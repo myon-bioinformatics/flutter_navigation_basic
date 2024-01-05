@@ -1,4 +1,4 @@
-# flutter_application_1
+# FLUTTER_NAVIGATION_BASIC
 
 A new Flutter project.
 
