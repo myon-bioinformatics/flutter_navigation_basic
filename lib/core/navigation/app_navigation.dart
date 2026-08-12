@@ -8,6 +8,8 @@ import '../../features/screen3/presentation/screen3_page.dart';
 import '../../features/screen3/domain/screen3_controller.dart';
 import '../../features/screen4/presentation/screen4_page.dart';
 import '../../features/screen4/domain/screen4_controller.dart';
+import '../../features/screen5/presentation/screen5_page.dart';
+import '../../features/screen5/domain/screen5_controller.dart';
 
 class AppNavigation {
   AppNavigation._();
@@ -16,6 +18,7 @@ class AppNavigation {
   static void toScreen2() => Get.toNamed(RouteNames.screen2);
   static void toScreen3() => Get.toNamed(RouteNames.screen3);
   static void toScreen4() => Get.toNamed(RouteNames.screen4);
+  static void toScreen5() => Get.toNamed(RouteNames.screen5);
   static void back() => Get.back();
 }
 
@@ -39,5 +42,10 @@ List<GetPage<dynamic>> get appRoutes => [
         name: RouteNames.screen4,
         page: () => const Screen4Page(),
         binding: BindingsBuilder(() => Get.lazyPut(() => Screen4Controller())),
+      ),
+      GetPage(
+        name: RouteNames.screen5,
+        page: () => const Screen5Page(),
+        binding: BindingsBuilder(() => Get.lazyPut(() => Screen5Controller())),
       ),
     ];

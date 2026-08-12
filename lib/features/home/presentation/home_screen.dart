@@ -54,6 +54,16 @@ class HomeScreen extends GetView<HomeController> {
               ),
             ],
           ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CustomButton(
+                label: 'Go to Screen 5🔗',
+                onPressed: AppNavigation.toScreen5,
+              ),
+            ],
+          ),
         ],
       ),
     );
