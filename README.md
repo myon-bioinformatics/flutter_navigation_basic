@@ -1,53 +1,43 @@
 # FLUTTER_NAVIGATION_BASIC_DEMO(macOS)
 ![Flutter Navigation Demo](https://raw.githubusercontent.com/myon-bioinformatics/flutter_navigation_basic/main/flutter_navigation_basic_demo.gif)
 
-## アーキテクチャ概要
+## Architecture
 
-シンプルなFlutterナビゲーション実装をモダンで拡張性の高い基盤にリファクタリングしたプロジェクトです。
-
-### ディレクトリ構造
+汎用的なFlutterアプリ基盤として、非機能要件（テーマ・ルート管理・共通ウィジェット）を外出しした構成になっています。
 
 ```
 lib/
-├── core/
-│   ├── config/          # 環境設定管理（.env対応）
-│   ├── exceptions/      # アプリ共通例外・エラーハンドリング
-│   ├── logging/         # ロギングサービス
-│   ├── navigation/      # ルート名定義・ナビゲーション管理
-│   └── services/        # 汎用サービス層（Storage、BaseController）
-├── features/
-│   ├── home/            # ホーム画面
-│   ├── screen2/         # カウンター画面
-│   ├── screen3/         # アイロニー画面
-│   └── screen4/         # 作曲ヒント画面
-├── shared/
-│   ├── widgets/         # 共通UIコンポーネント
-│   └── themes/          # テーマ・カラー定数
-├── main.dart            # 開発環境エントリーポイント
-└── main_prod.dart       # 本番環境エントリーポイント
+├── main.dart              # エントリポイント（MaterialApp設定のみ）
+├── config/
+│   ├── app_config.dart    # アプリ名・テーマカラー等の設定
+│   └── routes.dart        # 名前付きルート定義
+├── data/
+│   ├── ironies.dart       # Ironies データクラス
+│   └── composer.dart      # Composer データクラス
+├── screens/
+│   ├── home_screen.dart   # Screen1: HomeApp
+│   ├── screen2.dart       # Screen2: Trick and Mock
+│   ├── screen3.dart       # Screen3: Irony
+│   └── screen4.dart       # Screen4: Composition
+└── widgets/
+    └── nav_button.dart    # 共通ナビゲーションボタン
 ```
 
-### 主要ライブラリ
+### 設計方針
 
-| ライブラリ | 用途 |
-|---|---|
-| `get` | 状態管理・ナビゲーション |
-| `logger` | ロギング |
-| `flutter_dotenv` | 環境変数管理（.env） |
-| `shared_preferences` | ローカルストレージ |
+- **テーマ管理**: `AppConfig` でカラースキームを一元管理。色の変更は `app_config.dart` の `seedColor` だけ変えればよい。
+- **ルート管理**: `AppRoutes` で名前付きルートを定義。`Navigator.pushNamed` を使用し、Home への戻りは `pushNamedAndRemoveUntil` でスタッククリア。
+- **共通ウィジェット**: `NavButton` で画面遷移ボタンのパターンを共通化。新画面追加時も同じウィジェットを使うだけ。
+- **データ分離**: 各画面固有のデータ（皮肉リスト・音楽キーリスト）は `data/` 配下に独立させ、差し替えが容易。
 
-### 環境別実行
+## How to Run
 
 ```bash
-# 開発環境
-flutter run -t lib/main.dart
-
-# 本番環境
-flutter run -t lib/main_prod.dart
+flutter run
 ```
 
-### テスト
+Web で起動する場合:
 
 ```bash
-flutter test
+flutter run -d chrome
 ```

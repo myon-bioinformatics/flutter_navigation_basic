@@ -1,32 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'core/config/app_config.dart';
-import 'core/navigation/app_navigation.dart';
-import 'core/navigation/route_names.dart';
-import 'core/services/storage_service.dart';
-import 'core/logging/logger_service.dart';
-import 'shared/themes/app_theme.dart';
+import 'config/app_config.dart';
+import 'config/routes.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await AppConfig.initialize(env: AppEnvironment.development);
-  await StorageService.initialize();
-  LoggerService.info('App started in development mode');
-  runApp(const MyApp());
+void main() {
+  runApp(const App());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class App extends StatelessWidget {
+  const App({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
+    return MaterialApp(
       title: AppConfig.appName,
-      theme: AppTheme.light,
-      debugShowCheckedModeBanner: AppConfig.isDevelopment,
-      initialRoute: RouteNames.home,
-      getPages: appRoutes,
+      theme: AppConfig.theme,
+      routes: AppRoutes.routes,
+      initialRoute: AppRoutes.home,
     );
   }
 }
-
