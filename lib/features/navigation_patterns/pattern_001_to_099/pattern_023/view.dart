@@ -1,0 +1,37 @@
+// Pattern 023: NamedRouteResult
+// Named Route の遷移結果を受け取る。
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'controller.dart';
+
+class Pattern023View extends GetView<Pattern023Controller> {
+  const Pattern023View({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Pattern 023: NamedRouteResult'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Named Route の遷移結果を受け取る。',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            Obx(() => Text('状態: ${controller.status.value}')),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: controller.execute,
+              child: const Text('実行'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

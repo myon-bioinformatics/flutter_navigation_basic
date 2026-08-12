@@ -1,0 +1,18 @@
+// Pattern 044: AutoRefresh
+// 期限切れトークンの自動リフレッシュ。
+import 'package:get/get.dart';
+import '../../../../core/services/base_controller.dart';
+import 'service.dart';
+
+class Pattern044Controller extends BaseController {
+  final _service = Pattern044Service();
+  final RxString status = '待機中'.obs;
+
+  Future<void> execute() async {
+    await runAsync(() async {
+      status.value = '実行中...';
+      await _service.run();
+      status.value = '完了';
+    });
+  }
+}

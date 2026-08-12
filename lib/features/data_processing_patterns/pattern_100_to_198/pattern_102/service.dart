@@ -1,0 +1,11 @@
+// Pattern 102: SanitizeInput
+// XSS/SQLインジェクション防止の入力サニタイズ。
+import 'model.dart';
+
+class Pattern102Service {
+  Future<Pattern102Result> run() async {
+    // TODO: 実装を追加してください
+    await Future.delayed(const Duration(milliseconds: 100));
+    return Pattern102Result(message: 'SanitizeInput executed successfully');
+  }
+}
