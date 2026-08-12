@@ -9,9 +9,9 @@ import 'shared/themes/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AppConfig.initialize(env: AppEnvironment.development);
+  await AppConfig.initialize(env: AppEnvironment.production);
   await StorageService.initialize();
-  LoggerService.info('App started in development mode');
+  LoggerService.info('App started in production mode');
   runApp(const MyApp());
 }
 
@@ -23,10 +23,9 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       title: AppConfig.appName,
       theme: AppTheme.light,
-      debugShowCheckedModeBanner: AppConfig.isDevelopment,
+      debugShowCheckedModeBanner: false,
       initialRoute: RouteNames.home,
       getPages: appRoutes,
     );
   }
 }
-
