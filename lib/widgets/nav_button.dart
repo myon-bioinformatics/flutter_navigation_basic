@@ -3,7 +3,8 @@ import '../config/routes.dart';
 
 /// 画面遷移用の共通ボタン。
 /// [label] に表示テキスト、[routeName] に遷移先ルートを指定する。
-/// [clearStack] が true の場合、ナビゲーションスタックをクリアして遷移する（Home 戻り用）。
+/// [clearStack] が true の場合、または [routeName] が Home ルートの場合、
+/// ナビゲーションスタックをクリアして遷移する。
 class NavButton extends StatelessWidget {
   const NavButton({
     super.key,

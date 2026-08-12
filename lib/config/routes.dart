@@ -10,7 +10,7 @@ class AppRoutes {
   static const String screen3 = '/screen3';
   static const String screen4 = '/screen4';
 
-  static Map<String, WidgetBuilder> get routes => {
+  static final Map<String, WidgetBuilder> routes = {
         home: (_) => const HomeScreen(),
         screen2: (_) => const Screen2(),
         screen3: (_) => const Screen3(),

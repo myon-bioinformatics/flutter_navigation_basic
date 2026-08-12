@@ -8,7 +8,7 @@ class AppConfig {
   static const Color seedColor = Colors.deepPurple;
 
   // テーマ定義
-  static ThemeData get theme => ThemeData(
+  static final ThemeData theme = ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: seedColor),
         useMaterial3: true,
       );
