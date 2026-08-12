@@ -1,0 +1,6 @@
+{
+  "totalScreens": 198,
+  "sampleScreenIds": [1, 2, 3, 4, 5, 10, 50, 100, 150, 198],
+  "categories": ["navigation", "api", "ui", "data", "advanced"],
+  "searchTerms": ["Push", "HTTP", "Material", "Filter", "Animation"]
+}

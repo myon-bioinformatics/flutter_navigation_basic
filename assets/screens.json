@@ -1,0 +1,3568 @@
+{
+  "screens": [
+    {
+      "id": 1,
+      "name": "Screen1",
+      "title": "BasicPush",
+      "emoji": "🏠",
+      "description": "Navigation: BasicPush, API: HttpGet, Theme: MaterialAppBasic, Data: FilterBasic",
+      "category": "navigation",
+      "navigationPattern": "BasicPush",
+      "apiPattern": "HttpGet",
+      "themePattern": "MaterialAppBasic",
+      "dataPattern": "FilterBasic",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Screen2",
+      "title": "BasicPop",
+      "emoji": "👾",
+      "description": "Navigation: BasicPop, API: HttpPost, Theme: ElevatedButton, Data: FilterMultiple",
+      "category": "api",
+      "navigationPattern": "BasicPop",
+      "apiPattern": "HttpPost",
+      "themePattern": "ElevatedButton",
+      "dataPattern": "FilterMultiple",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Screen3",
+      "title": "BasicReplace",
+      "emoji": "🥐",
+      "description": "Navigation: BasicReplace, API: HttpPut, Theme: TextButton, Data: FilterNested",
+      "category": "ui",
+      "navigationPattern": "BasicReplace",
+      "apiPattern": "HttpPut",
+      "themePattern": "TextButton",
+      "dataPattern": "FilterNested",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Screen4",
+      "title": "PushWithResult",
+      "emoji": "🎸",
+      "description": "Navigation: PushWithResult, API: HttpDelete, Theme: OutlinedButton, Data: FilterDebounce",
+      "category": "data",
+      "navigationPattern": "PushWithResult",
+      "apiPattern": "HttpDelete",
+      "themePattern": "OutlinedButton",
+      "dataPattern": "FilterDebounce",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Screen5",
+      "title": "PushAndRemoveUntil",
+      "emoji": "🌟",
+      "description": "Navigation: PushAndRemoveUntil, API: HttpPatch, Theme: IconButton, Data: SearchBasic",
+      "category": "advanced",
+      "navigationPattern": "PushAndRemoveUntil",
+      "apiPattern": "HttpPatch",
+      "themePattern": "IconButton",
+      "dataPattern": "SearchBasic",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Screen6",
+      "title": "PushNamed",
+      "emoji": "🔮",
+      "description": "Navigation: PushNamed, API: QueryParams, Theme: FloatingActionButton, Data: SearchFuzzy",
+      "category": "navigation",
+      "navigationPattern": "PushNamed",
+      "apiPattern": "QueryParams",
+      "themePattern": "FloatingActionButton",
+      "dataPattern": "SearchFuzzy",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Screen7",
+      "title": "PopUntil",
+      "emoji": "🎯",
+      "description": "Navigation: PopUntil, API: PathParams, Theme: AppBar, Data: SearchHighlight",
+      "category": "api",
+      "navigationPattern": "PopUntil",
+      "apiPattern": "PathParams",
+      "themePattern": "AppBar",
+      "dataPattern": "SearchHighlight",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Screen8",
+      "title": "OffAll",
+      "emoji": "🚀",
+      "description": "Navigation: OffAll, API: JsonParse, Theme: Card, Data: SearchHistory",
+      "category": "ui",
+      "navigationPattern": "OffAll",
+      "apiPattern": "JsonParse",
+      "themePattern": "Card",
+      "dataPattern": "SearchHistory",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Screen9",
+      "title": "PushWithArguments",
+      "emoji": "🌈",
+      "description": "Navigation: PushWithArguments, API: JsonSerialize, Theme: ListTile, Data: SortBasic",
+      "category": "data",
+      "navigationPattern": "PushWithArguments",
+      "apiPattern": "JsonSerialize",
+      "themePattern": "ListTile",
+      "dataPattern": "SortBasic",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Screen10",
+      "title": "BackButtonHandler",
+      "emoji": "💡",
+      "description": "Navigation: BackButtonHandler, API: NestedJson, Theme: TextField, Data: SortMultiKey",
+      "category": "advanced",
+      "navigationPattern": "BackButtonHandler",
+      "apiPattern": "NestedJson",
+      "themePattern": "TextField",
+      "dataPattern": "SortMultiKey",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Screen11",
+      "title": "WillPopScope",
+      "emoji": "🔥",
+      "description": "Navigation: WillPopScope, API: JsonList, Theme: CheckBox, Data: SortStable",
+      "category": "navigation",
+      "navigationPattern": "WillPopScope",
+      "apiPattern": "JsonList",
+      "themePattern": "CheckBox",
+      "dataPattern": "SortStable",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Screen12",
+      "title": "NestedNavigator",
+      "emoji": "⚡",
+      "description": "Navigation: NestedNavigator, API: Pagination, Theme: RadioButton, Data: SortCustom",
+      "category": "api",
+      "navigationPattern": "NestedNavigator",
+      "apiPattern": "Pagination",
+      "themePattern": "RadioButton",
+      "dataPattern": "SortCustom",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Screen13",
+      "title": "IndexedStack",
+      "emoji": "🎨",
+      "description": "Navigation: IndexedStack, API: Cursor, Theme: Switch, Data: SortReverse",
+      "category": "ui",
+      "navigationPattern": "IndexedStack",
+      "apiPattern": "Cursor",
+      "themePattern": "Switch",
+      "dataPattern": "SortReverse",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Screen14",
+      "title": "BottomNavBar",
+      "emoji": "📊",
+      "description": "Navigation: BottomNavBar, API: Filtering, Theme: Slider, Data: GroupBy",
+      "category": "data",
+      "navigationPattern": "BottomNavBar",
+      "apiPattern": "Filtering",
+      "themePattern": "Slider",
+      "dataPattern": "GroupBy",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 15,
+      "name": "Screen15",
+      "title": "TabBarView",
+      "emoji": "🌙",
+      "description": "Navigation: TabBarView, API: Sorting, Theme: ProgressIndicator, Data: FacetFilter",
+      "category": "advanced",
+      "navigationPattern": "TabBarView",
+      "apiPattern": "Sorting",
+      "themePattern": "ProgressIndicator",
+      "dataPattern": "FacetFilter",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 16,
+      "name": "Screen16",
+      "title": "PageView",
+      "emoji": "🍀",
+      "description": "Navigation: PageView, API: Search, Theme: Chip, Data: RangeFilter",
+      "category": "navigation",
+      "navigationPattern": "PageView",
+      "apiPattern": "Search",
+      "themePattern": "Chip",
+      "dataPattern": "RangeFilter",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 17,
+      "name": "Screen17",
+      "title": "HeroAnimation",
+      "emoji": "🦋",
+      "description": "Navigation: HeroAnimation, API: BatchGet, Theme: Badge, Data: TagFilter",
+      "category": "api",
+      "navigationPattern": "HeroAnimation",
+      "apiPattern": "BatchGet",
+      "themePattern": "Badge",
+      "dataPattern": "TagFilter",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Screen18",
+      "title": "FadeTransition",
+      "emoji": "🎭",
+      "description": "Navigation: FadeTransition, API: BatchPost, Theme: Divider, Data: GeoFilter",
+      "category": "ui",
+      "navigationPattern": "FadeTransition",
+      "apiPattern": "BatchPost",
+      "themePattern": "Divider",
+      "dataPattern": "GeoFilter",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 19,
+      "name": "Screen19",
+      "title": "SlideTransition",
+      "emoji": "🔑",
+      "description": "Navigation: SlideTransition, API: BulkUpdate, Theme: ExpansionTile, Data: TextIndex",
+      "category": "data",
+      "navigationPattern": "SlideTransition",
+      "apiPattern": "BulkUpdate",
+      "themePattern": "ExpansionTile",
+      "dataPattern": "TextIndex",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Screen20",
+      "title": "ScaleTransition",
+      "emoji": "💎",
+      "description": "Navigation: ScaleTransition, API: ConditionalGet, Theme: Stepper, Data: InvertedIndex",
+      "category": "advanced",
+      "navigationPattern": "ScaleTransition",
+      "apiPattern": "ConditionalGet",
+      "themePattern": "Stepper",
+      "dataPattern": "InvertedIndex",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 21,
+      "name": "Screen21",
+      "title": "NamedRouteBasic",
+      "emoji": "🌊",
+      "description": "Navigation: NamedRouteBasic, API: HttpHead, Theme: DataTable, Data: Autocomplete",
+      "category": "navigation",
+      "navigationPattern": "NamedRouteBasic",
+      "apiPattern": "HttpHead",
+      "themePattern": "DataTable",
+      "dataPattern": "Autocomplete",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 22,
+      "name": "Screen22",
+      "title": "NamedRouteArguments",
+      "emoji": "🎪",
+      "description": "Navigation: NamedRouteArguments, API: HttpOptions, Theme: Tooltip2, Data: Tokenize",
+      "category": "api",
+      "navigationPattern": "NamedRouteArguments",
+      "apiPattern": "HttpOptions",
+      "themePattern": "Tooltip2",
+      "dataPattern": "Tokenize",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 23,
+      "name": "Screen23",
+      "title": "NamedRouteResult",
+      "emoji": "🦊",
+      "description": "Navigation: NamedRouteResult, API: Versioning, Theme: PopupMenu, Data: Stemming",
+      "category": "ui",
+      "navigationPattern": "NamedRouteResult",
+      "apiPattern": "Versioning",
+      "themePattern": "PopupMenu",
+      "dataPattern": "Stemming",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 24,
+      "name": "Screen24",
+      "title": "NamedRouteGuard",
+      "emoji": "🌸",
+      "description": "Navigation: NamedRouteGuard, API: ContentNeg, Theme: SegmentedButton, Data: StopWord",
+      "category": "data",
+      "navigationPattern": "NamedRouteGuard",
+      "apiPattern": "ContentNeg",
+      "themePattern": "SegmentedButton",
+      "dataPattern": "StopWord",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 25,
+      "name": "Screen25",
+      "title": "NamedRouteMiddleware",
+      "emoji": "🎲",
+      "description": "Navigation: NamedRouteMiddleware, API: Accept, Theme: NavigationBar, Data: TfIdf",
+      "category": "advanced",
+      "navigationPattern": "NamedRouteMiddleware",
+      "apiPattern": "Accept",
+      "themePattern": "NavigationBar",
+      "dataPattern": "TfIdf",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 26,
+      "name": "Screen26",
+      "title": "NamedRouteRedirect",
+      "emoji": "🏆",
+      "description": "Navigation: NamedRouteRedirect, API: Cors, Theme: NavigationDrawer, Data: SortedSet",
+      "category": "navigation",
+      "navigationPattern": "NamedRouteRedirect",
+      "apiPattern": "Cors",
+      "themePattern": "NavigationDrawer",
+      "dataPattern": "SortedSet",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 27,
+      "name": "Screen27",
+      "title": "NamedRouteNested",
+      "emoji": "🎵",
+      "description": "Navigation: NamedRouteNested, API: Redirect, Theme: BottomAppBar, Data: PriorityQueue",
+      "category": "api",
+      "navigationPattern": "NamedRouteNested",
+      "apiPattern": "Redirect",
+      "themePattern": "BottomAppBar",
+      "dataPattern": "PriorityQueue",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 28,
+      "name": "Screen28",
+      "title": "NamedRouteTabBar",
+      "emoji": "🔬",
+      "description": "Navigation: NamedRouteTabBar, API: Compression, Theme: SearchBar, Data: MinHeap",
+      "category": "ui",
+      "navigationPattern": "NamedRouteTabBar",
+      "apiPattern": "Compression",
+      "themePattern": "SearchBar",
+      "dataPattern": "MinHeap",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 29,
+      "name": "Screen29",
+      "title": "NamedRouteGroup",
+      "emoji": "🎃",
+      "description": "Navigation: NamedRouteGroup, API: Timeout, Theme: DatePickerM3, Data: TopN",
+      "category": "data",
+      "navigationPattern": "NamedRouteGroup",
+      "apiPattern": "Timeout",
+      "themePattern": "DatePickerM3",
+      "dataPattern": "TopN",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 30,
+      "name": "Screen30",
+      "title": "NamedRouteDynamic",
+      "emoji": "🌺",
+      "description": "Navigation: NamedRouteDynamic, API: BaseUrl, Theme: TimePickerM3, Data: DistinctFilter",
+      "category": "advanced",
+      "navigationPattern": "NamedRouteDynamic",
+      "apiPattern": "BaseUrl",
+      "themePattern": "TimePickerM3",
+      "dataPattern": "DistinctFilter",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 31,
+      "name": "Screen31",
+      "title": "NamedRouteWildcard",
+      "emoji": "🦁",
+      "description": "Navigation: NamedRouteWildcard, API: ApiKeyHeader, Theme: CupertinoApp, Data: PaginationBasic",
+      "category": "navigation",
+      "navigationPattern": "NamedRouteWildcard",
+      "apiPattern": "ApiKeyHeader",
+      "themePattern": "CupertinoApp",
+      "dataPattern": "PaginationBasic",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 32,
+      "name": "Screen32",
+      "title": "NamedRouteTransition",
+      "emoji": "🐬",
+      "description": "Navigation: NamedRouteTransition, API: BasicAuth, Theme: CupertinoNavBar, Data: CursorPagination",
+      "category": "api",
+      "navigationPattern": "NamedRouteTransition",
+      "apiPattern": "BasicAuth",
+      "themePattern": "CupertinoNavBar",
+      "dataPattern": "CursorPagination",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 33,
+      "name": "Screen33",
+      "title": "NamedRouteBinding",
+      "emoji": "🌴",
+      "description": "Navigation: NamedRouteBinding, API: BearerToken, Theme: CupertinoTabBar, Data: InfiniteScroll",
+      "category": "ui",
+      "navigationPattern": "NamedRouteBinding",
+      "apiPattern": "BearerToken",
+      "themePattern": "CupertinoTabBar",
+      "dataPattern": "InfiniteScroll",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 34,
+      "name": "Screen34",
+      "title": "NamedRouteHistory",
+      "emoji": "🎠",
+      "description": "Navigation: NamedRouteHistory, API: JwtLogin, Theme: CupertinoButton, Data: LoadMore",
+      "category": "data",
+      "navigationPattern": "NamedRouteHistory",
+      "apiPattern": "JwtLogin",
+      "themePattern": "CupertinoButton",
+      "dataPattern": "LoadMore",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 35,
+      "name": "Screen35",
+      "title": "NamedRouteModal",
+      "emoji": "🔭",
+      "description": "Navigation: NamedRouteModal, API: JwtRefresh, Theme: CupertinoTextField, Data: VirtualList",
+      "category": "advanced",
+      "navigationPattern": "NamedRouteModal",
+      "apiPattern": "JwtRefresh",
+      "themePattern": "CupertinoTextField",
+      "dataPattern": "VirtualList",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 36,
+      "name": "Screen36",
+      "title": "NamedRouteTabIndex",
+      "emoji": "🎋",
+      "description": "Navigation: NamedRouteTabIndex, API: JwtDecode, Theme: CupertinoSwitch, Data: LazyList",
+      "category": "navigation",
+      "navigationPattern": "NamedRouteTabIndex",
+      "apiPattern": "JwtDecode",
+      "themePattern": "CupertinoSwitch",
+      "dataPattern": "LazyList",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 37,
+      "name": "Screen37",
+      "title": "NamedRouteAnimation",
+      "emoji": "🦄",
+      "description": "Navigation: NamedRouteAnimation, API: OAuth2Code, Theme: CupertinoSlider, Data: PullRefresh",
+      "category": "api",
+      "navigationPattern": "NamedRouteAnimation",
+      "apiPattern": "OAuth2Code",
+      "themePattern": "CupertinoSlider",
+      "dataPattern": "PullRefresh",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 38,
+      "name": "Screen38",
+      "title": "NamedRouteObserver",
+      "emoji": "🌋",
+      "description": "Navigation: NamedRouteObserver, API: OAuth2Implicit, Theme: CupertinoPicker, Data: Prefetch",
+      "category": "ui",
+      "navigationPattern": "NamedRouteObserver",
+      "apiPattern": "OAuth2Implicit",
+      "themePattern": "CupertinoPicker",
+      "dataPattern": "Prefetch",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 39,
+      "name": "Screen39",
+      "title": "NamedRoutePreload",
+      "emoji": "🎪",
+      "description": "Navigation: NamedRoutePreload, API: OAuth2ClientCred, Theme: CupertinoAlert, Data: PageIndicator",
+      "category": "data",
+      "navigationPattern": "NamedRoutePreload",
+      "apiPattern": "OAuth2ClientCred",
+      "themePattern": "CupertinoAlert",
+      "dataPattern": "PageIndicator",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 40,
+      "name": "Screen40",
+      "title": "NamedRouteLazy",
+      "emoji": "💫",
+      "description": "Navigation: NamedRouteLazy, API: ApiKeyQuery, Theme: CupertinoAction, Data: PageSize",
+      "category": "advanced",
+      "navigationPattern": "NamedRouteLazy",
+      "apiPattern": "ApiKeyQuery",
+      "themePattern": "CupertinoAction",
+      "dataPattern": "PageSize",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 41,
+      "name": "Screen41",
+      "title": "DeepLinkBasic",
+      "emoji": "🏠",
+      "description": "Navigation: DeepLinkBasic, API: HmacSign, Theme: CupertinoPage, Data: OffsetLimit",
+      "category": "navigation",
+      "navigationPattern": "DeepLinkBasic",
+      "apiPattern": "HmacSign",
+      "themePattern": "CupertinoPage",
+      "dataPattern": "OffsetLimit",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 42,
+      "name": "Screen42",
+      "title": "DeepLinkArguments",
+      "emoji": "👾",
+      "description": "Navigation: DeepLinkArguments, API: RequestSigning, Theme: CupertinoList, Data: KeysetPagination",
+      "category": "api",
+      "navigationPattern": "DeepLinkArguments",
+      "apiPattern": "RequestSigning",
+      "themePattern": "CupertinoList",
+      "dataPattern": "KeysetPagination",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 43,
+      "name": "Screen43",
+      "title": "DeepLinkUniversal",
+      "emoji": "🥐",
+      "description": "Navigation: DeepLinkUniversal, API: TokenStorage, Theme: CupertinoContext, Data: WindowPaging",
+      "category": "ui",
+      "navigationPattern": "DeepLinkUniversal",
+      "apiPattern": "TokenStorage",
+      "themePattern": "CupertinoContext",
+      "dataPattern": "WindowPaging",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 44,
+      "name": "Screen44",
+      "title": "DeepLinkAppLink",
+      "emoji": "🎸",
+      "description": "Navigation: DeepLinkAppLink, API: AutoRefresh, Theme: CupertinoFormRow, Data: BidirectionalScroll",
+      "category": "data",
+      "navigationPattern": "DeepLinkAppLink",
+      "apiPattern": "AutoRefresh",
+      "themePattern": "CupertinoFormRow",
+      "dataPattern": "BidirectionalScroll",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 45,
+      "name": "Screen45",
+      "title": "DeepLinkWebUrl",
+      "emoji": "🌟",
+      "description": "Navigation: DeepLinkWebUrl, API: SessionCookie, Theme: CupertinoSearch, Data: StickyHeader",
+      "category": "advanced",
+      "navigationPattern": "DeepLinkWebUrl",
+      "apiPattern": "SessionCookie",
+      "themePattern": "CupertinoSearch",
+      "dataPattern": "StickyHeader",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 46,
+      "name": "Screen46",
+      "title": "DeepLinkQueryParam",
+      "emoji": "🔮",
+      "description": "Navigation: DeepLinkQueryParam, API: CsrfToken, Theme: CupertinoSegment, Data: SectionList",
+      "category": "navigation",
+      "navigationPattern": "DeepLinkQueryParam",
+      "apiPattern": "CsrfToken",
+      "themePattern": "CupertinoSegment",
+      "dataPattern": "SectionList",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 47,
+      "name": "Screen47",
+      "title": "DeepLinkAuthenticated",
+      "emoji": "🎯",
+      "description": "Navigation: DeepLinkAuthenticated, API: MutualTls, Theme: CupertinoProgress, Data: TreeView",
+      "category": "api",
+      "navigationPattern": "DeepLinkAuthenticated",
+      "apiPattern": "MutualTls",
+      "themePattern": "CupertinoProgress",
+      "dataPattern": "TreeView",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 48,
+      "name": "Screen48",
+      "title": "DeepLinkFallback",
+      "emoji": "🚀",
+      "description": "Navigation: DeepLinkFallback, API: Pkce, Theme: CupertinoDate, Data: FlatList",
+      "category": "ui",
+      "navigationPattern": "DeepLinkFallback",
+      "apiPattern": "Pkce",
+      "themePattern": "CupertinoDate",
+      "dataPattern": "FlatList",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 49,
+      "name": "Screen49",
+      "title": "DeepLinkDynamic",
+      "emoji": "🌈",
+      "description": "Navigation: DeepLinkDynamic, API: Scopes, Theme: CupertinoTimer, Data: GroupedList",
+      "category": "data",
+      "navigationPattern": "DeepLinkDynamic",
+      "apiPattern": "Scopes",
+      "themePattern": "CupertinoTimer",
+      "dataPattern": "GroupedList",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 50,
+      "name": "Screen50",
+      "title": "DeepLinkBranch",
+      "emoji": "💡",
+      "description": "Navigation: DeepLinkBranch, API: TokenIntrospect, Theme: CupertinoScaffold, Data: ThumbnailList",
+      "category": "advanced",
+      "navigationPattern": "DeepLinkBranch",
+      "apiPattern": "TokenIntrospect",
+      "themePattern": "CupertinoScaffold",
+      "dataPattern": "ThumbnailList",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 51,
+      "name": "Screen51",
+      "title": "DeepLinkNotification",
+      "emoji": "🔥",
+      "description": "Navigation: DeepLinkNotification, API: PermissionCheck, Theme: CupertinoTabScaffold, Data: SelectableList",
+      "category": "navigation",
+      "navigationPattern": "DeepLinkNotification",
+      "apiPattern": "PermissionCheck",
+      "themePattern": "CupertinoTabScaffold",
+      "dataPattern": "SelectableList",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 52,
+      "name": "Screen52",
+      "title": "DeepLinkShare",
+      "emoji": "⚡",
+      "description": "Navigation: DeepLinkShare, API: RateLimitAware, Theme: CupertinoFullscreen, Data: SwipeToDelete",
+      "category": "api",
+      "navigationPattern": "DeepLinkShare",
+      "apiPattern": "RateLimitAware",
+      "themePattern": "CupertinoFullscreen",
+      "dataPattern": "SwipeToDelete",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 53,
+      "name": "Screen53",
+      "title": "DeepLinkOnboarding",
+      "emoji": "🎨",
+      "description": "Navigation: DeepLinkOnboarding, API: IpWhitelist, Theme: CupertinoScrollbar, Data: Reorderable",
+      "category": "ui",
+      "navigationPattern": "DeepLinkOnboarding",
+      "apiPattern": "IpWhitelist",
+      "themePattern": "CupertinoScrollbar",
+      "dataPattern": "Reorderable",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 54,
+      "name": "Screen54",
+      "title": "DeepLinkWeb",
+      "emoji": "📊",
+      "description": "Navigation: DeepLinkWeb, API: EncryptPayload, Theme: CupertinoRefresh, Data: ChecklistView",
+      "category": "data",
+      "navigationPattern": "DeepLinkWeb",
+      "apiPattern": "EncryptPayload",
+      "themePattern": "CupertinoRefresh",
+      "dataPattern": "ChecklistView",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 55,
+      "name": "Screen55",
+      "title": "DeepLinkDesktop",
+      "emoji": "🌙",
+      "description": "Navigation: DeepLinkDesktop, API: HashPassword, Theme: CupertinoTheme, Data: TimelineView",
+      "category": "advanced",
+      "navigationPattern": "DeepLinkDesktop",
+      "apiPattern": "HashPassword",
+      "themePattern": "CupertinoTheme",
+      "dataPattern": "TimelineView",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 56,
+      "name": "Screen56",
+      "title": "DeepLinkHistory",
+      "emoji": "🍀",
+      "description": "Navigation: DeepLinkHistory, API: TlsVerify, Theme: AdaptiveWidget, Data: MasonryGrid",
+      "category": "navigation",
+      "navigationPattern": "DeepLinkHistory",
+      "apiPattern": "TlsVerify",
+      "themePattern": "AdaptiveWidget",
+      "dataPattern": "MasonryGrid",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 57,
+      "name": "Screen57",
+      "title": "DeepLinkHash",
+      "emoji": "🦋",
+      "description": "Navigation: DeepLinkHash, API: CertPin, Theme: PlatformDetect, Data: CalendarView",
+      "category": "api",
+      "navigationPattern": "DeepLinkHash",
+      "apiPattern": "CertPin",
+      "themePattern": "PlatformDetect",
+      "dataPattern": "CalendarView",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 58,
+      "name": "Screen58",
+      "title": "DeepLinkRestore",
+      "emoji": "🎭",
+      "description": "Navigation: DeepLinkRestore, API: SecureHeaders, Theme: AdaptiveTextField, Data: KanbanBoard",
+      "category": "ui",
+      "navigationPattern": "DeepLinkRestore",
+      "apiPattern": "SecureHeaders",
+      "themePattern": "AdaptiveTextField",
+      "dataPattern": "KanbanBoard",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 59,
+      "name": "Screen59",
+      "title": "DeepLinkAnalytics",
+      "emoji": "🔑",
+      "description": "Navigation: DeepLinkAnalytics, API: SamlAssertion, Theme: AdaptiveButton, Data: ChartData",
+      "category": "data",
+      "navigationPattern": "DeepLinkAnalytics",
+      "apiPattern": "SamlAssertion",
+      "themePattern": "AdaptiveButton",
+      "dataPattern": "ChartData",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 60,
+      "name": "Screen60",
+      "title": "DeepLinkLocalized",
+      "emoji": "💎",
+      "description": "Navigation: DeepLinkLocalized, API: LogoutRevoke, Theme: AdaptiveDialog, Data: HeatmapData",
+      "category": "advanced",
+      "navigationPattern": "DeepLinkLocalized",
+      "apiPattern": "LogoutRevoke",
+      "themePattern": "AdaptiveDialog",
+      "dataPattern": "HeatmapData",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 61,
+      "name": "Screen61",
+      "title": "BottomNavBasic",
+      "emoji": "🌊",
+      "description": "Navigation: BottomNavBasic, API: WebSocketBasic, Theme: CustomThemeBasic, Data: MemoryCacheBasic",
+      "category": "navigation",
+      "navigationPattern": "BottomNavBasic",
+      "apiPattern": "WebSocketBasic",
+      "themePattern": "CustomThemeBasic",
+      "dataPattern": "MemoryCacheBasic",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 62,
+      "name": "Screen62",
+      "title": "BottomNavBadge",
+      "emoji": "🎪",
+      "description": "Navigation: BottomNavBadge, API: WebSocketSend, Theme: ThemeExtension, Data: LruCache",
+      "category": "api",
+      "navigationPattern": "BottomNavBadge",
+      "apiPattern": "WebSocketSend",
+      "themePattern": "ThemeExtension",
+      "dataPattern": "LruCache",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 63,
+      "name": "Screen63",
+      "title": "BottomNavStatePreserve",
+      "emoji": "🦊",
+      "description": "Navigation: BottomNavStatePreserve, API: WebSocketPing, Theme: ColorScheme, Data: TtlCache",
+      "category": "ui",
+      "navigationPattern": "BottomNavStatePreserve",
+      "apiPattern": "WebSocketPing",
+      "themePattern": "ColorScheme",
+      "dataPattern": "TtlCache",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 64,
+      "name": "Screen64",
+      "title": "BottomNavHide",
+      "emoji": "🌸",
+      "description": "Navigation: BottomNavHide, API: WebSocketReconnect, Theme: TypographyTheme, Data: WeakRefCache",
+      "category": "data",
+      "navigationPattern": "BottomNavHide",
+      "apiPattern": "WebSocketReconnect",
+      "themePattern": "TypographyTheme",
+      "dataPattern": "WeakRefCache",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 65,
+      "name": "Screen65",
+      "title": "BottomNavCustom",
+      "emoji": "🎲",
+      "description": "Navigation: BottomNavCustom, API: WebSocketJson, Theme: ComponentTheme, Data: MultiLevel",
+      "category": "advanced",
+      "navigationPattern": "BottomNavCustom",
+      "apiPattern": "WebSocketJson",
+      "themePattern": "ComponentTheme",
+      "dataPattern": "MultiLevel",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 66,
+      "name": "Screen66",
+      "title": "TabBarFixed",
+      "emoji": "🏆",
+      "description": "Navigation: TabBarFixed, API: WebSocketBinary, Theme: ThemeToggle, Data: WriteThrough",
+      "category": "navigation",
+      "navigationPattern": "TabBarFixed",
+      "apiPattern": "WebSocketBinary",
+      "themePattern": "ThemeToggle",
+      "dataPattern": "WriteThrough",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 67,
+      "name": "Screen67",
+      "title": "TabBarScrollable",
+      "emoji": "🎵",
+      "description": "Navigation: TabBarScrollable, API: WebSocketRoom, Theme: AnimatedTheme, Data: WriteBack",
+      "category": "api",
+      "navigationPattern": "TabBarScrollable",
+      "apiPattern": "WebSocketRoom",
+      "themePattern": "AnimatedTheme",
+      "dataPattern": "WriteBack",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 68,
+      "name": "Screen68",
+      "title": "TabBarIcon",
+      "emoji": "🔬",
+      "description": "Navigation: TabBarIcon, API: WebSocketBroadcast, Theme: MultiTheme, Data: ReadAside",
+      "category": "ui",
+      "navigationPattern": "TabBarIcon",
+      "apiPattern": "WebSocketBroadcast",
+      "themePattern": "MultiTheme",
+      "dataPattern": "ReadAside",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 69,
+      "name": "Screen69",
+      "title": "TabBarDynamic",
+      "emoji": "🎃",
+      "description": "Navigation: TabBarDynamic, API: WebSocketAuth, Theme: ThemeProvider, Data: RefreshAhead",
+      "category": "data",
+      "navigationPattern": "TabBarDynamic",
+      "apiPattern": "WebSocketAuth",
+      "themePattern": "ThemeProvider",
+      "dataPattern": "RefreshAhead",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 70,
+      "name": "Screen70",
+      "title": "TabBarNested",
+      "emoji": "🌺",
+      "description": "Navigation: TabBarNested, API: WebSocketStream, Theme: ThemePersist, Data: CacheWarmup",
+      "category": "advanced",
+      "navigationPattern": "TabBarNested",
+      "apiPattern": "WebSocketStream",
+      "themePattern": "ThemePersist",
+      "dataPattern": "CacheWarmup",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 71,
+      "name": "Screen71",
+      "title": "DrawerBasic",
+      "emoji": "🦁",
+      "description": "Navigation: DrawerBasic, API: SseBasic, Theme: BrandTheme, Data: CacheKey",
+      "category": "navigation",
+      "navigationPattern": "DrawerBasic",
+      "apiPattern": "SseBasic",
+      "themePattern": "BrandTheme",
+      "dataPattern": "CacheKey",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 72,
+      "name": "Screen72",
+      "title": "DrawerEndDrawer",
+      "emoji": "🐬",
+      "description": "Navigation: DrawerEndDrawer, API: SseReconnect, Theme: SeasonTheme, Data: CacheShard",
+      "category": "api",
+      "navigationPattern": "DrawerEndDrawer",
+      "apiPattern": "SseReconnect",
+      "themePattern": "SeasonTheme",
+      "dataPattern": "CacheShard",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 73,
+      "name": "Screen73",
+      "title": "DrawerCustom",
+      "emoji": "🌴",
+      "description": "Navigation: DrawerCustom, API: SseEventType, Theme: GradientTheme, Data: CacheEviction",
+      "category": "ui",
+      "navigationPattern": "DrawerCustom",
+      "apiPattern": "SseEventType",
+      "themePattern": "GradientTheme",
+      "dataPattern": "CacheEviction",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 74,
+      "name": "Screen74",
+      "title": "DrawerHeader",
+      "emoji": "🎠",
+      "description": "Navigation: DrawerHeader, API: SseLastEventId, Theme: NeonTheme, Data: CacheStats2",
+      "category": "data",
+      "navigationPattern": "DrawerHeader",
+      "apiPattern": "SseLastEventId",
+      "themePattern": "NeonTheme",
+      "dataPattern": "CacheStats2",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 75,
+      "name": "Screen75",
+      "title": "DrawerPersistent",
+      "emoji": "🔭",
+      "description": "Navigation: DrawerPersistent, API: SseJson, Theme: MinimalTheme, Data: CacheSerialization",
+      "category": "advanced",
+      "navigationPattern": "DrawerPersistent",
+      "apiPattern": "SseJson",
+      "themePattern": "MinimalTheme",
+      "dataPattern": "CacheSerialization",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 76,
+      "name": "Screen76",
+      "title": "DrawerModal",
+      "emoji": "🎋",
+      "description": "Navigation: DrawerModal, API: LongPolling, Theme: RetroTheme, Data: ImageCache",
+      "category": "navigation",
+      "navigationPattern": "DrawerModal",
+      "apiPattern": "LongPolling",
+      "themePattern": "RetroTheme",
+      "dataPattern": "ImageCache",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 77,
+      "name": "Screen77",
+      "title": "NavigationRail",
+      "emoji": "🦄",
+      "description": "Navigation: NavigationRail, API: ShortPolling, Theme: NatureTheme, Data: ApiCache",
+      "category": "api",
+      "navigationPattern": "NavigationRail",
+      "apiPattern": "ShortPolling",
+      "themePattern": "NatureTheme",
+      "dataPattern": "ApiCache",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 78,
+      "name": "Screen78",
+      "title": "NavigationRailExtended",
+      "emoji": "🌋",
+      "description": "Navigation: NavigationRailExtended, API: HttpStream, Theme: HighContrastTheme, Data: ComputeCache",
+      "category": "ui",
+      "navigationPattern": "NavigationRailExtended",
+      "apiPattern": "HttpStream",
+      "themePattern": "HighContrastTheme",
+      "dataPattern": "ComputeCache",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 79,
+      "name": "Screen79",
+      "title": "AdaptiveNav",
+      "emoji": "🎪",
+      "description": "Navigation: AdaptiveNav, API: ChunkedTransfer, Theme: M3Theme, Data: LazyInit",
+      "category": "data",
+      "navigationPattern": "AdaptiveNav",
+      "apiPattern": "ChunkedTransfer",
+      "themePattern": "M3Theme",
+      "dataPattern": "LazyInit",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 80,
+      "name": "Screen80",
+      "title": "MultiLevelNav",
+      "emoji": "💫",
+      "description": "Navigation: MultiLevelNav, API: EventBus, Theme: M2Theme, Data: ObjectPool",
+      "category": "advanced",
+      "navigationPattern": "MultiLevelNav",
+      "apiPattern": "EventBus",
+      "themePattern": "M2Theme",
+      "dataPattern": "ObjectPool",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 81,
+      "name": "Screen81",
+      "title": "AuthGuard",
+      "emoji": "🏠",
+      "description": "Navigation: AuthGuard, API: WebSocketPool, Theme: FontFamily, Data: MemoryLimit",
+      "category": "navigation",
+      "navigationPattern": "AuthGuard",
+      "apiPattern": "WebSocketPool",
+      "themePattern": "FontFamily",
+      "dataPattern": "MemoryLimit",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 82,
+      "name": "Screen82",
+      "title": "RoleBasedNav",
+      "emoji": "👾",
+      "description": "Navigation: RoleBasedNav, API: SocketIo, Theme: FontScale, Data: GcFriendly",
+      "category": "api",
+      "navigationPattern": "RoleBasedNav",
+      "apiPattern": "SocketIo",
+      "themePattern": "FontScale",
+      "dataPattern": "GcFriendly",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 83,
+      "name": "Screen83",
+      "title": "OnboardingFlow",
+      "emoji": "🥐",
+      "description": "Navigation: OnboardingFlow, API: Sse404Handling, Theme: IconTheme, Data: Dispose",
+      "category": "ui",
+      "navigationPattern": "OnboardingFlow",
+      "apiPattern": "Sse404Handling",
+      "themePattern": "IconTheme",
+      "dataPattern": "Dispose",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 84,
+      "name": "Screen84",
+      "title": "WizardFlow",
+      "emoji": "🎸",
+      "description": "Navigation: WizardFlow, API: WebSocketCompress, Theme: DividerTheme, Data: StreamBuffer",
+      "category": "data",
+      "navigationPattern": "WizardFlow",
+      "apiPattern": "WebSocketCompress",
+      "themePattern": "DividerTheme",
+      "dataPattern": "StreamBuffer",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 85,
+      "name": "Screen85",
+      "title": "ConditionalHome",
+      "emoji": "🌟",
+      "description": "Navigation: ConditionalHome, API: WebSocketSubprotocol, Theme: CardTheme, Data: DataCompression",
+      "category": "advanced",
+      "navigationPattern": "ConditionalHome",
+      "apiPattern": "WebSocketSubprotocol",
+      "themePattern": "CardTheme",
+      "dataPattern": "DataCompression",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 86,
+      "name": "Screen86",
+      "title": "FeatureFlag",
+      "emoji": "🔮",
+      "description": "Navigation: FeatureFlag, API: RealTimeList, Theme: AppBarTheme, Data: Deduplication",
+      "category": "navigation",
+      "navigationPattern": "FeatureFlag",
+      "apiPattern": "RealTimeList",
+      "themePattern": "AppBarTheme",
+      "dataPattern": "Deduplication",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 87,
+      "name": "Screen87",
+      "title": "AgeGate",
+      "emoji": "🎯",
+      "description": "Navigation: AgeGate, API: NotificationWs, Theme: ButtonTheme, Data: Denormalize",
+      "category": "api",
+      "navigationPattern": "AgeGate",
+      "apiPattern": "NotificationWs",
+      "themePattern": "ButtonTheme",
+      "dataPattern": "Denormalize",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 88,
+      "name": "Screen88",
+      "title": "NetworkAware",
+      "emoji": "🚀",
+      "description": "Navigation: NetworkAware, API: PresenceWs, Theme: InputTheme, Data: SnapshotCache",
+      "category": "ui",
+      "navigationPattern": "NetworkAware",
+      "apiPattern": "PresenceWs",
+      "themePattern": "InputTheme",
+      "dataPattern": "SnapshotCache",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 89,
+      "name": "Screen89",
+      "title": "PermissionGuard",
+      "emoji": "🌈",
+      "description": "Navigation: PermissionGuard, API: TypingIndicator, Theme: SnackBarTheme, Data: DeltaCache",
+      "category": "data",
+      "navigationPattern": "PermissionGuard",
+      "apiPattern": "TypingIndicator",
+      "themePattern": "SnackBarTheme",
+      "dataPattern": "DeltaCache",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 90,
+      "name": "Screen90",
+      "title": "SubscriptionGuard",
+      "emoji": "💡",
+      "description": "Navigation: SubscriptionGuard, API: LiveFeed, Theme: TooltipTheme, Data: ReadThrough",
+      "category": "advanced",
+      "navigationPattern": "SubscriptionGuard",
+      "apiPattern": "LiveFeed",
+      "themePattern": "TooltipTheme",
+      "dataPattern": "ReadThrough",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 91,
+      "name": "Screen91",
+      "title": "MaintenanceMode",
+      "emoji": "🔥",
+      "description": "Navigation: MaintenanceMode, API: JsonBasicParse, Theme: DarkModeBasic, Data: ValidationBasic",
+      "category": "navigation",
+      "navigationPattern": "MaintenanceMode",
+      "apiPattern": "JsonBasicParse",
+      "themePattern": "DarkModeBasic",
+      "dataPattern": "ValidationBasic",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 92,
+      "name": "Screen92",
+      "title": "ForceUpdate",
+      "emoji": "⚡",
+      "description": "Navigation: ForceUpdate, API: JsonNested, Theme: SystemDarkMode, Data: EmailValidation",
+      "category": "api",
+      "navigationPattern": "ForceUpdate",
+      "apiPattern": "JsonNested",
+      "themePattern": "SystemDarkMode",
+      "dataPattern": "EmailValidation",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 93,
+      "name": "Screen93",
+      "title": "KYC",
+      "emoji": "🎨",
+      "description": "Navigation: KYC, API: JsonList, Theme: ManualDarkMode, Data: PasswordStrength",
+      "category": "ui",
+      "navigationPattern": "KYC",
+      "apiPattern": "JsonList",
+      "themePattern": "ManualDarkMode",
+      "dataPattern": "PasswordStrength",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 94,
+      "name": "Screen94",
+      "title": "TwoFactor",
+      "emoji": "📊",
+      "description": "Navigation: TwoFactor, API: JsonNull, Theme: DarkModeIcon, Data: PhoneValidation",
+      "category": "data",
+      "navigationPattern": "TwoFactor",
+      "apiPattern": "JsonNull",
+      "themePattern": "DarkModeIcon",
+      "dataPattern": "PhoneValidation",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 95,
+      "name": "Screen95",
+      "title": "ConsentFlow",
+      "emoji": "🌙",
+      "description": "Navigation: ConsentFlow, API: JsonToModel, Theme: DarkModeImage, Data: UrlValidation",
+      "category": "advanced",
+      "navigationPattern": "ConsentFlow",
+      "apiPattern": "JsonToModel",
+      "themePattern": "DarkModeImage",
+      "dataPattern": "UrlValidation",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 96,
+      "name": "Screen96",
+      "title": "LocationGate",
+      "emoji": "🍀",
+      "description": "Navigation: LocationGate, API: ModelToJson, Theme: DarkModeColor, Data: DateValidation",
+      "category": "navigation",
+      "navigationPattern": "LocationGate",
+      "apiPattern": "ModelToJson",
+      "themePattern": "DarkModeColor",
+      "dataPattern": "DateValidation",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 97,
+      "name": "Screen97",
+      "title": "DarkModeConditional",
+      "emoji": "🦋",
+      "description": "Navigation: DarkModeConditional, API: JsonDiff, Theme: DynamicColor, Data: RangeValidation",
+      "category": "api",
+      "navigationPattern": "DarkModeConditional",
+      "apiPattern": "JsonDiff",
+      "themePattern": "DynamicColor",
+      "dataPattern": "RangeValidation",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 98,
+      "name": "Screen98",
+      "title": "LanguageRedirect",
+      "emoji": "🎭",
+      "description": "Navigation: LanguageRedirect, API: JsonMerge, Theme: SystemAccent, Data: RegexValidation",
+      "category": "ui",
+      "navigationPattern": "LanguageRedirect",
+      "apiPattern": "JsonMerge",
+      "themePattern": "SystemAccent",
+      "dataPattern": "RegexValidation",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 99,
+      "name": "Screen99",
+      "title": "ThemeConditional",
+      "emoji": "🔑",
+      "description": "Navigation: ThemeConditional, API: JsonPath, Theme: MaterialYou, Data: FormValidation",
+      "category": "data",
+      "navigationPattern": "ThemeConditional",
+      "apiPattern": "JsonPath",
+      "themePattern": "MaterialYou",
+      "dataPattern": "FormValidation",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 100,
+      "name": "Screen100",
+      "title": "ProfileCompletion",
+      "emoji": "💎",
+      "description": "Navigation: ProfileCompletion, API: JsonlParse, Theme: AMOLED, Data: AsyncValidation",
+      "category": "advanced",
+      "navigationPattern": "ProfileCompletion",
+      "apiPattern": "JsonlParse",
+      "themePattern": "AMOLED",
+      "dataPattern": "AsyncValidation",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 101,
+      "name": "Screen101",
+      "title": "BackStackInspect",
+      "emoji": "🌊",
+      "description": "Navigation: BackStackInspect, API: JsonlWrite, Theme: ScheduledTheme, Data: CrossField",
+      "category": "navigation",
+      "navigationPattern": "BackStackInspect",
+      "apiPattern": "JsonlWrite",
+      "themePattern": "ScheduledTheme",
+      "dataPattern": "CrossField",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 102,
+      "name": "Screen102",
+      "title": "PopCount",
+      "emoji": "🎪",
+      "description": "Navigation: PopCount, API: JsonlStream, Theme: LightSensor, Data: SanitizeInput",
+      "category": "api",
+      "navigationPattern": "PopCount",
+      "apiPattern": "JsonlStream",
+      "themePattern": "LightSensor",
+      "dataPattern": "SanitizeInput",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 103,
+      "name": "Screen103",
+      "title": "ClearStack",
+      "emoji": "🦊",
+      "description": "Navigation: ClearStack, API: YamlRead, Theme: ColorBlind, Data: DataNormalize",
+      "category": "ui",
+      "navigationPattern": "ClearStack",
+      "apiPattern": "YamlRead",
+      "themePattern": "ColorBlind",
+      "dataPattern": "DataNormalize",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 104,
+      "name": "Screen104",
+      "title": "HomeToRoot",
+      "emoji": "🌸",
+      "description": "Navigation: HomeToRoot, API: YamlWrite, Theme: Sepia, Data: TypeCoercion",
+      "category": "data",
+      "navigationPattern": "HomeToRoot",
+      "apiPattern": "YamlWrite",
+      "themePattern": "Sepia",
+      "dataPattern": "TypeCoercion",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 105,
+      "name": "Screen105",
+      "title": "CustomBackButton",
+      "emoji": "🎲",
+      "description": "Navigation: CustomBackButton, API: YamlConfig, Theme: Monochrome, Data: DateConvert",
+      "category": "advanced",
+      "navigationPattern": "CustomBackButton",
+      "apiPattern": "YamlConfig",
+      "themePattern": "Monochrome",
+      "dataPattern": "DateConvert",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 106,
+      "name": "Screen106",
+      "title": "BackGesture",
+      "emoji": "🏆",
+      "description": "Navigation: BackGesture, API: YamlValidate, Theme: EyeComfort, Data: CurrencyConvert",
+      "category": "navigation",
+      "navigationPattern": "BackGesture",
+      "apiPattern": "YamlValidate",
+      "themePattern": "EyeComfort",
+      "dataPattern": "CurrencyConvert",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 107,
+      "name": "Screen107",
+      "title": "AndroidBackDouble",
+      "emoji": "🎵",
+      "description": "Navigation: AndroidBackDouble, API: JsonSchema, Theme: PrintMode, Data: UnitConvert",
+      "category": "api",
+      "navigationPattern": "AndroidBackDouble",
+      "apiPattern": "JsonSchema",
+      "themePattern": "PrintMode",
+      "dataPattern": "UnitConvert",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 108,
+      "name": "Screen108",
+      "title": "BackInterceptor",
+      "emoji": "🔬",
+      "description": "Navigation: BackInterceptor, API: JsonTransform, Theme: Dim, Data: TimeZone",
+      "category": "ui",
+      "navigationPattern": "BackInterceptor",
+      "apiPattern": "JsonTransform",
+      "themePattern": "Dim",
+      "dataPattern": "TimeZone",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 109,
+      "name": "Screen109",
+      "title": "PopWithData",
+      "emoji": "🎃",
+      "description": "Navigation: PopWithData, API: CsvParse, Theme: ContrastRatio, Data: Encoding",
+      "category": "data",
+      "navigationPattern": "PopWithData",
+      "apiPattern": "CsvParse",
+      "themePattern": "ContrastRatio",
+      "dataPattern": "Encoding",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 110,
+      "name": "Screen110",
+      "title": "StackDepth",
+      "emoji": "🌺",
+      "description": "Navigation: StackDepth, API: CsvWrite, Theme: ColorToken, Data: DataMasking",
+      "category": "advanced",
+      "navigationPattern": "StackDepth",
+      "apiPattern": "CsvWrite",
+      "themePattern": "ColorToken",
+      "dataPattern": "DataMasking",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 111,
+      "name": "Screen111",
+      "title": "BreadcrumbNav",
+      "emoji": "🦁",
+      "description": "Navigation: BreadcrumbNav, API: XmlParse, Theme: SeedColor, Data: DataEnrich",
+      "category": "navigation",
+      "navigationPattern": "BreadcrumbNav",
+      "apiPattern": "XmlParse",
+      "themePattern": "SeedColor",
+      "dataPattern": "DataEnrich",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 112,
+      "name": "Screen112",
+      "title": "HistoryView",
+      "emoji": "🐬",
+      "description": "Navigation: HistoryView, API: XmlWrite, Theme: TonalPalette, Data: DataClean",
+      "category": "api",
+      "navigationPattern": "HistoryView",
+      "apiPattern": "XmlWrite",
+      "themePattern": "TonalPalette",
+      "dataPattern": "DataClean",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 113,
+      "name": "Screen113",
+      "title": "NavObserver",
+      "emoji": "🌴",
+      "description": "Navigation: NavObserver, API: ProtobufMock, Theme: RoleColor, Data: DataDeduplicate",
+      "category": "ui",
+      "navigationPattern": "NavObserver",
+      "apiPattern": "ProtobufMock",
+      "themePattern": "RoleColor",
+      "dataPattern": "DataDeduplicate",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 114,
+      "name": "Screen114",
+      "title": "RouterDelegate",
+      "emoji": "🎠",
+      "description": "Navigation: RouterDelegate, API: MessagePack, Theme: ColorHarmony, Data: SchemaValidation",
+      "category": "data",
+      "navigationPattern": "RouterDelegate",
+      "apiPattern": "MessagePack",
+      "themePattern": "ColorHarmony",
+      "dataPattern": "SchemaValidation",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 115,
+      "name": "Screen115",
+      "title": "RouteInfo",
+      "emoji": "🔭",
+      "description": "Navigation: RouteInfo, API: JsonNormalize, Theme: NightShift, Data: Constraint",
+      "category": "advanced",
+      "navigationPattern": "RouteInfo",
+      "apiPattern": "JsonNormalize",
+      "themePattern": "NightShift",
+      "dataPattern": "Constraint",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 116,
+      "name": "Screen116",
+      "title": "PopResult",
+      "emoji": "🎋",
+      "description": "Navigation: PopResult, API: JsonStringify, Theme: SystemBrightness, Data: Pipeline",
+      "category": "navigation",
+      "navigationPattern": "PopResult",
+      "apiPattern": "JsonStringify",
+      "themePattern": "SystemBrightness",
+      "dataPattern": "Pipeline",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 117,
+      "name": "Screen117",
+      "title": "ModalBarrier",
+      "emoji": "🦄",
+      "description": "Navigation: ModalBarrier, API: JsonEncoding, Theme: AutoTheme, Data: MapReduce",
+      "category": "api",
+      "navigationPattern": "ModalBarrier",
+      "apiPattern": "JsonEncoding",
+      "themePattern": "AutoTheme",
+      "dataPattern": "MapReduce",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 118,
+      "name": "Screen118",
+      "title": "NavigationStack",
+      "emoji": "🌋",
+      "description": "Navigation: NavigationStack, API: JsonStream, Theme: MultiAccent, Data: Flatten",
+      "category": "ui",
+      "navigationPattern": "NavigationStack",
+      "apiPattern": "JsonStream",
+      "themePattern": "MultiAccent",
+      "dataPattern": "Flatten",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 119,
+      "name": "Screen119",
+      "title": "RouteLifecycle",
+      "emoji": "🎪",
+      "description": "Navigation: RouteLifecycle, API: JsonMask, Theme: ThemePreview, Data: Partition",
+      "category": "data",
+      "navigationPattern": "RouteLifecycle",
+      "apiPattern": "JsonMask",
+      "themePattern": "ThemePreview",
+      "dataPattern": "Partition",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 120,
+      "name": "Screen120",
+      "title": "StackSnapshot",
+      "emoji": "💫",
+      "description": "Navigation: StackSnapshot, API: JsonVersioning, Theme: ThemeExport, Data: Zip",
+      "category": "advanced",
+      "navigationPattern": "StackSnapshot",
+      "apiPattern": "JsonVersioning",
+      "themePattern": "ThemeExport",
+      "dataPattern": "Zip",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 121,
+      "name": "Screen121",
+      "title": "NestedNavBasic",
+      "emoji": "🏠",
+      "description": "Navigation: NestedNavBasic, API: ErrorHandlingBasic, Theme: ResponsiveLayout, Data: FutureBasic",
+      "category": "navigation",
+      "navigationPattern": "NestedNavBasic",
+      "apiPattern": "ErrorHandlingBasic",
+      "themePattern": "ResponsiveLayout",
+      "dataPattern": "FutureBasic",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 122,
+      "name": "Screen122",
+      "title": "NestedNavTab",
+      "emoji": "👾",
+      "description": "Navigation: NestedNavTab, API: RetryLogic, Theme: BreakPoint, Data: FutureChain",
+      "category": "api",
+      "navigationPattern": "NestedNavTab",
+      "apiPattern": "RetryLogic",
+      "themePattern": "BreakPoint",
+      "dataPattern": "FutureChain",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 123,
+      "name": "Screen123",
+      "title": "NestedNavBottom",
+      "emoji": "🥐",
+      "description": "Navigation: NestedNavBottom, API: ExponentialBackoff, Theme: FlexibleLayout, Data: FutureError",
+      "category": "ui",
+      "navigationPattern": "NestedNavBottom",
+      "apiPattern": "ExponentialBackoff",
+      "themePattern": "FlexibleLayout",
+      "dataPattern": "FutureError",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 124,
+      "name": "Screen124",
+      "title": "NestedNavDrawer",
+      "emoji": "🎸",
+      "description": "Navigation: NestedNavDrawer, API: CircuitBreaker, Theme: GridLayout, Data: FutureWait",
+      "category": "data",
+      "navigationPattern": "NestedNavDrawer",
+      "apiPattern": "CircuitBreaker",
+      "themePattern": "GridLayout",
+      "dataPattern": "FutureWait",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 125,
+      "name": "Screen125",
+      "title": "MultiNavigatorKey",
+      "emoji": "🌟",
+      "description": "Navigation: MultiNavigatorKey, API: Fallback, Theme: WrapLayout, Data: FutureAny",
+      "category": "advanced",
+      "navigationPattern": "MultiNavigatorKey",
+      "apiPattern": "Fallback",
+      "themePattern": "WrapLayout",
+      "dataPattern": "FutureAny",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 126,
+      "name": "Screen126",
+      "title": "GlobalKey",
+      "emoji": "🔮",
+      "description": "Navigation: GlobalKey, API: Timeout2, Theme: ConstraintLayout, Data: FutureTimeout",
+      "category": "navigation",
+      "navigationPattern": "GlobalKey",
+      "apiPattern": "Timeout2",
+      "themePattern": "ConstraintLayout",
+      "dataPattern": "FutureTimeout",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 127,
+      "name": "Screen127",
+      "title": "NestedNavDeepLink",
+      "emoji": "🎯",
+      "description": "Navigation: NestedNavDeepLink, API: ErrorMapping, Theme: AspectRatio, Data: StreamBasic",
+      "category": "api",
+      "navigationPattern": "NestedNavDeepLink",
+      "apiPattern": "ErrorMapping",
+      "themePattern": "AspectRatio",
+      "dataPattern": "StreamBasic",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 128,
+      "name": "Screen128",
+      "title": "NestedNavState",
+      "emoji": "🚀",
+      "description": "Navigation: NestedNavState, API: GlobalErrorHandler, Theme: FractionallySized, Data: StreamController",
+      "category": "ui",
+      "navigationPattern": "NestedNavState",
+      "apiPattern": "GlobalErrorHandler",
+      "themePattern": "FractionallySized",
+      "dataPattern": "StreamController",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 129,
+      "name": "Screen129",
+      "title": "ShellRoute",
+      "emoji": "🌈",
+      "description": "Navigation: ShellRoute, API: ErrorBoundary, Theme: LayoutBuilder, Data: BroadcastStream",
+      "category": "data",
+      "navigationPattern": "ShellRoute",
+      "apiPattern": "ErrorBoundary",
+      "themePattern": "LayoutBuilder",
+      "dataPattern": "BroadcastStream",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 130,
+      "name": "Screen130",
+      "title": "NestedNavGuard",
+      "emoji": "💡",
+      "description": "Navigation: NestedNavGuard, API: UserFriendlyError, Theme: MediaQuery, Data: StreamTransform",
+      "category": "advanced",
+      "navigationPattern": "NestedNavGuard",
+      "apiPattern": "UserFriendlyError",
+      "themePattern": "MediaQuery",
+      "dataPattern": "StreamTransform",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 131,
+      "name": "Screen131",
+      "title": "TabNestedNav",
+      "emoji": "🔥",
+      "description": "Navigation: TabNestedNav, API: ValidationError, Theme: OrientationLayout, Data: StreamMerge",
+      "category": "navigation",
+      "navigationPattern": "TabNestedNav",
+      "apiPattern": "ValidationError",
+      "themePattern": "OrientationLayout",
+      "dataPattern": "StreamMerge",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 132,
+      "name": "Screen132",
+      "title": "ChildNavigator",
+      "emoji": "⚡",
+      "description": "Navigation: ChildNavigator, API: NetworkError, Theme: TabletLayout, Data: StreamDebounce",
+      "category": "api",
+      "navigationPattern": "ChildNavigator",
+      "apiPattern": "NetworkError",
+      "themePattern": "TabletLayout",
+      "dataPattern": "StreamDebounce",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 133,
+      "name": "Screen133",
+      "title": "CrossNavigator",
+      "emoji": "🎨",
+      "description": "Navigation: CrossNavigator, API: ServerError, Theme: DesktopLayout, Data: StreamThrottle",
+      "category": "ui",
+      "navigationPattern": "CrossNavigator",
+      "apiPattern": "ServerError",
+      "themePattern": "DesktopLayout",
+      "dataPattern": "StreamThrottle",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 134,
+      "name": "Screen134",
+      "title": "NavigatorKey",
+      "emoji": "📊",
+      "description": "Navigation: NavigatorKey, API: AuthError, Theme: WebLayout, Data: StreamBuffer2",
+      "category": "data",
+      "navigationPattern": "NavigatorKey",
+      "apiPattern": "AuthError",
+      "themePattern": "WebLayout",
+      "dataPattern": "StreamBuffer2",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 135,
+      "name": "Screen135",
+      "title": "ModalStack",
+      "emoji": "🌙",
+      "description": "Navigation: ModalStack, API: NotFoundError, Theme: FoldableLayout, Data: StreamWindow",
+      "category": "advanced",
+      "navigationPattern": "ModalStack",
+      "apiPattern": "NotFoundError",
+      "themePattern": "FoldableLayout",
+      "dataPattern": "StreamWindow",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 136,
+      "name": "Screen136",
+      "title": "OverlayNavigator",
+      "emoji": "🍀",
+      "description": "Navigation: OverlayNavigator, API: RateLimitError, Theme: SliverList, Data: Isolate",
+      "category": "navigation",
+      "navigationPattern": "OverlayNavigator",
+      "apiPattern": "RateLimitError",
+      "themePattern": "SliverList",
+      "dataPattern": "Isolate",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 137,
+      "name": "Screen137",
+      "title": "SidePanelNav",
+      "emoji": "🦋",
+      "description": "Navigation: SidePanelNav, API: ConflictError, Theme: SliverGrid, Data: ComputeFunc",
+      "category": "api",
+      "navigationPattern": "SidePanelNav",
+      "apiPattern": "ConflictError",
+      "themePattern": "SliverGrid",
+      "dataPattern": "ComputeFunc",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 138,
+      "name": "Screen138",
+      "title": "SplitView",
+      "emoji": "🎭",
+      "description": "Navigation: SplitView, API: DeadlineExceeded, Theme: SliverAppBar, Data: WorkQueue",
+      "category": "ui",
+      "navigationPattern": "SplitView",
+      "apiPattern": "DeadlineExceeded",
+      "themePattern": "SliverAppBar",
+      "dataPattern": "WorkQueue",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 139,
+      "name": "Screen139",
+      "title": "NestedNavObserver",
+      "emoji": "🔑",
+      "description": "Navigation: NestedNavObserver, API: PartialSuccess, Theme: NestedScroll, Data: Semaphore",
+      "category": "data",
+      "navigationPattern": "NestedNavObserver",
+      "apiPattern": "PartialSuccess",
+      "themePattern": "NestedScroll",
+      "dataPattern": "Semaphore",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 140,
+      "name": "Screen140",
+      "title": "PopScopeNested",
+      "emoji": "💎",
+      "description": "Navigation: PopScopeNested, API: MultiError, Theme: Scrollbar, Data: Mutex",
+      "category": "advanced",
+      "navigationPattern": "PopScopeNested",
+      "apiPattern": "MultiError",
+      "themePattern": "Scrollbar",
+      "dataPattern": "Mutex",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 141,
+      "name": "Screen141",
+      "title": "AnimatedPageRoute",
+      "emoji": "🌊",
+      "description": "Navigation: AnimatedPageRoute, API: ErrorLogging, Theme: SafeArea, Data: CancelableOp",
+      "category": "navigation",
+      "navigationPattern": "AnimatedPageRoute",
+      "apiPattern": "ErrorLogging",
+      "themePattern": "SafeArea",
+      "dataPattern": "CancelableOp",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 142,
+      "name": "Screen142",
+      "title": "OpenContainer",
+      "emoji": "🎪",
+      "description": "Navigation: OpenContainer, API: ErrorReporting, Theme: Padding, Data: ParallelMap",
+      "category": "api",
+      "navigationPattern": "OpenContainer",
+      "apiPattern": "ErrorReporting",
+      "themePattern": "Padding",
+      "dataPattern": "ParallelMap",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 143,
+      "name": "Screen143",
+      "title": "SharedAxisTransition",
+      "emoji": "🦊",
+      "description": "Navigation: SharedAxisTransition, API: GracefulDegradation, Theme: Spacer, Data: ProgressStream",
+      "category": "ui",
+      "navigationPattern": "SharedAxisTransition",
+      "apiPattern": "GracefulDegradation",
+      "themePattern": "Spacer",
+      "dataPattern": "ProgressStream",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 144,
+      "name": "Screen144",
+      "title": "FadeThroughTransition",
+      "emoji": "🌸",
+      "description": "Navigation: FadeThroughTransition, API: OfflineMode, Theme: IntrinsicHeight, Data: Debounce",
+      "category": "data",
+      "navigationPattern": "FadeThroughTransition",
+      "apiPattern": "OfflineMode",
+      "themePattern": "IntrinsicHeight",
+      "dataPattern": "Debounce",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 145,
+      "name": "Screen145",
+      "title": "MaterialMotion",
+      "emoji": "🎲",
+      "description": "Navigation: MaterialMotion, API: SyncRetry, Theme: Stack, Data: Throttle",
+      "category": "advanced",
+      "navigationPattern": "MaterialMotion",
+      "apiPattern": "SyncRetry",
+      "themePattern": "Stack",
+      "dataPattern": "Throttle",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 146,
+      "name": "Screen146",
+      "title": "AnimatedSwitcher",
+      "emoji": "🏆",
+      "description": "Navigation: AnimatedSwitcher, API: AsyncRetry, Theme: CustomScroll, Data: RxLike",
+      "category": "navigation",
+      "navigationPattern": "AnimatedSwitcher",
+      "apiPattern": "AsyncRetry",
+      "themePattern": "CustomScroll",
+      "dataPattern": "RxLike",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 147,
+      "name": "Screen147",
+      "title": "AnimatedCrossFade",
+      "emoji": "🎵",
+      "description": "Navigation: AnimatedCrossFade, API: RetryBudget, Theme: Responsive2Col, Data: EventLoop",
+      "category": "api",
+      "navigationPattern": "AnimatedCrossFade",
+      "apiPattern": "RetryBudget",
+      "themePattern": "Responsive2Col",
+      "dataPattern": "EventLoop",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 148,
+      "name": "Screen148",
+      "title": "CustomSlide",
+      "emoji": "🔬",
+      "description": "Navigation: CustomSlide, API: Idempotency, Theme: Responsive3Col, Data: MicrotaskQueue",
+      "category": "ui",
+      "navigationPattern": "CustomSlide",
+      "apiPattern": "Idempotency",
+      "themePattern": "Responsive3Col",
+      "dataPattern": "MicrotaskQueue",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 149,
+      "name": "Screen149",
+      "title": "RotationTransition",
+      "emoji": "🎃",
+      "description": "Navigation: RotationTransition, API: ErrorContext, Theme: AdaptiveFont, Data: SuspendResume",
+      "category": "data",
+      "navigationPattern": "RotationTransition",
+      "apiPattern": "ErrorContext",
+      "themePattern": "AdaptiveFont",
+      "dataPattern": "SuspendResume",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 150,
+      "name": "Screen150",
+      "title": "FlipTransition",
+      "emoji": "🌺",
+      "description": "Navigation: FlipTransition, API: ErrorChain, Theme: AdaptiveImage, Data: AsyncGenerator",
+      "category": "advanced",
+      "navigationPattern": "FlipTransition",
+      "apiPattern": "ErrorChain",
+      "themePattern": "AdaptiveImage",
+      "dataPattern": "AsyncGenerator",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 151,
+      "name": "Screen151",
+      "title": "CurveAnimation",
+      "emoji": "🦁",
+      "description": "Navigation: CurveAnimation, API: HttpCacheBasic, Theme: PlatformView, Data: GetxState",
+      "category": "navigation",
+      "navigationPattern": "CurveAnimation",
+      "apiPattern": "HttpCacheBasic",
+      "themePattern": "PlatformView",
+      "dataPattern": "GetxState",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 152,
+      "name": "Screen152",
+      "title": "ChainedAnimation",
+      "emoji": "🐬",
+      "description": "Navigation: ChainedAnimation, API: EtagCache, Theme: IOSStatusBar, Data: GetxObservable",
+      "category": "api",
+      "navigationPattern": "ChainedAnimation",
+      "apiPattern": "EtagCache",
+      "themePattern": "IOSStatusBar",
+      "dataPattern": "GetxObservable",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 153,
+      "name": "Screen153",
+      "title": "StaggeredAnimation",
+      "emoji": "🌴",
+      "description": "Navigation: StaggeredAnimation, API: LastModified, Theme: AndroidBackColor, Data: GetxController",
+      "category": "ui",
+      "navigationPattern": "StaggeredAnimation",
+      "apiPattern": "LastModified",
+      "themePattern": "AndroidBackColor",
+      "dataPattern": "GetxController",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 154,
+      "name": "Screen154",
+      "title": "ImplicitAnimation",
+      "emoji": "🎠",
+      "description": "Navigation: ImplicitAnimation, API: CacheControl, Theme: WebScroll, Data: GetxBinding",
+      "category": "data",
+      "navigationPattern": "ImplicitAnimation",
+      "apiPattern": "CacheControl",
+      "themePattern": "WebScroll",
+      "dataPattern": "GetxBinding",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 155,
+      "name": "Screen155",
+      "title": "ExplicitAnimation",
+      "emoji": "🔭",
+      "description": "Navigation: ExplicitAnimation, API: MemoryCache, Theme: WebContextMenu, Data: GetxWorker",
+      "category": "advanced",
+      "navigationPattern": "ExplicitAnimation",
+      "apiPattern": "MemoryCache",
+      "themePattern": "WebContextMenu",
+      "dataPattern": "GetxWorker",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 156,
+      "name": "Screen156",
+      "title": "PredictiveBackAnim",
+      "emoji": "🎋",
+      "description": "Navigation: PredictiveBackAnim, API: DiskCache, Theme: MacOSMenu, Data: GetxService",
+      "category": "navigation",
+      "navigationPattern": "PredictiveBackAnim",
+      "apiPattern": "DiskCache",
+      "themePattern": "MacOSMenu",
+      "dataPattern": "GetxService",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 157,
+      "name": "Screen157",
+      "title": "ParallaxTransition",
+      "emoji": "🦄",
+      "description": "Navigation: ParallaxTransition, API: CacheExpiry, Theme: WindowsTitle, Data: ProviderBasic",
+      "category": "api",
+      "navigationPattern": "ParallaxTransition",
+      "apiPattern": "CacheExpiry",
+      "themePattern": "WindowsTitle",
+      "dataPattern": "ProviderBasic",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 158,
+      "name": "Screen158",
+      "title": "ZoomTransition",
+      "emoji": "🌋",
+      "description": "Navigation: ZoomTransition, API: CacheInvalidate, Theme: DesktopCursor, Data: ChangeNotifier",
+      "category": "ui",
+      "navigationPattern": "ZoomTransition",
+      "apiPattern": "CacheInvalidate",
+      "themePattern": "DesktopCursor",
+      "dataPattern": "ChangeNotifier",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 159,
+      "name": "Screen159",
+      "title": "WaveTransition",
+      "emoji": "🎪",
+      "description": "Navigation: WaveTransition, API: StaleWhileRevalidate, Theme: MobileHaptic, Data: ValueNotifier",
+      "category": "data",
+      "navigationPattern": "WaveTransition",
+      "apiPattern": "StaleWhileRevalidate",
+      "themePattern": "MobileHaptic",
+      "dataPattern": "ValueNotifier",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 160,
+      "name": "Screen160",
+      "title": "GlassTransition",
+      "emoji": "💫",
+      "description": "Navigation: GlassTransition, API: CacheFirst, Theme: IOSBlur, Data: InheritedWidget",
+      "category": "advanced",
+      "navigationPattern": "GlassTransition",
+      "apiPattern": "CacheFirst",
+      "themePattern": "IOSBlur",
+      "dataPattern": "InheritedWidget",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 161,
+      "name": "Screen161",
+      "title": "AlertDialogBasic",
+      "emoji": "🏠",
+      "description": "Navigation: AlertDialogBasic, API: NetworkFirst, Theme: AndroidSplash, Data: InheritedModel",
+      "category": "navigation",
+      "navigationPattern": "AlertDialogBasic",
+      "apiPattern": "NetworkFirst",
+      "themePattern": "AndroidSplash",
+      "dataPattern": "InheritedModel",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 162,
+      "name": "Screen162",
+      "title": "CustomDialog",
+      "emoji": "👾",
+      "description": "Navigation: CustomDialog, API: CacheOnly, Theme: IOSSplash, Data: StateNotifier",
+      "category": "api",
+      "navigationPattern": "CustomDialog",
+      "apiPattern": "CacheOnly",
+      "themePattern": "IOSSplash",
+      "dataPattern": "StateNotifier",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 163,
+      "name": "Screen163",
+      "title": "FullScreenDialog",
+      "emoji": "🥐",
+      "description": "Navigation: FullScreenDialog, API: NetworkOnly, Theme: WebFavicon, Data: Bloc",
+      "category": "ui",
+      "navigationPattern": "FullScreenDialog",
+      "apiPattern": "NetworkOnly",
+      "themePattern": "WebFavicon",
+      "dataPattern": "Bloc",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 164,
+      "name": "Screen164",
+      "title": "BottomSheetBasic",
+      "emoji": "🎸",
+      "description": "Navigation: BottomSheetBasic, API: CacheAndNetwork, Theme: DesktopIcon, Data: EventState",
+      "category": "data",
+      "navigationPattern": "BottomSheetBasic",
+      "apiPattern": "CacheAndNetwork",
+      "themePattern": "DesktopIcon",
+      "dataPattern": "EventState",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 165,
+      "name": "Screen165",
+      "title": "ModalBottomSheet",
+      "emoji": "🌟",
+      "description": "Navigation: ModalBottomSheet, API: PrefetchCache, Theme: StatusBarTransparent, Data: Redux",
+      "category": "advanced",
+      "navigationPattern": "ModalBottomSheet",
+      "apiPattern": "PrefetchCache",
+      "themePattern": "StatusBarTransparent",
+      "dataPattern": "Redux",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 166,
+      "name": "Screen166",
+      "title": "SnackBar",
+      "emoji": "🔮",
+      "description": "Navigation: SnackBar, API: CacheVersion, Theme: FullScreen, Data: MVC",
+      "category": "navigation",
+      "navigationPattern": "SnackBar",
+      "apiPattern": "CacheVersion",
+      "themePattern": "FullScreen",
+      "dataPattern": "MVC",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 167,
+      "name": "Screen167",
+      "title": "Tooltip",
+      "emoji": "🎯",
+      "description": "Navigation: Tooltip, API: RequestDedup, Theme: KeyboardPadding, Data: MVVM",
+      "category": "api",
+      "navigationPattern": "Tooltip",
+      "apiPattern": "RequestDedup",
+      "themePattern": "KeyboardPadding",
+      "dataPattern": "MVVM",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 168,
+      "name": "Screen168",
+      "title": "Popup",
+      "emoji": "🚀",
+      "description": "Navigation: Popup, API: CacheStats, Theme: SafeAreaPlatform, Data: MVP",
+      "category": "ui",
+      "navigationPattern": "Popup",
+      "apiPattern": "CacheStats",
+      "themePattern": "SafeAreaPlatform",
+      "dataPattern": "MVP",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 169,
+      "name": "Screen169",
+      "title": "ContextMenu",
+      "emoji": "🌈",
+      "description": "Navigation: ContextMenu, API: NoCacheHeader, Theme: MouseRegion, Data: CleanArch",
+      "category": "data",
+      "navigationPattern": "ContextMenu",
+      "apiPattern": "NoCacheHeader",
+      "themePattern": "MouseRegion",
+      "dataPattern": "CleanArch",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 170,
+      "name": "Screen170",
+      "title": "DropdownMenu",
+      "emoji": "💡",
+      "description": "Navigation: DropdownMenu, API: CdnUrl, Theme: GestureScale, Data: AtomState",
+      "category": "advanced",
+      "navigationPattern": "DropdownMenu",
+      "apiPattern": "CdnUrl",
+      "themePattern": "GestureScale",
+      "dataPattern": "AtomState",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 171,
+      "name": "Screen171",
+      "title": "DatePicker",
+      "emoji": "🔥",
+      "description": "Navigation: DatePicker, API: FileUploadBasic, Theme: ScrollPhysics, Data: SortableList",
+      "category": "navigation",
+      "navigationPattern": "DatePicker",
+      "apiPattern": "FileUploadBasic",
+      "themePattern": "ScrollPhysics",
+      "dataPattern": "SortableList",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 172,
+      "name": "Screen172",
+      "title": "TimePicker",
+      "emoji": "⚡",
+      "description": "Navigation: TimePicker, API: MultipartUpload, Theme: TextScaleFixed, Data: ReorderList",
+      "category": "api",
+      "navigationPattern": "TimePicker",
+      "apiPattern": "MultipartUpload",
+      "themePattern": "TextScaleFixed",
+      "dataPattern": "ReorderList",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 173,
+      "name": "Screen173",
+      "title": "ColorPicker",
+      "emoji": "🎨",
+      "description": "Navigation: ColorPicker, API: ChunkedUpload, Theme: DisplayMode, Data: DndGrid",
+      "category": "ui",
+      "navigationPattern": "ColorPicker",
+      "apiPattern": "ChunkedUpload",
+      "themePattern": "DisplayMode",
+      "dataPattern": "DndGrid",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 174,
+      "name": "Screen174",
+      "title": "FilePicker",
+      "emoji": "📊",
+      "description": "Navigation: FilePicker, API: UploadProgress, Theme: CameraAware, Data: InsertItem",
+      "category": "data",
+      "navigationPattern": "FilePicker",
+      "apiPattern": "UploadProgress",
+      "themePattern": "CameraAware",
+      "dataPattern": "InsertItem",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 175,
+      "name": "Screen175",
+      "title": "ConfirmDialog",
+      "emoji": "🌙",
+      "description": "Navigation: ConfirmDialog, API: ResumeUpload, Theme: SystemFont, Data: RemoveItem",
+      "category": "advanced",
+      "navigationPattern": "ConfirmDialog",
+      "apiPattern": "ResumeUpload",
+      "themePattern": "SystemFont",
+      "dataPattern": "RemoveItem",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 176,
+      "name": "Screen176",
+      "title": "FormDialog",
+      "emoji": "🍀",
+      "description": "Navigation: FormDialog, API: FileDownload, Theme: SemanticsBasic, Data: SwapItems",
+      "category": "navigation",
+      "navigationPattern": "FormDialog",
+      "apiPattern": "FileDownload",
+      "themePattern": "SemanticsBasic",
+      "dataPattern": "SwapItems",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 177,
+      "name": "Screen177",
+      "title": "SearchDelegate",
+      "emoji": "🦋",
+      "description": "Navigation: SearchDelegate, API: DownloadProgress, Theme: ExcludeSemantics, Data: MoveToTop",
+      "category": "api",
+      "navigationPattern": "SearchDelegate",
+      "apiPattern": "DownloadProgress",
+      "themePattern": "ExcludeSemantics",
+      "dataPattern": "MoveToTop",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 178,
+      "name": "Screen178",
+      "title": "ActionSheet",
+      "emoji": "🎭",
+      "description": "Navigation: ActionSheet, API: ParallelDownload, Theme: MergeSemantics, Data: MoveToBottom",
+      "category": "ui",
+      "navigationPattern": "ActionSheet",
+      "apiPattern": "ParallelDownload",
+      "themePattern": "MergeSemantics",
+      "dataPattern": "MoveToBottom",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 179,
+      "name": "Screen179",
+      "title": "BannerWidget",
+      "emoji": "🔑",
+      "description": "Navigation: BannerWidget, API: StreamDownload, Theme: SemanticsLabel, Data: InsertSorted",
+      "category": "data",
+      "navigationPattern": "BannerWidget",
+      "apiPattern": "StreamDownload",
+      "themePattern": "SemanticsLabel",
+      "dataPattern": "InsertSorted",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 180,
+      "name": "Screen180",
+      "title": "DrawerModal2",
+      "emoji": "💎",
+      "description": "Navigation: DrawerModal, API: ZipUpload, Theme: FocusTraversal, Data: UndoRedo",
+      "category": "advanced",
+      "navigationPattern": "DrawerModal",
+      "apiPattern": "ZipUpload",
+      "themePattern": "FocusTraversal",
+      "dataPattern": "UndoRedo",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 181,
+      "name": "Screen181",
+      "title": "AuthFlow",
+      "emoji": "🌊",
+      "description": "Navigation: AuthFlow, API: FileValidation, Theme: FocusNode, Data: CommandPattern",
+      "category": "navigation",
+      "navigationPattern": "AuthFlow",
+      "apiPattern": "FileValidation",
+      "themePattern": "FocusNode",
+      "dataPattern": "CommandPattern",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 182,
+      "name": "Screen182",
+      "title": "ShoppingCart",
+      "emoji": "🎪",
+      "description": "Navigation: ShoppingCart, API: FilePreview, Theme: AccessibleForm, Data: MementoPattern",
+      "category": "api",
+      "navigationPattern": "ShoppingCart",
+      "apiPattern": "FilePreview",
+      "themePattern": "AccessibleForm",
+      "dataPattern": "MementoPattern",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 183,
+      "name": "Screen183",
+      "title": "Onboarding",
+      "emoji": "🦊",
+      "description": "Navigation: Onboarding, API: DirectUpload, Theme: ContrastMode, Data: MultiSelect",
+      "category": "ui",
+      "navigationPattern": "Onboarding",
+      "apiPattern": "DirectUpload",
+      "themePattern": "ContrastMode",
+      "dataPattern": "MultiSelect",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 184,
+      "name": "Screen184",
+      "title": "ProfileSetup",
+      "emoji": "🌸",
+      "description": "Navigation: ProfileSetup, API: TusProtocol, Theme: LargeText, Data: DragReorder",
+      "category": "data",
+      "navigationPattern": "ProfileSetup",
+      "apiPattern": "TusProtocol",
+      "themePattern": "LargeText",
+      "dataPattern": "DragReorder",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 185,
+      "name": "Screen185",
+      "title": "Subscription",
+      "emoji": "🎲",
+      "description": "Navigation: Subscription, API: S3Presigned, Theme: ReduceMotion, Data: PositionSwap",
+      "category": "advanced",
+      "navigationPattern": "Subscription",
+      "apiPattern": "S3Presigned",
+      "themePattern": "ReduceMotion",
+      "dataPattern": "PositionSwap",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 186,
+      "name": "Screen186",
+      "title": "MultiStepForm",
+      "emoji": "🏆",
+      "description": "Navigation: MultiStepForm, API: BatchDownload, Theme: ScreenReader, Data: BatchProcess",
+      "category": "navigation",
+      "navigationPattern": "MultiStepForm",
+      "apiPattern": "BatchDownload",
+      "themePattern": "ScreenReader",
+      "dataPattern": "BatchProcess",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 187,
+      "name": "Screen187",
+      "title": "StateRestorationNav",
+      "emoji": "🎵",
+      "description": "Navigation: StateRestorationNav, API: CacheDownload, Theme: InvertColor, Data: Transaction",
+      "category": "api",
+      "navigationPattern": "StateRestorationNav",
+      "apiPattern": "CacheDownload",
+      "themePattern": "InvertColor",
+      "dataPattern": "Transaction",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 188,
+      "name": "Screen188",
+      "title": "DeeplinkToNested",
+      "emoji": "🔬",
+      "description": "Navigation: DeeplinkToNested, API: SecureDownload, Theme: BoldText, Data: EventDriven",
+      "category": "ui",
+      "navigationPattern": "DeeplinkToNested",
+      "apiPattern": "SecureDownload",
+      "themePattern": "BoldText",
+      "dataPattern": "EventDriven",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 189,
+      "name": "Screen189",
+      "title": "PinAuth",
+      "emoji": "🎃",
+      "description": "Navigation: PinAuth, API: ContentType, Theme: TouchTarget, Data: PubSub",
+      "category": "data",
+      "navigationPattern": "PinAuth",
+      "apiPattern": "ContentType",
+      "themePattern": "TouchTarget",
+      "dataPattern": "PubSub",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 190,
+      "name": "Screen190",
+      "title": "QRScan",
+      "emoji": "🌺",
+      "description": "Navigation: QRScan, API: Metadata, Theme: AccessibilityInspect, Data: MessageQueue",
+      "category": "advanced",
+      "navigationPattern": "QRScan",
+      "apiPattern": "Metadata",
+      "themePattern": "AccessibilityInspect",
+      "dataPattern": "MessageQueue",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 191,
+      "name": "Screen191",
+      "title": "InAppReview",
+      "emoji": "🦁",
+      "description": "Navigation: InAppReview, API: ImageEmbed, Theme: GestureDetect, Data: Saga",
+      "category": "navigation",
+      "navigationPattern": "InAppReview",
+      "apiPattern": "ImageEmbed",
+      "themePattern": "GestureDetect",
+      "dataPattern": "Saga",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 192,
+      "name": "Screen192",
+      "title": "ShareContent",
+      "emoji": "🐬",
+      "description": "Navigation: ShareContent, API: VideoEmbed, Theme: SwipeAction, Data: Outbox",
+      "category": "api",
+      "navigationPattern": "ShareContent",
+      "apiPattern": "VideoEmbed",
+      "themePattern": "SwipeAction",
+      "dataPattern": "Outbox",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 193,
+      "name": "Screen193",
+      "title": "PaymentFlow",
+      "emoji": "🌴",
+      "description": "Navigation: PaymentFlow, API: AudioEmbed, Theme: PinchZoom, Data: EventSourcing",
+      "category": "ui",
+      "navigationPattern": "PaymentFlow",
+      "apiPattern": "AudioEmbed",
+      "themePattern": "PinchZoom",
+      "dataPattern": "EventSourcing",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 194,
+      "name": "Screen194",
+      "title": "SocialLogin",
+      "emoji": "🎠",
+      "description": "Navigation: SocialLogin, API: Base64Image, Theme: DragDrop, Data: CQRS",
+      "category": "data",
+      "navigationPattern": "SocialLogin",
+      "apiPattern": "Base64Image",
+      "themePattern": "DragDrop",
+      "dataPattern": "CQRS",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 195,
+      "name": "Screen195",
+      "title": "NotificationNav",
+      "emoji": "🔭",
+      "description": "Navigation: NotificationNav, API: SvgEmbed, Theme: LongPress, Data: Scheduler",
+      "category": "advanced",
+      "navigationPattern": "NotificationNav",
+      "apiPattern": "SvgEmbed",
+      "themePattern": "LongPress",
+      "dataPattern": "Scheduler",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 196,
+      "name": "Screen196",
+      "title": "WidgetToRoute",
+      "emoji": "🎋",
+      "description": "Navigation: WidgetToRoute, API: LazyLoadImage, Theme: DoubleTap, Data: Worker",
+      "category": "navigation",
+      "navigationPattern": "WidgetToRoute",
+      "apiPattern": "LazyLoadImage",
+      "themePattern": "DoubleTap",
+      "dataPattern": "Worker",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 197,
+      "name": "Screen197",
+      "title": "MultiWindowNav",
+      "emoji": "🦄",
+      "description": "Navigation: MultiWindowNav, API: ResponsiveImage, Theme: ShakeDetect, Data: Checkpoint",
+      "category": "api",
+      "navigationPattern": "MultiWindowNav",
+      "apiPattern": "ResponsiveImage",
+      "themePattern": "ShakeDetect",
+      "dataPattern": "Checkpoint",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    },
+    {
+      "id": 198,
+      "name": "Screen198",
+      "title": "ComprehensiveApp",
+      "emoji": "🌋",
+      "description": "Navigation: ComprehensiveApp, API: MediaPlaylist, Theme: AnimatedFeedback, Data: FullPipeline",
+      "category": "ui",
+      "navigationPattern": "ComprehensiveApp",
+      "apiPattern": "MediaPlaylist",
+      "themePattern": "AnimatedFeedback",
+      "dataPattern": "FullPipeline",
+      "tags": [
+        "navigation",
+        "api",
+        "ui",
+        "data"
+      ]
+    }
+  ]
+}
