@@ -53,6 +53,13 @@ class _HomeScreenState extends State<HomeScreen> {
               NavButton(label: 'Go to Screen 4🎸', routeName: AppRoutes.screen4),
             ],
           ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const <Widget>[
+              NavButton(label: 'Navigation Hub 🗺️ (198 Screens)', routeName: AppRoutes.hub),
+            ],
+          ),
         ],
       ),
     );

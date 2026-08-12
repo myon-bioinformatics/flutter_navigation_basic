@@ -1,0 +1,16 @@
+{
+  "name": "flutter-navigation-e2e",
+  "version": "1.0.0",
+  "description": "Playwright E2E tests for flutter_navigation_basic",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed",
+    "test:debug": "npx playwright test --headed --debug",
+    "test:hub": "npx playwright test hub_navigation",
+    "test:screens": "npx playwright test screen_navigation",
+    "report": "npx playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.45.0"
+  }
+}
