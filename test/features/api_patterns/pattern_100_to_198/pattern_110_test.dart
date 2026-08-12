@@ -1,0 +1,24 @@
+// Pattern 110: CsvWrite - テスト
+// Dart データを CSV 形式に変換。
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_application_1/features/api_patterns/pattern_100_to_198/pattern_110/model.dart';
+import 'package:flutter_application_1/features/api_patterns/pattern_100_to_198/pattern_110/service.dart';
+
+void main() {
+  group('Pattern 110: CsvWrite', () {
+    test('model toJson and fromJson', () {
+      const result = Pattern110Result(message: 'test');
+      final json = result.toJson();
+      expect(json['message'], equals('test'));
+      final restored = Pattern110Result.fromJson(json);
+      expect(restored.message, equals('test'));
+    });
+
+    test('service run completes', () async {
+      final service = Pattern110Service();
+      final result = await service.run();
+      expect(result, isA<Pattern110Result>());
+      expect(result.message, isNotEmpty);
+    });
+  });
+}
