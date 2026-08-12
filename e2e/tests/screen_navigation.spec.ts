@@ -44,11 +44,11 @@ test.describe('Screen Navigation', () => {
   for (const screenId of testData.sampleScreenIds) {
     test(`navigates to Screen${screenId} via direct URL`, async ({ page }) => {
       await navigateToScreen(page, screenId);
-      // Screen1 is home, Screen2-4 are legacy, 5+ are generic
-      if (screenId >= 5) {
+      // Screen2/3/4 are legacy screens with their own navigation
+      if (screenId === 1 || screenId >= 5) {
         await expect(page.getByText(`Screen${screenId}`, { exact: false })).toBeVisible();
       } else {
-        // Legacy screens still load without errors
+        // Legacy screens (2-4) still load without errors
         await expect(page).toHaveURL(new RegExp(`screen${screenId}`));
       }
     });

@@ -22,8 +22,7 @@ class AppRoutes {
 
     // Register generic screens for all 198 screens (hub-navigable)
     for (var i = 1; i <= 198; i++) {
-      final id = i;
-      map['/screen$id'] = (_) => GenericScreen(screenId: id);
+      map['/screen$i'] = (_) => GenericScreen(screenId: i);
     }
 
     // Keep original special screens accessible at their canonical routes
