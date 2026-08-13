@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../config/routes.dart';
+import 'pattern_template_screen.dart';
 
 class ScreenData {
   final int id;
@@ -104,80 +105,84 @@ class _GenericScreenState extends State<GenericScreen> {
               : 'Screen ${widget.screenId}',
         ),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            tooltip: 'Back to Hub',
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.hub),
+            icon: const Icon(Icons.grid_view),
+          ),
+        ],
       ),
       body: data == null
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Text(
-                      data.emoji,
-                      style: const TextStyle(fontSize: 64),
-                    ),
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(data.emoji, style: const TextStyle(fontSize: 30)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  templateLabel(templateForScreenId(data.id)),
+                                  style: Theme.of(context).textTheme.titleMedium,
+                                ),
+                                Text(
+                                  'Template ${(data.id - 1) ~/ 18 + 1} of 11 · variant ${(data.id - 1) % 18 + 1} of 18',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _PatternChip(label: 'Navigation', value: data.navigationPattern),
+                          _PatternChip(label: 'API', value: data.apiPattern),
+                          _PatternChip(label: 'Theme', value: data.themePattern),
+                          _PatternChip(label: 'Data', value: data.dataPattern),
+                        ],
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  _PatternCard(
-                    label: '🔄 Navigation',
-                    value: data.navigationPattern,
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: PatternTemplateBody(
+                    screenId: data.id,
+                    title: data.title,
+                    description: data.description,
                   ),
-                  const SizedBox(height: 8),
-                  _PatternCard(
-                    label: '🔌 API',
-                    value: data.apiPattern,
-                  ),
-                  const SizedBox(height: 8),
-                  _PatternCard(
-                    label: '🎨 Theme',
-                    value: data.themePattern,
-                  ),
-                  const SizedBox(height: 8),
-                  _PatternCard(
-                    label: '📊 Data',
-                    value: data.dataPattern,
-                  ),
-                  const SizedBox(height: 24),
-                  Center(
-                    child: ElevatedButton.icon(
-                      onPressed: () =>
-                          Navigator.pushNamed(context, AppRoutes.hub),
-                      icon: const Icon(Icons.grid_view),
-                      label: const Text('Back to Hub'),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
     );
   }
 }
 
-class _PatternCard extends StatelessWidget {
+class _PatternChip extends StatelessWidget {
   final String label;
   final String value;
-  const _PatternCard({required this.label, required this.value});
+
+  const _PatternChip({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            Text(label,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    )),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(value,
-                  style: Theme.of(context).textTheme.bodyMedium),
-            ),
-          ],
-        ),
-      ),
+    return Chip(
+      avatar: Text(label.substring(0, 1)),
+      label: Text('$label: $value'),
+      visualDensity: VisualDensity.compact,
     );
   }
 }
