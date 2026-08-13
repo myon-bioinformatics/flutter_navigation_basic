@@ -15,4 +15,12 @@ void main() {
     expect(templateForScreenId(1), PatternScreenTemplate.list);
     expect(templateForScreenId(198), PatternScreenTemplate.settings);
   });
+
+  test('templateFromName resolves known names and falls back safely', () {
+    expect(templateFromName('detail'), PatternScreenTemplate.detail);
+    expect(templateFromName('bottomNavigation'), PatternScreenTemplate.bottomNavigation);
+    expect(templateFromName('settings'), PatternScreenTemplate.settings);
+    expect(templateFromName('unknown-template'), PatternScreenTemplate.list);
+    expect(templateFromName(null), PatternScreenTemplate.list);
+  });
 }
