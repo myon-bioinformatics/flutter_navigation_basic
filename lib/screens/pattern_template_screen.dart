@@ -21,6 +21,14 @@ PatternScreenTemplate templateForScreenId(int screenId) {
   return PatternScreenTemplate.values[index];
 }
 
+PatternScreenTemplate templateFromName(String? name) {
+  if (name == null) return PatternScreenTemplate.list;
+  for (final value in PatternScreenTemplate.values) {
+    if (value.name == name) return value;
+  }
+  return PatternScreenTemplate.list;
+}
+
 String templateLabel(PatternScreenTemplate template) {
   switch (template) {
     case PatternScreenTemplate.list:
@@ -52,12 +60,14 @@ class PatternTemplateBody extends StatefulWidget {
   final int screenId;
   final String title;
   final String description;
+  final String? templateOverride;
 
   const PatternTemplateBody({
     super.key,
     required this.screenId,
     required this.title,
     required this.description,
+    this.templateOverride,
   });
 
   @override
@@ -70,7 +80,13 @@ class _PatternTemplateBodyState extends State<PatternTemplateBody> {
   bool _enabled = true;
   bool _loading = false;
 
-  PatternScreenTemplate get template => templateForScreenId(widget.screenId);
+  PatternScreenTemplate get template {
+    final override = widget.templateOverride;
+    if (override != null && override.isNotEmpty) {
+      return templateFromName(override);
+    }
+    return templateForScreenId(widget.screenId);
+  }
 
   @override
   void dispose() {

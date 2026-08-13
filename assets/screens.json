@@ -340,7 +340,26 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "domainKey": "integration",
+      "domainJa": "外部連携",
+      "domainEmoji": "🌐",
+      "useCaseJa": "API連携",
+      "useCaseEn": "API Integration",
+      "useCaseKey": "integration.api-integration",
+      "templateJa": "詳細",
+      "templateOverride": null,
+      "detail": {
+        "purpose": "外部APIの呼び出し結果を1件の詳細情報としてまとめて表示する。",
+        "when": "REST/GraphQLなど外部サービスから取得したリソース1件を詳しく見せたいとき。",
+        "points": [
+          "ローディング・成功・失敗の状態をUIで明確に分ける",
+          "レスポンスの型とUI表示用モデルを分離する",
+          "再取得（リトライ）導線を用意する"
+        ],
+        "pitfall": "APIエラー時に画面が真っ白になる実装は避け、エラー内容をユーザーに伝える。",
+        "snippet": "final response = await http.get(uri);\nif (response.statusCode == 200) {\n  final data = jsonDecode(response.body);\n  setState(() => _detail = data);\n}"
+      }
     },
     {
       "id": 20,
@@ -358,7 +377,15 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "domainKey": "auth",
+      "domainJa": "認証・認可",
+      "domainEmoji": "🔐",
+      "useCaseJa": "認可スコープ詳細",
+      "useCaseEn": "Authorization Scope Detail",
+      "useCaseKey": "auth.authorization-scope-detail",
+      "templateJa": "詳細",
+      "templateOverride": null
     },
     {
       "id": 21,
@@ -1636,7 +1663,26 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "domainKey": "integration",
+      "domainJa": "外部連携",
+      "domainEmoji": "🌐",
+      "useCaseJa": "MCP連携",
+      "useCaseEn": "MCP Integration",
+      "useCaseKey": "integration.mcp-integration",
+      "templateJa": "ボトムナビゲーション",
+      "templateOverride": null,
+      "detail": {
+        "purpose": "Model Context Protocol (MCP) サーバーが公開するツール群を切り替えながら呼び出す。",
+        "when": "複数のMCPツール（検索・実行・保存など）を1画面から使い分けたいとき。",
+        "points": [
+          "ツールごとに入力スキーマが異なる前提でUIを組む",
+          "接続中のMCPサーバー・未接続状態を明示する",
+          "ツール呼び出し結果を種類ごとに描画し分ける"
+        ],
+        "pitfall": "MCPツールの呼び出し失敗を無視すると、ユーザーが原因を特定できなくなる。",
+        "snippet": "final tool = mcpClient.tools[selectedIndex];\nfinal result = await mcpClient.callTool(tool.name, args);\nsetState(() => _result = result);"
+      }
     },
     {
       "id": 92,

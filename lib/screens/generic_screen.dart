@@ -4,6 +4,31 @@ import 'package:flutter/services.dart';
 import '../config/routes.dart';
 import 'pattern_template_screen.dart';
 
+class ScreenDetail {
+  final String purpose;
+  final String when;
+  final List<String> points;
+  final String pitfall;
+  final String snippet;
+
+  const ScreenDetail({
+    required this.purpose,
+    required this.when,
+    required this.points,
+    required this.pitfall,
+    required this.snippet,
+  });
+
+  factory ScreenDetail.fromJson(Map<String, dynamic> json) => ScreenDetail(
+        purpose: json['purpose'] as String? ?? '',
+        when: json['when'] as String? ?? '',
+        points: (json['points'] as List?)?.map((e) => e as String).toList() ??
+            const [],
+        pitfall: json['pitfall'] as String? ?? '',
+        snippet: json['snippet'] as String? ?? '',
+      );
+}
+
 class ScreenData {
   final int id;
   final String name;
@@ -15,6 +40,15 @@ class ScreenData {
   final String apiPattern;
   final String themePattern;
   final String dataPattern;
+  final String domainKey;
+  final String domainJa;
+  final String domainEmoji;
+  final String useCaseJa;
+  final String useCaseEn;
+  final String useCaseKey;
+  final String templateJa;
+  final String? templateOverride;
+  final ScreenDetail? detail;
 
   const ScreenData({
     required this.id,
@@ -27,6 +61,15 @@ class ScreenData {
     required this.apiPattern,
     required this.themePattern,
     required this.dataPattern,
+    this.domainKey = '',
+    this.domainJa = '',
+    this.domainEmoji = '',
+    this.useCaseJa = '',
+    this.useCaseEn = '',
+    this.useCaseKey = '',
+    this.templateJa = '',
+    this.templateOverride,
+    this.detail,
   });
 
   factory ScreenData.fromJson(Map<String, dynamic> json) => ScreenData(
@@ -40,6 +83,17 @@ class ScreenData {
         apiPattern: json['apiPattern'] as String,
         themePattern: json['themePattern'] as String,
         dataPattern: json['dataPattern'] as String,
+        domainKey: json['domainKey'] as String? ?? '',
+        domainJa: json['domainJa'] as String? ?? '',
+        domainEmoji: json['domainEmoji'] as String? ?? '',
+        useCaseJa: json['useCaseJa'] as String? ?? '',
+        useCaseEn: json['useCaseEn'] as String? ?? '',
+        useCaseKey: json['useCaseKey'] as String? ?? '',
+        templateJa: json['templateJa'] as String? ?? '',
+        templateOverride: json['templateOverride'] as String?,
+        detail: json['detail'] == null
+            ? null
+            : ScreenDetail.fromJson(json['detail'] as Map<String, dynamic>),
       );
 }
 
@@ -99,13 +153,16 @@ class _GenericScreenState extends State<GenericScreen> {
   @override
   Widget build(BuildContext context) {
     final data = _data;
+    final hasUseCase = data != null && data.useCaseJa.isNotEmpty;
+    final appBarTitle = data == null
+        ? 'Screen ${widget.screenId}'
+        : hasUseCase
+            ? '${data.emoji} ${data.useCaseJa}'
+            : 'Screen${data.id}: ${data.title} ${data.emoji}';
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          data != null
-              ? 'Screen${data.id}: ${data.title} ${data.emoji}'
-              : 'Screen ${widget.screenId}',
-        ),
+        title: Text(appBarTitle),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
@@ -117,63 +174,181 @@ class _GenericScreenState extends State<GenericScreen> {
       ),
       body: data == null
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          : _GenericScreenBody(data: data, onBackToHub: _backToHub),
+    );
+  }
+}
+
+class _GenericScreenBody extends StatelessWidget {
+  final ScreenData data;
+  final VoidCallback onBackToHub;
+
+  const _GenericScreenBody({required this.data, required this.onBackToHub});
+
+  bool get _hasDomainInfo => data.domainJa.isNotEmpty && data.templateJa.isNotEmpty;
+
+  @override
+  Widget build(BuildContext context) {
+    final headline = data.useCaseJa.isNotEmpty
+        ? data.useCaseJa
+        : templateLabel(templateForScreenId(data.id));
+    final subline = _hasDomainInfo
+        ? '${data.domainEmoji} ${data.domainJa} · ${data.templateJa}テンプレート · Screen ${data.id}'
+        : 'Template ${(data.id - 1) ~/ 18 + 1} of 11 · variant ${(data.id - 1) % 18 + 1} of 18';
+    final detail = data.detail;
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(data.emoji, style: const TextStyle(fontSize: 30)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          headline,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        Text(
+                          subline,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: onBackToHub,
+                    icon: const Icon(Icons.grid_view),
+                    label: const Text('Back to Hub'),
+                  ),
+                ],
+              ),
+              if (detail == null) ...[
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _PatternChip(label: 'Navigation', value: data.navigationPattern),
+                    _PatternChip(label: 'API', value: data.apiPattern),
+                    _PatternChip(label: 'Theme', value: data.themePattern),
+                    _PatternChip(label: 'Data', value: data.dataPattern),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: detail == null
+              ? PatternTemplateBody(
+                  screenId: data.id,
+                  title: data.title,
+                  description: data.description,
+                  templateOverride: data.templateOverride,
+                )
+              : DefaultTabController(
+                  length: 2,
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Text(data.emoji, style: const TextStyle(fontSize: 30)),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  templateLabel(templateForScreenId(data.id)),
-                                  style: Theme.of(context).textTheme.titleMedium,
-                                ),
-                                Text(
-                                  'Template ${(data.id - 1) ~/ 18 + 1} of 11 · variant ${(data.id - 1) % 18 + 1} of 18',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ],
-                            ),
-                          ),
-                          TextButton.icon(
-                            onPressed: _backToHub,
-                            icon: const Icon(Icons.grid_view),
-                            label: const Text('Back to Hub'),
-                          ),
+                      const TabBar(
+                        tabs: [
+                          Tab(text: '用途'),
+                          Tab(text: 'UIサンプル'),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          _PatternChip(label: 'Navigation', value: data.navigationPattern),
-                          _PatternChip(label: 'API', value: data.apiPattern),
-                          _PatternChip(label: 'Theme', value: data.themePattern),
-                          _PatternChip(label: 'Data', value: data.dataPattern),
-                        ],
+                      Expanded(
+                        child: TabBarView(
+                          children: [
+                            _UseCaseTab(data: data, detail: detail),
+                            PatternTemplateBody(
+                              screenId: data.id,
+                              title: data.title,
+                              description: data.description,
+                              templateOverride: data.templateOverride,
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
-                const Divider(height: 1),
-                Expanded(
-                  child: PatternTemplateBody(
-                    screenId: data.id,
-                    title: data.title,
-                    description: data.description,
-                  ),
-                ),
-              ],
+        ),
+      ],
+    );
+  }
+}
+
+class _UseCaseTab extends StatelessWidget {
+  final ScreenData data;
+  final ScreenDetail detail;
+
+  const _UseCaseTab({required this.data, required this.detail});
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('目的', style: textTheme.titleSmall),
+          const SizedBox(height: 4),
+          Text(detail.purpose),
+          const SizedBox(height: 16),
+          Text('使いどころ', style: textTheme.titleSmall),
+          const SizedBox(height: 4),
+          Text(detail.when),
+          const SizedBox(height: 16),
+          Text('設計ポイント', style: textTheme.titleSmall),
+          const SizedBox(height: 4),
+          ...detail.points.map(
+            (point) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text('• $point'),
             ),
+          ),
+          const SizedBox(height: 16),
+          Text('落とし穴', style: textTheme.titleSmall),
+          const SizedBox(height: 4),
+          Text(detail.pitfall),
+          const SizedBox(height: 16),
+          Text('スニペット', style: textTheme.titleSmall),
+          const SizedBox(height: 4),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              detail.snippet,
+              style: const TextStyle(fontFamily: 'monospace'),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _PatternChip(label: 'Navigation', value: data.navigationPattern),
+              _PatternChip(label: 'API', value: data.apiPattern),
+              _PatternChip(label: 'Theme', value: data.themePattern),
+              _PatternChip(label: 'Data', value: data.dataPattern),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
