@@ -69,9 +69,14 @@ class _HubScreenState extends State<HubScreen> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
-            tooltip: 'Mock API demo',
+            tooltip: 'External Integration · API',
             icon: const Icon(Icons.api),
-            onPressed: () => Navigator.pushNamed(context, AppRoutes.mockApi),
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.externalApi),
+          ),
+          IconButton(
+            tooltip: 'External Integration · MCP',
+            icon: const Icon(Icons.hub_outlined),
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.externalMcp),
           ),
           IconButton(
             tooltip: 'List view',

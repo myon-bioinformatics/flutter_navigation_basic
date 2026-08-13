@@ -3,17 +3,17 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../data/mock_api_client.dart';
 
-class ApiIntegrationScreen extends StatefulWidget {
-  const ApiIntegrationScreen({super.key});
+class McpIntegrationScreen extends StatefulWidget {
+  const McpIntegrationScreen({super.key});
 
   @override
-  State<ApiIntegrationScreen> createState() => _ApiIntegrationScreenState();
+  State<McpIntegrationScreen> createState() => _McpIntegrationScreenState();
 }
 
-class _ApiIntegrationScreenState extends State<ApiIntegrationScreen> {
+class _McpIntegrationScreenState extends State<McpIntegrationScreen> {
   final MockApiClient _client = MockApiClient();
   bool _loading = false;
-  String _result = 'Choose an API scenario.';
+  String _result = 'Choose an MCP scenario.';
 
   Future<void> _run(String scenario) async {
     setState(() {
@@ -22,14 +22,19 @@ class _ApiIntegrationScreenState extends State<ApiIntegrationScreen> {
     });
 
     try {
-      final data = await _client.fetchScenario('api', scenario);
+      final data = await _client.fetchScenario('mcp', scenario);
       if (!mounted) return;
 
       final status = data['simulatedStatus'];
       final request = data['request'];
+      final requestBody = data['requestBody'];
       final response = const JsonEncoder.withIndent('  ').convert(data['response']);
+      final requestText = requestBody == null
+          ? ''
+          : '\nRequest body:\n${const JsonEncoder.withIndent('  ').convert(requestBody)}';
+
       setState(() {
-        _result = '$request\nSimulated HTTP $status\n\n$response';
+        _result = '$request\nSimulated HTTP $status$requestText\n\nResponse:\n$response';
       });
     } catch (error) {
       if (!mounted) return;
@@ -42,26 +47,26 @@ class _ApiIntegrationScreenState extends State<ApiIntegrationScreen> {
   @override
   Widget build(BuildContext context) {
     const scenarios = <(String, String, IconData)>[
-      ('get', 'GET', Icons.download_outlined),
-      ('post', 'POST', Icons.upload_outlined),
-      ('timeout', 'Timeout', Icons.timer_outlined),
-      ('unauthorized', '401', Icons.lock_outline),
-      ('serverError', '500', Icons.error_outline),
+      ('toolList', 'tool list', Icons.list_alt_outlined),
+      ('toolCall', 'tool call', Icons.play_arrow_outlined),
+      ('success', 'success result', Icons.check_circle_outline),
+      ('malformedArguments', 'malformed arguments', Icons.data_object_outlined),
+      ('toolError', 'tool error', Icons.warning_amber_outlined),
     ];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('External Integration · API'),
+        title: const Text('External Integration · MCP'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('API Demo', style: Theme.of(context).textTheme.headlineSmall),
+          Text('MCP Demo', style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 8),
           const Text(
-            'GET / POST / Timeout / 401 / 500 を1ページで確認します。'
-            ' GitHub Pagesでは公開fixtureを読み、Nodeモックでは同じケースを実際のHTTP挙動として再現できます。',
+            'tool list / tool call / success result / malformed arguments / tool error を1ページで確認します。'
+            ' 現段階ではMCPクライアントUIを固めるためのモックです。',
           ),
           const SizedBox(height: 12),
           SelectableText('Mock: ${MockApiClient.defaultBaseUrl}'),
