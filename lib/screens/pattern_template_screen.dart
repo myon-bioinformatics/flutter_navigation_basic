@@ -256,7 +256,8 @@ class _PatternTemplateBodyState extends State<PatternTemplateBody> {
                   onPressed: () async {
                     setState(() => _loading = true);
                     await Future<void>.delayed(const Duration(milliseconds: 500));
-                    if (mounted) setState(() => _loading = false);
+                    if (!mounted) return;
+                    setState(() => _loading = false);
                   },
                 ),
         );
