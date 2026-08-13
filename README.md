@@ -22,27 +22,22 @@ lib/
 │   ├── config/
 │   │   └── app_config.dart        # 環境変数読み込み・環境切替（dev/prod）
 │   ├── exceptions/
-│   │   ├── app_exception.dart     # アプリ独自例外クラス
-│   │   └── error_handler.dart     # 例外の捕捉・ラップ処理
 │   ├── logging/
-│   │   └── logger_service.dart    # ログ出力サービス（logger パッケージ使用）
 │   ├── navigation/
-│   │   ├── app_navigation.dart    # 画面遷移メソッド集・GetPage ルート定義
-│   │   └── route_names.dart       # ルート名定数
+│   │   ├── app_navigation.dart    # 意味ベースの画面遷移メソッド
+│   │   └── route_names.dart       # URL互換性を維持したルート名定数
 │   ├── services/
-│   │   ├── base_controller.dart   # 全 Controller の基底クラス（ローディング・エラー管理）
-│   │   └── storage_service.dart   # SharedPreferences ラッパー
 │   └── utils/
-│       └── url_params.dart        # URLパラメータ取得ユーティリティ（非機能・標準化）
+│       └── url_params.dart        # URLパラメータ取得ユーティリティ
 ├── data/
-│   ├── ironies.dart               # Ironies データクラス（皮肉フレーズリスト）
-│   └── composer.dart              # Composer データクラス（ダイアトニックスケール）
+│   ├── ironies.dart
+│   └── composer.dart
 ├── features/
 │   ├── home/
-│   ├── screen2/
-│   ├── screen3/
-│   ├── screen4/
-│   └── screen5/
+│   ├── counter_playground/        # 旧 screen2
+│   ├── irony_generator/           # 旧 screen3
+│   ├── composition_generator/     # 旧 screen4
+│   └── screen5/                   # URL Parameters
 ├── screens/
 │   ├── home_screen.dart
 │   ├── hub_screen.dart            # 198画面を検索・一覧表示
@@ -53,8 +48,6 @@ lib/
 │   └── composition_generator_screen.dart
 ├── shared/
 │   ├── themes/
-│   │   ├── app_theme.dart
-│   │   └── color_constants.dart
 │   └── widgets/
 └── widgets/
     └── nav_button.dart
@@ -69,6 +62,8 @@ lib/
 | **Screen 3** | Irony Generator 🥐 | `Ironies.ironicList` からランダムなフレーズを表示するサンプル。 |
 | **Screen 4** | Composition Generator 🎸 | `Composer.diatonicScaleList` からランダムなキーと BPM を生成するサンプル。 |
 | **Screen 1–198** | Pattern Catalogue | `assets/screens.json` のパターン定義を11種類の代表UIテンプレートに18件ずつ割り当てて表示。 |
+
+数値URL `/screen2`, `/screen3`, `/screen4` は既存リンクとの互換性のため維持しますが、Dart上のディレクトリ・ファイル・クラス・ルート定数は意味ベースの名前を使用します。
 
 ### 198画面の代表テンプレート
 
@@ -128,4 +123,4 @@ Web release buildをローカル確認する場合:
 flutter build web --release --base-href "/flutter_navigation_basic/"
 ```
 
-`main` へのpush時は `.github/workflows/flutter-pages.yml` が analyze / test / web build を実行し、GitHub Pagesへデプロイします。
+Pull Requestでは `.github/workflows/dart.yml` が analyze / test / Flutter Web build を検証します。`main` へのpush後は `.github/workflows/flutter-pages.yml` が同じ検証を通してGitHub Pagesへデプロイします。
