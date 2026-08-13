@@ -10,11 +10,9 @@ class AppRoutes {
   static const String home = '/';
   static const String hub = '/hub';
 
-  // Keep the canonical numeric paths so the 198-screen catalogue remains stable,
-  // while exposing semantic route names in source code.
-  static const String counterPlayground = '/screen2';
-  static const String ironyGenerator = '/screen3';
-  static const String compositionGenerator = '/screen4';
+  static const String counterPlayground = '/examples/counter-playground';
+  static const String ironyGenerator = '/examples/irony-generator';
+  static const String compositionGenerator = '/examples/composition-generator';
 
   static String screenRoute(int id) => '/screen$id';
 
@@ -23,12 +21,12 @@ class AppRoutes {
   static Map<String, WidgetBuilder> _buildRoutes() {
     final map = <String, WidgetBuilder>{};
 
-    // Register generic screens for all 198 catalogue entries.
+    // Keep all 198 catalogue routes available as template-driven screens.
     for (var i = 1; i <= 198; i++) {
-      map['/screen$i'] = (_) => GenericScreen(screenId: i);
+      map[screenRoute(i)] = (_) => GenericScreen(screenId: i);
     }
 
-    // Preserve the original handcrafted examples at their canonical numeric URLs.
+    // Handcrafted examples use semantic URLs and no longer replace catalogue IDs.
     map[home] = (_) => const HomeScreen();
     map[hub] = (_) => const HubScreen();
     map[counterPlayground] = (_) => const CounterPlaygroundScreen();
