@@ -15,7 +15,9 @@ enum PatternScreenTemplate {
 }
 
 PatternScreenTemplate templateForScreenId(int screenId) {
-  final index = ((screenId - 1) ~/ 18).clamp(0, PatternScreenTemplate.values.length - 1);
+  final index = ((screenId - 1) ~/ 18)
+      .clamp(0, PatternScreenTemplate.values.length - 1)
+      .toInt();
   return PatternScreenTemplate.values[index];
 }
 
@@ -236,7 +238,12 @@ class _PatternTemplateBodyState extends State<PatternTemplateBody> {
           ),
           itemCount: 8,
           itemBuilder: (context, index) => Card(
-            child: Center(child: Text('${widget.title}\n#${index + 1}', textAlign: TextAlign.center)),
+            child: Center(
+              child: Text(
+                '${widget.title}\n#${index + 1}',
+                textAlign: TextAlign.center,
+              ),
+            ),
           ),
         );
       case PatternScreenTemplate.asyncState:
