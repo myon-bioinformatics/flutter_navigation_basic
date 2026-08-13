@@ -7,16 +7,16 @@ void main() {
       expect(RouteNames.home, equals('/'));
     });
 
-    test('screen2 route is /screen2', () {
-      expect(RouteNames.screen2, equals('/screen2'));
+    test('counter playground keeps canonical /screen2 path', () {
+      expect(RouteNames.counterPlayground, equals('/screen2'));
     });
 
-    test('screen3 route is /screen3', () {
-      expect(RouteNames.screen3, equals('/screen3'));
+    test('irony generator keeps canonical /screen3 path', () {
+      expect(RouteNames.ironyGenerator, equals('/screen3'));
     });
 
-    test('screen4 route is /screen4', () {
-      expect(RouteNames.screen4, equals('/screen4'));
+    test('composition generator keeps canonical /screen4 path', () {
+      expect(RouteNames.compositionGenerator, equals('/screen4'));
     });
   });
 }
