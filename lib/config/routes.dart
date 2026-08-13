@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import '../screens/home_screen.dart';
 import '../screens/hub_screen.dart';
-import '../screens/screen2.dart';
-import '../screens/screen3.dart';
-import '../screens/screen4.dart';
+import '../screens/counter_playground_screen.dart';
+import '../screens/irony_generator_screen.dart';
+import '../screens/composition_generator_screen.dart';
 import '../screens/generic_screen.dart';
 
 class AppRoutes {
   static const String home = '/';
   static const String hub = '/hub';
-  static const String screen2 = '/screen2';
-  static const String screen3 = '/screen3';
-  static const String screen4 = '/screen4';
+
+  // Keep the canonical numeric paths so the 198-screen catalogue remains stable,
+  // while exposing semantic route names in source code.
+  static const String counterPlayground = '/screen2';
+  static const String ironyGenerator = '/screen3';
+  static const String compositionGenerator = '/screen4';
 
   static String screenRoute(int id) => '/screen$id';
 
@@ -20,18 +23,17 @@ class AppRoutes {
   static Map<String, WidgetBuilder> _buildRoutes() {
     final map = <String, WidgetBuilder>{};
 
-    // Register generic screens for all 198 screens (hub-navigable)
+    // Register generic screens for all 198 catalogue entries.
     for (var i = 1; i <= 198; i++) {
       map['/screen$i'] = (_) => GenericScreen(screenId: i);
     }
 
-    // Keep original special screens accessible at their canonical routes
-    // (these override the generic entries for screen2/3/4)
+    // Preserve the original handcrafted examples at their canonical numeric URLs.
     map[home] = (_) => const HomeScreen();
     map[hub] = (_) => const HubScreen();
-    map[screen2] = (_) => const Screen2();
-    map[screen3] = (_) => const Screen3();
-    map[screen4] = (_) => const Screen4();
+    map[counterPlayground] = (_) => const CounterPlaygroundScreen();
+    map[ironyGenerator] = (_) => const IronyGeneratorScreen();
+    map[compositionGenerator] = (_) => const CompositionGeneratorScreen();
 
     return map;
   }
