@@ -94,6 +94,8 @@ class _GenericScreenState extends State<GenericScreen> {
     if (mounted) setState(() => _data = data);
   }
 
+  void _backToHub() => Navigator.pushNamed(context, AppRoutes.hub);
+
   @override
   Widget build(BuildContext context) {
     final data = _data;
@@ -108,7 +110,7 @@ class _GenericScreenState extends State<GenericScreen> {
         actions: [
           IconButton(
             tooltip: 'Back to Hub',
-            onPressed: () => Navigator.pushNamed(context, AppRoutes.hub),
+            onPressed: _backToHub,
             icon: const Icon(Icons.grid_view),
           ),
         ],
@@ -140,6 +142,11 @@ class _GenericScreenState extends State<GenericScreen> {
                                 ),
                               ],
                             ),
+                          ),
+                          TextButton.icon(
+                            onPressed: _backToHub,
+                            icon: const Icon(Icons.grid_view),
+                            label: const Text('Back to Hub'),
                           ),
                         ],
                       ),
