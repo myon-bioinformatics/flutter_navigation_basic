@@ -18,49 +18,43 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Screen1: HomeApp🏠'),
+        title: const Text('Home 🏠'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: Column(
-        children: <Widget>[
-          Row(
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Text(
-                today,
-                style: Theme.of(context).textTheme.headlineMedium,
+              Text(today, style: Theme.of(context).textTheme.headlineMedium),
+              const SizedBox(height: 24),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 12,
+                runSpacing: 12,
+                children: const <Widget>[
+                  NavButton(
+                    label: 'Counter Playground 👾',
+                    routeName: AppRoutes.counterPlayground,
+                  ),
+                  NavButton(
+                    label: 'Irony Generator 🥐',
+                    routeName: AppRoutes.ironyGenerator,
+                  ),
+                  NavButton(
+                    label: 'Composition Generator 🎸',
+                    routeName: AppRoutes.compositionGenerator,
+                  ),
+                  NavButton(
+                    label: 'Navigation Hub 🗺️ (198 Screens)',
+                    routeName: AppRoutes.hub,
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const <Widget>[
-              NavButton(label: 'Go to Screen 2👾', routeName: AppRoutes.screen2),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const <Widget>[
-              NavButton(label: 'Go to Screen 3🥐', routeName: AppRoutes.screen3),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const <Widget>[
-              NavButton(label: 'Go to Screen 4🎸', routeName: AppRoutes.screen4),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const <Widget>[
-              NavButton(label: 'Navigation Hub 🗺️ (198 Screens)', routeName: AppRoutes.hub),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
