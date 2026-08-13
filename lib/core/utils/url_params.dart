@@ -2,8 +2,8 @@ import 'package:get/get.dart';
 
 /// URLパラメータ取得の標準化ユーティリティ
 ///
-/// GetX の [Get.parameters]（パスパラメータ）と [Get.query]（クエリパラメータ）を
-/// 型安全・Null安全に取得するためのヘルパークラス。
+/// GetX 4.x では [Get.parameters] からパスパラメータとクエリパラメータの
+/// 両方を取得できるため、このクラスでは用途ごとの型変換ヘルパーを提供する。
 ///
 /// ルート定義例:
 /// ```
@@ -62,7 +62,7 @@ class UrlParams {
   // URL例: /search?q=flutter
   // ─────────────────────────────────────────────
   static String queryString(String key, {String fallback = ''}) {
-    return Get.query[key] ?? fallback;
+    return Get.parameters[key] ?? fallback;
   }
 
   // ─────────────────────────────────────────────
@@ -70,7 +70,7 @@ class UrlParams {
   // URL例: /list?page=2
   // ─────────────────────────────────────────────
   static int queryInt(String key, {int fallback = 0}) {
-    return int.tryParse(Get.query[key] ?? '') ?? fallback;
+    return int.tryParse(Get.parameters[key] ?? '') ?? fallback;
   }
 
   // ─────────────────────────────────────────────
@@ -78,7 +78,7 @@ class UrlParams {
   // URL例: /map?zoom=1.5
   // ─────────────────────────────────────────────
   static double queryDouble(String key, {double fallback = 0.0}) {
-    return double.tryParse(Get.query[key] ?? '') ?? fallback;
+    return double.tryParse(Get.parameters[key] ?? '') ?? fallback;
   }
 
   // ─────────────────────────────────────────────
@@ -86,7 +86,7 @@ class UrlParams {
   // URL例: /settings?darkMode=true
   // ─────────────────────────────────────────────
   static bool queryBool(String key, {bool fallback = false}) {
-    final raw = Get.query[key];
+    final raw = Get.parameters[key];
     if (raw == null) return fallback;
     return raw.toLowerCase() == 'true' || raw == '1';
   }
@@ -95,7 +95,8 @@ class UrlParams {
   // Case 10: クエリパラメータが存在するか確認
   // ─────────────────────────────────────────────
   static bool hasQuery(String key) {
-    return Get.query.containsKey(key) && (Get.query[key]?.isNotEmpty ?? false);
+    return Get.parameters.containsKey(key) &&
+        (Get.parameters[key]?.isNotEmpty ?? false);
   }
 
   // ─────────────────────────────────────────────
@@ -103,7 +104,7 @@ class UrlParams {
   // URL例: /filter?tags=flutter,dart,mobile
   // ─────────────────────────────────────────────
   static List<String> queryList(String key, {String separator = ','}) {
-    final raw = Get.query[key];
+    final raw = Get.parameters[key];
     if (raw == null || raw.isEmpty) return [];
     return raw.split(separator).map((e) => e.trim()).toList();
   }
@@ -113,7 +114,7 @@ class UrlParams {
   // URL例: /batch?ids=1,2,3
   // ─────────────────────────────────────────────
   static List<int> queryIntList(String key, {String separator = ','}) {
-    final raw = Get.query[key];
+    final raw = Get.parameters[key];
     if (raw == null || raw.isEmpty) return [];
     return raw
         .split(separator)
@@ -131,10 +132,11 @@ class UrlParams {
   }
 
   // ─────────────────────────────────────────────
-  // Case 14: 全クエリパラメータを Map で一括取得
+  // Case 14: GetX が保持する全パラメータを Map で一括取得
+  // GetX 4.x では query / path の双方が Get.parameters に統合される。
   // ─────────────────────────────────────────────
   static Map<String, String> allQueryParams() {
-    return Map<String, String>.from(Get.query);
+    return Map<String, String>.from(Get.parameters);
   }
 
   // ─────────────────────────────────────────────
@@ -152,7 +154,7 @@ class UrlParams {
   // URL例: /events?from=2024-01-01
   // ─────────────────────────────────────────────
   static DateTime? queryDate(String key) {
-    final raw = Get.query[key];
+    final raw = Get.parameters[key];
     if (raw == null) return null;
     return DateTime.tryParse(raw);
   }
@@ -182,7 +184,7 @@ class UrlParams {
     List<T> values, {
     required T fallback,
   }) {
-    final raw = Get.query[key] ?? '';
+    final raw = Get.parameters[key] ?? '';
     return values.firstWhere(
       (e) => e.name == raw,
       orElse: () => fallback,
@@ -265,14 +267,14 @@ class UrlParamsCases {
     ),
     UrlParamCase(
       id: 11,
-      title: 'カンマ区切りクエリ → List\u003cString\u003e',
+      title: 'カンマ区切りクエリ → List<String>',
       route: '/filter',
       example: '/filter?tags=flutter,dart',
       getter: "UrlParams.queryList('tags')",
     ),
     UrlParamCase(
       id: 12,
-      title: 'カンマ区切りクエリ → List\u003cint\u003e',
+      title: 'カンマ区切りクエリ → List<int>',
       route: '/batch',
       example: '/batch?ids=1,2,3',
       getter: "UrlParams.queryIntList('ids')",

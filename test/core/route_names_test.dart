@@ -7,16 +7,19 @@ void main() {
       expect(RouteNames.home, equals('/'));
     });
 
-    test('screen2 route is /screen2', () {
-      expect(RouteNames.screen2, equals('/screen2'));
+    test('counter playground uses a semantic example path', () {
+      expect(RouteNames.counterPlayground, equals('/examples/counter-playground'));
     });
 
-    test('screen3 route is /screen3', () {
-      expect(RouteNames.screen3, equals('/screen3'));
+    test('irony generator uses a semantic example path', () {
+      expect(RouteNames.ironyGenerator, equals('/examples/irony-generator'));
     });
 
-    test('screen4 route is /screen4', () {
-      expect(RouteNames.screen4, equals('/screen4'));
+    test('composition generator uses a semantic example path', () {
+      expect(
+        RouteNames.compositionGenerator,
+        equals('/examples/composition-generator'),
+      );
     });
   });
 }

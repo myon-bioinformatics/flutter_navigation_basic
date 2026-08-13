@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_application_1/features/screen2/domain/screen2_controller.dart';
+import 'package:flutter_application_1/features/counter_playground/domain/counter_playground_controller.dart';
 
 void main() {
-  group('Screen2Controller', () {
-    late Screen2Controller controller;
+  group('CounterPlaygroundController', () {
+    late CounterPlaygroundController controller;
 
     setUp(() {
-      controller = Screen2Controller();
+      controller = CounterPlaygroundController();
     });
 
     test('initial counter is 0', () {
