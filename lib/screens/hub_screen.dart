@@ -69,6 +69,11 @@ class _HubScreenState extends State<HubScreen> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
+            tooltip: 'Mock API demo',
+            icon: const Icon(Icons.api),
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.mockApi),
+          ),
+          IconButton(
             tooltip: 'List view',
             icon: const Icon(Icons.list),
             onPressed: () => setState(() => _mode = _ViewMode.list),
