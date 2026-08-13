@@ -5,6 +5,7 @@ import '../screens/counter_playground_screen.dart';
 import '../screens/irony_generator_screen.dart';
 import '../screens/composition_generator_screen.dart';
 import '../screens/mock_api_screen.dart';
+import '../screens/mcp_integration_screen.dart';
 import '../screens/generic_screen.dart';
 
 class AppRoutes {
@@ -14,6 +15,11 @@ class AppRoutes {
   static const String counterPlayground = '/examples/counter-playground';
   static const String ironyGenerator = '/examples/irony-generator';
   static const String compositionGenerator = '/examples/composition-generator';
+
+  static const String externalApi = '/examples/external-integration/api';
+  static const String externalMcp = '/examples/external-integration/mcp';
+
+  // Compatibility route retained for existing links/bookmarks.
   static const String mockApi = '/examples/mock-api';
 
   static String screenRoute(int id) => '/screen$id';
@@ -34,7 +40,9 @@ class AppRoutes {
     map[counterPlayground] = (_) => const CounterPlaygroundScreen();
     map[ironyGenerator] = (_) => const IronyGeneratorScreen();
     map[compositionGenerator] = (_) => const CompositionGeneratorScreen();
-    map[mockApi] = (_) => const MockApiScreen();
+    map[externalApi] = (_) => const ApiIntegrationScreen();
+    map[externalMcp] = (_) => const McpIntegrationScreen();
+    map[mockApi] = (_) => const ApiIntegrationScreen();
 
     return map;
   }
