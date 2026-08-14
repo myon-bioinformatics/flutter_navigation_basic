@@ -61,7 +61,18 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "detail": {
+        "purpose": "ログイン中ユーザーに紐づくアカウント（連携中のIDや認証方式）を一覧表示し、それぞれの認証状態を把握できるようにする。",
+        "when": "複数の認証方式やアカウントを横断して管理する画面が必要なとき。",
+        "points": [
+          "一覧にはアカウントの識別情報のみを表示し、パスワードやトークンなど機微情報は表示しない",
+          "各アカウントの認証状態（有効/要再認証/無効）をひと目で判別できるようにする",
+          "一覧取得APIは認証済みセッションでのみ呼び出し、未認証時は401としてログイン画面へ誘導する"
+        ],
+        "pitfall": "アカウント一覧に権限（authorization）の情報まで混在させると、本人確認(authentication)の一覧なのか権限確認(authorization)の一覧なのか画面の責務が曖昧になる。一覧は認証状態の可視化に留め、権限管理は別画面に分離する。",
+        "snippet": "final res = await http.post(\n  Uri.parse('$base/auth/accounts'),\n  headers: {'Authorization': 'Bearer $accessToken'},\n);\nif (res.statusCode == 401) {\n  return redirectToLogin(); // アクセストークン失効 → 再認証へ\n}\nfinal accounts = (jsonDecode(res.body) as List)\n    .map((e) => Account.fromJson(e))\n    .toList();\nsetState(() => _accounts = accounts);"
+      }
     },
     {
       "id": 3,
@@ -540,7 +551,18 @@
       "useCaseEn": "Authorization Scope Detail",
       "useCaseKey": "auth.authorization-scope-detail",
       "templateJa": "詳細",
-      "templateOverride": null
+      "templateOverride": null,
+      "detail": {
+        "purpose": "特定のアクセストークンや外部連携に付与された認可スコープ（権限範囲）の詳細を表示する。",
+        "when": "「このトークン/アプリが何にアクセスできるか」をユーザーに開示・確認させたいとき。",
+        "points": [
+          "authentication（本人確認）ではなく authorization（権限範囲）の情報であることを明記し混同を避ける",
+          "スコープは最小権限の原則に沿って個別に表示し、まとめて「フルアクセス」のような曖昧な表現を避ける",
+          "スコープの取り消し操作を提供し、取り消し後は即座にサーバー側でトークンを無効化する"
+        ],
+        "pitfall": "スコープ詳細画面でアクセストークンの値自体を表示・ログ出力してしまうと漏洩リスクになる。画面にはスコープ名や権限の説明のみを表示し、トークン文字列そのものは表示しない。",
+        "snippet": "final res = await http.get(\n  Uri.parse('$base/auth/tokens/$tokenId/scopes'),\n  headers: {'If-None-Match': _etag ?? ''},\n);\nif (res.statusCode == 304) return; // キャッシュ有効\nfinal scopes = (jsonDecode(res.body)['scopes'] as List).cast<String>();\nsetState(() => _scopes = scopes);"
+      }
     },
     {
       "id": 21,
@@ -1019,7 +1041,18 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "detail": {
+        "purpose": "メールアドレス（またはID）とパスワードを入力してサインインし、認証成功時にアクセストークンとリフレッシュトークンを受け取る。",
+        "when": "新規セッションを開始する入口画面が必要なとき。",
+        "points": [
+          "入力されたパスワードは送信後に変数から即座に破棄し、ログへ出力しない",
+          "サインイン成功時はアクセストークンとリフレッシュトークンを分けて安全なストレージへ保存する",
+          "失敗時はアカウントの有無を推測させないよう汎用的なエラーメッセージにとどめる"
+        ],
+        "pitfall": "パスワードを平文のまま変数に長く保持したり、SharedPreferencesやログに書き出すと漏洩の原因になる。送信後は速やかに変数をクリアし、平文保存は行わない。",
+        "snippet": "final res = await http.post(\n  Uri.parse('$base/auth/sign-in'),\n  body: {'email': email, 'password': password},\n);\npassword = ''; // 送信後は保持しない\nif (res.statusCode == 401) {\n  setState(() => _error = '認証情報が正しくありません');\n  return;\n}\nfinal body = jsonDecode(res.body);\nawait secureStorage.write(key: 'access_token', value: body['accessToken']);\nawait secureStorage.write(key: 'refresh_token', value: body['refreshToken']);"
+      }
     },
     {
       "id": 39,
@@ -1498,7 +1531,18 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "detail": {
+        "purpose": "管理者がユーザーや権限の割り当て状況を検索し、対象ユーザーの認可設定を素早く見つけられるようにする。",
+        "when": "大量のユーザーの中から特定ユーザーやロール保有者を絞り込みたい管理画面で。",
+        "points": [
+          "検索APIは管理者権限（authorization）を持つセッションのみ許可し、権限不足時は403を返す",
+          "検索結果にはメールアドレス等の個人情報を最小限に留め、パスワードや秘密情報は含めない",
+          "通信はTLS証明書検証済みの経路のみで行い、検証をスキップする設定を本番に残さない"
+        ],
+        "pitfall": "401（未認証）と403（権限不足）を同じエラーメッセージ・同じ遷移で扱うと、ユーザーが「ログインし直せば直る」のか「権限がないので管理者に問い合わせる」のか判断できなくなる。ステータスコードごとに導線を分ける。",
+        "snippet": "final res = await http.get(\n  Uri.parse('$base/admin/users?q=$query'),\n  headers: {'Authorization': 'Bearer $accessToken'},\n);\nif (res.statusCode == 401) return redirectToLogin();\nif (res.statusCode == 403) return showPermissionDeniedDialog();\nfinal users = (jsonDecode(res.body) as List)\n    .map((e) => UserResult.fromJson(e))\n    .toList();"
+      }
     },
     {
       "id": 57,
@@ -1977,7 +2021,18 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "detail": {
+        "purpose": "パスワード・パスキー・SSOなど複数の認証方式をタブで切り替えて比較・選択できるようにする。",
+        "when": "ユーザーに複数のサインイン手段を提示し、状況に応じて選ばせたいとき。",
+        "points": [
+          "各タブは独立した認証方式であることを明示し、タブ切替え自体では既存のログイン状態を変化させない",
+          "パスキーやSSOのようなフィッシング耐性の高い方式を優先的に案内する",
+          "どのタブを選んでも最終的に同じ認可情報（アクセストークン）に正規化して扱う"
+        ],
+        "pitfall": "タブごとに認証成功後の処理を個別実装すると、トークン発行後の扱いがタブによってばらつき、権限チェックの抜け漏れが生まれる。認証方式が違ってもトークン取得後の処理は共通化する。",
+        "snippet": "Widget buildTab(AuthMethod method) {\n  return switch (method) {\n    AuthMethod.password => PasswordSignInForm(onSuccess: _onAuthenticated),\n    AuthMethod.passkey => PasskeySignInButton(onSuccess: _onAuthenticated),\n    AuthMethod.sso => SsoSignInButton(onSuccess: _onAuthenticated),\n  };\n}\nvoid _onAuthenticated(AuthResult r) => _saveTokens(r.accessToken, r.refreshToken);"
+      }
     },
     {
       "id": 75,
@@ -2456,7 +2511,18 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "detail": {
+        "purpose": "複数アカウントを切り替えながらアプリの主要セクションへナビゲーションできるようにする。",
+        "when": "1つの端末で複数アカウント（仕事用/個人用など）を行き来する必要があるとき。",
+        "points": [
+          "アカウント切替時はアクセストークン・リフレッシュトークンを完全に入れ替え、前アカウントの情報を残さない",
+          "各タブの表示内容は切替後のアカウントの認可範囲（ロール）に応じて出し分ける",
+          "切替操作自体にも再認証やアカウントロック状態の確認を挟み、意図しない切替を防ぐ"
+        ],
+        "pitfall": "アカウント切替時にメモリ上のキャッシュやフォーム入力を消し忘れると、前のアカウントのデータが新しいアカウントの画面に一瞬表示される「アカウント混線」が起きる。切替時は関連する状態を明示的にリセットする。",
+        "snippet": "Future<void> switchAccount(Account next) async {\n  await secureStorage.write(key: 'access_token', value: next.accessToken);\n  await secureStorage.write(key: 'refresh_token', value: next.refreshToken);\n  _cache.clear(); // 前アカウントのキャッシュを破棄\n  setState(() => _currentAccount = next);\n}"
+      }
     },
     {
       "id": 93,
@@ -2935,7 +3001,18 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "detail": {
+        "purpose": "ログイン中ユーザーの権限（ロール）に応じて、ドロワーメニューの項目を出し分ける。",
+        "when": "管理者/一般ユーザーなど権限によって導線を変えたいとき。",
+        "points": [
+          "メニュー項目の表示・非表示はサーバー側の権限情報（authorization）に基づいて決定する",
+          "権限がない項目は非表示または無効化し、押しても403で弾かれるだけの導線を残さない",
+          "権限情報はログイン中に取得したロール/パーミッションをキャッシュし、更新があれば再取得する"
+        ],
+        "pitfall": "クライアント側でメニュー項目を隠すだけで満足し、対応するAPI側の権限チェックを省略すると、URLを直接叩かれた場合に権限のないユーザーが操作できてしまう。UIの出し分けとAPIの認可チェックは必ずセットで実装する。",
+        "snippet": "List<DrawerItem> buildMenu(UserRoles roles) => [\n  if (roles.contains('user')) DrawerItem('マイページ', '/me'),\n  if (roles.contains('admin')) DrawerItem('管理画面', '/admin'),\n];\n// サーバー側でも同じロールチェックを必須で行う"
+      }
     },
     {
       "id": 111,
@@ -3414,7 +3491,18 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "detail": {
+        "purpose": "決済や権限変更などの重要操作の前に、多要素認証（MFA）による再認証をダイアログで要求する。",
+        "when": "通常のセッションだけでは実行させたくない操作の直前。",
+        "points": [
+          "セッションの有効性ではなく「直近の再認証からの経過時間」を確認し、期限切れなら再度MFAを要求する",
+          "MFAコードはワンタイムかつ短時間で失効させ、成功後は使い回さない",
+          "MFA成功後は操作専用の短命な確認トークンを発行し、通常のアクセストークンと役割を分離する"
+        ],
+        "pitfall": "MFAダイアログをキャンセルした場合でも元の画面操作が続行できてしまうと、再認証を要求した意味がなくなる。キャンセル時は必ず対象操作自体も中断する。",
+        "snippet": "final ok = await showMfaDialog(context);\nif (!ok) return; // キャンセル時は操作自体を中断\nfinal res = await http.post(\n  Uri.parse('$base/auth/mfa/verify'),\n  body: {'code': code},\n);\nif (res.statusCode == 401) return showMfaError();\nfinal confirmToken = jsonDecode(res.body)['confirmToken'];\nawait performSensitiveAction(confirmToken);"
+      }
     },
     {
       "id": 129,
@@ -3893,7 +3981,18 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "detail": {
+        "purpose": "ロールごとに付与されている権限をグリッド形式で一覧・比較できるようにする。",
+        "when": "どのロールがどの操作を許可されているかをまとめて確認・監査したいとき。",
+        "points": [
+          "グリッドの軸は「ロール」×「権限（できる操作）」とし、認証方式の違いとは区別して扱う",
+          "権限の付与・剥奪はこの画面から即時反映せず、確認ステップを挟んでから更新する",
+          "変更操作自体も管理者権限を要求し、権限のないユーザーには読み取り専用で表示する"
+        ],
+        "pitfall": "ロール×権限グリッドに「認証済みかどうか」のような認証状態の列を混ぜると、認可（何ができるか）と認証（本人確認済みか）の軸が混同され、監査時に読み違えやすくなる。グリッドは権限情報だけに専念させる。",
+        "snippet": "DataTable buildRoleGrid(List<Role> roles, List<Permission> perms) {\n  return DataTable(\n    columns: [\n      const DataColumn(label: Text('ロール')),\n      ...perms.map((p) => DataColumn(label: Text(p.name))),\n    ],\n    rows: roles.map((r) => DataRow(cells: [\n      DataCell(Text(r.name)),\n      ...perms.map((p) => DataCell(Icon(r.has(p) ? Icons.check : Icons.close))),\n    ])).toList(),\n  );\n}"
+      }
     },
     {
       "id": 147,
@@ -4372,7 +4471,18 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "detail": {
+        "purpose": "アクセストークンの有効期限が切れる前後にリフレッシュトークンで再取得する非同期処理の状態を表示する。",
+        "when": "バックグラウンドでトークンを自動更新し、その進行状況やエラーをユーザーに伝えたいとき。",
+        "points": [
+          "アクセストークン（短命・API呼び出し用）とリフレッシュトークン（長命・再発行専用）の役割を分離する",
+          "リフレッシュにも失敗した場合はセッション失効として扱い、再ログインを促す",
+          "複数リクエストが同時にリフレッシュを走らせて競合しないよう、更新処理を1つに集約する"
+        ],
+        "pitfall": "リフレッシュトークンをアクセストークンと同じ場所・同じ扱いで保存すると、片方が漏洩したときにもう片方まで危険にさらされる。用途ごとに保存先やスコープを分ける。",
+        "snippet": "Future<String> ensureFreshToken() async {\n  if (!_isExpiringSoon(_accessToken)) return _accessToken!;\n  final res = await http.post(\n    Uri.parse('$base/auth/refresh'),\n    body: {'refreshToken': _refreshToken},\n  );\n  if (res.statusCode == 401) {\n    _sessionExpired = true; // 再ログインへ\n    throw SessionExpiredException();\n  }\n  _accessToken = jsonDecode(res.body)['accessToken'];\n  return _accessToken!;\n}"
+      }
     },
     {
       "id": 165,
@@ -4851,7 +4961,18 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "detail": {
+        "purpose": "ログインセッションの有効期限やMFAなど、セキュリティに関する設定をユーザーが管理できるようにする。",
+        "when": "「他端末を全てログアウトする」「MFAを有効化する」等のセキュリティ設定画面が必要なとき。",
+        "points": [
+          "影響の大きい変更（MFA無効化、全端末ログアウト等）は再認証を挟んでから確定する",
+          "有効なセッション一覧はデバイス名・最終利用日時など識別に必要な情報のみ表示し、トークン自体は表示しない",
+          "設定の保存はサーバー側の認可チェックを経て反映し、クライアント側の表示だけを変更して満足しない"
+        ],
+        "pitfall": "「全端末からログアウト」のような破壊的操作を確認なしに即実行すると、誤操作で自分自身も含めた全セッションを失効させてしまう。実行前に確認ダイアログと再認証を挟む。",
+        "snippet": "Future<void> revokeAllSessions() async {\n  final confirmed = await showConfirmDialog(context, '全端末からログアウトしますか？');\n  if (!confirmed) return;\n  final reauthed = await requireReauth(context);\n  if (!reauthed) return;\n  await http.post(\n    Uri.parse('$base/auth/sessions/revoke-all'),\n    headers: {'Authorization': 'Bearer $accessToken'},\n  );\n}"
+      }
     },
     {
       "id": 183,
