@@ -24,7 +24,18 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "detail": {
+        "purpose": "利用可能な外部連携先（決済・通知・認証など）をカタログとして一覧表示し、選択して詳細に進めるための入口を提供する。",
+        "when": "複数の外部サービスをまとめて紹介し、ユーザーや管理者に連携先を選ばせたいとき。",
+        "points": [
+          "連携先ごとの状態（連携済み/未連携/準備中）をバッジ等でひと目で区別できるようにする",
+          "キーワード検索やカテゴリフィルタで目的の連携先を絞り込めるようにする",
+          "一覧APIはページングまたは無限スクロールに対応し、連携先数の増加に耐えられる設計にする"
+        ],
+        "pitfall": "一覧表示のたびに各連携先の詳細情報まで取得すると通信量が増えるため、一覧APIは要約情報のみ返す設計にする。",
+        "snippet": "final res = await http.get(Uri.parse('$base/integrations'));\nfinal list = (jsonDecode(res.body) as List)\n    .map((e) => Integration.fromJson(e))\n    .toList();\nsetState(() => _integrations = list);"
+      }
     },
     {
       "id": 2,
@@ -971,7 +982,18 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "detail": {
+        "purpose": "外部APIへ送信するリクエスト（メソッド・ヘッダー・ボディ）をフォームで組み立て、その場で実行結果を確認する。",
+        "when": "OpenAPI仕様を整備する前に手動でエンドポイントを試したい、または開発者向けのAPIテストツールを提供したいとき。",
+        "points": [
+          "HTTPメソッド・URL・ヘッダー・ボディを個別入力にし、送信前にフォームバリデーションを行う",
+          "OAuth2などの認可コードフローを扱う場合は、認可待ち・失効といった状態を画面上に明示する",
+          "送信結果と合わせてリクエスト履歴を保持し、再送や比較をしやすくする"
+        ],
+        "pitfall": "認可トークンやAPIキーをフォームの状態やログに平文のまま残さない。送信直前のみ保持し、画面を離れたら破棄する。",
+        "snippet": "final req = http.Request(method, Uri.parse(url))\n  ..headers.addAll(headers)\n  ..body = body;\nfinal streamed = await req.send();\nfinal res = await http.Response.fromStream(streamed);"
+      }
     },
     {
       "id": 38,
@@ -1439,7 +1461,18 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "detail": {
+        "purpose": "OpenAPI（Swagger）仕様書からエンドポイントやスキーマ定義を検索し、目的の定義に素早くたどり着けるようにする。",
+        "when": "大規模なAPI仕様の中から特定のパス・スキーマ・パラメータを探したいとき。",
+        "points": [
+          "OpenAPIのJSON/YAMLをパースし、パス名・タグ・説明などから検索用インデックスを事前に構築する",
+          "入力のたびに結果を絞り込むインクリメンタル検索で、体感速度を落とさないようにする",
+          "検索結果からスキーマの詳細（型・必須項目・サンプル値）へドリルダウンできるようにする"
+        ],
+        "pitfall": "巨大な仕様ファイルを表示のたびに全文パースすると起動が遅くなるため、パース結果をメモリやローカルキャッシュに保持する。",
+        "snippet": "final spec = jsonDecode(await rootBundle.loadString('openapi.json'));\nfinal paths = (spec['paths'] as Map).entries\n    .where((e) => e.key.contains(query))\n    .toList();"
+      }
     },
     {
       "id": 56,
@@ -1907,7 +1940,18 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "detail": {
+        "purpose": "REST・GraphQL・gRPCという3つの通信方式の違いをタブで切り替えながら並べて比較提示する。",
+        "when": "プロジェクトでどの通信方式を採用するか検討する際に、リクエスト/レスポンスの違いを見比べたいとき。",
+        "points": [
+          "TabBarで3方式を切り替え、各タブで同じユースケースのリクエスト例を統一フォーマットで表示する",
+          "レイテンシ・ペイロードサイズ・型安全性など比較軸を明示し、数値やコード例で裏付ける",
+          "gRPCはHTTP/2前提、GraphQLは単一エンドポイントなど、方式ごとの制約差を補足コピーで説明する"
+        ],
+        "pitfall": "3方式の説明を均等な情報量で作らないと、特定方式に誘導する印象を与えてしまう。",
+        "snippet": "final tabController = TabController(length: 3, vsync: this);\nTabBarView(\n  controller: tabController,\n  children: [RestExample(), GraphQLExample(), GrpcExample()],\n);"
+      }
     },
     {
       "id": 74,
@@ -2854,7 +2898,18 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "detail": {
+        "purpose": "外部連携先の接続環境（本番/ステージング/開発など）をドロワーから切り替える。",
+        "when": "同じ連携先に対して複数環境（Sandbox/Production等）のAPIキーやベースURLを使い分けたいとき。",
+        "points": [
+          "現在選択中の環境をドロワー内とアプリバーの両方に常時表示し、誤操作を防ぐ",
+          "環境切替時はAPIクライアントを再生成し、古い環境の認証情報を引き継がないようにする",
+          "本番環境への切替時は確認ダイアログを挟み、誤操作による事故を防ぐ"
+        ],
+        "pitfall": "環境ごとのAPIキーをコードにハードコードすると本番キーが漏洩する恐れがあるため、設定ストレージやSecure Storageから読み込む。",
+        "snippet": "Drawer(\n  child: ListView(\n    children: environments.map((e) => ListTile(\n      title: Text(e.name),\n      onTap: () => apiClient.switchEnvironment(e),\n    )).toList(),\n  ),\n);"
+      }
     },
     {
       "id": 110,
@@ -3322,7 +3377,18 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "detail": {
+        "purpose": "外部サービス連携時にユーザーへ許可範囲（スコープ）を提示し、明示的な同意を取得する。",
+        "when": "OAuthなどで外部サービスに自分のデータへのアクセスを許可させる前に、影響範囲を明示して同意を得たいとき。",
+        "points": [
+          "要求スコープを箇条書きで具体的に示し、何ができて何ができないかを明確にする",
+          "同意・拒否の結果をダイアログの戻り値として呼び出し元に返し、後続処理を分岐させる",
+          "同意状態を永続化しつつ、要求スコープが変わった場合は必ず再同意させる"
+        ],
+        "pitfall": "「同意する」ボタンだけを強調し拒否を選びにくくするダークパターンは避け、両方の選択肢を対等に扱う。",
+        "snippet": "final consented = await showDialog<bool>(\n  context: context,\n  builder: (_) => ConsentDialog(scopes: requestedScopes),\n);\nif (consented == true) await savedConsent(scopes: requestedScopes);"
+      }
     },
     {
       "id": 128,
@@ -3790,7 +3856,18 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "detail": {
+        "purpose": "利用可能な連携コネクタをアイコン主体のグリッドで表示し、視覚的にサービスを選びやすくする。",
+        "when": "多数の連携先をカテゴリ横断でざっと見せ、直感的に探させたいとき。",
+        "points": [
+          "GridViewでアイコン・名称・接続状態バッジを組み合わせたカードを表示する",
+          "検索やフィルタ操作にスロットリングをかけ、スクロール中の再描画負荷を抑える",
+          "タップ時はコネクタの詳細画面へ遷移し、接続手順や必要な認証情報を案内する"
+        ],
+        "pitfall": "接続失敗時に自動リトライを無制限に行うと過剰なリクエストになるため、リトライ回数と間隔の上限を設ける。",
+        "snippet": "GridView.builder(\n  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3),\n  itemCount: connectors.length,\n  itemBuilder: (_, i) => ConnectorCard(connector: connectors[i]),\n);"
+      }
     },
     {
       "id": 146,
@@ -4258,7 +4335,18 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "detail": {
+        "purpose": "外部サービスから送られてくるWebhookイベントを受信し、非同期に一覧・処理する。",
+        "when": "決済完了通知やCI結果など、外部からのイベントをリアルタイムに近い形で受け取り画面へ反映したいとき。",
+        "points": [
+          "受信イベントはStreamやBlocで管理し、到着に応じて画面を自動更新する",
+          "署名検証（HMAC等）でWebhookの送信元を確認し、不正なペイロードを弾く",
+          "処理失敗イベントを状態（未処理/処理済み/失敗）として保持し、再処理できるようにする"
+        ],
+        "pitfall": "受信のたびに重い処理を同期実行するとイベントを取りこぼすため、受信とハンドリングをキューで分離する。",
+        "snippet": "webhookStream.listen((event) {\n  if (!verifySignature(event)) return;\n  eventQueue.add(event);\n});"
+      }
     },
     {
       "id": 164,
@@ -4726,7 +4814,18 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "detail": {
+        "purpose": "外部連携に使うAPIキーとベースURLを画面から設定・管理する。",
+        "when": "連携先ごとに異なるAPIキーやエンドポイントURLをユーザー自身に入力・変更させたいとき。",
+        "points": [
+          "APIキー入力欄はマスク表示にし、平文表示は明示的な操作でのみ切り替える",
+          "保存前にベースURLの形式チェックとAPIキーの疎通確認（テスト呼び出し）を行う",
+          "設定変更をコマンド単位で扱い、直前の値へ戻せるUndo導線を用意する"
+        ],
+        "pitfall": "APIキーを平文のSharedPreferencesに保存すると漏洩リスクが高いため、Secure Storageなど暗号化された領域に保存する。",
+        "snippet": "await secureStorage.write(key: 'api_key', value: apiKey);\nawait secureStorage.write(key: 'base_url', value: baseUrl);\nfinal ok = await testConnectivity(baseUrl, apiKey);"
+      }
     },
     {
       "id": 182,
