@@ -94,8 +94,32 @@ void main() {
       expect(count, 18, reason: 'template $templateJa should have 18 screens');
     }
 
-    final withDetail = screens.where((s) => s.detail != null).map((s) => s.id).toList()
-      ..sort();
-    expect(withDetail, [19, 91]);
+    final integrationScreens =
+        screens.where((s) => s.domainKey == 'integration').toList();
+    expect(integrationScreens, hasLength(11));
+    expect(integrationScreens.every((s) => s.detail != null), isTrue,
+        reason: 'all 11 integration screens should have detail');
+
+    final nonIntegrationScreens =
+        screens.where((s) => s.domainKey != 'integration').toList();
+    expect(nonIntegrationScreens, hasLength(198 - 11));
+    expect(nonIntegrationScreens.every((s) => s.detail == null), isTrue,
+        reason: 'non-integration screens should not have detail');
+
+    for (final screen in integrationScreens) {
+      final detail = screen.detail!;
+      expect(detail.purpose, isNotEmpty,
+          reason: 'screen ${screen.id} detail.purpose should not be empty');
+      expect(detail.when, isNotEmpty,
+          reason: 'screen ${screen.id} detail.when should not be empty');
+      expect(detail.pitfall, isNotEmpty,
+          reason: 'screen ${screen.id} detail.pitfall should not be empty');
+      expect(detail.snippet, isNotEmpty,
+          reason: 'screen ${screen.id} detail.snippet should not be empty');
+      expect(detail.points, hasLength(3),
+          reason: 'screen ${screen.id} detail.points should have 3 items');
+      expect(detail.points.every((p) => p.isNotEmpty), isTrue,
+          reason: 'screen ${screen.id} detail.points should not contain empty strings');
+    }
   });
 }
