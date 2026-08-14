@@ -94,19 +94,33 @@ void main() {
       expect(count, 18, reason: 'template $templateJa should have 18 screens');
     }
 
-    final integrationScreens =
-        screens.where((s) => s.domainKey == 'integration').toList();
-    expect(integrationScreens, hasLength(11));
-    expect(integrationScreens.every((s) => s.detail != null), isTrue,
-        reason: 'all 11 integration screens should have detail');
+    const detailDomains = ['integration', 'auth'];
 
-    final nonIntegrationScreens =
-        screens.where((s) => s.domainKey != 'integration').toList();
-    expect(nonIntegrationScreens, hasLength(198 - 11));
-    expect(nonIntegrationScreens.every((s) => s.detail == null), isTrue,
-        reason: 'non-integration screens should not have detail');
+    final detailScreens =
+        screens.where((s) => detailDomains.contains(s.domainKey)).toList();
+    expect(detailScreens, hasLength(22));
+    expect(detailScreens.every((s) => s.detail != null), isTrue,
+        reason: 'all integration and auth screens should have detail');
 
-    for (final screen in integrationScreens) {
+    for (final domainKey in detailDomains) {
+      final domainScreens =
+          screens.where((s) => s.domainKey == domainKey).toList();
+      expect(domainScreens, hasLength(11));
+      expect(domainScreens.every((s) => s.detail != null), isTrue,
+          reason: 'all 11 $domainKey screens should have detail');
+    }
+
+    final nonDetailScreens =
+        screens.where((s) => !detailDomains.contains(s.domainKey)).toList();
+    expect(nonDetailScreens, hasLength(198 - 22));
+    expect(nonDetailScreens.every((s) => s.detail == null), isTrue,
+        reason: 'non-detail-domain screens should not have detail');
+
+    final allDetailCount = screens.where((s) => s.detail != null).length;
+    expect(allDetailCount, 22,
+        reason: 'total detail count should be 22 (integration 11 + auth 11)');
+
+    for (final screen in detailScreens) {
       final detail = screen.detail!;
       expect(detail.purpose, isNotEmpty,
           reason: 'screen ${screen.id} detail.purpose should not be empty');
