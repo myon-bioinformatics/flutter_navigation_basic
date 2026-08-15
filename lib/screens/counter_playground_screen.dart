@@ -17,22 +17,41 @@ class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
   var _step = 1;
   final List<int> _history = <int>[0];
 
+  void _record(int value) {
+    _history.insert(0, value);
+    if (_history.length > 8) _history.removeLast();
+  }
+
   void _changeCounter(int delta) {
     final int next = (_counter + delta).clamp(_min, _max).toInt();
     if (next == _counter) return;
     setState(() {
       _counter = next;
-      _history.insert(0, _counter);
-      if (_history.length > 8) _history.removeLast();
+      _record(_counter);
+    });
+  }
+
+  void _restoreValue(int value) {
+    if (value == _counter) return;
+    setState(() {
+      _counter = value;
+      _record(_counter);
+    });
+  }
+
+  void _undo() {
+    if (_history.length < 2) return;
+    setState(() {
+      _history.removeAt(0);
+      _counter = _history.first;
     });
   }
 
   void _reset() {
+    if (_counter == 0) return;
     setState(() {
       _counter = 0;
-      _history
-        ..clear()
-        ..add(0);
+      _record(0);
     });
   }
 
@@ -120,6 +139,11 @@ class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
                               icon: const Icon(Icons.refresh),
                               label: const Text('Reset'),
                             ),
+                            OutlinedButton.icon(
+                              onPressed: _history.length > 1 ? _undo : null,
+                              icon: const Icon(Icons.undo),
+                              label: const Text('Undo'),
+                            ),
                           ],
                         ),
                       ],
@@ -134,12 +158,29 @@ class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text('Recent values', style: theme.textTheme.titleMedium),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Tap a value to restore it.',
+                          style: theme.textTheme.bodySmall,
+                        ),
                         const SizedBox(height: 12),
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
                           children: _history
-                              .map((value) => Chip(label: Text('$value')))
+                              .asMap()
+                              .entries
+                              .map(
+                                (entry) => ActionChip(
+                                  tooltip: entry.key == 0
+                                      ? 'Current value'
+                                      : 'Restore ${entry.value}',
+                                  onPressed: entry.key == 0
+                                      ? null
+                                      : () => _restoreValue(entry.value),
+                                  label: Text('${entry.value}'),
+                                ),
+                              )
                               .toList(),
                         ),
                       ],
