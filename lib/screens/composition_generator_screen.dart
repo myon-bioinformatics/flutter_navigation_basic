@@ -34,6 +34,12 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
   String get _resultText =>
       'Key: $_tonicKey $_mode · BPM: $_bpm · Time: $_timeSignature · Progression: $_progression';
 
+  void _recordCurrent() {
+    _history.remove(_resultText);
+    _history.insert(0, _resultText);
+    if (_history.length > 6) _history.removeLast();
+  }
+
   void _generate({bool initial = false}) {
     String key;
     String mode;
@@ -68,8 +74,7 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
       _bpm = bpm;
       _timeSignature = timeSignature;
       _progression = progression;
-      _history.insert(0, _resultText);
-      if (_history.length > 6) _history.removeLast();
+      _recordCurrent();
     }
 
     if (initial) {
@@ -89,9 +94,23 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
         }
       }
       _progression = next;
-      _history.insert(0, _resultText);
-      if (_history.length > 6) _history.removeLast();
+      _recordCurrent();
     });
+  }
+
+  void _changeMode(String mode) {
+    if (mode == _mode) return;
+    setState(() {
+      _mode = mode;
+      _progression = _progressionPool.first;
+    });
+  }
+
+  void _saveCurrent() {
+    setState(_recordCurrent);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Composition idea saved to recent ideas')),
+    );
   }
 
   Future<void> _copy() async {
@@ -162,6 +181,11 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
                               icon: const Icon(Icons.shuffle),
                               label: const Text('Shuffle chords'),
                             ),
+                            OutlinedButton.icon(
+                              onPressed: _saveCurrent,
+                              icon: const Icon(Icons.bookmark_add_outlined),
+                              label: const Text('Save current'),
+                            ),
                             IconButton.filledTonal(
                               tooltip: 'Copy composition idea',
                               onPressed: _copy,
@@ -171,6 +195,97 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
                         ),
                       ],
                     ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Card(
+                  child: ExpansionTile(
+                    title: const Text('Customize seed'),
+                    subtitle: const Text('Adjust the generated idea without extra packages.'),
+                    childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    children: [
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final width = constraints.maxWidth;
+                          final fieldWidth = width >= 560 ? (width - 12) / 2 : width;
+                          return Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              SizedBox(
+                                width: fieldWidth,
+                                child: DropdownButtonFormField<String>(
+                                  value: _tonicKey,
+                                  decoration: const InputDecoration(labelText: 'Key'),
+                                  items: Composer.diatonicScaleList
+                                      .map((value) => DropdownMenuItem(value: value, child: Text(value)))
+                                      .toList(),
+                                  onChanged: (value) {
+                                    if (value != null) setState(() => _tonicKey = value);
+                                  },
+                                ),
+                              ),
+                              SizedBox(
+                                width: fieldWidth,
+                                child: DropdownButtonFormField<String>(
+                                  value: _mode,
+                                  decoration: const InputDecoration(labelText: 'Mode'),
+                                  items: Composer.modes
+                                      .map((value) => DropdownMenuItem(value: value, child: Text(value)))
+                                      .toList(),
+                                  onChanged: (value) {
+                                    if (value != null) _changeMode(value);
+                                  },
+                                ),
+                              ),
+                              SizedBox(
+                                width: fieldWidth,
+                                child: DropdownButtonFormField<String>(
+                                  value: _timeSignature,
+                                  decoration: const InputDecoration(labelText: 'Time signature'),
+                                  items: Composer.timeSignatures
+                                      .map((value) => DropdownMenuItem(value: value, child: Text(value)))
+                                      .toList(),
+                                  onChanged: (value) {
+                                    if (value != null) setState(() => _timeSignature = value);
+                                  },
+                                ),
+                              ),
+                              SizedBox(
+                                width: fieldWidth,
+                                child: DropdownButtonFormField<String>(
+                                  value: _progression,
+                                  decoration: const InputDecoration(labelText: 'Progression'),
+                                  items: _progressionPool
+                                      .map((value) => DropdownMenuItem(value: value, child: Text(value)))
+                                      .toList(),
+                                  onChanged: (value) {
+                                    if (value != null) setState(() => _progression = value);
+                                  },
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          const Text('BPM'),
+                          Expanded(
+                            child: Slider(
+                              min: 60,
+                              max: 200,
+                              divisions: 140,
+                              label: '$_bpm',
+                              value: _bpm.toDouble().clamp(60, 200),
+                              onChanged: (value) => setState(() => _bpm = value.round()),
+                            ),
+                          ),
+                          SizedBox(width: 44, child: Text('$_bpm')),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 16),
