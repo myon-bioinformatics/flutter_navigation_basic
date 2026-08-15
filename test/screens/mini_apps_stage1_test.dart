@@ -61,7 +61,7 @@ void main() {
     await tester.tap(find.text('Favorite'));
     await tester.pump();
     expect(find.text('Favorited'), findsOneWidget);
-    expect(find.textContaining('1 favorite'), findsOneWidget);
+    expect(find.text('Favorites · 1'), findsOneWidget);
   });
 
   testWidgets('irony copy shows snackbar confirmation', (tester) async {

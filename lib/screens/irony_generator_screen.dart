@@ -30,6 +30,10 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
       ? Ironies.entries
       : Ironies.entries.where((entry) => entry.tone == _tone).toList();
 
+  List<IronyEntry> get _favoriteEntries => Ironies.entries
+      .where((entry) => _favorites.contains(entry.text))
+      .toList(growable: false);
+
   IronyEntry _pickNext(List<IronyEntry> pool) {
     IronyEntry next = pool[_random.nextInt(pool.length)];
     if (pool.length > 1) {
@@ -40,14 +44,19 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
     return next;
   }
 
+  void _record(IronyEntry entry) {
+    _history.removeWhere((item) => item.text == entry.text);
+    _history.insert(0, entry);
+    if (_history.length > 8) _history.removeLast();
+  }
+
   void _generate() {
     final pool = _pool;
     if (pool.isEmpty) return;
     final next = _pickNext(pool);
     setState(() {
       _current = next;
-      _history.insert(0, next);
-      if (_history.length > 8) _history.removeLast();
+      _record(next);
     });
   }
 
@@ -61,8 +70,14 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
     setState(() {
       _tone = tone;
       _current = next;
-      _history.insert(0, next);
-      if (_history.length > 8) _history.removeLast();
+      _record(next);
+    });
+  }
+
+  void _selectEntry(IronyEntry entry) {
+    setState(() {
+      _current = entry;
+      _record(entry);
     });
   }
 
@@ -71,6 +86,18 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
       if (!_favorites.add(_current.text)) {
         _favorites.remove(_current.text);
       }
+    });
+  }
+
+  void _removeFavorite(String text) {
+    setState(() => _favorites.remove(text));
+  }
+
+  void _clearHistory() {
+    setState(() {
+      _history
+        ..clear()
+        ..add(_current);
     });
   }
 
@@ -86,6 +113,7 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isFavorite = _favorites.contains(_current.text);
+    final favoriteEntries = _favoriteEntries;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Irony Generator 🥐'),
@@ -170,9 +198,20 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(
-                          'Recent generations · ${_favorites.length} favorite${_favorites.length == 1 ? '' : 's'}',
-                          style: theme.textTheme.titleMedium,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Recent generations',
+                                style: theme.textTheme.titleMedium,
+                              ),
+                            ),
+                            TextButton.icon(
+                              onPressed: _history.length > 1 ? _clearHistory : null,
+                              icon: const Icon(Icons.clear_all),
+                              label: const Text('Clear'),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 8),
                         ..._history.take(5).map(
@@ -184,9 +223,43 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
                             trailing: _favorites.contains(entry.text)
                                 ? const Icon(Icons.favorite, size: 18)
                                 : null,
-                            onTap: () => setState(() => _current = entry),
+                            onTap: () => _selectEntry(entry),
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Favorites · ${favoriteEntries.length}',
+                          style: theme.textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        if (favoriteEntries.isEmpty)
+                          const Text('Favorite an irony to keep it handy here.')
+                        else
+                          ...favoriteEntries.map(
+                            (entry) => ListTile(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(Icons.favorite),
+                              title: Text(entry.text, maxLines: 2, overflow: TextOverflow.ellipsis),
+                              subtitle: Text(entry.tone),
+                              trailing: IconButton(
+                                tooltip: 'Remove favorite',
+                                onPressed: () => _removeFavorite(entry.text),
+                                icon: const Icon(Icons.close),
+                              ),
+                              onTap: () => _selectEntry(entry),
+                            ),
+                          ),
                       ],
                     ),
                   ),
