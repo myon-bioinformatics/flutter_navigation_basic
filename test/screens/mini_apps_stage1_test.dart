@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/screens/composition_generator_screen.dart';
 import 'package:flutter_application_1/screens/counter_playground_screen.dart';
@@ -7,6 +8,21 @@ import 'package:flutter_application_1/screens/irony_generator_screen.dart';
 Widget _app(Widget child) => MaterialApp(home: child);
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') return null;
+      return null;
+    });
+  });
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null);
+  });
+
   testWidgets('counter supports step selection, increase, decrease and reset',
       (tester) async {
     await tester.pumpWidget(_app(const CounterPlaygroundScreen()));
@@ -48,6 +64,15 @@ void main() {
     expect(find.textContaining('1 favorite'), findsOneWidget);
   });
 
+  testWidgets('irony copy shows snackbar confirmation', (tester) async {
+    await tester.pumpWidget(_app(const IronyGeneratorScreen()));
+
+    await tester.tap(find.byTooltip('Copy irony'));
+    await tester.pump();
+
+    expect(find.text('Copied to clipboard'), findsOneWidget);
+  });
+
   testWidgets('composition generator exposes richer song seed controls',
       (tester) async {
     await tester.pumpWidget(_app(const CompositionGeneratorScreen()));
@@ -60,5 +85,14 @@ void main() {
     await tester.tap(find.text('Generate again'));
     await tester.pump();
     expect(find.byIcon(Icons.music_note), findsWidgets);
+  });
+
+  testWidgets('composition copy shows snackbar confirmation', (tester) async {
+    await tester.pumpWidget(_app(const CompositionGeneratorScreen()));
+
+    await tester.tap(find.byTooltip('Copy composition idea'));
+    await tester.pump();
+
+    expect(find.text('Composition idea copied'), findsOneWidget);
   });
 }
