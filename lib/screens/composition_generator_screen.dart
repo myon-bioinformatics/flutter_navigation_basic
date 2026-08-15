@@ -35,16 +35,32 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
       'Key: $_tonicKey $_mode · BPM: $_bpm · Time: $_timeSignature · Progression: $_progression';
 
   void _generate({bool initial = false}) {
-    final key = Composer.diatonicScaleList[
-        _random.nextInt(Composer.diatonicScaleList.length)];
-    final mode = Composer.modes[_random.nextInt(Composer.modes.length)];
-    final bpm = 80 + _random.nextInt(81);
-    final timeSignature = Composer.timeSignatures[
-        _random.nextInt(Composer.timeSignatures.length)];
-    final progressions = mode == 'Major'
-        ? Composer.progressionsMajor
-        : Composer.progressionsMinor;
-    final progression = progressions[_random.nextInt(progressions.length)];
+    String key;
+    String mode;
+    int bpm;
+    String timeSignature;
+    String progression;
+    var attempts = 0;
+
+    do {
+      key = Composer.diatonicScaleList[
+          _random.nextInt(Composer.diatonicScaleList.length)];
+      mode = Composer.modes[_random.nextInt(Composer.modes.length)];
+      bpm = 80 + _random.nextInt(81);
+      timeSignature = Composer.timeSignatures[
+          _random.nextInt(Composer.timeSignatures.length)];
+      final progressions = mode == 'Major'
+          ? Composer.progressionsMajor
+          : Composer.progressionsMinor;
+      progression = progressions[_random.nextInt(progressions.length)];
+      attempts++;
+    } while (!initial &&
+        attempts < 8 &&
+        key == _tonicKey &&
+        mode == _mode &&
+        bpm == _bpm &&
+        timeSignature == _timeSignature &&
+        progression == _progression);
 
     void assign() {
       _tonicKey = key;
@@ -66,7 +82,13 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
   void _regenerateProgression() {
     setState(() {
       final pool = _progressionPool;
-      _progression = pool[_random.nextInt(pool.length)];
+      var next = pool[_random.nextInt(pool.length)];
+      if (pool.length > 1) {
+        while (next == _progression) {
+          next = pool[_random.nextInt(pool.length)];
+        }
+      }
+      _progression = next;
       _history.insert(0, _resultText);
       if (_history.length > 6) _history.removeLast();
     });
@@ -116,10 +138,12 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
                         Semantics(
                           liveRegion: true,
                           label: 'Chord progression $_progression',
-                          child: Text(
-                            _progression,
-                            style: theme.textTheme.headlineSmall,
-                            textAlign: TextAlign.center,
+                          child: ExcludeSemantics(
+                            child: Text(
+                              _progression,
+                              style: theme.textTheme.headlineSmall,
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -163,7 +187,11 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
                             dense: true,
                             contentPadding: EdgeInsets.zero,
                             leading: const Icon(Icons.music_note),
-                            title: Text(item),
+                            title: Text(
+                              item,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ),
                       ],
