@@ -46,6 +46,12 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
     });
   }
 
+  void _selectTone(String tone) {
+    if (_tone == tone) return;
+    setState(() => _tone = tone);
+    _generate();
+  }
+
   void _toggleFavorite() {
     setState(() {
       if (!_favorites.add(_current.text)) {
@@ -86,19 +92,13 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
                     ChoiceChip(
                       label: const Text('All'),
                       selected: _tone == 'All',
-                      onSelected: (_) => setState(() {
-                        _tone = 'All';
-                        _generate();
-                      }),
+                      onSelected: (_) => _selectTone('All'),
                     ),
                     ...Ironies.tones.map(
                       (tone) => ChoiceChip(
                         label: Text(tone),
                         selected: _tone == tone,
-                        onSelected: (_) => setState(() {
-                          _tone = tone;
-                          _generate();
-                        }),
+                        onSelected: (_) => _selectTone(tone),
                       ),
                     ),
                   ],
