@@ -18,7 +18,7 @@ class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
   final List<int> _history = <int>[0];
 
   void _changeCounter(int delta) {
-    final next = (_counter + delta).clamp(_min, _max);
+    final int next = (_counter + delta).clamp(_min, _max).toInt();
     if (next == _counter) return;
     setState(() {
       _counter = next;
@@ -71,24 +71,29 @@ class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
                         Semantics(
                           label: 'Counter value $_counter',
                           liveRegion: true,
-                          child: Text(
-                            '$_counter',
-                            style: theme.textTheme.displayMedium,
+                          child: ExcludeSemantics(
+                            child: Text(
+                              '$_counter',
+                              style: theme.textTheme.displayMedium,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(_status, style: theme.textTheme.titleMedium),
                         const SizedBox(height: 20),
-                        SegmentedButton<int>(
-                          segments: const [
-                            ButtonSegment(value: 1, label: Text('Step 1')),
-                            ButtonSegment(value: 5, label: Text('Step 5')),
-                            ButtonSegment(value: 10, label: Text('Step 10')),
-                          ],
-                          selected: {_step},
-                          onSelectionChanged: (selection) {
-                            setState(() => _step = selection.first);
-                          },
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: SegmentedButton<int>(
+                            segments: const [
+                              ButtonSegment(value: 1, label: Text('Step 1')),
+                              ButtonSegment(value: 5, label: Text('Step 5')),
+                              ButtonSegment(value: 10, label: Text('Step 10')),
+                            ],
+                            selected: {_step},
+                            onSelectionChanged: (selection) {
+                              setState(() => _step = selection.first);
+                            },
+                          ),
                         ),
                         const SizedBox(height: 20),
                         Wrap(
