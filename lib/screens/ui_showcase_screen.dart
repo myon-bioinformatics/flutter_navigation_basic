@@ -176,12 +176,6 @@ class _UiShowcaseScreenState extends State<UiShowcaseScreen> {
     );
   }
 
-  void _selectSection(int index) {
-    setState(() => _selectedIndex = index);
-    final scaffold = Scaffold.maybeOf(context);
-    if (scaffold?.isDrawerOpen ?? false) Navigator.of(context).pop();
-  }
-
   @override
   Widget build(BuildContext context) {
     final config = _config;
