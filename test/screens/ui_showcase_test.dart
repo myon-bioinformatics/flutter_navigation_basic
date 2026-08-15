@@ -20,7 +20,11 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: UiShowcaseScreen()));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Media').last);
+    final mediaDestination = find.descendant(
+      of: find.byType(NavigationBar),
+      matching: find.text('Media'),
+    );
+    await tester.tap(mediaDestination);
     await tester.pumpAndSettle();
 
     expect(find.text('Embedded media'), findsOneWidget);
