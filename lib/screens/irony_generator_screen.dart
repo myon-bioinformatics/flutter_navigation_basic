@@ -30,15 +30,20 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
       ? Ironies.entries
       : Ironies.entries.where((entry) => entry.tone == _tone).toList();
 
-  void _generate() {
-    final pool = _pool;
-    if (pool.isEmpty) return;
+  IronyEntry _pickNext(List<IronyEntry> pool) {
     IronyEntry next = pool[_random.nextInt(pool.length)];
     if (pool.length > 1) {
       while (next.text == _current.text) {
         next = pool[_random.nextInt(pool.length)];
       }
     }
+    return next;
+  }
+
+  void _generate() {
+    final pool = _pool;
+    if (pool.isEmpty) return;
+    final next = _pickNext(pool);
     setState(() {
       _current = next;
       _history.insert(0, next);
@@ -48,8 +53,17 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
 
   void _selectTone(String tone) {
     if (_tone == tone) return;
-    setState(() => _tone = tone);
-    _generate();
+    final pool = tone == 'All'
+        ? Ironies.entries
+        : Ironies.entries.where((entry) => entry.tone == tone).toList();
+    if (pool.isEmpty) return;
+    final next = _pickNext(pool);
+    setState(() {
+      _tone = tone;
+      _current = next;
+      _history.insert(0, next);
+      if (_history.length > 8) _history.removeLast();
+    });
   }
 
   void _toggleFavorite() {
@@ -114,10 +128,12 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
                         Semantics(
                           liveRegion: true,
                           label: 'Generated irony: ${_current.text}',
-                          child: Text(
-                            _current.text,
-                            style: theme.textTheme.headlineSmall,
-                            textAlign: TextAlign.center,
+                          child: ExcludeSemantics(
+                            child: Text(
+                              _current.text,
+                              style: theme.textTheme.headlineSmall,
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 24),
