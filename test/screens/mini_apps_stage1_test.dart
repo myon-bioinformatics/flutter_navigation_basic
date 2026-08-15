@@ -24,8 +24,12 @@ void main() {
     expect(find.text('0'), findsWidgets);
 
     await tester.tap(find.text('Increase'));
+    await tester.pump();
+    expect(find.text('5'), findsWidgets);
+
     await tester.tap(find.text('Reset'));
     await tester.pump();
+    expect(find.text('0'), findsWidgets);
     expect(find.text('Keep experimenting 👾'), findsOneWidget);
   });
 
