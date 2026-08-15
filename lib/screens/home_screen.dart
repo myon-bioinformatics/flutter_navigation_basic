@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../config/routes.dart';
 import '../widgets/nav_button.dart';
 
@@ -12,7 +11,15 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   DateTime get nowadays => DateTime.now();
-  String get today => DateFormat('yyyy/MM/dd(E)').format(nowadays);
+
+  String get today {
+    const weekdays = <String>['月', '火', '水', '木', '金', '土', '日'];
+    final value = nowadays;
+    final month = value.month.toString().padLeft(2, '0');
+    final day = value.day.toString().padLeft(2, '0');
+    final weekday = weekdays[value.weekday - 1];
+    return '${value.year}/$month/$day($weekday)';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +52,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   NavButton(
                     label: 'Composition Generator 🎸',
                     routeName: AppRoutes.compositionGenerator,
+                  ),
+                  NavButton(
+                    label: 'UI Showcase 🧩',
+                    routeName: AppRoutes.uiShowcase,
                   ),
                   NavButton(
                     label: 'Navigation Hub 🗺️ (198 Screens)',
