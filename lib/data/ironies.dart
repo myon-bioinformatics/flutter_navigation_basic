@@ -29,6 +29,11 @@ class Ironies {
     IronyEntry(text: 'We dislike uncertainty, so we make confident predictions about it.', tone: 'Human'),
   ];
 
+  // Backward-compatible view for legacy callers that only need the text.
+  // Keep this derived from `entries` so irony content remains single-sourced.
+  static List<String> get ironicList =>
+      entries.map((entry) => entry.text).toList(growable: false);
+
   static List<String> get tones =>
       entries.map((entry) => entry.tone).toSet().toList(growable: false);
 }
