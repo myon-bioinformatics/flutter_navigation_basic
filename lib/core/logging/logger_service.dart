@@ -1,50 +1,51 @@
-import 'package:logger/logger.dart';
+import 'dart:developer' as developer;
+
 import '../config/app_config.dart';
 
 class LoggerService {
   LoggerService._();
 
-  static Logger? _logger;
+  static const String _name = 'flutter_navigation_basic';
 
-  static Logger get _instance {
-    _logger ??= Logger(
-      printer: PrettyPrinter(
-        methodCount: 2,
-        errorMethodCount: 8,
-        lineLength: 120,
-        colors: true,
-        printEmojis: true,
-      ),
-      level: _resolveLevel(),
-      output: ConsoleOutput(),
-    );
-    return _logger!;
-  }
-
-  static Level _resolveLevel() {
+  static int get _minimumLevel {
     switch (AppConfig.logLevel) {
-      case 'debug':
-        return Level.debug;
       case 'info':
-        return Level.info;
+        return 800;
       case 'warning':
-        return Level.warning;
+        return 900;
       case 'error':
-        return Level.error;
+        return 1000;
+      case 'debug':
       default:
-        return AppConfig.isProduction ? Level.error : Level.debug;
+        return AppConfig.isProduction ? 1000 : 500;
     }
   }
 
+  static void _write(
+    int level,
+    String message, {
+    Object? error,
+    StackTrace? stackTrace,
+  }) {
+    if (level < _minimumLevel) return;
+    developer.log(
+      message,
+      name: _name,
+      level: level,
+      error: error,
+      stackTrace: stackTrace,
+    );
+  }
+
   static void debug(String message, {Object? error, StackTrace? stackTrace}) =>
-      _instance.d(message, error: error, stackTrace: stackTrace);
+      _write(500, message, error: error, stackTrace: stackTrace);
 
   static void info(String message, {Object? error, StackTrace? stackTrace}) =>
-      _instance.i(message, error: error, stackTrace: stackTrace);
+      _write(800, message, error: error, stackTrace: stackTrace);
 
   static void warning(String message, {Object? error, StackTrace? stackTrace}) =>
-      _instance.w(message, error: error, stackTrace: stackTrace);
+      _write(900, message, error: error, stackTrace: stackTrace);
 
   static void error(String message, {Object? error, StackTrace? stackTrace}) =>
-      _instance.e(message, error: error, stackTrace: stackTrace);
+      _write(1000, message, error: error, stackTrace: stackTrace);
 }
