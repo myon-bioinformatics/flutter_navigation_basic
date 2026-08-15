@@ -278,7 +278,7 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
                               max: 200,
                               divisions: 140,
                               label: '$_bpm',
-                              value: _bpm.toDouble().clamp(60, 200),
+                              value: _bpm.toDouble(),
                               onChanged: (value) => setState(() => _bpm = value.round()),
                             ),
                           ),
