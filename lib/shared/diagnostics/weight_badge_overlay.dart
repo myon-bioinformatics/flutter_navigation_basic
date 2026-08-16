@@ -4,9 +4,14 @@ import 'build_metadata.dart';
 import 'route_diagnostics_observer.dart';
 
 class WeightBadgeOverlay extends StatefulWidget {
-  const WeightBadgeOverlay({super.key, required this.child});
+  const WeightBadgeOverlay({
+    super.key,
+    required this.child,
+    this.preferFeatureWeights = false,
+  });
 
   final Widget child;
+  final bool preferFeatureWeights;
 
   @override
   State<WeightBadgeOverlay> createState() => _WeightBadgeOverlayState();
@@ -36,6 +41,7 @@ class _WeightBadgeOverlayState extends State<WeightBadgeOverlay> {
                     return _WeightBadge(
                       metadata: snapshot.data!,
                       routeName: routeName,
+                      preferFeatureWeights: widget.preferFeatureWeights,
                       expanded: _expanded,
                       onTap: () => setState(() => _expanded = !_expanded),
                     );
@@ -54,21 +60,28 @@ class _WeightBadge extends StatelessWidget {
   const _WeightBadge({
     required this.metadata,
     required this.routeName,
+    required this.preferFeatureWeights,
     required this.expanded,
     required this.onTap,
   });
 
   final BuildMetadata metadata;
   final String? routeName;
+  final bool preferFeatureWeights;
   final bool expanded;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final screenId = _screenIdForRoute(routeName);
+    final screenId = preferFeatureWeights ? _screenIdForRoute(routeName) : null;
     final screen = screenId == null ? null : metadata.screens[screenId];
-    final compactBytes = screen?.sourceBytes ?? metadata.artifactBytes ?? metadata.sourceBytes;
-    final compactLabel = screen != null
+    final routeSourceId = preferFeatureWeights ? null : _routeSourceIdForRoute(routeName);
+    final routeSource = routeSourceId == null ? null : metadata.routeSources[routeSourceId];
+    final compactBytes = screen?.sourceBytes ??
+        routeSource?.sourceBytes ??
+        metadata.artifactBytes ??
+        metadata.sourceBytes;
+    final compactLabel = screen != null || routeSource != null
         ? 'screen ${formatDiagnosticBytes(compactBytes)}'
         : metadata.artifactBytes != null
             ? 'build ${formatDiagnosticBytes(compactBytes)}'
@@ -91,23 +104,19 @@ class _WeightBadge extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        '⚖ $compactLabel',
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
+                      Text('⚖ $compactLabel', style: Theme.of(context).textTheme.labelMedium),
                       const SizedBox(height: 4),
                       Text(metadata.displayVersion, style: Theme.of(context).textTheme.labelSmall),
                       Text('route ${routeName ?? 'unknown'}', style: Theme.of(context).textTheme.labelSmall),
                       if (screen != null)
                         Text('feature ${formatDiagnosticBytes(screen.featureBytes)}', style: Theme.of(context).textTheme.labelSmall),
+                      if (routeSource != null && routeSource.path.isNotEmpty)
+                        Text(routeSource.path, style: Theme.of(context).textTheme.labelSmall),
                       Text('artifact ${formatDiagnosticBytes(metadata.artifactBytes)}', style: Theme.of(context).textTheme.labelSmall),
                       Text('assets ${formatDiagnosticBytes(metadata.assetBytes)}', style: Theme.of(context).textTheme.labelSmall),
                     ],
                   )
-                : Text(
-                    '⚖ $compactLabel',
-                    style: Theme.of(context).textTheme.labelMedium,
-                  ),
+                : Text('⚖ $compactLabel', style: Theme.of(context).textTheme.labelMedium),
           ),
         ),
       ),
@@ -122,6 +131,23 @@ String? _screenIdForRoute(String? routeName) {
     '/examples/irony-generator' => 'irony_generator',
     '/examples/composition-generator' => 'composition_generator',
     '/screen5' => 'screen5',
+    _ => null,
+  };
+}
+
+String? _routeSourceIdForRoute(String? routeName) {
+  if (routeName == null) return null;
+  if (RegExp(r'^/screen\d+$').hasMatch(routeName)) return 'generic_screen';
+  return switch (routeName) {
+    '/' => 'home_screen',
+    '/hub' => 'hub_screen',
+    '/examples/counter-playground' => 'counter_playground_screen',
+    '/examples/irony-generator' => 'irony_generator_screen',
+    '/examples/composition-generator' => 'composition_generator_screen',
+    '/examples/ui-showcase' => 'ui_showcase_screen',
+    '/examples/external-integration/api' => 'mock_api_screen',
+    '/examples/mock-api' => 'mock_api_screen',
+    '/examples/external-integration/mcp' => 'mcp_integration_screen',
     _ => null,
   };
 }
