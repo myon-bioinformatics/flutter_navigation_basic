@@ -41,8 +41,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 HomeOverviewPanel(
                   actions: [
                     HomeOverviewAction(
+                      label: 'Clipboard Shelf · Core Tool #1',
+                      subtitle: 'Keep a temporary session-only history of text, URLs, Markdown and 2/3-scaled images; select, sort and bundle-copy it.',
+                      icon: Icons.inventory_2_outlined,
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.clipboardShelf),
+                    ),
+                    HomeOverviewAction(
                       label: 'Clipboard Workbench',
-                      subtitle: 'Paste source material, shape a system prompt, preview it, and copy the result.',
+                      subtitle: 'Turn shelf/source material into a structured system prompt and copy the result.',
                       icon: Icons.content_paste_go_outlined,
                       onTap: () => Navigator.pushNamed(context, AppRoutes.clipboardWorkbench),
                     ),
