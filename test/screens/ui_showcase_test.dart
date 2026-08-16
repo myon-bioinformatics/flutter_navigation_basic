@@ -27,25 +27,25 @@ Future<void> _pumpLoadedShowcase(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('UI showcase loads external config and compact navigation',
+  testWidgets('UI showcase loads config, compact navigation, and Base64 media',
       (tester) async {
+    // Load the external config once for this screen instance. Re-pumping a second
+    // UiShowcaseScreen in a separate widget test made rootBundle loading flaky on
+    // CI even with a long timeout, while the first load consistently completed.
     await _pumpLoadedShowcase(tester);
 
     expect(find.text('UI Showcase'), findsWidgets);
     expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.text('Internal defaults'), findsOneWidget);
+    expect(find.text('External JSON overrides'), findsOneWidget);
 
     final scaffoldState = tester.state<ScaffoldState>(find.byType(Scaffold));
     scaffoldState.openDrawer();
     await tester.pumpAndSettle();
     expect(find.byType(Drawer), findsOneWidget);
 
-    expect(find.text('Internal defaults'), findsOneWidget);
-    expect(find.text('External JSON overrides'), findsOneWidget);
-  });
-
-  testWidgets('UI showcase renders Base64 media with Image.memory',
-      (tester) async {
-    await _pumpLoadedShowcase(tester);
+    scaffoldState.closeDrawer();
+    await tester.pumpAndSettle();
 
     final mediaDestination = find.descendant(
       of: find.byType(NavigationBar),
