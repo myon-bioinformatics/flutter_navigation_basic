@@ -4,6 +4,8 @@ import 'core/navigation/app_navigation.dart';
 import 'core/navigation/route_names.dart';
 import 'core/services/storage_service.dart';
 import 'core/logging/logger_service.dart';
+import 'shared/diagnostics/route_diagnostics_observer.dart';
+import 'shared/diagnostics/weight_badge_overlay.dart';
 import 'shared/themes/app_theme.dart';
 
 void main() async {
@@ -26,6 +28,10 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: RouteNames.home,
       routes: AppNavigation.routes,
+      navigatorObservers: [RouteDiagnosticsObserver.instance],
+      builder: (context, child) => WeightBadgeOverlay(
+        child: child ?? const SizedBox.shrink(),
+      ),
     );
   }
 }
