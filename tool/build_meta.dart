@@ -11,30 +11,17 @@ Future<void> main(List<String> args) async {
   final mode = _valueAfter(args, '--mode') ?? 'release';
 
   final pubspec = await File('pubspec.yaml').readAsString();
-  final versionMatch = RegExp(r'^version:\s*([^+\s]+)(?:\+(\d+))?', multiLine: true).firstMatch(pubspec);
+  final versionMatch = RegExp(
+    r'^version:\s*([^+\s]+)(?:\+(\d+))?',
+    multiLine: true,
+  ).firstMatch(pubspec);
   if (versionMatch == null) {
     stderr.writeln('Could not read version from pubspec.yaml');
     exitCode = 2;
     return;
   }
 
-  final screens = <String, String>{
-    'home': 'lib/features/home',
-    'counter_playground': 'lib/features/counter_playground',
-    'irony_generator': 'lib/features/irony_generator',
-    'composition_generator': 'lib/features/composition_generator',
-    'screen5': 'lib/features/screen5',
-  };
-
-  final screenReport = <String, dynamic>{};
-  for (final entry in screens.entries) {
-    final presentation = Directory('${entry.value}/presentation');
-    screenReport[entry.key] = {
-      'sourceBytes': await directorySize(presentation),
-      'featureBytes': await directorySize(Directory(entry.value)),
-    };
-  }
-
+  final screenReport = await _discoverFeatureWeights();
   final artifact = artifactPath == null ? null : File(artifactPath);
   final analysis = analysisPath == null ? null : File(analysisPath);
   final report = <String, dynamic>{
@@ -68,6 +55,30 @@ Future<void> main(List<String> args) async {
   await output.parent.create(recursive: true);
   await output.writeAsString('${const JsonEncoder.withIndent('  ').convert(report)}\n');
   stdout.writeln('Build metadata: ${output.path}');
+}
+
+Future<Map<String, dynamic>> _discoverFeatureWeights() async {
+  final features = Directory('lib/features');
+  if (!await features.exists()) return <String, dynamic>{};
+
+  final directories = <Directory>[];
+  await for (final entity in features.list(followLinks: false)) {
+    if (entity is Directory) directories.add(entity);
+  }
+  directories.sort((a, b) => a.path.compareTo(b.path));
+
+  final report = <String, dynamic>{};
+  for (final feature in directories) {
+    final id = feature.uri.pathSegments.where((segment) => segment.isNotEmpty).last;
+    final presentation = Directory(
+      '${feature.path}${Platform.pathSeparator}presentation',
+    );
+    report[id] = {
+      'sourceBytes': await directorySize(presentation),
+      'featureBytes': await directorySize(feature),
+    };
+  }
+  return report;
 }
 
 String? _valueAfter(List<String> args, String flag) {
