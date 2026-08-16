@@ -18,27 +18,17 @@ Future<void> main(List<String> args) async {
   final data = jsonDecode(result.stdoutText) as Map<String, dynamic>;
   final packages = (data['packages'] as List<dynamic>? ?? const []);
   final stale = <String>[];
-  final observed = <String>{};
 
   for (final raw in packages) {
     final package = raw as Map<String, dynamic>;
     final name = package['package'] as String?;
     if (name == null || !tracked.contains(name)) continue;
-    observed.add(name);
 
     final current = (package['current'] as Map<String, dynamic>?)?['version'];
     final latest = (package['latest'] as Map<String, dynamic>?)?['version'];
     if (current != latest) {
       stale.add('$name: current=$current, latest=$latest');
     }
-  }
-
-  final missing = tracked.difference(observed);
-  if (missing.isNotEmpty) {
-    stderr.writeln('Tracked packages missing from pub outdated output: '
-        '${missing.toList()..sort()}');
-    exitCode = 2;
-    return;
   }
 
   if (stale.isNotEmpty) {
@@ -50,8 +40,11 @@ Future<void> main(List<String> args) async {
     return;
   }
 
+  // `dart pub outdated --json` may omit packages that are already current.
+  // Therefore absence from the result is treated as "no outdated finding",
+  // matching the previous CI behavior while keeping parsing in Dart.
   stdout.writeln(
-    'Tracked direct dependencies are on latest stable releases: '
+    'No outdated stable release found for tracked direct dependencies: '
     '${tracked.toList()..sort()}',
   );
 }
