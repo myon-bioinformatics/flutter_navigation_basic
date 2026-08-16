@@ -21,6 +21,23 @@ class Base64ImageBridge {
     'image/webp',
   };
 
+  static ({int width, int height}) targetDimensions({
+    required int width,
+    required int height,
+    double scale = defaultScale,
+  }) {
+    if (width <= 0 || height <= 0) {
+      throw ArgumentError('width and height must be positive');
+    }
+    if (scale <= 0 || scale > 1) {
+      throw ArgumentError.value(scale, 'scale', 'must be > 0 and <= 1');
+    }
+    return (
+      width: (width * scale).round().clamp(1, width).toInt(),
+      height: (height * scale).round().clamp(1, height).toInt(),
+    );
+  }
+
   static Future<Base64ImagePayload> downscaleToPng(
     Uint8List source, {
     double scale = defaultScale,
@@ -28,28 +45,22 @@ class Base64ImageBridge {
     if (source.isEmpty) {
       throw const FormatException('Image bytes are empty.');
     }
-    if (scale <= 0 || scale > 1) {
-      throw ArgumentError.value(scale, 'scale', 'must be > 0 and <= 1');
-    }
 
     final sourceCodec = await ui.instantiateImageCodec(source);
     final sourceFrame = await sourceCodec.getNextFrame();
     final sourceImage = sourceFrame.image;
-    final targetWidth = (sourceImage.width * scale)
-        .round()
-        .clamp(1, sourceImage.width)
-        .toInt();
-    final targetHeight = (sourceImage.height * scale)
-        .round()
-        .clamp(1, sourceImage.height)
-        .toInt();
+    final target = targetDimensions(
+      width: sourceImage.width,
+      height: sourceImage.height,
+      scale: scale,
+    );
     sourceImage.dispose();
     sourceCodec.dispose();
 
     final scaledCodec = await ui.instantiateImageCodec(
       source,
-      targetWidth: targetWidth,
-      targetHeight: targetHeight,
+      targetWidth: target.width,
+      targetHeight: target.height,
       allowUpscaling: false,
     );
     final scaledFrame = await scaledCodec.getNextFrame();
