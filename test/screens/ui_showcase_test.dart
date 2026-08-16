@@ -29,9 +29,6 @@ Future<void> _pumpLoadedShowcase(WidgetTester tester) async {
 void main() {
   testWidgets('UI showcase loads config, compact navigation, and Base64 media',
       (tester) async {
-    // Load the external config once for this screen instance. Re-pumping a second
-    // UiShowcaseScreen in a separate widget test made rootBundle loading flaky on
-    // CI even with a long timeout, while the first load consistently completed.
     await _pumpLoadedShowcase(tester);
 
     expect(find.text('UI Showcase'), findsWidgets);
@@ -54,8 +51,7 @@ void main() {
     await tester.tap(mediaDestination);
     await tester.pump();
 
-    // Image.memory uses a real async codec for the Base64 asset. Give that work
-    // a real async turn, then return to the widget-test clock for assertions.
+    // Let Image.memory resolve its codec before checking the media page.
     await tester.runAsync(() async {
       await Future<void>.delayed(const Duration(milliseconds: 100));
     });
@@ -63,6 +59,16 @@ void main() {
 
     expect(find.text('Embedded media'), findsOneWidget);
     expect(find.byType(Image), findsOneWidget);
-    expect(find.text('Video intentionally optional'), findsOneWidget);
+
+    // The media page is a lazily built ListView. Scroll the trailing ListTile into
+    // view before asserting it instead of assuming the test viewport is tall enough.
+    final videoOptional = find.text('Video intentionally optional');
+    await tester.scrollUntilVisible(
+      videoOptional,
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+    expect(videoOptional, findsOneWidget);
   });
 }
