@@ -2,11 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/screens/ui_showcase_screen.dart';
 
+Future<void> _pumpLoadedShowcase(WidgetTester tester) async {
+  await tester.pumpWidget(const MaterialApp(home: UiShowcaseScreen()));
+
+  // The screen loads JSON through rootBundle and shows an indeterminate progress
+  // indicator while waiting. Avoid pumpAndSettle here because that animation can
+  // keep scheduling frames under the widget-test fake clock. Give the real async
+  // asset load bounded turns instead, pumping after each turn until it completes.
+  for (var attempt = 0; attempt < 40; attempt++) {
+    await tester.pump();
+    if (find.byType(CircularProgressIndicator).evaluate().isEmpty) return;
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+  }
+
+  await tester.pump();
+  expect(
+    find.byType(CircularProgressIndicator),
+    findsNothing,
+    reason: 'UI Showcase config did not finish loading within the test window.',
+  );
+}
+
 void main() {
   testWidgets('UI showcase loads external config and compact navigation',
       (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: UiShowcaseScreen()));
-    await tester.pumpAndSettle();
+    await _pumpLoadedShowcase(tester);
 
     expect(find.text('UI Showcase'), findsWidgets);
     expect(find.byType(NavigationBar), findsOneWidget);
@@ -22,8 +44,7 @@ void main() {
 
   testWidgets('UI showcase renders Base64 media with Image.memory',
       (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: UiShowcaseScreen()));
-    await tester.pumpAndSettle();
+    await _pumpLoadedShowcase(tester);
 
     final mediaDestination = find.descendant(
       of: find.byType(NavigationBar),
