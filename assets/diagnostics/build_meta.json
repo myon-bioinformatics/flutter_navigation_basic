@@ -1,0 +1,19 @@
+{
+  "app": {
+    "version": "0.0.1",
+    "buildNumber": 1,
+    "stage": "pre-beta"
+  },
+  "measurement": {
+    "platform": "unmeasured",
+    "mode": "release",
+    "artifactBytes": null,
+    "analysisJsonBytes": null,
+    "note": "Run dart run tool/dev.dart meta, optionally with --artifact/--analysis, to refresh this snapshot."
+  },
+  "repository": {
+    "sourceBytes": null,
+    "assetBytes": null
+  },
+  "screens": {}
+}
