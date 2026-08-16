@@ -1,0 +1,17 @@
+# Flutter / Dart generated state
+.dart_tool/
+build/
+
+# Common generated IDE/plugin metadata
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+
+# Platform/local generated files
+android/.gradle/
+ios/Pods/
+macos/Pods/
+
+# Local environment files
+.env
+.env.*

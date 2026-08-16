@@ -44,28 +44,18 @@ jobs:
             exit 1
           fi
 
-      - name: Verify direct packages are latest stable
+      - name: Verify no Python requirements file
         run: |
-          dart pub outdated --json > /tmp/pub-outdated.json
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
+          if git ls-files | grep -E '(^|/)requirements\.txt$'; then
+            echo "::error::requirements.txt is prohibited. Keep repository tooling Dart-first and Python stdlib-only."
+            exit 1
+          fi
 
-          data = json.loads(Path('/tmp/pub-outdated.json').read_text())
-          tracked = {'get', 'shared_preferences', 'flutter_lints'}
-          stale = []
-          for package in data.get('packages', []):
-              name = package.get('package')
-              if name not in tracked:
-                  continue
-              current = (package.get('current') or {}).get('version')
-              latest = (package.get('latest') or {}).get('version')
-              if current != latest:
-                  stale.append(f'{name}: current={current}, latest={latest}')
-          if stale:
-              raise SystemExit('Direct dependency not on latest stable:\n' + '\n'.join(stale))
-          print('Tracked direct dependencies are on latest stable releases.')
-          PY
+      - name: Inspect repository with shared toolkit
+        run: dart run tool/inspect.dart --json
+
+      - name: Verify direct packages are latest stable
+        run: dart run tool/check_versions.dart
 
       - name: Analyze project source
         run: flutter analyze --no-fatal-infos
@@ -97,6 +87,9 @@ jobs:
 
       - name: Resolve with latest stable toolchain
         run: flutter pub get
+
+      - name: Inspect repository with latest stable Dart
+        run: dart run tool/inspect.dart --json
 
       - name: Analyze on latest stable
         run: flutter analyze --no-fatal-infos
