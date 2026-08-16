@@ -1,0 +1,8 @@
+{
+  "title": "UI Showcase",
+  "subtitle": "Standard Flutter widgets with external overrides and internal defaults.",
+  "defaultStyle": "modern",
+  "defaultBrightness": "system",
+  "sections": ["Overview", "Components", "Data", "Media"],
+  "imageBase64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+}

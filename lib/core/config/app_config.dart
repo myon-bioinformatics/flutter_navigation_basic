@@ -1,5 +1,3 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-
 enum AppEnvironment { development, production }
 
 class AppConfig {
@@ -12,21 +10,29 @@ class AppConfig {
   static bool get isDevelopment => _environment == AppEnvironment.development;
   static bool get isProduction => _environment == AppEnvironment.production;
 
-  static String get appName =>
-      dotenv.env['APP_NAME'] ?? 'FlutterNavigationBasic';
+  static const String appName = String.fromEnvironment(
+    'APP_NAME',
+    defaultValue: 'FlutterNavigationBasic',
+  );
 
-  static String get appVersion => dotenv.env['APP_VERSION'] ?? '1.0.0';
+  static const String appVersion = String.fromEnvironment(
+    'APP_VERSION',
+    defaultValue: '1.0.0',
+  );
 
-  static String get apiBaseUrl =>
-      dotenv.env['API_BASE_URL'] ?? 'https://api.example.com';
+  static const String apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://api.example.com',
+  );
 
-  static String get logLevel => dotenv.env['LOG_LEVEL'] ?? 'debug';
+  static const String logLevel = String.fromEnvironment(
+    'LOG_LEVEL',
+    defaultValue: 'debug',
+  );
 
   static Future<void> initialize({
     AppEnvironment env = AppEnvironment.development,
   }) async {
     _environment = env;
-    final envFile = env == AppEnvironment.production ? '.env.prod' : '.env.dev';
-    await dotenv.load(fileName: envFile);
   }
 }
