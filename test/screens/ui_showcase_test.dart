@@ -10,7 +10,13 @@ void main() {
 
     expect(find.text('UI Showcase'), findsWidgets);
     expect(find.byType(NavigationBar), findsOneWidget);
+
+    final openDrawerButton = find.byTooltip('Open navigation menu');
+    expect(openDrawerButton, findsOneWidget);
+    await tester.tap(openDrawerButton);
+    await tester.pumpAndSettle();
     expect(find.byType(Drawer), findsOneWidget);
+
     expect(find.text('Internal defaults'), findsOneWidget);
     expect(find.text('External JSON overrides'), findsOneWidget);
   });
@@ -25,7 +31,11 @@ void main() {
       matching: find.text('Media'),
     );
     await tester.tap(mediaDestination);
-    await tester.pumpAndSettle();
+
+    // Use bounded pumps instead of pumpAndSettle: Image.memory decodes the real
+    // Base64 PNG asynchronously and can keep fake-async settling from converging.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
 
     expect(find.text('Embedded media'), findsOneWidget);
     expect(find.byType(Image), findsOneWidget);
