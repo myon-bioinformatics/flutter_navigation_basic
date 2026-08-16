@@ -11,10 +11,10 @@ class ClipboardShelfScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Clipboard Shelf')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 72),
-        child: const Center(
+        child: Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: 1100),
-            child: ClipboardShelf(),
+            constraints: const BoxConstraints(maxWidth: 1100),
+            child: const ClipboardShelf(),
           ),
         ),
       ),
