@@ -216,6 +216,7 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
                                 width: fieldWidth,
                                 child: DropdownButtonFormField<String>(
                                   value: _tonicKey,
+                                  isExpanded: true,
                                   decoration: const InputDecoration(labelText: 'Key'),
                                   items: Composer.diatonicScaleList
                                       .map((value) => DropdownMenuItem(value: value, child: Text(value)))
@@ -229,6 +230,7 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
                                 width: fieldWidth,
                                 child: DropdownButtonFormField<String>(
                                   value: _mode,
+                                  isExpanded: true,
                                   decoration: const InputDecoration(labelText: 'Mode'),
                                   items: Composer.modes
                                       .map((value) => DropdownMenuItem(value: value, child: Text(value)))
@@ -242,6 +244,7 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
                                 width: fieldWidth,
                                 child: DropdownButtonFormField<String>(
                                   value: _timeSignature,
+                                  isExpanded: true,
                                   decoration: const InputDecoration(labelText: 'Time signature'),
                                   items: Composer.timeSignatures
                                       .map((value) => DropdownMenuItem(value: value, child: Text(value)))
@@ -255,6 +258,7 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
                                 width: fieldWidth,
                                 child: DropdownButtonFormField<String>(
                                   value: _progression,
+                                  isExpanded: true,
                                   decoration: const InputDecoration(labelText: 'Progression'),
                                   items: _progressionPool
                                       .map((value) => DropdownMenuItem(value: value, child: Text(value)))
