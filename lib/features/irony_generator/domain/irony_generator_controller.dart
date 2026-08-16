@@ -4,7 +4,7 @@ import '../../../config.dart';
 class IronyGeneratorController {
   IronyGeneratorController({Random? random})
       : irony = Ironies.ironicList[
-          (random ?? Random()).nextInt(Ironies.ironicList.length),
+          (random ?? Random()).nextInt(Ironies.ironicList.length)
         ];
 
   final String irony;
