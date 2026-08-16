@@ -59,7 +59,9 @@ Future<int> _forward(String executable, List<String> arguments) async {
 }
 
 Future<int> _bundle(List<String> args) async {
-  final outputName = _valueAfter(args, '--output') ?? 'build/diagnostics.zip';
+  final outputName = _readOutputPath(args);
+  if (outputName == null) return 64;
+
   final diagnostics = Directory('build/diagnostics');
   if (await diagnostics.exists()) {
     await diagnostics.delete(recursive: true);
@@ -67,6 +69,10 @@ Future<int> _bundle(List<String> args) async {
   await diagnostics.create(recursive: true);
 
   stdout.writeln('Creating diagnostic bundle staging directory...');
+  stdout.writeln(
+    'Note: diagnostics may include machine-local SDK paths and environment details; '
+    'review before sharing externally.',
+  );
 
   final probes = <_Capture>[
     const _Capture(
@@ -111,15 +117,15 @@ Future<int> _bundle(List<String> args) async {
   // Python is intentionally only the packaging helper here. The diagnostics,
   // orchestration, and policy stay Dart-first; no requirements.txt/pip layer.
   final zip = await runCommand(
-    python,
-    ['-m', 'zipfile', '-c', output.path, diagnostics.path],
+    python.executable,
+    [...python.prefixArguments, '-m', 'zipfile', '-c', output.path, diagnostics.path],
     stream: true,
   );
   if (!zip.ok) return zip.exitCode;
 
   final verify = await runCommand(
-    python,
-    ['-m', 'zipfile', '-t', output.path],
+    python.executable,
+    [...python.prefixArguments, '-m', 'zipfile', '-t', output.path],
     stream: true,
   );
   if (!verify.ok) return verify.exitCode;
@@ -128,18 +134,40 @@ Future<int> _bundle(List<String> args) async {
   return 0;
 }
 
-Future<String?> _findPython() async {
-  for (final executable in ['python3', 'python']) {
-    final result = await runCommand(executable, ['--version']);
-    if (result.ok) return executable;
+String? _readOutputPath(List<String> args) {
+  final index = args.indexOf('--output');
+  if (index < 0) return 'build/diagnostics.zip';
+  if (index + 1 >= args.length) {
+    stderr.writeln('Missing value after --output.');
+    return null;
   }
-  return null;
+  final value = args[index + 1].trim();
+  if (value.isEmpty || value.startsWith('--')) {
+    stderr.writeln('Invalid --output value. Provide a non-empty ZIP path.');
+    return null;
+  }
+  return value;
 }
 
-String? _valueAfter(List<String> args, String flag) {
-  final index = args.indexOf(flag);
-  if (index < 0 || index + 1 >= args.length) return null;
-  return args[index + 1];
+Future<_PythonCommand?> _findPython() async {
+  final candidates = <_PythonCommand>[
+    if (Platform.isWindows) const _PythonCommand('py', ['-3']),
+    const _PythonCommand('python3', []),
+    const _PythonCommand('python', []),
+  ];
+
+  for (final candidate in candidates) {
+    try {
+      final result = await runCommand(
+        candidate.executable,
+        [...candidate.prefixArguments, '--version'],
+      );
+      if (result.ok) return candidate;
+    } on ProcessException {
+      // Try the next standard launcher name.
+    }
+  }
+  return null;
 }
 
 void _printHelp() {
@@ -169,4 +197,11 @@ class _Capture {
   final String fileName;
   final String executable;
   final List<String> arguments;
+}
+
+class _PythonCommand {
+  const _PythonCommand(this.executable, this.prefixArguments);
+
+  final String executable;
+  final List<String> prefixArguments;
 }
