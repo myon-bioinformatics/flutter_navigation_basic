@@ -13,6 +13,7 @@ class BuildMetadata {
     required this.sourceBytes,
     required this.assetBytes,
     required this.screens,
+    required this.routeSources,
   });
 
   final String version;
@@ -24,6 +25,7 @@ class BuildMetadata {
   final int? sourceBytes;
   final int? assetBytes;
   final Map<String, ScreenWeightMetadata> screens;
+  final Map<String, RouteSourceWeightMetadata> routeSources;
 
   String get displayVersion => 'v$version+$buildNumber';
 
@@ -34,6 +36,7 @@ class BuildMetadata {
     final measurement = json['measurement'] as Map<String, dynamic>? ?? const {};
     final repository = json['repository'] as Map<String, dynamic>? ?? const {};
     final rawScreens = json['screens'] as Map<String, dynamic>? ?? const {};
+    final rawRouteSources = json['routeSources'] as Map<String, dynamic>? ?? const {};
 
     return BuildMetadata(
       version: app['version'] as String? ?? 'unknown',
@@ -46,19 +49,18 @@ class BuildMetadata {
       assetBytes: (repository['assetBytes'] as num?)?.toInt(),
       screens: {
         for (final entry in rawScreens.entries)
-          entry.key: ScreenWeightMetadata.fromJson(
-            entry.value as Map<String, dynamic>,
-          ),
+          entry.key: ScreenWeightMetadata.fromJson(entry.value as Map<String, dynamic>),
+      },
+      routeSources: {
+        for (final entry in rawRouteSources.entries)
+          entry.key: RouteSourceWeightMetadata.fromJson(entry.value as Map<String, dynamic>),
       },
     );
   }
 }
 
 class ScreenWeightMetadata {
-  const ScreenWeightMetadata({
-    required this.sourceBytes,
-    required this.featureBytes,
-  });
+  const ScreenWeightMetadata({required this.sourceBytes, required this.featureBytes});
 
   final int sourceBytes;
   final int featureBytes;
@@ -67,6 +69,20 @@ class ScreenWeightMetadata {
     return ScreenWeightMetadata(
       sourceBytes: (json['sourceBytes'] as num?)?.toInt() ?? 0,
       featureBytes: (json['featureBytes'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class RouteSourceWeightMetadata {
+  const RouteSourceWeightMetadata({required this.sourceBytes, required this.path});
+
+  final int sourceBytes;
+  final String path;
+
+  factory RouteSourceWeightMetadata.fromJson(Map<String, dynamic> json) {
+    return RouteSourceWeightMetadata(
+      sourceBytes: (json['sourceBytes'] as num?)?.toInt() ?? 0,
+      path: json['path'] as String? ?? '',
     );
   }
 }
