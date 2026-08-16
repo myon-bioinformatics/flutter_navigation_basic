@@ -25,12 +25,14 @@ Future<CommandResult> runCommand(
   List<String> arguments, {
   bool stream = false,
   Map<String, String>? environment,
+  String? workingDirectory,
 }) async {
   final stopwatch = Stopwatch()..start();
   final process = await Process.start(
     executable,
     arguments,
     environment: environment,
+    workingDirectory: workingDirectory,
     runInShell: Platform.isWindows,
   );
 
