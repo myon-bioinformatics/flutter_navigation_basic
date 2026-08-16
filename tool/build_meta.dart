@@ -63,7 +63,11 @@ Future<Map<String, dynamic>> _discoverFeatureWeights() async {
 
   final directories = <Directory>[];
   await for (final entity in features.list(followLinks: false)) {
-    if (entity is Directory) directories.add(entity);
+    if (entity is! Directory) continue;
+    final presentation = Directory(
+      '${entity.path}${Platform.pathSeparator}presentation',
+    );
+    if (await presentation.exists()) directories.add(entity);
   }
   directories.sort((a, b) => a.path.compareTo(b.path));
 
