@@ -5,7 +5,7 @@ class CompositionGeneratorController {
   CompositionGeneratorController({Random? random})
       : _random = random ?? Random() {
     tonicKey = Composer.diatonicScaleList[
-      _random.nextInt(Composer.diatonicScaleList.length),
+      _random.nextInt(Composer.diatonicScaleList.length)
     ];
     bpm = 100 + _random.nextInt(61);
   }
