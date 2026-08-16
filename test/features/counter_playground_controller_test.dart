@@ -9,13 +9,17 @@ void main() {
       controller = CounterPlaygroundController();
     });
 
+    tearDown(() {
+      controller.dispose();
+    });
+
     test('initial counter is 0', () {
-      expect(controller.counter.value, equals(0));
+      expect(controller.counter, equals(0));
     });
 
     test('increment increases counter', () {
       controller.increment();
-      expect(controller.counter.value, equals(1));
+      expect(controller.counter, equals(1));
     });
 
     test('isTooMuch is false below 10', () {

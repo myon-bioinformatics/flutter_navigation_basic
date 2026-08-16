@@ -8,15 +8,16 @@ on:
 
 jobs:
   build:
+    name: Pinned stable 3.47.0
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Flutter
+      - name: Set up Flutter 3.47.0
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: "3.47.0"
           cache: true
 
       - name: Install dependencies
@@ -25,9 +26,46 @@ jobs:
       - name: Verify dependency lockfile
         run: |
           if ! git diff --exit-code -- pubspec.lock; then
-            echo "::error::pubspec.lock is stale. Run 'flutter pub get' with the repository Flutter toolchain and commit the result."
+            echo "::error::pubspec.lock is stale for Flutter 3.47.0. Commit the generated CI lockfile."
             exit 1
           fi
+
+      - name: Verify handcrafted shell is GetX-free
+        run: |
+          if grep -R -n "package:get/get.dart" \
+            lib/main_prod.dart \
+            lib/core/navigation/app_navigation.dart \
+            lib/features/home \
+            lib/features/counter_playground \
+            lib/features/irony_generator \
+            lib/features/composition_generator \
+            lib/features/screen5; then
+            echo "::error::GetX coupling reintroduced into the handcrafted application shell."
+            exit 1
+          fi
+
+      - name: Verify direct packages are latest stable
+        run: |
+          dart pub outdated --json > /tmp/pub-outdated.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          data = json.loads(Path('/tmp/pub-outdated.json').read_text())
+          tracked = {'get', 'shared_preferences', 'flutter_lints'}
+          stale = []
+          for package in data.get('packages', []):
+              name = package.get('package')
+              if name not in tracked:
+                  continue
+              current = (package.get('current') or {}).get('version')
+              latest = (package.get('latest') or {}).get('version')
+              if current != latest:
+                  stale.append(f'{name}: current={current}, latest={latest}')
+          if stale:
+              raise SystemExit('Direct dependency not on latest stable:\n' + '\n'.join(stale))
+          print('Tracked direct dependencies are on latest stable releases.')
+          PY
 
       - name: Analyze project source
         run: flutter analyze --no-fatal-infos
@@ -37,3 +75,34 @@ jobs:
 
       - name: Build Flutter web
         run: flutter build web --release --base-href "/flutter_navigation_basic/"
+
+      - name: Build production entrypoint
+        run: flutter build web --release -t lib/main_prod.dart --base-href "/flutter_navigation_basic/"
+
+  latest-stable:
+    name: Latest stable compatibility
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up latest stable Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Show Flutter version
+        run: flutter --version
+
+      - name: Resolve with latest stable toolchain
+        run: flutter pub get
+
+      - name: Analyze on latest stable
+        run: flutter analyze --no-fatal-infos
+
+      - name: Run tests on latest stable
+        run: flutter test
+
+      - name: Build production entrypoint on latest stable
+        run: flutter build web --release -t lib/main_prod.dart --base-href "/flutter_navigation_basic/"

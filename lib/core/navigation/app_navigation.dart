@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+import 'package:flutter/material.dart';
 import 'route_names.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/home/domain/home_controller.dart';
@@ -14,46 +14,39 @@ import '../../features/screen5/domain/screen5_controller.dart';
 class AppNavigation {
   AppNavigation._();
 
-  static void toHome() => Get.offAllNamed(RouteNames.home);
-  static void toCounterPlayground() =>
-      Get.toNamed(RouteNames.counterPlayground);
-  static void toIronyGenerator() => Get.toNamed(RouteNames.ironyGenerator);
-  static void toCompositionGenerator() =>
-      Get.toNamed(RouteNames.compositionGenerator);
-  static void toScreen5() => Get.toNamed(RouteNames.screen5);
-  static void back() => Get.back();
-}
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-List<GetPage<dynamic>> get appRoutes => [
-      GetPage(
-        name: RouteNames.home,
-        page: () => const HomeScreen(),
-        binding: BindingsBuilder(() => Get.lazyPut(() => HomeController())),
-      ),
-      GetPage(
-        name: RouteNames.counterPlayground,
-        page: () => const CounterPlaygroundPage(),
-        binding: BindingsBuilder(
-          () => Get.lazyPut(() => CounterPlaygroundController()),
-        ),
-      ),
-      GetPage(
-        name: RouteNames.ironyGenerator,
-        page: () => const IronyGeneratorPage(),
-        binding: BindingsBuilder(
-          () => Get.lazyPut(() => IronyGeneratorController()),
-        ),
-      ),
-      GetPage(
-        name: RouteNames.compositionGenerator,
-        page: () => const CompositionGeneratorPage(),
-        binding: BindingsBuilder(
-          () => Get.lazyPut(() => CompositionGeneratorController()),
-        ),
-      ),
-      GetPage(
-        name: RouteNames.screen5,
-        page: () => const Screen5Page(),
-        binding: BindingsBuilder(() => Get.lazyPut(() => Screen5Controller())),
-      ),
-    ];
+  static NavigatorState get _navigator {
+    final state = navigatorKey.currentState;
+    if (state == null) {
+      throw StateError('AppNavigation.navigatorKey is not attached to a Navigator.');
+    }
+    return state;
+  }
+
+  static Map<String, WidgetBuilder> get routes => {
+        RouteNames.home: (_) => HomeScreen(controller: HomeController()),
+        RouteNames.counterPlayground: (_) => CounterPlaygroundPage(
+              controller: CounterPlaygroundController(),
+            ),
+        RouteNames.ironyGenerator: (_) => IronyGeneratorPage(
+              controller: IronyGeneratorController(),
+            ),
+        RouteNames.compositionGenerator: (_) => CompositionGeneratorPage(
+              controller: CompositionGeneratorController(),
+            ),
+        RouteNames.screen5: (_) => Screen5Page(controller: Screen5Controller()),
+      };
+
+  static void toHome() => _navigator.pushNamedAndRemoveUntil(
+        RouteNames.home,
+        (route) => false,
+      );
+  static void toCounterPlayground() =>
+      _navigator.pushNamed(RouteNames.counterPlayground);
+  static void toIronyGenerator() => _navigator.pushNamed(RouteNames.ironyGenerator);
+  static void toCompositionGenerator() =>
+      _navigator.pushNamed(RouteNames.compositionGenerator);
+  static void toScreen5() => _navigator.pushNamed(RouteNames.screen5);
+  static void back() => _navigator.maybePop();
+}
