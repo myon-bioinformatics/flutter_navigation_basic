@@ -88,20 +88,27 @@ Future<int> directorySize(
 }) async {
   if (!await directory.exists()) return 0;
 
-  var total = 0;
-  await for (final entity in directory.list(recursive: true, followLinks: false)) {
-    if (entity is! File) continue;
-    final relative = entity.path
-        .replaceFirst('${directory.path}${Platform.pathSeparator}', '');
-    final first = relative.split(Platform.pathSeparator).first;
-    if (excludedTopLevel.contains(first)) continue;
-    try {
-      total += await entity.length();
-    } on FileSystemException {
-      // Ignore files that disappear while inspecting a changing build tree.
+  Future<int> walk(Directory current, {required bool atRoot}) async {
+    var total = 0;
+    await for (final entity in current.list(followLinks: false)) {
+      if (entity is Directory) {
+        final name = entity.uri.pathSegments
+            .where((segment) => segment.isNotEmpty)
+            .last;
+        if (atRoot && excludedTopLevel.contains(name)) continue;
+        total += await walk(entity, atRoot: false);
+      } else if (entity is File) {
+        try {
+          total += await entity.length();
+        } on FileSystemException {
+          // Ignore files that disappear while inspecting a changing build tree.
+        }
+      }
     }
+    return total;
   }
-  return total;
+
+  return walk(directory, atRoot: true);
 }
 
 Future<List<File>> dartFilesUnder(Directory directory) async {
