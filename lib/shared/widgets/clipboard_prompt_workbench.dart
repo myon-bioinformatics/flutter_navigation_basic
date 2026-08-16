@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../clipboard/base64_image_bridge.dart';
+
 class ClipboardPromptWorkbench extends StatefulWidget {
   const ClipboardPromptWorkbench({super.key});
 
@@ -17,10 +19,12 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
   final _requirementsController = TextEditingController();
   final _constraintsController = TextEditingController();
   final _outputController = TextEditingController();
+  final _base64Controller = TextEditingController();
 
   Uint8List? _imageBytes;
   String? _imageMimeType;
-  String _status = 'Paste text first, then shape it into a reusable system prompt.';
+  bool _processingImage = false;
+  String _status = 'Select/copy/paste text freely, then shape it into a reusable system prompt.';
 
   @override
   void dispose() {
@@ -30,6 +34,7 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
     _requirementsController.dispose();
     _constraintsController.dispose();
     _outputController.dispose();
+    _base64Controller.dispose();
     super.dispose();
   }
 
@@ -61,8 +66,58 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
     setState(() {
       _imageBytes = bytes;
       _imageMimeType = content.mimeType;
-      _status = 'Attached ${content.mimeType} from rich content insertion (${bytes.length} bytes).';
+      _status = 'Attached ${content.mimeType} (${bytes.length} bytes).';
     });
+  }
+
+  Future<void> _copyImageAsBase64() async {
+    final bytes = _imageBytes;
+    if (bytes == null) {
+      setState(() => _status = 'Attach or decode an image first.');
+      return;
+    }
+    setState(() => _processingImage = true);
+    try {
+      final payload = await Base64ImageBridge.downscaleToPng(bytes);
+      final text = payload.dataUrl;
+      await Clipboard.setData(ClipboardData(text: text));
+      _base64Controller.text = text;
+      if (!mounted) return;
+      setState(() {
+        _processingImage = false;
+        _status = 'Resized to 2/3, encoded as PNG Base64, and copied (${payload.bytes.length} bytes before Base64).';
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _processingImage = false;
+        _status = 'Image encode failed: $error';
+      });
+    }
+  }
+
+  Future<void> _pasteBase64Image() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text ?? '';
+    if (text.trim().isEmpty) {
+      setState(() => _status = 'Clipboard does not contain Base64 text.');
+      return;
+    }
+    _base64Controller.text = text;
+    _decodeBase64Image();
+  }
+
+  void _decodeBase64Image() {
+    try {
+      final payload = Base64ImageBridge.decodeText(_base64Controller.text);
+      setState(() {
+        _imageBytes = payload.bytes;
+        _imageMimeType = payload.mimeType;
+        _status = 'Decoded ${payload.mimeType} from Base64 (${payload.bytes.length} bytes).';
+      });
+    } catch (error) {
+      setState(() => _status = 'Base64 decode failed: $error');
+    }
   }
 
   String _buildPrompt() {
@@ -94,120 +149,160 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
   @override
   Widget build(BuildContext context) {
     final preview = _buildPrompt();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _StepCard(
-          number: 1,
-          title: 'Paste the source',
-          subtitle: 'Start from what you already have instead of filling fields in an arbitrary UI order.',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextField(
-                controller: _rawController,
-                minLines: 4,
-                maxLines: 10,
-                onChanged: (_) => setState(() {}),
-                contentInsertionConfiguration: ContentInsertionConfiguration(
-                  onContentInserted: _handleInsertedContent,
-                  allowedMimeTypes: const ['image/png', 'image/jpeg', 'image/webp'],
-                ),
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Raw text / rough request / existing prompt',
-                  hintText: 'Paste notes, an existing prompt, requirements, or conversation excerpts here.',
-                ),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  FilledButton.icon(
-                    onPressed: _pasteText,
-                    icon: const Icon(Icons.content_paste_go_outlined),
-                    label: const Text('Paste text'),
+    return SelectionArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _StepCard(
+            number: 1,
+            title: 'Copy / paste the source',
+            subtitle: 'Displayed text remains selectable, while this field also supports normal editing plus explicit clipboard paste.',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  controller: _rawController,
+                  minLines: 4,
+                  maxLines: 10,
+                  onChanged: (_) => setState(() {}),
+                  contentInsertionConfiguration: ContentInsertionConfiguration(
+                    onContentInserted: _handleInsertedContent,
+                    allowedMimeTypes: const ['image/png', 'image/jpeg', 'image/webp'],
                   ),
-                  OutlinedButton.icon(
-                    onPressed: () {
-                      _rawController.clear();
-                      setState(() => _status = 'Cleared the raw source.');
-                    },
-                    icon: const Icon(Icons.clear),
-                    label: const Text('Clear'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        _StepCard(
-          number: 2,
-          title: 'Add visual context',
-          subtitle: 'Images are useful for “make the UI more like this” requests; video stays optional and out of this first clipboard flow.',
-          child: _ImageReferenceCard(
-            bytes: _imageBytes,
-            mimeType: _imageMimeType,
-            onRemove: _imageBytes == null
-                ? null
-                : () => setState(() {
-                      _imageBytes = null;
-                      _imageMimeType = null;
-                      _status = 'Removed the visual reference.';
-                    }),
-          ),
-        ),
-        const SizedBox(height: 12),
-        _StepCard(
-          number: 3,
-          title: 'Shape the instruction',
-          subtitle: 'Organize the request in the order a person typically decides it: goal → context → must-have → constraints → output.',
-          child: Column(
-            children: [
-              _Field(controller: _goalController, label: 'Goal', hint: 'What should the assistant/system accomplish?', onChanged: () => setState(() {})),
-              _Field(controller: _contextController, label: 'Context', hint: 'Background, target users, project facts, existing behavior.', onChanged: () => setState(() {})),
-              _Field(controller: _requirementsController, label: 'Must include', hint: 'Required behavior, screens, APIs, acceptance criteria.', onChanged: () => setState(() {})),
-              _Field(controller: _constraintsController, label: 'Constraints / avoid', hint: 'Dependencies to avoid, compatibility rules, non-goals.', onChanged: () => setState(() {})),
-              _Field(controller: _outputController, label: 'Output format', hint: 'PR, patch, Markdown, JSON, implementation plan, etc.', onChanged: () => setState(() {})),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        _StepCard(
-          number: 4,
-          title: 'Preview and copy',
-          subtitle: 'The generated text is intentionally plain Markdown so it can be pasted into ChatGPT, Claude, an Issue, or another tool.',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                constraints: const BoxConstraints(maxHeight: 360),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: SingleChildScrollView(
-                  child: SelectableText(
-                    preview.isEmpty ? '# System Prompt Draft' : preview,
-                    style: const TextStyle(fontFamily: 'monospace'),
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Raw text / rough request / existing prompt',
+                    hintText: 'Paste notes, selected text, an existing prompt, requirements, or conversation excerpts here.',
                   ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              FilledButton.icon(
-                onPressed: _copyPrompt,
-                icon: const Icon(Icons.copy_all_outlined),
-                label: const Text('Copy system prompt'),
-              ),
-            ],
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: _pasteText,
+                      icon: const Icon(Icons.content_paste_go_outlined),
+                      label: const Text('Paste text'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        _rawController.clear();
+                        setState(() => _status = 'Cleared the raw source.');
+                      },
+                      icon: const Icon(Icons.clear),
+                      label: const Text('Clear'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        Semantics(liveRegion: true, child: Text(_status, style: Theme.of(context).textTheme.bodySmall)),
-      ],
+          const SizedBox(height: 12),
+          _StepCard(
+            number: 2,
+            title: 'Base64 Image Bridge',
+            subtitle: 'Dependency-free image transport: resize to 2/3 → PNG encode → Base64 copy; paste Base64 → decode → preview. Optimized for screenshots/OCR context rather than archival fidelity.',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _ImageReferenceCard(
+                  bytes: _imageBytes,
+                  mimeType: _imageMimeType,
+                  onRemove: _imageBytes == null
+                      ? null
+                      : () => setState(() {
+                            _imageBytes = null;
+                            _imageMimeType = null;
+                            _status = 'Removed the visual reference.';
+                          }),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _base64Controller,
+                  minLines: 2,
+                  maxLines: 5,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Image Base64 / data:image/...;base64,...',
+                    hintText: 'Paste a Base64 image here, or use Paste Base64 image.',
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: _processingImage ? null : _copyImageAsBase64,
+                      icon: const Icon(Icons.copy_all_outlined),
+                      label: Text(_processingImage ? 'Encoding…' : 'Copy image as Base64 · 2/3'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _pasteBase64Image,
+                      icon: const Icon(Icons.content_paste_outlined),
+                      label: const Text('Paste Base64 image'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _decodeBase64Image,
+                      icon: const Icon(Icons.image_search_outlined),
+                      label: const Text('Decode / preview'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          _StepCard(
+            number: 3,
+            title: 'Shape the instruction',
+            subtitle: 'Organize the request in human decision order: goal → context → must-have → constraints → output.',
+            child: Column(
+              children: [
+                _Field(controller: _goalController, label: 'Goal', hint: 'What should the assistant/system accomplish?', onChanged: () => setState(() {})),
+                _Field(controller: _contextController, label: 'Context', hint: 'Background, target users, project facts, existing behavior.', onChanged: () => setState(() {})),
+                _Field(controller: _requirementsController, label: 'Must include', hint: 'Required behavior, screens, APIs, acceptance criteria.', onChanged: () => setState(() {})),
+                _Field(controller: _constraintsController, label: 'Constraints / avoid', hint: 'Dependencies to avoid, compatibility rules, non-goals.', onChanged: () => setState(() {})),
+                _Field(controller: _outputController, label: 'Output format', hint: 'PR, patch, Markdown, JSON, implementation plan, etc.', onChanged: () => setState(() {})),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          _StepCard(
+            number: 4,
+            title: 'Preview and copy',
+            subtitle: 'Plain Markdown stays selectable and can also be copied in one action.',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  constraints: const BoxConstraints(maxHeight: 360),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: SingleChildScrollView(
+                    child: SelectableText(
+                      preview.isEmpty ? '# System Prompt Draft' : preview,
+                      style: const TextStyle(fontFamily: 'monospace'),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                FilledButton.icon(
+                  onPressed: _copyPrompt,
+                  icon: const Icon(Icons.copy_all_outlined),
+                  label: const Text('Copy system prompt'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Semantics(liveRegion: true, child: Text(_status, style: Theme.of(context).textTheme.bodySmall)),
+        ],
+      ),
     );
   }
 }
@@ -235,7 +330,7 @@ class _ImageReferenceCard extends StatelessWidget {
             SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Image insertion is wired through Flutter rich-content insertion where the platform supplies image bytes. Plain clipboard buttons use Flutter’s text clipboard API, so unsupported platforms keep this area empty without adding a heavy clipboard plugin.',
+                'Native rich-image clipboard access is not assumed. Use rich insertion where available, or carry an image through the standard text clipboard as a Base64 data URL.',
               ),
             ),
           ],
