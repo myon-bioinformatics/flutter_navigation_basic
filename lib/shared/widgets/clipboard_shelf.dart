@@ -34,6 +34,8 @@ class ClipboardShelf extends StatefulWidget {
 }
 
 class _ClipboardShelfState extends State<ClipboardShelf> {
+  static const int _maxImageClipboardChars = 4 * 1024 * 1024;
+
   final _manualController = TextEditingController();
   final List<ClipboardShelfItem> _items = [];
   final Set<int> _selected = {};
@@ -89,20 +91,24 @@ class _ClipboardShelfState extends State<ClipboardShelf> {
       setState(() => _status = 'Clipboard does not contain plain text.');
       return;
     }
-    try {
-      if (text.startsWith('data:image/') || _looksLikeRawBase64(text)) {
+
+    final imageCandidate = text.startsWith('data:image/') || _looksLikeRawBase64(text);
+    if (imageCandidate && text.length <= _maxImageClipboardChars) {
+      try {
         final payload = Base64ImageBridge.decodeText(text);
-        await _addImage(payload.bytes, payload.mimeType);
-        return;
+        final added = await _addImage(payload.bytes, payload.mimeType);
+        if (added) return;
+      } catch (_) {
+        // Preserve the original clipboard value below when image parsing fails.
       }
-    } catch (_) {
-      // Fall through and keep the clipboard content as ordinary text.
     }
     _addText(text);
   }
 
   bool _looksLikeRawBase64(String value) {
-    if (value.length < 80 || value.length % 4 != 0) return false;
+    if (value.length < 80 || value.length > _maxImageClipboardChars || value.length % 4 != 0) {
+      return false;
+    }
     return RegExp(r'^[A-Za-z0-9+/=\r\n]+$').hasMatch(value);
   }
 
@@ -115,11 +121,11 @@ class _ClipboardShelfState extends State<ClipboardShelf> {
     _addImage(bytes, content.mimeType);
   }
 
-  Future<void> _addImage(Uint8List bytes, String mimeType) async {
+  Future<bool> _addImage(Uint8List bytes, String mimeType) async {
     setState(() => _status = 'Preparing image at the default 2/3 scale…');
     try {
       final payload = await Base64ImageBridge.downscaleToPng(bytes);
-      if (!mounted) return;
+      if (!mounted) return false;
       setState(() {
         _items.insert(
           0,
@@ -133,14 +139,16 @@ class _ClipboardShelfState extends State<ClipboardShelf> {
         );
         _status = 'Added image after 2/3 resize (${payload.bytes.length} bytes).';
       });
+      return true;
     } catch (error) {
-      if (!mounted) return;
-      setState(() => _status = 'Image preparation failed: $error');
+      if (!mounted) return false;
+      setState(() => _status = 'Image preparation failed; preserved clipboard text instead. ($error)');
+      return false;
     }
   }
 
-  List<ClipboardShelfItem> get _visibleItems {
-    var values = _items.where((item) => _filter == null || item.kind == _filter).toList();
+  List<ClipboardShelfItem> _orderedItems(Iterable<ClipboardShelfItem> source) {
+    final values = source.toList();
     if (_sort == ClipboardShelfSort.newest) {
       values.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     } else if (_sort == ClipboardShelfSort.oldest) {
@@ -149,16 +157,23 @@ class _ClipboardShelfState extends State<ClipboardShelf> {
     return values;
   }
 
+  List<ClipboardShelfItem> get _visibleItems =>
+      _orderedItems(_items.where((item) => _filter == null || item.kind == _filter));
+
   String _plainText(String markdown) {
     var text = markdown;
     text = text.replaceAll(RegExp(r'^\s{0,3}#{1,6}\s+', multiLine: true), '');
     text = text.replaceAll(RegExp(r'^\s{0,3}>\s?', multiLine: true), '');
     text = text.replaceAll(RegExp(r'^\s*[-*+]\s+', multiLine: true), '');
     text = text.replaceAll(RegExp(r'^\s*\d+[.)]\s+', multiLine: true), '');
-    text = text.replaceAll(RegExp(r'```[^\n]*\n?'), '');
-    text = text.replaceAll('```', '');
-    text = text.replaceAllMapped(RegExp(r'\[([^\]]+)\]\(([^\)]+)\)'), (m) => '${m[1]} (${m[2]})');
-    text = text.replaceAll(RegExp(r'[*_~`]{1,3}'), '');
+    text = text.replaceAll(RegExp(r'^\s*```[^\n]*$', multiLine: true), '');
+    text = text.replaceAllMapped(
+      RegExp(r'\[([^\]]+)\]\(([^\)]+)\)'),
+      (m) => '${m[1]} (${m[2]})',
+    );
+    text = text.replaceAllMapped(RegExp(r'`([^`\n]+)`'), (m) => m[1] ?? '');
+    text = text.replaceAllMapped(RegExp(r'\*\*([^*\n]+)\*\*'), (m) => m[1] ?? '');
+    text = text.replaceAllMapped(RegExp(r'~~([^~\n]+)~~'), (m) => m[1] ?? '');
     return text.trim();
   }
 
@@ -177,12 +192,9 @@ class _ClipboardShelfState extends State<ClipboardShelf> {
   }
 
   String _bundleText() {
-    final source = _selected.isEmpty
+    final ordered = _selected.isEmpty
         ? _visibleItems
-        : _items.where((item) => _selected.contains(item.id)).toList();
-    final ordered = _sort == ClipboardShelfSort.manual
-        ? source
-        : source..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        : _orderedItems(_items.where((item) => _selected.contains(item.id)));
     final buffer = StringBuffer('# Context Bundle\n\n');
     for (var i = 0; i < ordered.length; i++) {
       final item = ordered[i];
@@ -201,24 +213,40 @@ class _ClipboardShelfState extends State<ClipboardShelf> {
   }
 
   Future<void> _copyBundle() async {
-    final text = _bundleText();
     if (_items.isEmpty) {
       setState(() => _status = 'Shelf is empty.');
       return;
     }
+    final text = _bundleText();
     await Clipboard.setData(ClipboardData(text: text));
     if (!mounted) return;
     setState(() => _status = 'Copied context bundle (${text.length} characters).');
   }
 
   void _moveManual(int id, int delta) {
-    final index = _items.indexWhere((item) => item.id == id);
-    final target = index + delta;
-    if (index < 0 || target < 0 || target >= _items.length) return;
+    final visibleBefore = _visibleItems;
+    final visibleIndex = visibleBefore.indexWhere((item) => item.id == id);
+    final targetVisibleIndex = visibleIndex + delta;
+    if (visibleIndex < 0 || targetVisibleIndex < 0 || targetVisibleIndex >= visibleBefore.length) {
+      return;
+    }
+
+    final targetId = visibleBefore[targetVisibleIndex].id;
     setState(() {
-      final item = _items.removeAt(index);
-      _items.insert(target, item);
+      if (_sort != ClipboardShelfSort.manual) {
+        final normalized = _orderedItems(_items);
+        _items
+          ..clear()
+          ..addAll(normalized);
+      }
+      final index = _items.indexWhere((item) => item.id == id);
+      final targetIndex = _items.indexWhere((item) => item.id == targetId);
+      if (index < 0 || targetIndex < 0) return;
+      final current = _items[index];
+      _items[index] = _items[targetIndex];
+      _items[targetIndex] = current;
       _sort = ClipboardShelfSort.manual;
+      _status = 'Switched to manual order.';
     });
   }
 
