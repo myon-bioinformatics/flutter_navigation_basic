@@ -41,6 +41,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 HomeOverviewPanel(
                   actions: [
                     HomeOverviewAction(
+                      label: 'Clipboard Workbench',
+                      subtitle: 'Paste source material, shape a system prompt, preview it, and copy the result.',
+                      icon: Icons.content_paste_go_outlined,
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.clipboardWorkbench),
+                    ),
+                    HomeOverviewAction(
                       label: 'Navigation Hub',
                       subtitle: 'Browse the 198 navigation catalogue screens.',
                       icon: Icons.map_outlined,
