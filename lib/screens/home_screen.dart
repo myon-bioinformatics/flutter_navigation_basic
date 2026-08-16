@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../config/routes.dart';
-import '../widgets/nav_button.dart';
+import '../shared/widgets/home_overview_panel.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,42 +28,64 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('Home 🏠'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Text(today, style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 24),
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 12,
-                runSpacing: 12,
-                children: const <Widget>[
-                  NavButton(
-                    label: 'Counter Playground 👾',
-                    routeName: AppRoutes.counterPlayground,
-                  ),
-                  NavButton(
-                    label: 'Irony Generator 🥐',
-                    routeName: AppRoutes.ironyGenerator,
-                  ),
-                  NavButton(
-                    label: 'Composition Generator 🎸',
-                    routeName: AppRoutes.compositionGenerator,
-                  ),
-                  NavButton(
-                    label: 'UI Showcase 🧩',
-                    routeName: AppRoutes.uiShowcase,
-                  ),
-                  NavButton(
-                    label: 'Navigation Hub 🗺️ (198 Screens)',
-                    routeName: AppRoutes.hub,
-                  ),
-                ],
-              ),
-            ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 72),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1180),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(today, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 12),
+                HomeOverviewPanel(
+                  actions: [
+                    HomeOverviewAction(
+                      label: 'Navigation Hub',
+                      subtitle: 'Browse the 198 navigation catalogue screens.',
+                      icon: Icons.map_outlined,
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.hub),
+                    ),
+                    HomeOverviewAction(
+                      label: 'UI Showcase',
+                      subtitle: 'Material controls, responsive layout, theme and media examples.',
+                      icon: Icons.dashboard_customize_outlined,
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.uiShowcase),
+                    ),
+                    HomeOverviewAction(
+                      label: 'API Integration',
+                      subtitle: 'Exercise success, timeout, auth and server-error scenarios.',
+                      icon: Icons.http_outlined,
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.externalApi),
+                    ),
+                    HomeOverviewAction(
+                      label: 'MCP Integration',
+                      subtitle: 'Inspect tool-list and tool-call integration behavior.',
+                      icon: Icons.hub_outlined,
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.externalMcp),
+                    ),
+                    HomeOverviewAction(
+                      label: 'Counter Playground',
+                      subtitle: 'State transitions, history and interaction basics.',
+                      icon: Icons.exposure_plus_1_outlined,
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.counterPlayground),
+                    ),
+                    HomeOverviewAction(
+                      label: 'Irony Generator',
+                      subtitle: 'Generate, favorite and revisit lightweight text results.',
+                      icon: Icons.auto_awesome_outlined,
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.ironyGenerator),
+                    ),
+                    HomeOverviewAction(
+                      label: 'Composition Generator',
+                      subtitle: 'Explore key, tempo, progression and customization controls.',
+                      icon: Icons.music_note_outlined,
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.compositionGenerator),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -22,6 +22,7 @@ Future<void> main(List<String> args) async {
   }
 
   final screenReport = await _discoverFeatureWeights();
+  final routeSourceReport = await _discoverRouteSourceWeights();
   final artifact = artifactPath == null ? null : File(artifactPath);
   final analysis = analysisPath == null ? null : File(analysisPath);
   final report = <String, dynamic>{
@@ -49,6 +50,7 @@ Future<void> main(List<String> args) async {
       'assetBytes': await directorySize(Directory('assets')),
     },
     'screens': screenReport,
+    'routeSources': routeSourceReport,
   };
 
   final output = File(outputPath);
@@ -80,6 +82,28 @@ Future<Map<String, dynamic>> _discoverFeatureWeights() async {
     report[id] = {
       'sourceBytes': await directorySize(presentation),
       'featureBytes': await directorySize(feature),
+    };
+  }
+  return report;
+}
+
+Future<Map<String, dynamic>> _discoverRouteSourceWeights() async {
+  final screens = Directory('lib/screens');
+  if (!await screens.exists()) return <String, dynamic>{};
+
+  final files = <File>[];
+  await for (final entity in screens.list(followLinks: false)) {
+    if (entity is File && entity.path.endsWith('.dart')) files.add(entity);
+  }
+  files.sort((a, b) => a.path.compareTo(b.path));
+
+  final report = <String, dynamic>{};
+  for (final file in files) {
+    final fileName = file.uri.pathSegments.last;
+    final id = fileName.substring(0, fileName.length - '.dart'.length);
+    report[id] = {
+      'sourceBytes': await file.length(),
+      'path': file.path.replaceAll('\\', '/'),
     };
   }
   return report;

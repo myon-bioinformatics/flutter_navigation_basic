@@ -23,6 +23,11 @@ Future<void> main(List<String> args) async {
       exitCode = await _forward('dart', ['run', 'tool/build_meta.dart', ...rest]);
       return;
     case 'size':
+      final metaCode = await _forward('dart', ['run', 'tool/build_meta.dart']);
+      if (metaCode != 0) {
+        exitCode = metaCode;
+        return;
+      }
       exitCode = await _forward('dart', ['run', 'tool/android_size.dart', ...rest]);
       return;
     case 'net':
@@ -193,7 +198,7 @@ Recommended one-liners:
   dart run tool/dev.dart check   # quick repository health
   dart run tool/dev.dart full    # quick health + both release web builds
   dart run tool/dev.dart meta    # refresh app/screen source metadata
-  dart run tool/dev.dart size    # Android arm64 release + --analyze-size + metadata
+  dart run tool/dev.dart size    # refresh metadata + Android arm64 release analysis
   dart run tool/dev.dart bundle  # reusable diagnostic ZIP
   dart run tool/dev.dart all     # full validation + diagnostic ZIP
 ''');
