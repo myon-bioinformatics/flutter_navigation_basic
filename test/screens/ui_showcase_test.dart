@@ -7,9 +7,10 @@ Future<void> _pumpLoadedShowcase(WidgetTester tester) async {
 
   // The screen loads JSON through rootBundle and shows an indeterminate progress
   // indicator while waiting. Avoid pumpAndSettle here because that animation can
-  // keep scheduling frames under the widget-test fake clock. Give the real async
-  // asset load bounded turns instead, pumping after each turn until it completes.
-  for (var attempt = 0; attempt < 40; attempt++) {
+  // keep scheduling frames under the widget-test fake clock. CI can be much slower
+  // than a local run, so give the real async asset load a generous bounded window
+  // while still failing instead of hanging forever if loading genuinely stalls.
+  for (var attempt = 0; attempt < 200; attempt++) {
     await tester.pump();
     if (find.byType(CircularProgressIndicator).evaluate().isEmpty) return;
     await tester.runAsync(() async {
