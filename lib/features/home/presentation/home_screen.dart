@@ -27,8 +27,14 @@ class HomeScreen extends StatelessWidget {
                 HomeOverviewPanel(
                   actions: [
                     HomeOverviewAction(
+                      label: 'Clipboard Shelf · Core Tool #1',
+                      subtitle: 'Session-only history for text, URLs, Markdown and 2/3-scaled images with filter, ordering and bundle copy.',
+                      icon: Icons.inventory_2_outlined,
+                      onTap: AppNavigation.toClipboardShelf,
+                    ),
+                    HomeOverviewAction(
                       label: 'Clipboard Workbench',
-                      subtitle: 'Paste source material, shape a system prompt, preview it, and copy the result.',
+                      subtitle: 'Turn source material into a structured system prompt and copy the result.',
                       icon: Icons.content_paste_go_outlined,
                       onTap: AppNavigation.toClipboardWorkbench,
                     ),
