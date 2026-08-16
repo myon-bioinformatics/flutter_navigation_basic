@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'core/config/app_config.dart';
 import 'core/navigation/app_navigation.dart';
 import 'core/navigation/route_names.dart';
@@ -20,12 +19,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
+    return MaterialApp(
+      navigatorKey: AppNavigation.navigatorKey,
       title: AppConfig.appName,
       theme: AppTheme.light,
       debugShowCheckedModeBanner: false,
       initialRoute: RouteNames.home,
-      getPages: appRoutes,
+      routes: AppNavigation.routes,
     );
   }
 }
