@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import '../domain/screen5_controller.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../core/utils/url_params.dart';
 
-class Screen5Page extends GetView<Screen5Controller> {
-  const Screen5Page({super.key});
+class Screen5Page extends StatelessWidget {
+  const Screen5Page({super.key, required this.controller});
+
+  final Screen5Controller controller;
 
   @override
   Widget build(BuildContext context) {
