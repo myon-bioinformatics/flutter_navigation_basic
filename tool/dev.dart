@@ -22,6 +22,9 @@ Future<void> main(List<String> args) async {
     case 'meta':
       exitCode = await _forward('dart', ['run', 'tool/build_meta.dart', ...rest]);
       return;
+    case 'size':
+      exitCode = await _forward('dart', ['run', 'tool/android_size.dart', ...rest]);
+      return;
     case 'net':
       if (rest.isEmpty) {
         stderr.writeln('Usage: dart run tool/dev.dart net <url>');
@@ -180,6 +183,7 @@ Usage:
   dart run tool/dev.dart full
   dart run tool/dev.dart versions
   dart run tool/dev.dart meta [--artifact path] [--analysis path] [--platform name]
+  dart run tool/dev.dart size [--target lib/main_prod.dart]
   dart run tool/dev.dart net <url>
   dart run tool/dev.dart mock [args]
   dart run tool/dev.dart bundle [--output path.zip]
@@ -188,7 +192,8 @@ Usage:
 Recommended one-liners:
   dart run tool/dev.dart check   # quick repository health
   dart run tool/dev.dart full    # quick health + both release web builds
-  dart run tool/dev.dart meta    # refresh app/screen weight metadata
+  dart run tool/dev.dart meta    # refresh app/screen source metadata
+  dart run tool/dev.dart size    # Android arm64 release + --analyze-size + metadata
   dart run tool/dev.dart bundle  # reusable diagnostic ZIP
   dart run tool/dev.dart all     # full validation + diagnostic ZIP
 ''');
