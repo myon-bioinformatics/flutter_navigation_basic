@@ -27,6 +27,12 @@ class HomeScreen extends StatelessWidget {
                 HomeOverviewPanel(
                   actions: [
                     HomeOverviewAction(
+                      label: 'Clipboard Workbench',
+                      subtitle: 'Paste source material, shape a system prompt, preview it, and copy the result.',
+                      icon: Icons.content_paste_go_outlined,
+                      onTap: AppNavigation.toClipboardWorkbench,
+                    ),
+                    HomeOverviewAction(
                       label: 'Counter Playground',
                       subtitle: 'State transitions, undo/history and interaction basics.',
                       icon: Icons.exposure_plus_1_outlined,

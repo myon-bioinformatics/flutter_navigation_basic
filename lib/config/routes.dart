@@ -4,6 +4,7 @@ import '../screens/hub_screen.dart';
 import '../screens/counter_playground_screen.dart';
 import '../screens/irony_generator_screen.dart';
 import '../screens/composition_generator_screen.dart';
+import '../screens/clipboard_workbench_screen.dart';
 import '../screens/mock_api_screen.dart';
 import '../screens/mcp_integration_screen.dart';
 import '../screens/generic_screen.dart';
@@ -16,6 +17,7 @@ class AppRoutes {
   static const String counterPlayground = '/examples/counter-playground';
   static const String ironyGenerator = '/examples/irony-generator';
   static const String compositionGenerator = '/examples/composition-generator';
+  static const String clipboardWorkbench = '/examples/clipboard-workbench';
   static const String uiShowcase = '/examples/ui-showcase';
 
   static const String externalApi = '/examples/external-integration/api';
@@ -31,17 +33,16 @@ class AppRoutes {
   static Map<String, WidgetBuilder> _buildRoutes() {
     final map = <String, WidgetBuilder>{};
 
-    // Keep all 198 catalogue routes available as template-driven screens.
     for (var i = 1; i <= 198; i++) {
       map[screenRoute(i)] = (_) => GenericScreen(screenId: i);
     }
 
-    // Handcrafted examples use semantic URLs and no longer replace catalogue IDs.
     map[home] = (_) => const HomeScreen();
     map[hub] = (_) => const HubScreen();
     map[counterPlayground] = (_) => const CounterPlaygroundScreen();
     map[ironyGenerator] = (_) => const IronyGeneratorScreen();
     map[compositionGenerator] = (_) => const CompositionGeneratorScreen();
+    map[clipboardWorkbench] = (_) => const ClipboardWorkbenchScreen();
     map[uiShowcase] = (_) => const UiShowcaseScreen();
     map[externalApi] = (_) => const ApiIntegrationScreen();
     map[externalMcp] = (_) => const McpIntegrationScreen();

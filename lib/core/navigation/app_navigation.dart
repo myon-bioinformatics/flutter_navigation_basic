@@ -8,6 +8,7 @@ import '../../features/irony_generator/presentation/irony_generator_page.dart';
 import '../../features/irony_generator/domain/irony_generator_controller.dart';
 import '../../features/composition_generator/presentation/composition_generator_page.dart';
 import '../../features/composition_generator/domain/composition_generator_controller.dart';
+import '../../features/clipboard_workbench/presentation/clipboard_workbench_page.dart';
 import '../../features/screen5/presentation/screen5_page.dart';
 import '../../features/screen5/domain/screen5_controller.dart';
 
@@ -35,6 +36,7 @@ class AppNavigation {
         RouteNames.compositionGenerator: (_) => CompositionGeneratorPage(
               controller: CompositionGeneratorController(),
             ),
+        RouteNames.clipboardWorkbench: (_) => const ClipboardWorkbenchPage(),
         RouteNames.screen5: (_) => Screen5Page(controller: Screen5Controller()),
       };
 
@@ -47,6 +49,8 @@ class AppNavigation {
   static void toIronyGenerator() => _navigator.pushNamed(RouteNames.ironyGenerator);
   static void toCompositionGenerator() =>
       _navigator.pushNamed(RouteNames.compositionGenerator);
+  static void toClipboardWorkbench() =>
+      _navigator.pushNamed(RouteNames.clipboardWorkbench);
   static void toScreen5() => _navigator.pushNamed(RouteNames.screen5);
   static void back() => _navigator.maybePop();
 }
