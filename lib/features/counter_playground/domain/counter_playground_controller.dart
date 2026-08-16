@@ -1,10 +1,13 @@
-import 'package:get/get.dart';
-import '../../../core/services/base_controller.dart';
+import 'package:flutter/foundation.dart';
 
-class CounterPlaygroundController extends BaseController {
-  final RxInt counter = 0.obs;
+class CounterPlaygroundController extends ChangeNotifier {
+  int _counter = 0;
 
-  bool get isTooMuch => counter.value >= 10;
+  int get counter => _counter;
+  bool get isTooMuch => _counter >= 10;
 
-  void increment() => counter.value++;
+  void increment() {
+    _counter++;
+    notifyListeners();
+  }
 }
