@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'route_names.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/home/domain/home_controller.dart';
+import '../../features/clipboard_shelf/presentation/clipboard_shelf_page.dart';
 import '../../features/counter_playground/presentation/counter_playground_page.dart';
 import '../../features/counter_playground/domain/counter_playground_controller.dart';
 import '../../features/irony_generator/presentation/irony_generator_page.dart';
@@ -27,6 +28,7 @@ class AppNavigation {
 
   static Map<String, WidgetBuilder> get routes => {
         RouteNames.home: (_) => HomeScreen(controller: HomeController()),
+        RouteNames.clipboardShelf: (_) => const ClipboardShelfPage(),
         RouteNames.counterPlayground: (_) => CounterPlaygroundPage(
               controller: CounterPlaygroundController(),
             ),
@@ -44,6 +46,7 @@ class AppNavigation {
         RouteNames.home,
         (route) => false,
       );
+  static void toClipboardShelf() => _navigator.pushNamed(RouteNames.clipboardShelf);
   static void toCounterPlayground() =>
       _navigator.pushNamed(RouteNames.counterPlayground);
   static void toIronyGenerator() => _navigator.pushNamed(RouteNames.ironyGenerator);
