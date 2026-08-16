@@ -129,18 +129,11 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
       setState(() {
         _imageBytes = payload.bytes;
         _imageMimeType = payload.mimeType;
-        _status = 'Decoded ${payload.mimeType} from Base64 (${payload.bytes.length} bytes).';
+        _status = 'Parsed ${payload.mimeType} from Base64 (${payload.bytes.length} bytes); preview shown below.';
       });
     } catch (error) {
       setState(() => _status = 'Base64 decode failed: $error');
     }
-  }
-
-  void _imageDecodeFailed(Object error) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      setState(() => _status = 'Image preview failed: unsupported or invalid image bytes ($error).');
-    });
   }
 
   String _buildPrompt() {
@@ -232,7 +225,6 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
                 _ImageReferenceCard(
                   bytes: _imageBytes,
                   mimeType: _imageMimeType,
-                  onDecodeError: _imageDecodeFailed,
                   onRemove: _imageBytes == null
                       ? null
                       : () => setState(() {
@@ -336,13 +328,11 @@ class _ImageReferenceCard extends StatelessWidget {
     required this.bytes,
     required this.mimeType,
     required this.onRemove,
-    required this.onDecodeError,
   });
 
   final Uint8List? bytes;
   final String? mimeType;
   final VoidCallback? onRemove;
-  final ValueChanged<Object> onDecodeError;
 
   @override
   Widget build(BuildContext context) {
@@ -378,7 +368,6 @@ class _ImageReferenceCard extends StatelessWidget {
             width: double.infinity,
             fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) {
-              onDecodeError(error);
               return const SizedBox(
                 height: 120,
                 child: Center(
