@@ -2,21 +2,34 @@ import 'package:flutter/material.dart';
 
 import 'build_metadata.dart';
 
-class BuildDiagnosticsCard extends StatelessWidget {
+class BuildDiagnosticsCard extends StatefulWidget {
   const BuildDiagnosticsCard({super.key, this.screenId});
 
   final String? screenId;
 
   @override
+  State<BuildDiagnosticsCard> createState() => _BuildDiagnosticsCardState();
+}
+
+class _BuildDiagnosticsCardState extends State<BuildDiagnosticsCard> {
+  late final Future<BuildMetadata> _metadata;
+
+  @override
+  void initState() {
+    super.initState();
+    _metadata = BuildMetadata.load();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder<BuildMetadata>(
-      future: BuildMetadata.load(),
+      future: _metadata,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const SizedBox.shrink();
         }
         final metadata = snapshot.data!;
-        final screen = screenId == null ? null : metadata.screens[screenId];
+        final screen = widget.screenId == null ? null : metadata.screens[widget.screenId];
         return Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
