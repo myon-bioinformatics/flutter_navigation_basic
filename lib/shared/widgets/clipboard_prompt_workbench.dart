@@ -13,6 +13,8 @@ class ClipboardPromptWorkbench extends StatefulWidget {
 }
 
 class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
+  static const int _maxBase64TextChars = 16 * 1024 * 1024;
+
   final _rawController = TextEditingController();
   final _goalController = TextEditingController();
   final _contextController = TextEditingController();
@@ -98,9 +100,16 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
 
   Future<void> _pasteBase64Image() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (!mounted) return;
     final text = data?.text ?? '';
     if (text.trim().isEmpty) {
       setState(() => _status = 'Clipboard does not contain Base64 text.');
+      return;
+    }
+    if (text.length > _maxBase64TextChars) {
+      setState(() {
+        _status = 'Base64 clipboard text is too large (${text.length} characters; limit $_maxBase64TextChars).';
+      });
       return;
     }
     _base64Controller.text = text;
@@ -108,8 +117,15 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
   }
 
   void _decodeBase64Image() {
+    final input = _base64Controller.text;
+    if (input.length > _maxBase64TextChars) {
+      setState(() {
+        _status = 'Base64 text is too large (${input.length} characters; limit $_maxBase64TextChars).';
+      });
+      return;
+    }
     try {
-      final payload = Base64ImageBridge.decodeText(_base64Controller.text);
+      final payload = Base64ImageBridge.decodeText(input);
       setState(() {
         _imageBytes = payload.bytes;
         _imageMimeType = payload.mimeType;
@@ -118,6 +134,13 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
     } catch (error) {
       setState(() => _status = 'Base64 decode failed: $error');
     }
+  }
+
+  void _imageDecodeFailed(Object error) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _status = 'Image preview failed: unsupported or invalid image bytes ($error).');
+    });
   }
 
   String _buildPrompt() {
@@ -209,6 +232,7 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
                 _ImageReferenceCard(
                   bytes: _imageBytes,
                   mimeType: _imageMimeType,
+                  onDecodeError: _imageDecodeFailed,
                   onRemove: _imageBytes == null
                       ? null
                       : () => setState(() {
@@ -225,7 +249,7 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     labelText: 'Image Base64 / data:image/...;base64,...',
-                    hintText: 'Paste a Base64 image here, or use Paste Base64 image.',
+                    hintText: 'Paste a PNG/JPEG/WebP Base64 image here, or use Paste Base64 image.',
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -308,11 +332,17 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
 }
 
 class _ImageReferenceCard extends StatelessWidget {
-  const _ImageReferenceCard({required this.bytes, required this.mimeType, required this.onRemove});
+  const _ImageReferenceCard({
+    required this.bytes,
+    required this.mimeType,
+    required this.onRemove,
+    required this.onDecodeError,
+  });
 
   final Uint8List? bytes;
   final String? mimeType;
   final VoidCallback? onRemove;
+  final ValueChanged<Object> onDecodeError;
 
   @override
   Widget build(BuildContext context) {
@@ -342,7 +372,21 @@ class _ImageReferenceCard extends StatelessWidget {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(12),
-          child: Image.memory(bytes!, height: 220, width: double.infinity, fit: BoxFit.contain),
+          child: Image.memory(
+            bytes!,
+            height: 220,
+            width: double.infinity,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              onDecodeError(error);
+              return const SizedBox(
+                height: 120,
+                child: Center(
+                  child: Text('Preview unavailable: invalid or unsupported image data.'),
+                ),
+              );
+            },
+          ),
         ),
         const SizedBox(height: 8),
         Row(
