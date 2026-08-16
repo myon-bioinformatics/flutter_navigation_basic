@@ -5,7 +5,12 @@ import 'src/toolkit_io.dart';
 Future<void> main(List<String> args) async {
   final full = args.contains('--full');
   final steps = <_Step>[
-    const _Step('Resolve dependencies', 'flutter', ['pub', 'get']),
+    const _Step(
+      'Resolve dependencies',
+      'flutter',
+      ['pub', 'get'],
+      verifyLockfileAfter: true,
+    ),
     const _Step('Inspect repository', 'dart', ['run', 'tool/inspect.dart']),
     const _Step('Analyze', 'flutter', ['analyze', '--no-fatal-infos']),
     const _Step('Test', 'flutter', ['test']),
@@ -17,7 +22,7 @@ Future<void> main(List<String> args) async {
 
   for (final step in steps) {
     if (!await _runStep(step)) return;
-    if (step.label == 'Resolve dependencies') {
+    if (step.verifyLockfileAfter) {
       final lock = await runCommand(
         'git',
         ['diff', '--exit-code', '--', 'pubspec.lock'],
@@ -81,9 +86,15 @@ Future<bool> _runStep(_Step step) async {
 }
 
 class _Step {
-  const _Step(this.label, this.executable, this.arguments);
+  const _Step(
+    this.label,
+    this.executable,
+    this.arguments, {
+    this.verifyLockfileAfter = false,
+  });
 
   final String label;
   final String executable;
   final List<String> arguments;
+  final bool verifyLockfileAfter;
 }
