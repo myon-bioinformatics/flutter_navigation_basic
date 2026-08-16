@@ -19,8 +19,11 @@ class App extends StatelessWidget {
       routes: AppRoutes.routes,
       initialRoute: AppRoutes.home,
       navigatorObservers: [RouteDiagnosticsObserver.instance],
-      builder: (context, child) => WeightBadgeOverlay(
-        child: child ?? const SizedBox.shrink(),
+      builder: (context, child) => Column(
+        children: [
+          Expanded(child: child ?? const SizedBox.shrink()),
+          const WeightDiagnosticsStrip(),
+        ],
       ),
     );
   }
