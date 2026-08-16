@@ -9,9 +9,9 @@ class ClipboardShelfScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Clipboard Shelf')),
-      body: const SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(20, 20, 20, 72),
-        child: Center(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 72),
+        child: const Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: 1100),
             child: ClipboardShelf(),
