@@ -15,6 +15,11 @@ class Base64ImageBridge {
   const Base64ImageBridge._();
 
   static const double defaultScale = 2 / 3;
+  static const Set<String> supportedRasterMimeTypes = {
+    'image/png',
+    'image/jpeg',
+    'image/webp',
+  };
 
   static Future<Base64ImagePayload> downscaleToPng(
     Uint8List source, {
@@ -73,11 +78,18 @@ class Base64ImageBridge {
       r'^data:([^;,]+);base64,(.*)$',
       dotAll: true,
     ).firstMatch(text);
-    final mimeType = dataUrl?.group(1) ?? 'image/png';
+    final mimeType = (dataUrl?.group(1) ?? 'image/png').toLowerCase();
     final encoded = (dataUrl?.group(2) ?? text).replaceAll(RegExp(r'\s+'), '');
-    if (!mimeType.startsWith('image/')) {
-      throw FormatException('Expected image/* data URL, got $mimeType.');
+    if (!supportedRasterMimeTypes.contains(mimeType)) {
+      throw FormatException(
+        'Unsupported image MIME type: $mimeType. '
+        'Use PNG, JPEG, or WebP.',
+      );
     }
-    return Base64ImagePayload(bytes: base64Decode(encoded), mimeType: mimeType);
+    final bytes = base64Decode(encoded);
+    if (bytes.isEmpty) {
+      throw const FormatException('Decoded image bytes are empty.');
+    }
+    return Base64ImagePayload(bytes: bytes, mimeType: mimeType);
   }
 }
