@@ -22,6 +22,13 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Verify dependency lockfile
+        run: |
+          if ! git diff --exit-code -- pubspec.lock; then
+            echo "::error::pubspec.lock is stale. Run 'flutter pub get' with the repository Flutter toolchain and commit the result."
+            exit 1
+          fi
+
       - name: Analyze project source
         run: flutter analyze --no-fatal-infos
 
