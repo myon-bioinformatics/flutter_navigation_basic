@@ -99,3 +99,33 @@ jobs:
 
       - name: Build production entrypoint on latest stable
         run: flutter build web --release -t lib/main_prod.dart --base-href "/flutter_navigation_basic/"
+
+  android-size:
+    name: Android arm64 release size
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter 3.47.0
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.0"
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Measure production Android arm64 release
+        run: dart run tool/dev.dart size
+
+      - name: Show size summary
+        run: cat build/diagnostics/android-arm64/summary.txt
+
+      - name: Upload size diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-arm64-size-diagnostics
+          path: build/diagnostics/android-arm64/
+          if-no-files-found: error
+          retention-days: 30

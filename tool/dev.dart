@@ -19,6 +19,12 @@ Future<void> main(List<String> args) async {
     case 'versions':
       exitCode = await _forward('dart', ['run', 'tool/check_versions.dart', ...rest]);
       return;
+    case 'meta':
+      exitCode = await _forward('dart', ['run', 'tool/build_meta.dart', ...rest]);
+      return;
+    case 'size':
+      exitCode = await _forward('dart', ['run', 'tool/android_size.dart', ...rest]);
+      return;
     case 'net':
       if (rest.isEmpty) {
         stderr.writeln('Usage: dart run tool/dev.dart net <url>');
@@ -114,8 +120,6 @@ Future<int> _bundle(List<String> args) async {
     return 2;
   }
 
-  // Python is intentionally only the packaging helper here. The diagnostics,
-  // orchestration, and policy stay Dart-first; no requirements.txt/pip layer.
   final zip = await runCommand(
     python.executable,
     [...python.prefixArguments, '-m', 'zipfile', '-c', output.path, diagnostics.path],
@@ -178,6 +182,8 @@ Usage:
   dart run tool/dev.dart check
   dart run tool/dev.dart full
   dart run tool/dev.dart versions
+  dart run tool/dev.dart meta [--artifact path] [--analysis path] [--platform name]
+  dart run tool/dev.dart size [--target lib/main_prod.dart]
   dart run tool/dev.dart net <url>
   dart run tool/dev.dart mock [args]
   dart run tool/dev.dart bundle [--output path.zip]
@@ -186,6 +192,8 @@ Usage:
 Recommended one-liners:
   dart run tool/dev.dart check   # quick repository health
   dart run tool/dev.dart full    # quick health + both release web builds
+  dart run tool/dev.dart meta    # refresh app/screen source metadata
+  dart run tool/dev.dart size    # Android arm64 release + --analyze-size + metadata
   dart run tool/dev.dart bundle  # reusable diagnostic ZIP
   dart run tool/dev.dart all     # full validation + diagnostic ZIP
 ''');
