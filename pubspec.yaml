@@ -2,7 +2,7 @@ name: flutter_application_1
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 0.0.1+1
 
 environment:
   sdk: '>=3.12.0 <4.0.0'
@@ -30,3 +30,4 @@ flutter:
   assets:
     - assets/screens.json
     - assets/ui_showcase.json
+    - assets/diagnostics/build_meta.json
