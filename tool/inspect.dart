@@ -22,15 +22,13 @@ Future<void> main(List<String> args) async {
 
   final patternDirectories = <Directory>[];
   final features = Directory('lib/features');
+  final terminalPattern = RegExp(r'^pattern_\d{3}$');
   if (await features.exists()) {
     await for (final entity in features.list(recursive: true, followLinks: false)) {
-      if (entity is Directory &&
-          entity.uri.pathSegments
-              .where((segment) => segment.isNotEmpty)
-              .last
-              .startsWith('pattern_')) {
-        patternDirectories.add(entity);
-      }
+      if (entity is! Directory) continue;
+      final segments = entity.uri.pathSegments.where((segment) => segment.isNotEmpty);
+      if (segments.isEmpty) continue;
+      if (terminalPattern.hasMatch(segments.last)) patternDirectories.add(entity);
     }
   }
 
