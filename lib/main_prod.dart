@@ -30,6 +30,7 @@ class MyApp extends StatelessWidget {
       routes: AppNavigation.routes,
       navigatorObservers: [RouteDiagnosticsObserver.instance],
       builder: (context, child) => WeightBadgeOverlay(
+        preferFeatureWeights: true,
         child: child ?? const SizedBox.shrink(),
       ),
     );
