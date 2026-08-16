@@ -72,18 +72,20 @@ flutter run \
 
 | Dependency | Coupling | Decision |
 |---|---|---|
-| `get` | **High** | Widely embedded in legacy/generated pattern architecture (`GetView`, `GetxController`, routing/state). Do not bulk-remove in this PR; migrate by responsibility in a dedicated staged effort. |
+| `get` | **High** | Widely embedded in legacy/generated pattern architecture (`GetView`, `GetxController`, routing/state). Do not bulk-remove in one cleanup PR; migrate by responsibility using [`GETX_MIGRATION_MAP.md`](GETX_MIGRATION_MAP.md). |
 | `shared_preferences` | Low/medium | Isolated behind `StorageService`; it provides actual platform persistence not supplied by core Dart. Keep unless persistence requirements change. |
 | `flutter_lints` | Dev only | Lightweight static-analysis rules; keep. |
 
 ## GetX migration boundary
 
-GetX is the one dependency comparable to a high-level framework abstraction rather than a thin adapter. A safe migration should be split by responsibility:
+GetX is the one dependency comparable to a high-level framework abstraction rather than a thin adapter. The concrete coupling map, rules for new work, staged migration order, and removal criteria are maintained in [`GETX_MIGRATION_MAP.md`](GETX_MIGRATION_MAP.md).
+
+The short policy is:
 
 1. new/handcrafted screens use `Navigator`, `StatefulWidget`/`ValueNotifier`, and standard Flutter APIs by default;
-2. map legacy GetX usage into routing, state/reactivity, dependency lookup, and convenience UI calls;
-3. remove each responsibility only when the corresponding patterns can retain behavior and tests;
-4. do not rewrite all 792 pattern modules in one dependency-cleanup PR.
+2. legacy GetX usage is migrated by responsibility: routing, state/reactivity, dependency lookup, and convenience UI calls;
+3. each responsibility is removed only when the corresponding behavior and tests remain equivalent;
+4. the 792 pattern modules are not rewritten wholesale merely to reduce a dependency count.
 
 ## Presentation-layer completion rule
 
