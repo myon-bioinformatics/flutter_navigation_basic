@@ -75,11 +75,15 @@ Future<void> main(List<String> args) async {
   }
 
   final analysis = await _latestAnalysisFile(
-    Directory('${workingDirectory.path}${Platform.pathSeparator}build'),
-    startedAt,
+    workingDirectory: workingDirectory,
+    startedAt: startedAt,
+    flutterOutput: '${build.stdoutText}\n${build.stderrText}',
   );
   if (analysis == null) {
-    stderr.writeln('Flutter code-size analysis JSON was not found under the measurement build/.');
+    stderr.writeln(
+      'Flutter code-size analysis JSON was not found in the reported output path, '
+      'the measurement build/, or ~/.flutter-devtools/.',
+    );
     exitCode = 2;
     return;
   }
@@ -174,27 +178,45 @@ Future<void> _copyDirectory(Directory source, Directory destination) async {
   }
 }
 
-Future<File?> _latestAnalysisFile(
-  Directory buildDirectory,
-  DateTime startedAt,
-) async {
-  if (!await buildDirectory.exists()) return null;
+Future<File?> _latestAnalysisFile({
+  required Directory workingDirectory,
+  required DateTime startedAt,
+  required String flutterOutput,
+}) async {
+  final reportedPath = RegExp(
+    r'A summary of your APK analysis can be found at:\s*(.+\.json)',
+  ).firstMatch(flutterOutput)?.group(1)?.trim();
+  if (reportedPath != null) {
+    final reported = File(reportedPath);
+    if (await reported.exists()) return reported;
+  }
+
+  final searchRoots = <Directory>[
+    Directory('${workingDirectory.path}${Platform.pathSeparator}build'),
+    Directory(
+      '${Platform.environment['HOME'] ?? ''}${Platform.pathSeparator}.flutter-devtools',
+    ),
+  ];
 
   final candidates = <File>[];
-  await for (final entity in buildDirectory.list(
-    recursive: true,
-    followLinks: false,
-  )) {
-    if (entity is! File) continue;
-    final name = entity.uri.pathSegments.last;
-    if (!name.contains('-code-size-analysis_') || !name.endsWith('.json')) {
+  for (final root in searchRoots) {
+    if (root.path.startsWith(Platform.pathSeparator) && root.path.length == 1) {
       continue;
     }
-    final modified = await entity.lastModified();
-    if (!modified.isBefore(startedAt.subtract(const Duration(seconds: 2)))) {
-      candidates.add(entity);
+    if (!await root.exists()) continue;
+    await for (final entity in root.list(recursive: true, followLinks: false)) {
+      if (entity is! File) continue;
+      final name = entity.uri.pathSegments.last;
+      if (!name.contains('-code-size-analysis_') || !name.endsWith('.json')) {
+        continue;
+      }
+      final modified = await entity.lastModified();
+      if (!modified.isBefore(startedAt.subtract(const Duration(seconds: 2)))) {
+        candidates.add(entity);
+      }
     }
   }
+
   if (candidates.isEmpty) return null;
   candidates.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
   return candidates.first;
