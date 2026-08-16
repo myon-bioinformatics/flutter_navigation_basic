@@ -1,13 +1,18 @@
 import 'dart:math';
-import 'package:get/get.dart';
-import '../../../core/services/base_controller.dart';
 import '../../../config.dart';
 
-class CompositionGeneratorController extends BaseController {
-  final RxString tonicKey = Composer.diatonicScaleList[
-          Random().nextInt(Composer.diatonicScaleList.length)]
-      .obs;
-  final RxInt bpm = (100 + Random().nextInt(61)).obs;
+class CompositionGeneratorController {
+  CompositionGeneratorController({Random? random})
+      : _random = random ?? Random() {
+    tonicKey = Composer.diatonicScaleList[
+      _random.nextInt(Composer.diatonicScaleList.length),
+    ];
+    bpm = 100 + _random.nextInt(61);
+  }
 
-  String get displayText => 'Key: ${tonicKey.value}, BPM: ${bpm.value}';
+  final Random _random;
+  late final String tonicKey;
+  late final int bpm;
+
+  String get displayText => 'Key: $tonicKey, BPM: $bpm';
 }
