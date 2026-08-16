@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_navigation_basic/shared/clipboard/base64_image_bridge.dart';
+import 'package:flutter_application_1/shared/clipboard/base64_image_bridge.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
