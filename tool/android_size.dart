@@ -7,16 +7,43 @@ Future<void> main(List<String> args) async {
   final diagnosticsDir = Directory(
     _valueAfter(args, '--output-dir') ?? 'build/diagnostics/android-arm64',
   );
+  final workspace = Directory('build/android-size-workspace');
 
   if (await diagnosticsDir.exists()) {
     await diagnosticsDir.delete(recursive: true);
   }
   await diagnosticsDir.create(recursive: true);
 
-  final startedAt = DateTime.now();
   stdout.writeln('=== Android arm64 release size analysis ===');
   stdout.writeln('target: $target');
 
+  final hasAndroidPlatform = await Directory('android').exists();
+  final workingDirectory = hasAndroidPlatform ? Directory.current : workspace;
+
+  if (!hasAndroidPlatform) {
+    stdout.writeln(
+      'android/ is not tracked in this repository; creating an ephemeral '
+      'measurement workspace under build/.',
+    );
+    if (await workspace.exists()) {
+      await workspace.delete(recursive: true);
+    }
+    await workspace.create(recursive: true);
+    await _copyMeasurementInputs(workspace);
+
+    final scaffold = await runCommand(
+      'flutter',
+      ['create', '--platforms=android', '--no-pub', '.'],
+      workingDirectory: workspace.path,
+      stream: true,
+    );
+    if (!scaffold.ok) {
+      exitCode = scaffold.exitCode;
+      return;
+    }
+  }
+
+  final startedAt = DateTime.now();
   final build = await runCommand(
     'flutter',
     [
@@ -28,6 +55,7 @@ Future<void> main(List<String> args) async {
       '-t',
       target,
     ],
+    workingDirectory: workingDirectory.path,
     stream: true,
   );
   if (!build.ok) {
@@ -35,26 +63,35 @@ Future<void> main(List<String> args) async {
     return;
   }
 
-  final apk = File('build/app/outputs/flutter-apk/app-release.apk');
+  final apk = File(
+    '${workingDirectory.path}${Platform.pathSeparator}build${Platform.pathSeparator}'
+    'app${Platform.pathSeparator}outputs${Platform.pathSeparator}flutter-apk'
+    '${Platform.pathSeparator}app-release.apk',
+  );
   if (!await apk.exists()) {
     stderr.writeln('Android release APK was not found at ${apk.path}.');
     exitCode = 2;
     return;
   }
 
-  final analysis = await _latestAnalysisFile(startedAt);
+  final analysis = await _latestAnalysisFile(
+    Directory('${workingDirectory.path}${Platform.pathSeparator}build'),
+    startedAt,
+  );
   if (analysis == null) {
-    stderr.writeln('Flutter code-size analysis JSON was not found under build/.');
+    stderr.writeln('Flutter code-size analysis JSON was not found under the measurement build/.');
     exitCode = 2;
     return;
   }
 
   final copiedAnalysis = File(
-    '${diagnosticsDir.path}/${analysis.uri.pathSegments.last}',
+    '${diagnosticsDir.path}${Platform.pathSeparator}${analysis.uri.pathSegments.last}',
   );
   await analysis.copy(copiedAnalysis.path);
 
-  final metadata = File('${diagnosticsDir.path}/build_meta.json');
+  final metadata = File(
+    '${diagnosticsDir.path}${Platform.pathSeparator}build_meta.json',
+  );
   final meta = await runCommand(
     'dart',
     [
@@ -78,13 +115,17 @@ Future<void> main(List<String> args) async {
     return;
   }
 
-  final summary = File('${diagnosticsDir.path}/summary.txt');
+  final summary = File(
+    '${diagnosticsDir.path}${Platform.pathSeparator}summary.txt',
+  );
   final apkBytes = await apk.length();
   final analysisBytes = await copiedAnalysis.length();
   await summary.writeAsString(
     'platform=android-arm64\n'
     'mode=release\n'
     'target=$target\n'
+    'measurementWorkspace=${workingDirectory.path}\n'
+    'ephemeralAndroidScaffold=${!hasAndroidPlatform}\n'
     'artifact=${apk.path}\n'
     'artifactBytes=$apkBytes\n'
     'artifactSize=${formatBytes(apkBytes)}\n'
@@ -99,12 +140,51 @@ Future<void> main(List<String> args) async {
   stdout.writeln('Metadata : ${metadata.path}');
 }
 
-Future<File?> _latestAnalysisFile(DateTime startedAt) async {
-  final build = Directory('build');
-  if (!await build.exists()) return null;
+Future<void> _copyMeasurementInputs(Directory workspace) async {
+  for (final fileName in ['pubspec.yaml', 'pubspec.lock', 'analysis_options.yaml']) {
+    final source = File(fileName);
+    if (await source.exists()) {
+      await source.copy(
+        '${workspace.path}${Platform.pathSeparator}$fileName',
+      );
+    }
+  }
+
+  for (final directoryName in ['lib', 'assets']) {
+    final source = Directory(directoryName);
+    if (await source.exists()) {
+      await _copyDirectory(
+        source,
+        Directory('${workspace.path}${Platform.pathSeparator}$directoryName'),
+      );
+    }
+  }
+}
+
+Future<void> _copyDirectory(Directory source, Directory destination) async {
+  await destination.create(recursive: true);
+  await for (final entity in source.list(followLinks: false)) {
+    final name = entity.uri.pathSegments.where((segment) => segment.isNotEmpty).last;
+    final destinationPath = '${destination.path}${Platform.pathSeparator}$name';
+    if (entity is Directory) {
+      await _copyDirectory(entity, Directory(destinationPath));
+    } else if (entity is File) {
+      await entity.copy(destinationPath);
+    }
+  }
+}
+
+Future<File?> _latestAnalysisFile(
+  Directory buildDirectory,
+  DateTime startedAt,
+) async {
+  if (!await buildDirectory.exists()) return null;
 
   final candidates = <File>[];
-  await for (final entity in build.list(recursive: true, followLinks: false)) {
+  await for (final entity in buildDirectory.list(
+    recursive: true,
+    followLinks: false,
+  )) {
     if (entity is! File) continue;
     final name = entity.uri.pathSegments.last;
     if (!name.contains('-code-size-analysis_') || !name.endsWith('.json')) {
