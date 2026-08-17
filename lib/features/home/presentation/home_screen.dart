@@ -39,6 +39,12 @@ class HomeScreen extends StatelessWidget {
                       onTap: AppNavigation.toNowTimeline,
                     ),
                     HomeOverviewAction(
+                      label: 'Latitude / Longitude',
+                      subtitle: 'Validate decimal coordinates and convert them to degrees, minutes and seconds with hemisphere labels.',
+                      icon: Icons.my_location_outlined,
+                      onTap: AppNavigation.toCoordinateTool,
+                    ),
+                    HomeOverviewAction(
                       label: 'Clipboard Workbench',
                       subtitle: 'Turn source material into a structured system prompt and copy the result.',
                       icon: Icons.content_paste_go_outlined,
