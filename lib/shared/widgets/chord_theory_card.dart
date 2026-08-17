@@ -18,6 +18,7 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
   String _progression = 'I V vi IV';
   int _builderDegree = 1;
   String _modifier = 'triad';
+  int _inversion = 0;
 
   @override
   void initState() {
@@ -49,10 +50,27 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
     setState(() => _key = ChordTheory.transposeKey(_key, semitones));
   }
 
+  void _moveByFifth(bool clockwise) {
+    setState(() {
+      _key = ChordTheory.fifthNeighbor(_key, clockwise: clockwise);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scale = ChordTheory.scale(_key, minor: _minor);
+    final leftFifth = ChordTheory.fifthNeighbor(_key, clockwise: false);
+    final rightFifth = ChordTheory.fifthNeighbor(_key, clockwise: true);
+    final normalizedInversion =
+        ChordTheory.normalizedInversion(_modifier, _inversion);
+    final inversionName = switch (normalizedInversion) {
+      0 => 'Root position',
+      1 => '1st inversion',
+      2 => '2nd inversion',
+      3 => '3rd inversion',
+      _ => 'Root position',
+    };
 
     return Card(
       child: Padding(
@@ -63,7 +81,7 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
             Text('Key / Chord Translator', style: theme.textTheme.titleLarge),
             const SizedBox(height: 4),
             const Text(
-              'Choose a key, transpose it, and turn Roman-numeral progressions such as I V vi IV into concrete chord names.',
+              'Choose a key, move by semitone or fifth, and turn Roman-numeral progressions into concrete chord names.',
             ),
             const SizedBox(height: 16),
             Wrap(
@@ -113,6 +131,38 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
                 ),
               ],
             ),
+            const SizedBox(height: 14),
+            Text('Circle-of-fifths neighbors', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () => _moveByFifth(false),
+                  icon: const Icon(Icons.arrow_back),
+                  label: Text(leftFifth),
+                ),
+                Chip(
+                  avatar: const Icon(Icons.radio_button_checked, size: 18),
+                  label: Text(_key, style: theme.textTheme.titleMedium),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => _moveByFifth(true),
+                  iconAlignment: IconAlignment.end,
+                  icon: const Icon(Icons.arrow_forward),
+                  label: Text(rightFifth),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Example in C: ← F   C   G →',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall,
+            ),
             const SizedBox(height: 16),
             Text('Scale degrees', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
@@ -143,6 +193,12 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
               _converted.join('  ·  '),
               style: theme.textTheme.headlineSmall,
             ),
+            const SizedBox(height: 12),
+            _buildMeasureLayout(context),
+            const SizedBox(height: 6),
+            const Text(
+              'The progression is wrapped into small measure blocks instead of a DAW-style endless horizontal timeline, so it stays usable on phones.',
+            ),
             const SizedBox(height: 6),
             const Text(
               'In this lightweight translator, a suffix such as I6 means an added-sixth chord (C6 in C major), not figured-bass first-inversion notation.',
@@ -153,7 +209,7 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
             Text('Chord builder', style: theme.textTheme.titleMedium),
             const SizedBox(height: 4),
             const Text(
-              'Use a scale degree as the root, then attach common colors/extensions without adding a music-theory package.',
+              'Choose a scale-degree root, color/extension and inversion. Seventh/add-sixth chords expose a real third inversion; triads loop the third slot back to first inversion.',
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -206,17 +262,50 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
                         )
                         .toList(),
                     onChanged: (value) {
-                      if (value != null) setState(() => _modifier = value);
+                      if (value != null) {
+                        setState(() {
+                          _modifier = value;
+                          if (_inversion > 3) _inversion = 0;
+                        });
+                      }
                     },
                   ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SegmentedButton<int>(
+                segments: const [
+                  ButtonSegment(value: 0, label: Text('Root')),
+                  ButtonSegment(value: 1, label: Text('1st')),
+                  ButtonSegment(value: 2, label: Text('2nd')),
+                  ButtonSegment(value: 3, label: Text('3rd')),
+                ],
+                selected: {_inversion},
+                onSelectionChanged: (value) =>
+                    setState(() => _inversion = value.first),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
                 Chip(
                   avatar: const Icon(Icons.music_note, size: 18),
                   label: Text(
-                    ChordTheory.applyModifier(_builderRoot, _modifier),
+                    ChordTheory.chordWithInversion(
+                      _builderRoot,
+                      _modifier,
+                      _inversion,
+                    ),
                     style: theme.textTheme.titleMedium,
                   ),
                 ),
+                Text(inversionName),
               ],
             ),
             const SizedBox(height: 10),
@@ -226,6 +315,50 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMeasureLayout(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth < 420
+            ? 2
+            : constraints.maxWidth < 760
+                ? 4
+                : 8;
+        const gap = 8.0;
+        final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (var i = 0; i < _converted.length; i++)
+              SizedBox(
+                width: width,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    children: [
+                      Text('${i + 1}', style: Theme.of(context).textTheme.labelSmall),
+                      const SizedBox(height: 2),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          _converted[i],
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
