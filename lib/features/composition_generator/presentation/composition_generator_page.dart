@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/navigation/app_navigation.dart';
+import '../../../shared/widgets/chord_theory_card.dart';
 import '../../../shared/widgets/composition_studio.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
 import '../../../shared/widgets/custom_button.dart';
@@ -27,6 +28,8 @@ class CompositionGeneratorPage extends StatelessWidget {
                   initialBpm: controller.bpm,
                   initialKey: controller.tonicKey,
                 ),
+                const SizedBox(height: 16),
+                ChordTheoryCard(initialKey: controller.tonicKey),
                 const SizedBox(height: 20),
                 Wrap(
                   spacing: 12,
