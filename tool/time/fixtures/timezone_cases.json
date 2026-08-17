@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "source": "Python stdlib zoneinfo / system IANA tzdata",
+  "zones": [
+    "Asia/Tokyo",
+    "Europe/London",
+    "America/New_York"
+  ],
+  "cases": [
+    {"zone":"Asia/Tokyo","utc":"2026-01-15T12:00:00+00:00","local":"2026-01-15T21:00:00+09:00","offset_minutes":540,"is_dst":false},
+    {"zone":"Asia/Tokyo","utc":"2026-03-08T06:59:00+00:00","local":"2026-03-08T15:59:00+09:00","offset_minutes":540,"is_dst":false},
+    {"zone":"Asia/Tokyo","utc":"2026-03-08T07:01:00+00:00","local":"2026-03-08T16:01:00+09:00","offset_minutes":540,"is_dst":false},
+    {"zone":"Asia/Tokyo","utc":"2026-03-29T00:59:00+00:00","local":"2026-03-29T09:59:00+09:00","offset_minutes":540,"is_dst":false},
+    {"zone":"Asia/Tokyo","utc":"2026-03-29T01:01:00+00:00","local":"2026-03-29T10:01:00+09:00","offset_minutes":540,"is_dst":false},
+    {"zone":"Asia/Tokyo","utc":"2026-07-15T12:00:00+00:00","local":"2026-07-15T21:00:00+09:00","offset_minutes":540,"is_dst":false},
+    {"zone":"Asia/Tokyo","utc":"2026-10-25T00:59:00+00:00","local":"2026-10-25T09:59:00+09:00","offset_minutes":540,"is_dst":false},
+    {"zone":"Asia/Tokyo","utc":"2026-10-25T01:01:00+00:00","local":"2026-10-25T10:01:00+09:00","offset_minutes":540,"is_dst":false},
+    {"zone":"Asia/Tokyo","utc":"2026-11-01T05:59:00+00:00","local":"2026-11-01T14:59:00+09:00","offset_minutes":540,"is_dst":false},
+    {"zone":"Asia/Tokyo","utc":"2026-11-01T06:01:00+00:00","local":"2026-11-01T15:01:00+09:00","offset_minutes":540,"is_dst":false},
+    {"zone":"Europe/London","utc":"2026-01-15T12:00:00+00:00","local":"2026-01-15T12:00:00+00:00","offset_minutes":0,"is_dst":false},
+    {"zone":"Europe/London","utc":"2026-03-08T06:59:00+00:00","local":"2026-03-08T06:59:00+00:00","offset_minutes":0,"is_dst":false},
+    {"zone":"Europe/London","utc":"2026-03-08T07:01:00+00:00","local":"2026-03-08T07:01:00+00:00","offset_minutes":0,"is_dst":false},
+    {"zone":"Europe/London","utc":"2026-03-29T00:59:00+00:00","local":"2026-03-29T00:59:00+00:00","offset_minutes":0,"is_dst":false},
+    {"zone":"Europe/London","utc":"2026-03-29T01:01:00+00:00","local":"2026-03-29T02:01:00+01:00","offset_minutes":60,"is_dst":true},
+    {"zone":"Europe/London","utc":"2026-07-15T12:00:00+00:00","local":"2026-07-15T13:00:00+01:00","offset_minutes":60,"is_dst":true},
+    {"zone":"Europe/London","utc":"2026-10-25T00:59:00+00:00","local":"2026-10-25T01:59:00+01:00","offset_minutes":60,"is_dst":true},
+    {"zone":"Europe/London","utc":"2026-10-25T01:01:00+00:00","local":"2026-10-25T01:01:00+00:00","offset_minutes":0,"is_dst":false},
+    {"zone":"Europe/London","utc":"2026-11-01T05:59:00+00:00","local":"2026-11-01T05:59:00+00:00","offset_minutes":0,"is_dst":false},
+    {"zone":"Europe/London","utc":"2026-11-01T06:01:00+00:00","local":"2026-11-01T06:01:00+00:00","offset_minutes":0,"is_dst":false},
+    {"zone":"America/New_York","utc":"2026-01-15T12:00:00+00:00","local":"2026-01-15T07:00:00-05:00","offset_minutes":-300,"is_dst":false},
+    {"zone":"America/New_York","utc":"2026-03-08T06:59:00+00:00","local":"2026-03-08T01:59:00-05:00","offset_minutes":-300,"is_dst":false},
+    {"zone":"America/New_York","utc":"2026-03-08T07:01:00+00:00","local":"2026-03-08T03:01:00-04:00","offset_minutes":-240,"is_dst":true},
+    {"zone":"America/New_York","utc":"2026-03-29T00:59:00+00:00","local":"2026-03-28T20:59:00-04:00","offset_minutes":-240,"is_dst":true},
+    {"zone":"America/New_York","utc":"2026-03-29T01:01:00+00:00","local":"2026-03-28T21:01:00-04:00","offset_minutes":-240,"is_dst":true},
+    {"zone":"America/New_York","utc":"2026-07-15T12:00:00+00:00","local":"2026-07-15T08:00:00-04:00","offset_minutes":-240,"is_dst":true},
+    {"zone":"America/New_York","utc":"2026-10-25T00:59:00+00:00","local":"2026-10-24T20:59:00-04:00","offset_minutes":-240,"is_dst":true},
+    {"zone":"America/New_York","utc":"2026-10-25T01:01:00+00:00","local":"2026-10-24T21:01:00-04:00","offset_minutes":-240,"is_dst":true},
+    {"zone":"America/New_York","utc":"2026-11-01T05:59:00+00:00","local":"2026-11-01T01:59:00-04:00","offset_minutes":-240,"is_dst":true},
+    {"zone":"America/New_York","utc":"2026-11-01T06:01:00+00:00","local":"2026-11-01T01:01:00-05:00","offset_minutes":-300,"is_dst":false}
+  ]
+}

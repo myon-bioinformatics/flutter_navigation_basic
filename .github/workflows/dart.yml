@@ -51,6 +51,11 @@ jobs:
             exit 1
           fi
 
+      - name: Verify stdlib timezone oracle
+        run: |
+          python3 tool/time/verify_timezone.py
+          python3 tool/time/generate_timezone_cases.py --check
+
       - name: Inspect repository with shared toolkit
         run: dart run tool/inspect.dart --json
 
