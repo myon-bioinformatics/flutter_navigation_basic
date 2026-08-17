@@ -12,6 +12,7 @@ class ChordTheoryCard extends StatefulWidget {
 }
 
 class _ChordTheoryCardState extends State<ChordTheoryCard> {
+  late final TextEditingController _progressionController;
   late String _key;
   bool _minor = false;
   String _progression = 'I V vi IV';
@@ -21,10 +22,16 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
   @override
   void initState() {
     super.initState();
-    _key = ChordTheory.flatKeys.contains(widget.initialKey) ||
-            ChordTheory.sharpKeys.contains(widget.initialKey)
+    _key = ChordTheory.selectableKeys.contains(widget.initialKey)
         ? widget.initialKey
         : 'C';
+    _progressionController = TextEditingController(text: _progression);
+  }
+
+  @override
+  void dispose() {
+    _progressionController.dispose();
+    super.dispose();
   }
 
   List<String> get _converted => ChordTheory.convertProgression(
@@ -72,8 +79,13 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
                       labelText: 'Key',
                       border: OutlineInputBorder(),
                     ),
-                    items: ChordTheory.flatKeys
-                        .map((key) => DropdownMenuItem(value: key, child: Text(key)))
+                    items: ChordTheory.selectableKeys
+                        .map(
+                          (key) => DropdownMenuItem(
+                            value: key,
+                            child: Text(key),
+                          ),
+                        )
                         .toList(),
                     onChanged: (value) {
                       if (value != null) setState(() => _key = value);
@@ -86,7 +98,8 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
                     ButtonSegment(value: true, label: Text('Minor')),
                   ],
                   selected: {_minor},
-                  onSelectionChanged: (value) => setState(() => _minor = value.first),
+                  onSelectionChanged: (value) =>
+                      setState(() => _minor = value.first),
                 ),
                 OutlinedButton.icon(
                   onPressed: () => _transpose(-1),
@@ -97,14 +110,6 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
                   onPressed: () => _transpose(1),
                   icon: const Icon(Icons.add),
                   label: const Text('+1 semitone'),
-                ),
-                OutlinedButton(
-                  onPressed: () => _transpose(-12),
-                  child: const Text('−12'),
-                ),
-                OutlinedButton(
-                  onPressed: () => _transpose(12),
-                  child: const Text('+12'),
                 ),
               ],
             ),
@@ -125,7 +130,7 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
             ),
             const SizedBox(height: 18),
             TextField(
-              controller: TextEditingController(text: _progression),
+              controller: _progressionController,
               decoration: const InputDecoration(
                 labelText: 'Roman-numeral progression',
                 hintText: 'I V vi IV',
@@ -164,11 +169,15 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
                       for (var i = 1; i <= 7; i++)
                         DropdownMenuItem(
                           value: i,
-                          child: Text('${_roman(i, minor: _minor)} · ${scale[i - 1]}'),
+                          child: Text(
+                            '${_roman(i, minor: _minor)} · ${scale[i - 1]}',
+                          ),
                         ),
                     ],
                     onChanged: (value) {
-                      if (value != null) setState(() => _builderDegree = value);
+                      if (value != null) {
+                        setState(() => _builderDegree = value);
+                      }
                     },
                   ),
                 ),
@@ -184,7 +193,11 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
                         .map(
                           (modifier) => DropdownMenuItem(
                             value: modifier,
-                            child: Text(modifier == 'triad' ? 'triad / plain' : modifier),
+                            child: Text(
+                              modifier == 'triad'
+                                  ? 'triad / plain'
+                                  : modifier,
+                            ),
                           ),
                         )
                         .toList(),
