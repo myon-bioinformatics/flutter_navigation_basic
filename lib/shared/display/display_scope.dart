@@ -4,31 +4,44 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'display_catalog.dart';
 
 class DisplayController extends ChangeNotifier {
-  DisplayController._(this.catalog, this._locale);
+  DisplayController._(this.catalog, this._preferences, this._locale);
 
-  static const _localeKey = 'app.display.locale.v1';
+  static const preferenceKey = 'app.display.locale.v1';
+  static const legacyNowTimelinePreferenceKey = 'now_timeline.locale.v1';
 
   final DisplayCatalog catalog;
+  final SharedPreferences _preferences;
   String _locale;
 
   String get locale => _locale;
 
   static Future<DisplayController> load() async {
     final catalog = await DisplayCatalog.load();
-    final prefs = await SharedPreferences.getInstance();
-    final stored = prefs.getString(_localeKey) ?? 'en';
-    final locale = catalog.supports(stored) ? stored : 'en';
-    return DisplayController._(catalog, locale);
+    final preferences = await SharedPreferences.getInstance();
+    final saved = preferences.getString(preferenceKey);
+    final legacy = preferences.getString(legacyNowTimelinePreferenceKey);
+    final candidate = saved ?? legacy ?? 'en';
+    final locale = catalog.supports(candidate) ? candidate : 'en';
+
+    if (saved == null && catalog.supports(candidate)) {
+      await preferences.setString(preferenceKey, locale);
+    }
+
+    return DisplayController._(catalog, preferences, locale);
   }
 
-  String text(String key) => catalog.text(_locale, key);
+  String text(
+    String key, {
+    Map<String, Object?> arguments = const {},
+  }) =>
+      catalog.text(_locale, key, arguments: arguments);
 
   Future<void> setLocale(String value) async {
-    if (!catalog.supports(value) || value == _locale) return;
-    _locale = value;
+    final resolved = catalog.supports(value) ? value : 'en';
+    if (resolved == _locale) return;
+    _locale = resolved;
     notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_localeKey, value);
+    await _preferences.setString(preferenceKey, resolved);
   }
 }
 
@@ -46,10 +59,15 @@ class DisplayScope extends InheritedNotifier<DisplayController> {
     }
     return scope.notifier!;
   }
+
+  static DisplayController? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<DisplayScope>()?.notifier;
 }
 
 class DisplayLocalePicker extends StatelessWidget {
-  const DisplayLocalePicker({super.key});
+  const DisplayLocalePicker({super.key, this.compact = false});
+
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +75,8 @@ class DisplayLocalePicker extends StatelessWidget {
     return DropdownButtonHideUnderline(
       child: DropdownButton<String>(
         value: display.locale,
+        isDense: compact,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
         items: DisplayCatalog.supportedLocales
             .map(
               (locale) => DropdownMenuItem(
