@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../shared/display/display_scope.dart';
 import '../../../shared/widgets/clipboard_shelf.dart';
 
 class ClipboardShelfPage extends StatelessWidget {
@@ -7,8 +8,12 @@ class ClipboardShelfPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Clipboard Shelf')),
+      appBar: AppBar(
+        title: Text(display.text('home.clipboardShelf')),
+        actions: const [DisplayLocalePicker(compact: true)],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 72),
         child: Center(
