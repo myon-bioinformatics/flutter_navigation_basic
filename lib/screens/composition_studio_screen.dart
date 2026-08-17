@@ -6,6 +6,7 @@ import '../config/routes.dart';
 import '../data/composer.dart';
 import '../shared/widgets/chord_theory_card.dart';
 import '../shared/widgets/composition_studio.dart';
+import '../shared/widgets/note_sequence_card.dart';
 import '../widgets/nav_button.dart';
 
 class CompositionStudioScreen extends StatefulWidget {
@@ -50,6 +51,8 @@ class _CompositionStudioScreenState extends State<CompositionStudioScreen> {
                 ),
                 const SizedBox(height: 16),
                 ChordTheoryCard(initialKey: _initialKey),
+                const SizedBox(height: 16),
+                const NoteSequenceCard(),
                 const SizedBox(height: 20),
                 const Wrap(
                   alignment: WrapAlignment.center,
