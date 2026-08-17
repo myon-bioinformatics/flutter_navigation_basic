@@ -47,6 +47,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () => Navigator.pushNamed(context, AppRoutes.clipboardShelf),
                     ),
                     HomeOverviewAction(
+                      label: 'Now Timeline',
+                      subtitle: 'Put people, places, schedules and events from different IANA time zones on one client-side timeline.',
+                      icon: Icons.public_outlined,
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.nowTimeline),
+                    ),
+                    HomeOverviewAction(
                       label: 'Clipboard Workbench',
                       subtitle: 'Turn shelf/source material into a structured system prompt and copy the result.',
                       icon: Icons.content_paste_go_outlined,
