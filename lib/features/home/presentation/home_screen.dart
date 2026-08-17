@@ -51,8 +51,8 @@ class HomeScreen extends StatelessWidget {
                       onTap: AppNavigation.toIronyGenerator,
                     ),
                     HomeOverviewAction(
-                      label: 'Composition Generator',
-                      subtitle: 'Explore key, tempo, progression and customization controls.',
+                      label: 'Composition Studio',
+                      subtitle: 'Visual metronome, tap tempo, song structure, lyrics and chords in one lightweight pre-DAW workspace.',
                       icon: Icons.music_note_outlined,
                       onTap: AppNavigation.toCompositionGenerator,
                     ),
