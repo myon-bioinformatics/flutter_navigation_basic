@@ -93,6 +93,10 @@ class ChordTheory {
     );
   }
 
+  static String fifthNeighbor(String key, {required bool clockwise}) {
+    return transposeKey(key, clockwise ? 7 : -7);
+  }
+
   static List<String> scale(String key, {required bool minor}) {
     final rootPitch = pitchClass(key);
     final rootLetter = key.substring(0, 1);
@@ -240,5 +244,61 @@ class ChordTheory {
       'modifier',
       'Unsupported chord modifier',
     );
+  }
+
+  static List<int> chordIntervals(String modifier) {
+    return switch (modifier) {
+      'triad' => const [0, 4, 7],
+      '6' => const [0, 4, 7, 9],
+      'm6' => const [0, 3, 7, 9],
+      '7' => const [0, 4, 7, 10],
+      'maj7' => const [0, 4, 7, 11],
+      'm7' => const [0, 3, 7, 10],
+      'm7♭5' => const [0, 3, 6, 10],
+      'sus2' => const [0, 2, 7],
+      'sus4' => const [0, 5, 7],
+      'add9' => const [0, 4, 7, 14],
+      'add11' => const [0, 4, 7, 17],
+      'dim' => const [0, 3, 6],
+      'aug' => const [0, 4, 8],
+      _ => throw ArgumentError.value(
+          modifier,
+          'modifier',
+          'Unsupported chord modifier',
+        ),
+    };
+  }
+
+  static List<String> chordTones(String root, String modifier) {
+    final rootPitch = pitchClass(root);
+    final sharps = prefersSharps(root);
+    return [
+      for (final interval in chordIntervals(modifier))
+        noteForPitchClass(rootPitch + interval, sharps: sharps),
+    ];
+  }
+
+  static int normalizedInversion(String modifier, int inversion) {
+    if (inversion < 0 || inversion > 3) {
+      throw ArgumentError.value(inversion, 'inversion', 'Expected 0 through 3');
+    }
+    final toneCount = chordIntervals(modifier).length;
+    if (inversion < toneCount) return inversion;
+    // Triads only have root / first / second inversion. For a compact four-state
+    // UI, the requested third-inversion slot loops back to first inversion.
+    if (toneCount == 3 && inversion == 3) return 1;
+    return inversion % toneCount;
+  }
+
+  static String chordWithInversion(
+    String root,
+    String modifier,
+    int inversion,
+  ) {
+    final chord = applyModifier(root, modifier);
+    final normalized = normalizedInversion(modifier, inversion);
+    if (normalized == 0) return chord;
+    final bass = chordTones(root, modifier)[normalized];
+    return '$chord/$bass';
   }
 }
