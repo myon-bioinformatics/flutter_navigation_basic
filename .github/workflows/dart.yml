@@ -36,6 +36,7 @@ jobs:
             lib/main_prod.dart \
             lib/core/navigation/app_navigation.dart \
             lib/features/home \
+            lib/features/now_timeline \
             lib/features/counter_playground \
             lib/features/irony_generator \
             lib/features/composition_generator \

@@ -33,6 +33,12 @@ class HomeScreen extends StatelessWidget {
                       onTap: AppNavigation.toClipboardShelf,
                     ),
                     HomeOverviewAction(
+                      label: 'Now Timeline',
+                      subtitle: 'Put people, places, schedules and events from different IANA time zones on one client-side timeline.',
+                      icon: Icons.public_outlined,
+                      onTap: AppNavigation.toNowTimeline,
+                    ),
+                    HomeOverviewAction(
                       label: 'Clipboard Workbench',
                       subtitle: 'Turn source material into a structured system prompt and copy the result.',
                       icon: Icons.content_paste_go_outlined,
