@@ -89,8 +89,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () => Navigator.pushNamed(context, AppRoutes.ironyGenerator),
                     ),
                     HomeOverviewAction(
-                      label: 'Composition Generator',
-                      subtitle: 'Explore key, tempo, progression and customization controls.',
+                      label: 'Composition Studio',
+                      subtitle: 'Visual metronome, tap tempo, song structure, lyrics and chords in one lightweight pre-DAW workspace.',
                       icon: Icons.music_note_outlined,
                       onTap: () => Navigator.pushNamed(context, AppRoutes.compositionGenerator),
                     ),
