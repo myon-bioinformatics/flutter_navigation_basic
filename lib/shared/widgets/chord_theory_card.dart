@@ -133,7 +133,7 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
               controller: _progressionController,
               decoration: const InputDecoration(
                 labelText: 'Roman-numeral progression',
-                hintText: 'I V vi IV',
+                hintText: 'I V vi IV · I6 IV6 · V7',
                 border: OutlineInputBorder(),
               ),
               onChanged: (value) => setState(() => _progression = value),
@@ -142,6 +142,10 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
             SelectableText(
               _converted.join('  ·  '),
               style: theme.textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'In this lightweight translator, a suffix such as I6 means an added-sixth chord (C6 in C major), not figured-bass first-inversion notation.',
             ),
             const SizedBox(height: 18),
             const Divider(),
@@ -217,7 +221,7 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
             ),
             const SizedBox(height: 10),
             const Text(
-              'Supported labels: 7, maj7, m7, m7♭5, sus2, sus4, add9, add11, dim, aug. “aug” is the standard abbreviation for augmented.',
+              'Supported labels: 6, m6, 7, maj7, m7, m7♭5, sus2, sus4, add9, add11, dim, aug. “aug” is the standard abbreviation for augmented.',
             ),
           ],
         ),
