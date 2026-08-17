@@ -6,14 +6,16 @@ import 'core/services/storage_service.dart';
 import 'core/logging/logger_service.dart';
 import 'shared/diagnostics/route_diagnostics_observer.dart';
 import 'shared/diagnostics/weight_badge_overlay.dart';
+import 'shared/display/display_scope.dart';
 import 'shared/themes/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppConfig.initialize(env: AppEnvironment.production);
   await StorageService.initialize();
+  final display = await DisplayController.load();
   LoggerService.info('App started in production mode');
-  runApp(const MyApp());
+  runApp(DisplayScope(controller: display, child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
