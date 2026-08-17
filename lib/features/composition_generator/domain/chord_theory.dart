@@ -49,33 +49,29 @@ class ChordTheory {
     'aug',
   ];
 
+  static const List<String> _letters = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+  static const Map<String, int> _naturalPitchClasses = {
+    'C': 0,
+    'D': 2,
+    'E': 4,
+    'F': 5,
+    'G': 7,
+    'A': 9,
+    'B': 11,
+  };
+
   static int pitchClass(String note) {
-    const values = <String, int>{
-      'C': 0,
-      'B♯': 0,
-      'C♯': 1,
-      'D♭': 1,
-      'D': 2,
-      'D♯': 3,
-      'E♭': 3,
-      'E': 4,
-      'F♭': 4,
-      'E♯': 5,
-      'F': 5,
-      'F♯': 6,
-      'G♭': 6,
-      'G': 7,
-      'G♯': 8,
-      'A♭': 8,
-      'A': 9,
-      'A♯': 10,
-      'B♭': 10,
-      'B': 11,
-      'C♭': 11,
-    };
-    final value = values[note];
-    if (value == null) throw ArgumentError.value(note, 'note', 'Unsupported note');
-    return value;
+    final match = RegExp(r'^([A-G])([♯♭]*)$').firstMatch(note);
+    if (match == null) {
+      throw ArgumentError.value(note, 'note', 'Unsupported note');
+    }
+    var value = _naturalPitchClasses[match.group(1)!]!;
+    for (final rune in match.group(2)!.runes) {
+      final accidental = String.fromCharCode(rune);
+      if (accidental == '♯') value += 1;
+      if (accidental == '♭') value -= 1;
+    }
+    return ((value % 12) + 12) % 12;
   }
 
   static bool prefersSharps(String key) =>
@@ -96,13 +92,39 @@ class ChordTheory {
   }
 
   static List<String> scale(String key, {required bool minor}) {
-    final root = pitchClass(key);
+    final rootPitch = pitchClass(key);
+    final rootLetter = key.substring(0, 1);
+    final rootLetterIndex = _letters.indexOf(rootLetter);
+    if (rootLetterIndex < 0) {
+      throw ArgumentError.value(key, 'key', 'Unsupported root letter');
+    }
+
     final intervals = minor ? minorIntervals : majorIntervals;
-    final sharps = prefersSharps(key);
     return [
-      for (final interval in intervals)
-        noteForPitchClass(root + interval, sharps: sharps),
+      for (var degree = 0; degree < 7; degree++)
+        _spellPitch(
+          letter: _letters[(rootLetterIndex + degree) % 7],
+          pitchClass: rootPitch + intervals[degree],
+        ),
     ];
+  }
+
+  static String _spellPitch({required String letter, required int pitchClass}) {
+    final target = ((pitchClass % 12) + 12) % 12;
+    final natural = _naturalPitchClasses[letter]!;
+    var delta = target - natural;
+    if (delta > 6) delta -= 12;
+    if (delta < -6) delta += 12;
+
+    final accidental = switch (delta) {
+      -2 => '♭♭',
+      -1 => '♭',
+      0 => '',
+      1 => '♯',
+      2 => '♯♯',
+      _ => throw StateError('Cannot spell pitch $target on letter $letter'),
+    };
+    return '$letter$accidental';
   }
 
   static String diatonicChord(String key, int degree, {required bool minor}) {
@@ -115,11 +137,9 @@ class ChordTheory {
   }
 
   static int? romanDegree(String token) {
-    final normalized = token
-        .replaceAll('♭', '')
-        .replaceAll('♯', '')
-        .replaceAll(RegExp(r'[^ivIV]'), '')
-        .toUpperCase();
+    final match = RegExp(r'^([ivIV]+)').firstMatch(token.trim());
+    if (match == null) return null;
+    final normalized = match.group(1)!.toUpperCase();
     const degrees = <String, int>{
       'I': 1,
       'II': 2,
@@ -133,9 +153,44 @@ class ChordTheory {
   }
 
   static String convertRomanToken(String key, String token, {required bool minor}) {
-    final degree = romanDegree(token);
+    final trimmed = token.trim();
+    final match = RegExp(r'^([ivIV]+)(.*)$').firstMatch(trimmed);
+    if (match == null) return token;
+
+    final degree = romanDegree(trimmed);
     if (degree == null) return token;
-    return diatonicChord(key, degree, minor: minor);
+
+    final root = scale(key, minor: minor)[degree - 1];
+    final baseChord = diatonicChord(key, degree, minor: minor);
+    final suffix = match.group(2)!.trim();
+    if (suffix.isEmpty) return baseChord;
+
+    switch (suffix) {
+      case '7':
+        return '$baseChord7';
+      case 'maj7':
+      case 'M7':
+      case '△7':
+        return '${root}maj7';
+      case 'm7':
+        return '${root}m7';
+      case 'm7♭5':
+      case 'ø7':
+        return '${root}m7♭5';
+      case 'sus2':
+      case 'sus4':
+      case 'add9':
+      case 'add11':
+        return '$root$suffix';
+      case 'dim':
+      case '°':
+        return '${root}dim';
+      case 'aug':
+      case '+':
+        return '${root}aug';
+      default:
+        return baseChord;
+    }
   }
 
   static List<String> convertProgression(
