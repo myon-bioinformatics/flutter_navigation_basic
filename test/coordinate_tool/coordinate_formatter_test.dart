@@ -3,15 +3,14 @@ import 'package:flutter_application_1/features/coordinate_tool/domain/coordinate
 
 void main() {
   group('CoordinateValue', () {
-    test('parses valid decimal coordinates', () {
+    test('parses valid decimal coordinates with exact DMS output', () {
       final value = CoordinateValue.parse(
         latitude: '35.681236',
         longitude: '139.767125',
       );
 
       expect(value.decimalDegrees, '35.681236, 139.767125');
-      expect(value.dms, contains('N'));
-      expect(value.dms, contains('E'));
+      expect(value.dms, '35° 40′ 52.45″ N, 139° 46′ 01.65″ E');
     });
 
     test('uses south and west hemispheres for negative values', () {
@@ -35,6 +34,13 @@ void main() {
       );
     });
 
+    test('normalizes DMS rounding carry into the next degree', () {
+      expect(
+        CoordinateValue.toDms(179.999999999996, isLatitude: false),
+        '180° 00′ 00.00″ E',
+      );
+    });
+
     test('rejects out-of-range coordinates', () {
       expect(
         () => CoordinateValue.parse(latitude: '90.1', longitude: '0'),
@@ -49,6 +55,17 @@ void main() {
     test('rejects non-numeric values', () {
       expect(
         () => CoordinateValue.parse(latitude: 'north', longitude: 'east'),
+        throwsFormatException,
+      );
+    });
+
+    test('rejects non-finite values', () {
+      expect(
+        () => CoordinateValue.parse(latitude: 'NaN', longitude: '0'),
+        throwsFormatException,
+      );
+      expect(
+        () => CoordinateValue.parse(latitude: '0', longitude: 'Infinity'),
         throwsFormatException,
       );
     });
