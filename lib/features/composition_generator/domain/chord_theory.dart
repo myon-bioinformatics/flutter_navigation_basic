@@ -9,6 +9,26 @@ class ChordTheory {
     'C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B',
   ];
 
+  static const List<String> selectableKeys = [
+    'C',
+    'C♯',
+    'D♭',
+    'D',
+    'D♯',
+    'E♭',
+    'E',
+    'F',
+    'F♯',
+    'G♭',
+    'G',
+    'G♯',
+    'A♭',
+    'A',
+    'A♯',
+    'B♭',
+    'B',
+  ];
+
   static const List<int> majorIntervals = [0, 2, 4, 5, 7, 9, 11];
   static const List<int> minorIntervals = [0, 2, 3, 5, 7, 8, 10];
 
@@ -58,17 +78,19 @@ class ChordTheory {
     return value;
   }
 
-  static bool prefersSharps(String key) => key.contains('♯') || const {'D', 'E', 'G', 'A', 'B'}.contains(key);
+  static bool prefersSharps(String key) =>
+      key.contains('♯') || const {'D', 'E', 'G', 'A', 'B'}.contains(key);
 
   static String noteForPitchClass(int pitchClass, {required bool sharps}) {
     final list = sharps ? sharpKeys : flatKeys;
-    return list[pitchClass % 12];
+    final normalized = ((pitchClass % 12) + 12) % 12;
+    return list[normalized];
   }
 
   static String transposeKey(String key, int semitones) {
     final root = pitchClass(key);
     return noteForPitchClass(
-      (root + semitones) % 12,
+      root + semitones,
       sharps: prefersSharps(key),
     );
   }
@@ -79,7 +101,7 @@ class ChordTheory {
     final sharps = prefersSharps(key);
     return [
       for (final interval in intervals)
-        noteForPitchClass((root + interval) % 12, sharps: sharps),
+        noteForPitchClass(root + interval, sharps: sharps),
     ];
   }
 
@@ -116,7 +138,11 @@ class ChordTheory {
     return diatonicChord(key, degree, minor: minor);
   }
 
-  static List<String> convertProgression(String key, String progression, {required bool minor}) {
+  static List<String> convertProgression(
+    String key,
+    String progression, {
+    required bool minor,
+  }) {
     final tokens = progression
         .replaceAll('–', ' ')
         .replaceAll('—', ' ')
@@ -124,7 +150,10 @@ class ChordTheory {
         .replaceAll('|', ' ')
         .split(RegExp(r'[\s,]+'))
         .where((value) => value.isNotEmpty);
-    return [for (final token in tokens) convertRomanToken(key, token, minor: minor)];
+    return [
+      for (final token in tokens)
+        convertRomanToken(key, token, minor: minor),
+    ];
   }
 
   static String applyModifier(String root, String modifier) {
@@ -143,6 +172,10 @@ class ChordTheory {
       case 'aug':
         return '$root$modifier';
     }
-    throw ArgumentError.value(modifier, 'modifier', 'Unsupported chord modifier');
+    throw ArgumentError.value(
+      modifier,
+      'modifier',
+      'Unsupported chord modifier',
+    );
   }
 }
