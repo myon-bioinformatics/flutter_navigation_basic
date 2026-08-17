@@ -4,6 +4,7 @@ import '../screens/hub_screen.dart';
 import '../screens/counter_playground_screen.dart';
 import '../screens/irony_generator_screen.dart';
 import '../screens/composition_generator_screen.dart';
+import '../screens/composition_studio_screen.dart';
 import '../screens/clipboard_shelf_screen.dart';
 import '../screens/clipboard_workbench_screen.dart';
 import '../screens/mock_api_screen.dart';
@@ -19,6 +20,7 @@ class AppRoutes {
   static const String counterPlayground = '/examples/counter-playground';
   static const String ironyGenerator = '/examples/irony-generator';
   static const String compositionGenerator = '/examples/composition-generator';
+  static const String compositionSeedGenerator = '/examples/composition-generator/seed';
   static const String clipboardWorkbench = '/examples/clipboard-workbench';
   static const String uiShowcase = '/examples/ui-showcase';
 
@@ -44,7 +46,8 @@ class AppRoutes {
     map[clipboardShelf] = (_) => const ClipboardShelfScreen();
     map[counterPlayground] = (_) => const CounterPlaygroundScreen();
     map[ironyGenerator] = (_) => const IronyGeneratorScreen();
-    map[compositionGenerator] = (_) => const CompositionGeneratorScreen();
+    map[compositionGenerator] = (_) => const CompositionStudioScreen();
+    map[compositionSeedGenerator] = (_) => const CompositionGeneratorScreen();
     map[clipboardWorkbench] = (_) => const ClipboardWorkbenchScreen();
     map[uiShowcase] = (_) => const UiShowcaseScreen();
     map[externalApi] = (_) => const ApiIntegrationScreen();
