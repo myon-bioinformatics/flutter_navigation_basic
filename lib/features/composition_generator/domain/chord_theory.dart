@@ -173,11 +173,11 @@ class ChordTheory {
 
     switch (suffix) {
       case '6':
-        return '$baseChord6';
+        return '${baseChord}6';
       case 'm6':
         return '${root}m6';
       case '7':
-        return '$baseChord7';
+        return '${baseChord}7';
       case 'maj7':
       case 'M7':
       case '△7':
