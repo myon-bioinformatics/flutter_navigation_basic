@@ -37,6 +37,8 @@ class ChordTheory {
 
   static const List<String> chordModifiers = [
     'triad',
+    '6',
+    'm6',
     '7',
     'maj7',
     'm7',
@@ -166,6 +168,10 @@ class ChordTheory {
     if (suffix.isEmpty) return baseChord;
 
     switch (suffix) {
+      case '6':
+        return '$baseChord6';
+      case 'm6':
+        return '${root}m6';
       case '7':
         return '$baseChord7';
       case 'maj7':
@@ -215,6 +221,8 @@ class ChordTheory {
     switch (modifier) {
       case 'triad':
         return root;
+      case '6':
+      case 'm6':
       case '7':
       case 'maj7':
       case 'm7':
