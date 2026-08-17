@@ -34,14 +34,33 @@ void main() {
       expect(
         ChordTheory.convertProgression(
           'C',
-          'Imaj7 V7 ii7 viiø7 IVsus2 IVadd9 Vaug',
+          'I6 IV6 Imaj7 V7 ii7 viiø7 IVsus2 IVadd9 Vaug',
           minor: false,
         ),
-        ['Cmaj7', 'G7', 'Dm7', 'Bm7♭5', 'Fsus2', 'Fadd9', 'Gaug'],
+        [
+          'C6',
+          'F6',
+          'Cmaj7',
+          'G7',
+          'Dm7',
+          'Bm7♭5',
+          'Fsus2',
+          'Fadd9',
+          'Gaug',
+        ],
+      );
+    });
+
+    test('keeps diatonic minor quality when adding a sixth suffix', () {
+      expect(
+        ChordTheory.convertProgression('C', 'ii6 vi6', minor: false),
+        ['Dm6', 'Am6'],
       );
     });
 
     test('builds requested chord quality labels', () {
+      expect(ChordTheory.applyModifier('C', '6'), 'C6');
+      expect(ChordTheory.applyModifier('C', 'm6'), 'Cm6');
       expect(ChordTheory.applyModifier('B', 'm7♭5'), 'Bm7♭5');
       expect(ChordTheory.applyModifier('C', 'sus2'), 'Csus2');
       expect(ChordTheory.applyModifier('C', 'sus4'), 'Csus4');
