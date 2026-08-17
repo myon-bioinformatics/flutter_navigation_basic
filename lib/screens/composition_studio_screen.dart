@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../config/routes.dart';
 import '../data/composer.dart';
+import '../shared/widgets/chord_theory_card.dart';
 import '../shared/widgets/composition_studio.dart';
 import '../widgets/nav_button.dart';
 
@@ -47,6 +48,8 @@ class _CompositionStudioScreenState extends State<CompositionStudioScreen> {
                   initialBpm: _initialBpm,
                   initialKey: _initialKey,
                 ),
+                const SizedBox(height: 16),
+                ChordTheoryCard(initialKey: _initialKey),
                 const SizedBox(height: 20),
                 const Wrap(
                   alignment: WrapAlignment.center,
