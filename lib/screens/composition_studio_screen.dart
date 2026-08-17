@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../config/routes.dart';
 import '../data/composer.dart';
+import '../shared/display/display_scope.dart';
 import '../shared/widgets/chord_theory_card.dart';
 import '../shared/widgets/composition_studio.dart';
 import '../shared/widgets/note_sequence_card.dart';
@@ -24,18 +25,18 @@ class _CompositionStudioScreenState extends State<CompositionStudioScreen> {
   void initState() {
     super.initState();
     final random = Random();
-    _initialKey = Composer.diatonicScaleList[
-      random.nextInt(Composer.diatonicScaleList.length)
-    ];
+    _initialKey = Composer.diatonicScaleList[random.nextInt(Composer.diatonicScaleList.length)];
     _initialBpm = 90 + random.nextInt(61);
   }
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Composition Studio 🎸'),
+        title: Text(display.text('home.composition')),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: const [DisplayLocalePicker(compact: true)],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 72),
@@ -45,24 +46,21 @@ class _CompositionStudioScreenState extends State<CompositionStudioScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                CompositionStudio(
-                  initialBpm: _initialBpm,
-                  initialKey: _initialKey,
-                ),
+                CompositionStudio(initialBpm: _initialBpm, initialKey: _initialKey),
                 const SizedBox(height: 16),
                 ChordTheoryCard(initialKey: _initialKey),
                 const SizedBox(height: 16),
                 const NoteSequenceCard(),
                 const SizedBox(height: 20),
-                const Wrap(
+                Wrap(
                   alignment: WrapAlignment.center,
                   spacing: 12,
                   runSpacing: 12,
                   children: [
-                    NavButton(label: 'Song Seed Generator', routeName: AppRoutes.compositionSeedGenerator),
-                    NavButton(label: 'Home 🏠', routeName: AppRoutes.home),
-                    NavButton(label: 'Counter Playground 👾', routeName: AppRoutes.counterPlayground),
-                    NavButton(label: 'Irony Generator 🥐', routeName: AppRoutes.ironyGenerator),
+                    const NavButton(label: 'Song Seed Generator', routeName: AppRoutes.compositionSeedGenerator),
+                    NavButton(label: display.text('common.home'), routeName: AppRoutes.home),
+                    NavButton(label: display.text('home.counter'), routeName: AppRoutes.counterPlayground),
+                    NavButton(label: display.text('home.irony'), routeName: AppRoutes.ironyGenerator),
                   ],
                 ),
               ],
