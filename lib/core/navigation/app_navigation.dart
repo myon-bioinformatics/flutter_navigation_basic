@@ -3,6 +3,7 @@ import 'route_names.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/home/domain/home_controller.dart';
 import '../../features/clipboard_shelf/presentation/clipboard_shelf_page.dart';
+import '../../features/now_timeline/presentation/now_timeline_page.dart';
 import '../../features/counter_playground/presentation/counter_playground_page.dart';
 import '../../features/counter_playground/domain/counter_playground_controller.dart';
 import '../../features/irony_generator/presentation/irony_generator_page.dart';
@@ -29,6 +30,7 @@ class AppNavigation {
   static Map<String, WidgetBuilder> get routes => {
         RouteNames.home: (_) => HomeScreen(controller: HomeController()),
         RouteNames.clipboardShelf: (_) => const ClipboardShelfPage(),
+        RouteNames.nowTimeline: (_) => const NowTimelinePage(),
         RouteNames.counterPlayground: (_) => CounterPlaygroundPage(
               controller: CounterPlaygroundController(),
             ),
@@ -47,13 +49,11 @@ class AppNavigation {
         (route) => false,
       );
   static void toClipboardShelf() => _navigator.pushNamed(RouteNames.clipboardShelf);
-  static void toCounterPlayground() =>
-      _navigator.pushNamed(RouteNames.counterPlayground);
+  static void toNowTimeline() => _navigator.pushNamed(RouteNames.nowTimeline);
+  static void toCounterPlayground() => _navigator.pushNamed(RouteNames.counterPlayground);
   static void toIronyGenerator() => _navigator.pushNamed(RouteNames.ironyGenerator);
-  static void toCompositionGenerator() =>
-      _navigator.pushNamed(RouteNames.compositionGenerator);
-  static void toClipboardWorkbench() =>
-      _navigator.pushNamed(RouteNames.clipboardWorkbench);
+  static void toCompositionGenerator() => _navigator.pushNamed(RouteNames.compositionGenerator);
+  static void toClipboardWorkbench() => _navigator.pushNamed(RouteNames.clipboardWorkbench);
   static void toScreen5() => _navigator.pushNamed(RouteNames.screen5);
   static void back() => _navigator.maybePop();
 }
