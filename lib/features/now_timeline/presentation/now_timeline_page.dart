@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../shared/display/display_catalog.dart';
+import '../../../shared/display/display_scope.dart';
 import '../domain/now_timeline_models.dart';
 
 class NowTimelinePage extends StatefulWidget {
@@ -15,9 +16,7 @@ class NowTimelinePage extends StatefulWidget {
 class _NowTimelinePageState extends State<NowTimelinePage> {
   final _store = NowTimelineStore();
   List<TimelineEntry> _entries = const [];
-  String _locale = 'en';
   DateTime _nowUtc = DateTime.now().toUtc();
-  DisplayCatalog? _catalog;
   Timer? _ticker;
   bool _loading = true;
 
@@ -37,24 +36,16 @@ class _NowTimelinePageState extends State<NowTimelinePage> {
   }
 
   Future<void> _load() async {
-    final catalog = await DisplayCatalog.load();
     final entries = await _store.loadEntries();
-    final locale = await _store.loadLocale();
     if (!mounted) return;
     setState(() {
-      _catalog = catalog;
       _entries = entries;
-      _locale = catalog.supports(locale) ? locale : 'en';
       _loading = false;
     });
   }
 
-  String _t(String key) => _catalog?.text(_locale, 'nowTimeline.$key') ?? key;
-
-  Future<void> _setLocale(String value) async {
-    setState(() => _locale = value);
-    await _store.saveLocale(value);
-  }
+  String _t(String key) =>
+      DisplayScope.of(context).text('nowTimeline.$key');
 
   Future<void> _delete(TimelineEntry entry) async {
     final next = _entries.where((item) => item.id != entry.id).toList();
@@ -63,13 +54,12 @@ class _NowTimelinePageState extends State<NowTimelinePage> {
   }
 
   Future<void> _addEntry() async {
-    final catalog = _catalog;
-    if (catalog == null) return;
+    final display = DisplayScope.of(context);
     final created = await showDialog<TimelineEntry>(
       context: context,
       builder: (_) => _AddTimelineEntryDialog(
-        catalog: catalog,
-        locale: _locale,
+        catalog: display.catalog,
+        locale: display.locale,
       ),
     );
     if (created == null) return;
@@ -80,29 +70,11 @@ class _NowTimelinePageState extends State<NowTimelinePage> {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(_t('title')),
-        actions: [
-          if (_catalog != null)
-            DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _locale,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                items: DisplayCatalog.supportedLocales
-                    .map(
-                      (locale) => DropdownMenuItem(
-                        value: locale,
-                        child: Text(locale.toUpperCase()),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) _setLocale(value);
-                },
-              ),
-            ),
-        ],
+        title: Text(display.text('nowTimeline.title')),
+        actions: const [DisplayLocalePicker(compact: true)],
       ),
       floatingActionButton: _loading
           ? null
