@@ -53,6 +53,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () => Navigator.pushNamed(context, AppRoutes.nowTimeline),
                     ),
                     HomeOverviewAction(
+                      label: 'Latitude / Longitude',
+                      subtitle: 'Validate decimal coordinates and convert them to degrees, minutes and seconds with hemisphere labels.',
+                      icon: Icons.my_location_outlined,
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.coordinateTool),
+                    ),
+                    HomeOverviewAction(
                       label: 'Clipboard Workbench',
                       subtitle: 'Turn shelf/source material into a structured system prompt and copy the result.',
                       icon: Icons.content_paste_go_outlined,
