@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/navigation/app_navigation.dart';
+import '../../../shared/display/display_scope.dart';
 import '../../../shared/widgets/chord_theory_card.dart';
 import '../../../shared/widgets/composition_studio.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
@@ -15,8 +16,9 @@ class CompositionGeneratorPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Composition Studio 🎸'),
+      appBar: CustomAppBar(title: display.text('home.composition')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 72),
         child: Center(
@@ -25,30 +27,17 @@ class CompositionGeneratorPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                CompositionStudio(
-                  initialBpm: controller.bpm,
-                  initialKey: controller.tonicKey,
-                ),
+                CompositionStudio(initialBpm: controller.bpm, initialKey: controller.tonicKey),
                 const SizedBox(height: 16),
                 ChordTheoryCard(initialKey: controller.tonicKey),
                 const SizedBox(height: 16),
                 const NoteSequenceCard(),
                 const SizedBox(height: 20),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    CustomButton(label: 'Home 🏠', onPressed: AppNavigation.toHome),
-                    CustomButton(
-                      label: 'Counter Playground 👾',
-                      onPressed: AppNavigation.toCounterPlayground,
-                    ),
-                    CustomButton(
-                      label: 'Irony Generator 🥐',
-                      onPressed: AppNavigation.toIronyGenerator,
-                    ),
-                  ],
-                ),
+                Wrap(spacing: 12, runSpacing: 12, children: [
+                  CustomButton(label: display.text('common.home'), onPressed: AppNavigation.toHome),
+                  CustomButton(label: display.text('home.counter'), onPressed: AppNavigation.toCounterPlayground),
+                  CustomButton(label: display.text('home.irony'), onPressed: AppNavigation.toIronyGenerator),
+                ]),
               ],
             ),
           ),
