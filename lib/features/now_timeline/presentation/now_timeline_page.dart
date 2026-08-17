@@ -295,45 +295,19 @@ void _addScheduleRows(
   DateTime nowUtc,
   String Function(String key) text,
 ) {
-  final start = entry.localStartMinute;
-  final end = entry.localEndMinute;
-  if (start == null && end == null) return;
-
   final localNow = IanaTimeRules.toLocal(entry.zoneName, nowUtc);
-  final day = DateTime(localNow.year, localNow.month, localNow.day);
-
-  if (start != null) {
-    final wall = DateTime(
-      day.year,
-      day.month,
-      day.day,
-      start ~/ 60,
-      start % 60,
-    );
+  final boundaries = projectScheduleBoundaries(
+    zoneName: entry.zoneName,
+    localStartMinute: entry.localStartMinute,
+    localEndMinute: entry.localEndMinute,
+    localDay: localNow,
+  );
+  for (final boundary in boundaries) {
     rows.add(
       _TimelineRow(
         entry: entry,
-        instantUtc: IanaTimeRules.localWallTimeToUtc(entry.zoneName, wall),
-        label: text('start'),
-      ),
-    );
-  }
-
-  if (end != null) {
-    final overnight = start != null && end < start;
-    final endDay = overnight ? day.add(const Duration(days: 1)) : day;
-    final wall = DateTime(
-      endDay.year,
-      endDay.month,
-      endDay.day,
-      end ~/ 60,
-      end % 60,
-    );
-    rows.add(
-      _TimelineRow(
-        entry: entry,
-        instantUtc: IanaTimeRules.localWallTimeToUtc(entry.zoneName, wall),
-        label: text('end'),
+        instantUtc: boundary.instantUtc,
+        label: text(boundary.isStart ? 'start' : 'end'),
       ),
     );
   }

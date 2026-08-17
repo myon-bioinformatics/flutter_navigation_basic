@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_application_1/features/now_timeline/domain/now_timeline_models.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   group('IanaTimeRules', () {
@@ -71,6 +72,110 @@ void main() {
         ),
         throwsFormatException,
       );
+    });
+  });
+
+  group('projectScheduleBoundaries', () {
+    test('projects an overnight schedule end onto the following day', () {
+      final boundaries = projectScheduleBoundaries(
+        zoneName: 'Asia/Tokyo',
+        localStartMinute: 22 * 60,
+        localEndMinute: 2 * 60,
+        localDay: DateTime(2026, 8, 17),
+      );
+
+      expect(boundaries, hasLength(2));
+      expect(boundaries[0].isStart, isTrue);
+      expect(boundaries[0].instantUtc, DateTime.utc(2026, 8, 17, 13));
+      expect(boundaries[1].isStart, isFalse);
+      expect(boundaries[1].instantUtc, DateTime.utc(2026, 8, 17, 17));
+      expect(
+        boundaries[1].instantUtc.isAfter(boundaries[0].instantUtc),
+        isTrue,
+      );
+    });
+
+    test('keeps a same-day schedule on the same local day', () {
+      final boundaries = projectScheduleBoundaries(
+        zoneName: 'Asia/Tokyo',
+        localStartMinute: 9 * 60,
+        localEndMinute: 17 * 60,
+        localDay: DateTime(2026, 8, 17),
+      );
+
+      expect(boundaries, hasLength(2));
+      expect(boundaries[0].instantUtc, DateTime.utc(2026, 8, 17, 0));
+      expect(boundaries[1].instantUtc, DateTime.utc(2026, 8, 17, 8));
+    });
+
+    test(
+      'skips a DST spring-forward gap boundary instead of throwing',
+      () {
+        // Europe/London clocks jump from 00:59 to 02:00 on 2026-03-29, so
+        // a saved 01:30 start never occurs on that date.
+        final boundaries = projectScheduleBoundaries(
+          zoneName: 'Europe/London',
+          localStartMinute: 1 * 60 + 30,
+          localEndMinute: 10 * 60,
+          localDay: DateTime(2026, 3, 29),
+        );
+
+        expect(boundaries, hasLength(1));
+        expect(boundaries.single.isStart, isFalse);
+        expect(boundaries.single.instantUtc, DateTime.utc(2026, 3, 29, 9));
+      },
+    );
+
+    test('returns no boundaries when both start and end fall in the gap', () {
+      final boundaries = projectScheduleBoundaries(
+        zoneName: 'Europe/London',
+        localStartMinute: 1 * 60 + 10,
+        localEndMinute: 1 * 60 + 45,
+        localDay: DateTime(2026, 3, 29),
+      );
+
+      expect(boundaries, isEmpty);
+    });
+  });
+
+  group('NowTimelineStore write serialization', () {
+    test('saveEntries persists calls in call order so the latest wins', () async {
+      SharedPreferences.setMockInitialValues({});
+      final store = NowTimelineStore();
+      const first = [
+        TimelineEntry(
+          id: '1',
+          title: 'First',
+          kind: TimelineKind.person,
+          zoneName: 'Asia/Tokyo',
+        ),
+      ];
+      const second = [
+        TimelineEntry(
+          id: '1',
+          title: 'Second',
+          kind: TimelineKind.person,
+          zoneName: 'Asia/Tokyo',
+        ),
+      ];
+
+      final saveFirst = store.saveEntries(first);
+      final saveSecond = store.saveEntries(second);
+      await Future.wait([saveFirst, saveSecond]);
+
+      final loaded = await store.loadEntries();
+      expect(loaded.single.title, 'Second');
+    });
+
+    test('saveLocale persists calls in call order so the latest wins', () async {
+      SharedPreferences.setMockInitialValues({});
+      final store = NowTimelineStore();
+
+      final saveFirst = store.saveLocale('ja');
+      final saveSecond = store.saveLocale('fr');
+      await Future.wait([saveFirst, saveSecond]);
+
+      expect(await store.loadLocale(), 'fr');
     });
   });
 

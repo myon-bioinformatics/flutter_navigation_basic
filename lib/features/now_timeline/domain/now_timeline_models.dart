@@ -54,6 +54,13 @@ class NowTimelineStore {
   static const _entriesKey = 'now_timeline.entries.v1';
   static const _localeKey = 'now_timeline.locale.v1';
 
+  // Chains writes so they land on disk in call order rather than completion
+  // order. Without this, two rapid saveEntries()/saveLocale() calls (e.g.
+  // fast double-tap add/delete) can race on the underlying platform channel
+  // and let an older snapshot overwrite a newer one.
+  Future<void> _entriesWriteQueue = Future.value();
+  Future<void> _localeWriteQueue = Future.value();
+
   Future<List<TimelineEntry>> loadEntries() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_entriesKey);
@@ -64,7 +71,13 @@ class NowTimelineStore {
         .toList(growable: true);
   }
 
-  Future<void> saveEntries(List<TimelineEntry> entries) async {
+  Future<void> saveEntries(List<TimelineEntry> entries) {
+    final scheduled = _entriesWriteQueue.then((_) => _writeEntries(entries));
+    _entriesWriteQueue = scheduled.catchError((_) {});
+    return scheduled;
+  }
+
+  Future<void> _writeEntries(List<TimelineEntry> entries) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
       _entriesKey,
@@ -77,7 +90,13 @@ class NowTimelineStore {
     return prefs.getString(_localeKey) ?? 'en';
   }
 
-  Future<void> saveLocale(String locale) async {
+  Future<void> saveLocale(String locale) {
+    final scheduled = _localeWriteQueue.then((_) => _writeLocale(locale));
+    _localeWriteQueue = scheduled.catchError((_) {});
+    return scheduled;
+  }
+
+  Future<void> _writeLocale(String locale) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_localeKey, locale);
   }
@@ -206,5 +225,82 @@ class IanaTimeRules {
   static int _lastSunday(int year, int month) {
     final last = DateTime.utc(year, month + 1, 0);
     return last.day - ((last.weekday - DateTime.sunday) % 7);
+  }
+}
+
+/// One projected schedule boundary, already resolved to a UTC instant.
+class ScheduleBoundaryInstant {
+  const ScheduleBoundaryInstant({
+    required this.instantUtc,
+    required this.isStart,
+  });
+
+  final DateTime instantUtc;
+  final bool isStart;
+}
+
+/// Projects a schedule entry's local start/end minutes onto [localDay] and
+/// resolves each boundary to a UTC instant.
+///
+/// Overnight schedules (`localEndMinute < localStartMinute`) project the end
+/// boundary onto the day after [localDay]. A boundary that lands in a DST
+/// spring-forward gap (a local wall time that never occurs) is skipped
+/// rather than thrown, so a schedule saved on an ordinary day cannot crash
+/// rendering on the one day a year its start/end becomes momentarily
+/// non-existent.
+List<ScheduleBoundaryInstant> projectScheduleBoundaries({
+  required String zoneName,
+  required int? localStartMinute,
+  required int? localEndMinute,
+  required DateTime localDay,
+}) {
+  final boundaries = <ScheduleBoundaryInstant>[];
+  if (localStartMinute == null && localEndMinute == null) return boundaries;
+
+  final day = DateTime(localDay.year, localDay.month, localDay.day);
+
+  if (localStartMinute != null) {
+    final wall = DateTime(
+      day.year,
+      day.month,
+      day.day,
+      localStartMinute ~/ 60,
+      localStartMinute % 60,
+    );
+    final instant = _tryLocalWallTimeToUtc(zoneName, wall);
+    if (instant != null) {
+      boundaries.add(
+        ScheduleBoundaryInstant(instantUtc: instant, isStart: true),
+      );
+    }
+  }
+
+  if (localEndMinute != null) {
+    final overnight =
+        localStartMinute != null && localEndMinute < localStartMinute;
+    final endDay = overnight ? day.add(const Duration(days: 1)) : day;
+    final wall = DateTime(
+      endDay.year,
+      endDay.month,
+      endDay.day,
+      localEndMinute ~/ 60,
+      localEndMinute % 60,
+    );
+    final instant = _tryLocalWallTimeToUtc(zoneName, wall);
+    if (instant != null) {
+      boundaries.add(
+        ScheduleBoundaryInstant(instantUtc: instant, isStart: false),
+      );
+    }
+  }
+
+  return boundaries;
+}
+
+DateTime? _tryLocalWallTimeToUtc(String zoneName, DateTime wall) {
+  try {
+    return IanaTimeRules.localWallTimeToUtc(zoneName, wall);
+  } on FormatException {
+    return null;
   }
 }
