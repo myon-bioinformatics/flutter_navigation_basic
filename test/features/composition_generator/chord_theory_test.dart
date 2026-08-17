@@ -23,6 +23,24 @@ void main() {
       expect(ChordTheory.transposeKey('C', -1), 'B');
     });
 
+    test('preserves diatonic letter spelling for sharp keys', () {
+      expect(
+        ChordTheory.scale('F♯', minor: false),
+        ['F♯', 'G♯', 'A♯', 'B', 'C♯', 'D♯', 'E♯'],
+      );
+    });
+
+    test('understands common roman-numeral chord suffixes', () {
+      expect(
+        ChordTheory.convertProgression(
+          'C',
+          'Imaj7 V7 ii7 viiø7 IVsus2 IVadd9 Vaug',
+          minor: false,
+        ),
+        ['Cmaj7', 'G7', 'Dm7', 'Bm7♭5', 'Fsus2', 'Fadd9', 'Gaug'],
+      );
+    });
+
     test('builds requested chord quality labels', () {
       expect(ChordTheory.applyModifier('B', 'm7♭5'), 'Bm7♭5');
       expect(ChordTheory.applyModifier('C', 'sus2'), 'Csus2');
@@ -36,7 +54,10 @@ void main() {
 
     test('major scale degrees expose diatonic chord qualities', () {
       expect(
-        [for (var degree = 1; degree <= 7; degree++) ChordTheory.diatonicChord('C', degree, minor: false)],
+        [
+          for (var degree = 1; degree <= 7; degree++)
+            ChordTheory.diatonicChord('C', degree, minor: false),
+        ],
         ['C', 'Dm', 'Em', 'F', 'G', 'Am', 'Bdim'],
       );
     });
