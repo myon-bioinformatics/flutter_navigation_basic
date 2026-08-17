@@ -13,6 +13,9 @@ class CoordinateValue {
     if (lat == null || lon == null) {
       throw const FormatException('Latitude and longitude must be numbers.');
     }
+    if (!lat.isFinite || !lon.isFinite) {
+      throw const FormatException('Latitude and longitude must be finite numbers.');
+    }
     if (lat < -90 || lat > 90) {
       throw const FormatException('Latitude must be between -90 and 90.');
     }
