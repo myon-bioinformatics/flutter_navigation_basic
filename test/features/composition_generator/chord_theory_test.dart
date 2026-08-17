@@ -23,6 +23,13 @@ void main() {
       expect(ChordTheory.transposeKey('C', -1), 'B');
     });
 
+    test('moves to circle-of-fifths neighbors', () {
+      expect(ChordTheory.fifthNeighbor('C', clockwise: false), 'F');
+      expect(ChordTheory.fifthNeighbor('C', clockwise: true), 'G');
+      expect(ChordTheory.fifthNeighbor('D♭', clockwise: false), 'G♭');
+      expect(ChordTheory.fifthNeighbor('D♭', clockwise: true), 'A♭');
+    });
+
     test('preserves diatonic letter spelling for sharp keys', () {
       expect(
         ChordTheory.scale('F♯', minor: false),
@@ -69,6 +76,20 @@ void main() {
       expect(ChordTheory.applyModifier('D', 'dim'), 'Ddim');
       expect(ChordTheory.applyModifier('E', 'aug'), 'Eaug');
       expect(ChordTheory.applyModifier('G', '7'), 'G7');
+    });
+
+    test('exposes root through third inversion for four-note chords', () {
+      expect(ChordTheory.chordWithInversion('C', 'maj7', 0), 'Cmaj7');
+      expect(ChordTheory.chordWithInversion('C', 'maj7', 1), 'Cmaj7/E');
+      expect(ChordTheory.chordWithInversion('C', 'maj7', 2), 'Cmaj7/G');
+      expect(ChordTheory.chordWithInversion('C', 'maj7', 3), 'Cmaj7/B');
+      expect(ChordTheory.chordWithInversion('C', '6', 3), 'C6/A');
+    });
+
+    test('loops triad third-inversion slot back to first inversion', () {
+      expect(ChordTheory.normalizedInversion('triad', 3), 1);
+      expect(ChordTheory.chordWithInversion('C', 'triad', 3), 'C/E');
+      expect(ChordTheory.chordWithInversion('C', 'sus4', 3), 'Csus4/F');
     });
 
     test('major scale degrees expose diatonic chord qualities', () {
