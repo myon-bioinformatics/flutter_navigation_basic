@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_navigation_basic/features/coordinate_tool/domain/coordinate_formatter.dart';
+import 'package:flutter_application_1/features/coordinate_tool/domain/coordinate_formatter.dart';
 
 void main() {
   group('CoordinateValue', () {
