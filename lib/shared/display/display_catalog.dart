@@ -22,12 +22,19 @@ class DisplayCatalog {
     final raw = await rootBundle.loadString('assets/display/app_text.json');
     final decoded = jsonDecode(raw) as Map<String, dynamic>;
     final locales = decoded['locales'] as Map<String, dynamic>;
+    final englishSource = (locales['en'] as Map<dynamic, dynamic>?) ?? const {};
+    final english = englishSource.map(
+      (key, value) => MapEntry(key.toString(), value.toString()),
+    );
     final values = <String, Map<String, String>>{};
     for (final locale in supportedLocales) {
       final source = (locales[locale] as Map<dynamic, dynamic>?) ?? const {};
-      values[locale] = source.map(
-        (key, value) => MapEntry(key.toString(), value.toString()),
-      );
+      values[locale] = <String, String>{
+        ...english,
+        ...source.map(
+          (key, value) => MapEntry(key.toString(), value.toString()),
+        ),
+      };
     }
     return DisplayCatalog._(values);
   }
