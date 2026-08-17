@@ -3,14 +3,7 @@ import 'package:flutter/material.dart';
 import '../../features/composition_generator/domain/note_sequence.dart';
 
 class NoteSequenceCard extends StatefulWidget {
-  const NoteSequenceCard({
-    super.key,
-    required this.beatsPerBar,
-    required this.beatUnit,
-  });
-
-  final int beatsPerBar;
-  final int beatUnit;
+  const NoteSequenceCard({super.key});
 
   @override
   State<NoteSequenceCard> createState() => _NoteSequenceCardState();
@@ -20,6 +13,8 @@ class _NoteSequenceCardState extends State<NoteSequenceCard> {
   final TextEditingController _controller = TextEditingController(
     text: 'C3 D3 C3 D3 G3 A3 G3 C4',
   );
+  int _beatsPerBar = 4;
+  int _beatUnit = 4;
   int _noteUnit = 8;
   String? _error;
   Set<int> _expandedBars = {0};
@@ -36,8 +31,8 @@ class _NoteSequenceCardState extends State<NoteSequenceCard> {
       _error = null;
       return NoteSequence.bars(
         notes,
-        beatsPerBar: widget.beatsPerBar,
-        beatUnit: widget.beatUnit,
+        beatsPerBar: _beatsPerBar,
+        beatUnit: _beatUnit,
         noteUnit: _noteUnit,
       );
     } on FormatException catch (error) {
@@ -47,6 +42,15 @@ class _NoteSequenceCardState extends State<NoteSequenceCard> {
       _error = error.message?.toString() ?? 'Invalid sequence';
       return const [];
     }
+  }
+
+  void _setSignature(String value) {
+    final parts = value.split('/');
+    setState(() {
+      _beatsPerBar = int.parse(parts[0]);
+      _beatUnit = int.parse(parts[1]);
+      _expandedBars = {0};
+    });
   }
 
   @override
@@ -72,7 +76,7 @@ class _NoteSequenceCardState extends State<NoteSequenceCard> {
                 labelText: 'Monophonic note sequence',
                 hintText: 'C3 D3 C3 D3 G3 A3 G3 C4',
                 border: OutlineInputBorder(),
-                helperText: 'Notes only; spaces or commas separate events. #/♯ and b/♭ are accepted.',
+                helperText: 'Spaces or commas separate notes. #/♯ and b/♭ are accepted.',
               ),
               onChanged: (_) => setState(() {}),
             ),
@@ -82,6 +86,17 @@ class _NoteSequenceCardState extends State<NoteSequenceCard> {
               runSpacing: 10,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
+                DropdownButton<String>(
+                  value: '$_beatsPerBar/$_beatUnit',
+                  items: const [
+                    DropdownMenuItem(value: '3/4', child: Text('3/4')),
+                    DropdownMenuItem(value: '4/4', child: Text('4/4')),
+                    DropdownMenuItem(value: '6/8', child: Text('6/8')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) _setSignature(value);
+                  },
+                ),
                 SegmentedButton<int>(
                   segments: const [
                     ButtonSegment(value: 4, label: Text('1/4 note')),
@@ -93,15 +108,12 @@ class _NoteSequenceCardState extends State<NoteSequenceCard> {
                     _expandedBars = {0};
                   }),
                 ),
-                Text('${widget.beatsPerBar}/${widget.beatUnit} · ${bars.length} bar${bars.length == 1 ? '' : 's'}'),
+                Text('$_beatsPerBar/$_beatUnit · ${bars.length} bar${bars.length == 1 ? '' : 's'}'),
               ],
             ),
             if (_error != null) ...[
               const SizedBox(height: 10),
-              Text(
-                _error!,
-                style: TextStyle(color: theme.colorScheme.error),
-              ),
+              Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
             ],
             const SizedBox(height: 14),
             if (bars.isEmpty && _error == null)
@@ -112,7 +124,9 @@ class _NoteSequenceCardState extends State<NoteSequenceCard> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: ExpansionTile(
-                      key: ValueKey('sequence-bar-$index-${_noteUnit}-${widget.beatsPerBar}-${widget.beatUnit}'),
+                      key: ValueKey(
+                        'sequence-bar-$index-$_noteUnit-$_beatsPerBar-$_beatUnit',
+                      ),
                       initiallyExpanded: _expandedBars.contains(index),
                       onExpansionChanged: (expanded) => setState(() {
                         if (expanded) {
@@ -144,7 +158,7 @@ class _NoteSequenceCardState extends State<NoteSequenceCard> {
               ],
             const SizedBox(height: 4),
             const Text(
-              'This is a sketch sequencer, not audio/MIDI playback. The same bar model can later feed a richer horizontal timeline on large screens without changing the sequence data.',
+              'Sketch only: no audio or MIDI playback yet. Bars stay vertically foldable on phone/Web; a richer horizontal timeline can be added later over the same sequence model.',
             ),
           ],
         ),
