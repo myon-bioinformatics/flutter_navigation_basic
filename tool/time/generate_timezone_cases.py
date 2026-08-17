@@ -95,17 +95,21 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    rendered = render_fixture()
+    expected = build_fixture()
     if args.stdout:
-        sys.stdout.write(rendered)
+        sys.stdout.write(json.dumps(expected, ensure_ascii=False, indent=2) + "\n")
         return 0
 
     if args.check:
         if not FIXTURE_PATH.exists():
             print(f"Missing fixture: {FIXTURE_PATH}", file=sys.stderr)
             return 1
-        current = FIXTURE_PATH.read_text(encoding="utf-8")
-        if current != rendered:
+        try:
+            current = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"Cannot read timezone fixture: {exc}", file=sys.stderr)
+            return 1
+        if current != expected:
             print(
                 "Timezone fixture is stale. Run "
                 "`python3 tool/time/generate_timezone_cases.py` and commit the result.",
@@ -116,7 +120,10 @@ def main() -> int:
         return 0
 
     FIXTURE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    FIXTURE_PATH.write_text(rendered, encoding="utf-8")
+    FIXTURE_PATH.write_text(
+        json.dumps(expected, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
     print(f"Wrote {FIXTURE_PATH}")
     return 0
 
