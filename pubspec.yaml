@@ -31,3 +31,4 @@ flutter:
     - assets/screens.json
     - assets/ui_showcase.json
     - assets/diagnostics/build_meta.json
+    - assets/display/app_text.json
