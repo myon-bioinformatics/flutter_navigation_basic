@@ -5,6 +5,7 @@ import '../../../shared/widgets/chord_theory_card.dart';
 import '../../../shared/widgets/composition_studio.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
 import '../../../shared/widgets/custom_button.dart';
+import '../../../shared/widgets/note_sequence_card.dart';
 import '../domain/composition_generator_controller.dart';
 
 class CompositionGeneratorPage extends StatelessWidget {
@@ -30,6 +31,8 @@ class CompositionGeneratorPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 ChordTheoryCard(initialKey: controller.tonicKey),
+                const SizedBox(height: 16),
+                const NoteSequenceCard(),
                 const SizedBox(height: 20),
                 Wrap(
                   spacing: 12,
