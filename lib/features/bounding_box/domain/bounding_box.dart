@@ -80,7 +80,7 @@ class BoundingBox {
 
     final longitudeDelta = math.min(
       180.0,
-      _degrees(angular / _radians(latitude).cos().abs()),
+      _degrees(angular / math.cos(_radians(latitude)).abs()),
     );
     final rawWest = longitude - longitudeDelta;
     final rawEast = longitude + longitudeDelta;
