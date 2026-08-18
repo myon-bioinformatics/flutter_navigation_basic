@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../features/composition_generator/domain/note_sequence.dart';
+import '../display/display_scope.dart';
 
 class NoteSequenceCard extends StatefulWidget {
   const NoteSequenceCard({super.key});
@@ -57,6 +58,7 @@ class _NoteSequenceCardState extends State<NoteSequenceCard> {
   Widget build(BuildContext context) {
     final bars = _bars();
     final theme = Theme.of(context);
+    final display = DisplayScope.of(context);
 
     return Card(
       child: Padding(
@@ -64,19 +66,17 @@ class _NoteSequenceCardState extends State<NoteSequenceCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Pocket Sequence', style: theme.textTheme.titleLarge),
+            Text(display.text('noteSequence.title'), style: theme.textTheme.titleLarge),
             const SizedBox(height: 4),
-            const Text(
-              'A deliberately small monophonic sketchpad: type note names, choose quarter or eighth notes, and inspect the phrase bar by bar.',
-            ),
+            Text(display.text('noteSequence.subtitle')),
             const SizedBox(height: 12),
             TextField(
               controller: _controller,
-              decoration: const InputDecoration(
-                labelText: 'Monophonic note sequence',
+              decoration: InputDecoration(
+                labelText: display.text('noteSequence.sequenceLabel'),
                 hintText: 'C3 D3 C3 D3 G3 A3 G3 C4',
-                border: OutlineInputBorder(),
-                helperText: 'Spaces or commas separate notes. #/♯ and b/♭ are accepted.',
+                border: const OutlineInputBorder(),
+                helperText: display.text('noteSequence.helperText'),
               ),
               onChanged: (_) => setState(() {}),
             ),
@@ -98,9 +98,9 @@ class _NoteSequenceCardState extends State<NoteSequenceCard> {
                   },
                 ),
                 SegmentedButton<int>(
-                  segments: const [
-                    ButtonSegment(value: 4, label: Text('1/4 note')),
-                    ButtonSegment(value: 8, label: Text('1/8 note')),
+                  segments: [
+                    ButtonSegment(value: 4, label: Text(display.text('noteSequence.quarterNote'))),
+                    ButtonSegment(value: 8, label: Text(display.text('noteSequence.eighthNote'))),
                   ],
                   selected: {_noteUnit},
                   onSelectionChanged: (value) => setState(() {
@@ -108,7 +108,10 @@ class _NoteSequenceCardState extends State<NoteSequenceCard> {
                     _expandedBars = {0};
                   }),
                 ),
-                Text('$_beatsPerBar/$_beatUnit · ${bars.length} bar${bars.length == 1 ? '' : 's'}'),
+                Text(display.text(
+                  bars.length == 1 ? 'noteSequence.barCountSingular' : 'noteSequence.barCountPlural',
+                  arguments: {'meter': '$_beatsPerBar/$_beatUnit', 'count': bars.length},
+                )),
               ],
             ),
             if (_error != null) ...[
@@ -117,7 +120,7 @@ class _NoteSequenceCardState extends State<NoteSequenceCard> {
             ],
             const SizedBox(height: 14),
             if (bars.isEmpty && _error == null)
-              const Text('Enter notes to create the sequence.')
+              Text(display.text('noteSequence.emptyPrompt'))
             else
               ...[
                 for (var index = 0; index < bars.length; index++)
@@ -135,7 +138,7 @@ class _NoteSequenceCardState extends State<NoteSequenceCard> {
                           _expandedBars = {..._expandedBars}..remove(index);
                         }
                       }),
-                      title: Text('Bar ${index + 1}'),
+                      title: Text(display.text('noteSequence.barTitle', arguments: {'n': index + 1})),
                       subtitle: Text(bars[index].join('  ')),
                       children: [
                         Padding(
@@ -157,9 +160,7 @@ class _NoteSequenceCardState extends State<NoteSequenceCard> {
                   ),
               ],
             const SizedBox(height: 4),
-            const Text(
-              'Sketch only: no audio or MIDI playback yet. Bars stay vertically foldable on phone/Web; a richer horizontal timeline can be added later over the same sequence model.',
-            ),
+            Text(display.text('noteSequence.sketchOnlyNote')),
           ],
         ),
       ),

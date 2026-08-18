@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../shared/display/display_scope.dart';
+
 enum PatternScreenTemplate {
   list,
   detail,
@@ -29,30 +31,30 @@ PatternScreenTemplate templateFromName(String? name) {
   return PatternScreenTemplate.list;
 }
 
-String templateLabel(PatternScreenTemplate template) {
+String templateLabel(DisplayController display, PatternScreenTemplate template) {
   switch (template) {
     case PatternScreenTemplate.list:
-      return 'List';
+      return display.text('patternTemplate.list');
     case PatternScreenTemplate.detail:
-      return 'Detail';
+      return display.text('patternTemplate.detail');
     case PatternScreenTemplate.form:
-      return 'Form';
+      return display.text('patternTemplate.form');
     case PatternScreenTemplate.search:
-      return 'Search';
+      return display.text('patternTemplate.search');
     case PatternScreenTemplate.tabs:
-      return 'Tabs';
+      return display.text('patternTemplate.tabs');
     case PatternScreenTemplate.bottomNavigation:
-      return 'Bottom navigation';
+      return display.text('patternTemplate.bottomNavigation');
     case PatternScreenTemplate.drawer:
-      return 'Drawer';
+      return display.text('patternTemplate.drawer');
     case PatternScreenTemplate.dialog:
-      return 'Dialog';
+      return display.text('patternTemplate.dialog');
     case PatternScreenTemplate.grid:
-      return 'Grid';
+      return display.text('patternTemplate.grid');
     case PatternScreenTemplate.asyncState:
-      return 'Async state';
+      return display.text('patternTemplate.asyncState');
     case PatternScreenTemplate.settings:
-      return 'Settings';
+      return display.text('patternTemplate.settings');
   }
 }
 
@@ -96,6 +98,7 @@ class _PatternTemplateBodyState extends State<PatternTemplateBody> {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     switch (template) {
       case PatternScreenTemplate.list:
         return ListView.separated(
@@ -103,7 +106,10 @@ class _PatternTemplateBodyState extends State<PatternTemplateBody> {
           separatorBuilder: (_, __) => const Divider(height: 1),
           itemBuilder: (context, index) => ListTile(
             leading: CircleAvatar(child: Text('${index + 1}')),
-            title: Text('${widget.title} item ${index + 1}'),
+            title: Text(display.text(
+              'patternTemplate.listItem',
+              arguments: {'title': widget.title, 'n': index + 1},
+            )),
             subtitle: Text(widget.description),
           ),
         );
@@ -117,7 +123,10 @@ class _PatternTemplateBodyState extends State<PatternTemplateBody> {
               Text(widget.description),
               const SizedBox(height: 20),
               const Divider(),
-              Text('Screen ID: ${widget.screenId}'),
+              Text(display.text(
+                'patternTemplate.screenIdLabel',
+                arguments: {'id': widget.screenId},
+              )),
             ],
           ),
         );
@@ -127,9 +136,9 @@ class _PatternTemplateBodyState extends State<PatternTemplateBody> {
             children: [
               TextField(
                 controller: _controller,
-                decoration: const InputDecoration(
-                  labelText: 'Sample input',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: display.text('patternTemplate.sampleInputLabel'),
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
@@ -137,9 +146,14 @@ class _PatternTemplateBodyState extends State<PatternTemplateBody> {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Submitted: ${_controller.text}')),
+                    SnackBar(
+                      content: Text(display.text(
+                        'patternTemplate.submitted',
+                        arguments: {'value': _controller.text},
+                      )),
+                    ),
                   ),
-                  child: const Text('Submit'),
+                  child: Text(display.text('patternTemplate.submit')),
                 ),
               ),
             ],
@@ -151,10 +165,10 @@ class _PatternTemplateBodyState extends State<PatternTemplateBody> {
             children: [
               TextField(
                 controller: _controller,
-                decoration: const InputDecoration(
-                  hintText: 'Search this sample',
-                  prefixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  hintText: display.text('patternTemplate.searchHint'),
+                  prefixIcon: const Icon(Icons.search),
+                  border: const OutlineInputBorder(),
                 ),
                 onChanged: (_) => setState(() {}),
               ),
@@ -162,8 +176,11 @@ class _PatternTemplateBodyState extends State<PatternTemplateBody> {
               ListTile(
                 leading: const Icon(Icons.manage_search),
                 title: Text(_controller.text.isEmpty
-                    ? 'Type a query to filter'
-                    : 'Result for “${_controller.text}”'),
+                    ? display.text('patternTemplate.typeToFilter')
+                    : display.text(
+                        'patternTemplate.resultFor',
+                        arguments: {'query': _controller.text},
+                      )),
                 subtitle: Text(widget.description),
               ),
             ],
@@ -174,10 +191,10 @@ class _PatternTemplateBodyState extends State<PatternTemplateBody> {
           length: 3,
           child: Column(
             children: [
-              const TabBar(tabs: [
-                Tab(text: 'Overview'),
-                Tab(text: 'Code'),
-                Tab(text: 'Notes'),
+              TabBar(tabs: [
+                Tab(text: display.text('patternTemplate.tabOverview')),
+                Tab(text: display.text('patternTemplate.tabCode')),
+                Tab(text: display.text('patternTemplate.tabNotes')),
               ]),
               Expanded(
                 child: TabBarView(
@@ -196,16 +213,28 @@ class _PatternTemplateBodyState extends State<PatternTemplateBody> {
           children: [
             Expanded(
               child: Center(
-                child: Text('Destination ${_selectedIndex + 1}: ${widget.title}'),
+                child: Text(display.text(
+                  'patternTemplate.destination',
+                  arguments: {'n': _selectedIndex + 1, 'title': widget.title},
+                )),
               ),
             ),
             NavigationBar(
               selectedIndex: _selectedIndex,
               onDestinationSelected: (value) => setState(() => _selectedIndex = value),
-              destinations: const [
-                NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
-                NavigationDestination(icon: Icon(Icons.list_alt), label: 'Patterns'),
-                NavigationDestination(icon: Icon(Icons.info_outline), label: 'About'),
+              destinations: [
+                NavigationDestination(
+                  icon: const Icon(Icons.home_outlined),
+                  label: display.text('patternTemplate.navHome'),
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.list_alt),
+                  label: display.text('patternTemplate.navPatterns'),
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.info_outline),
+                  label: display.text('patternTemplate.navAbout'),
+                ),
               ],
             ),
           ],
@@ -215,12 +244,21 @@ class _PatternTemplateBodyState extends State<PatternTemplateBody> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Drawer-style navigation sample',
+              Text(display.text('patternTemplate.drawerSampleTitle'),
                   style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 12),
-              const ListTile(leading: Icon(Icons.home), title: Text('Home')),
-              const ListTile(leading: Icon(Icons.book), title: Text('Library')),
-              const ListTile(leading: Icon(Icons.settings), title: Text('Settings')),
+              ListTile(
+                leading: const Icon(Icons.home),
+                title: Text(display.text('patternTemplate.drawerHome')),
+              ),
+              ListTile(
+                leading: const Icon(Icons.book),
+                title: Text(display.text('patternTemplate.drawerLibrary')),
+              ),
+              ListTile(
+                leading: const Icon(Icons.settings),
+                title: Text(display.text('patternTemplate.drawerSettings')),
+              ),
             ],
           ),
         );
@@ -228,7 +266,7 @@ class _PatternTemplateBodyState extends State<PatternTemplateBody> {
         return Center(
           child: FilledButton.icon(
             icon: const Icon(Icons.open_in_new),
-            label: const Text('Open dialog'),
+            label: Text(display.text('patternTemplate.dialogOpen')),
             onPressed: () => showDialog<void>(
               context: context,
               builder: (context) => AlertDialog(
@@ -237,7 +275,7 @@ class _PatternTemplateBodyState extends State<PatternTemplateBody> {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Close'),
+                    child: Text(display.text('patternTemplate.dialogClose')),
                   ),
                 ],
               ),
@@ -268,7 +306,7 @@ class _PatternTemplateBodyState extends State<PatternTemplateBody> {
               ? const CircularProgressIndicator()
               : FilledButton.icon(
                   icon: const Icon(Icons.sync),
-                  label: const Text('Simulate async task'),
+                  label: Text(display.text('patternTemplate.asyncSimulate')),
                   onPressed: () async {
                     setState(() => _loading = true);
                     await Future<void>.delayed(const Duration(milliseconds: 500));
@@ -282,15 +320,15 @@ class _PatternTemplateBodyState extends State<PatternTemplateBody> {
           Column(
             children: [
               SwitchListTile(
-                title: const Text('Enable sample option'),
+                title: Text(display.text('patternTemplate.settingsEnableOption')),
                 subtitle: Text(widget.description),
                 value: _enabled,
                 onChanged: (value) => setState(() => _enabled = value),
               ),
               ListTile(
                 leading: const Icon(Icons.palette_outlined),
-                title: const Text('Theme preference'),
-                trailing: const Text('System'),
+                title: Text(display.text('patternTemplate.settingsThemePreference')),
+                trailing: Text(display.text('patternTemplate.settingsSystem')),
                 onTap: () {},
               ),
             ],

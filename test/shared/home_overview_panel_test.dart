@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/shared/diagnostics/build_metadata.dart';
 import 'package:flutter_application_1/shared/widgets/home_overview_panel.dart';
 
+import '../support/display_test_harness.dart';
+
 class _RefreshHarness extends StatefulWidget {
   const _RefreshHarness({required this.actions, this.metadataLoader = BuildMetadata.load});
 
@@ -57,16 +59,18 @@ void main() {
     var tapped = false;
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(
-          body: HomeOverviewPanel(
-            actions: [
-              HomeOverviewAction(
-                label: 'Navigation Hub',
-                subtitle: 'Browse patterns',
-                icon: Icons.map_outlined,
-                onTap: () => tapped = true,
-              ),
-            ],
+        home: await wrapWithDisplayScope(
+          Scaffold(
+            body: HomeOverviewPanel(
+              actions: [
+                HomeOverviewAction(
+                  label: 'Navigation Hub',
+                  subtitle: 'Browse patterns',
+                  icon: Icons.map_outlined,
+                  onTap: () => tapped = true,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -89,16 +93,18 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: _RefreshHarness(
-          actions: [
-            HomeOverviewAction(
-              label: 'Navigation Hub',
-              subtitle: 'Browse patterns',
-              icon: Icons.map_outlined,
-              onTap: () {},
-            ),
-          ],
-          metadataLoader: loader,
+        home: await wrapWithDisplayScope(
+          _RefreshHarness(
+            actions: [
+              HomeOverviewAction(
+                label: 'Navigation Hub',
+                subtitle: 'Browse patterns',
+                icon: Icons.map_outlined,
+                onTap: () {},
+              ),
+            ],
+            metadataLoader: loader,
+          ),
         ),
       ),
     );

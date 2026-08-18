@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../diagnostics/build_metadata.dart';
+import '../display/display_scope.dart';
 
 class HomeOverviewAction {
   const HomeOverviewAction({
@@ -37,6 +38,7 @@ class HomeOverviewPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final display = DisplayScope.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -64,10 +66,13 @@ class HomeOverviewPanel extends StatelessWidget {
                 spacing: 10,
                 runSpacing: 10,
                 children: [
-                  const _Metric(label: 'Reference patterns', value: '792'),
-                  const _Metric(label: 'Per category', value: '198'),
-                  const _Metric(label: 'Runtime deps', value: '2'),
-                  const _Metric(label: 'Stage', value: 'pre-beta'),
+                  _Metric(label: display.text('homeOverview.metricReferencePatterns'), value: '792'),
+                  _Metric(label: display.text('homeOverview.metricPerCategory'), value: '198'),
+                  _Metric(label: display.text('homeOverview.metricRuntimeDeps'), value: '2'),
+                  _Metric(
+                    label: display.text('homeOverview.metricStage'),
+                    value: display.text('homeOverview.metricStageValue'),
+                  ),
                   _RevisionMetric(loader: metadataLoader),
                 ],
               ),
@@ -141,34 +146,39 @@ class _RevisionMetricState extends State<_RevisionMetric> {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     return FutureBuilder<BuildMetadata>(
       future: _metadata,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return const _Metric(label: 'Revision', value: 'loading…');
+          return _Metric(
+            label: display.text('homeOverview.revision'),
+            value: display.text('homeOverview.loading'),
+          );
         }
         final revision = snapshot.data!.revision;
         final details = <String>[
-          if (revision.sha != null) 'SHA: ${revision.sha}',
-          if (revision.ref != null) 'Ref: ${revision.ref}',
-          if (revision.committedAt != null) 'Committed: ${revision.committedAt}',
+          if (revision.sha != null) display.text('homeOverview.shaLabel', arguments: {'sha': revision.sha}),
+          if (revision.ref != null) display.text('homeOverview.refLabel', arguments: {'ref': revision.ref}),
+          if (revision.committedAt != null)
+            display.text('homeOverview.committedLabel', arguments: {'date': revision.committedAt}),
           if (revision.subject != null) revision.subject!,
           if (revision.commitUrl != null) revision.commitUrl!,
-          if (revision.dirty) 'Local working tree was dirty',
+          if (revision.dirty) display.text('homeOverview.dirtyWorkingTree'),
         ].join('\n');
         final commitUrl = revision.commitUrl;
         final metric = _Metric(
           label: revision.ref == null || revision.ref!.isEmpty
-              ? 'Revision'
-              : 'Revision · ${revision.ref}',
+              ? display.text('homeOverview.revision')
+              : display.text('homeOverview.revisionWithRef', arguments: {'ref': revision.ref}),
           value: revision.displaySha,
         );
         return Tooltip(
           message: details.isEmpty
-              ? 'Git revision unavailable'
+              ? display.text('homeOverview.gitRevisionUnavailable')
               : commitUrl == null
                   ? details
-                  : '$details\n(tap to copy commit URL)',
+                  : '$details\n${display.text('homeOverview.tapToCopyCommitUrl')}',
           child: commitUrl == null
               ? metric
               : InkWell(
@@ -177,7 +187,7 @@ class _RevisionMetricState extends State<_RevisionMetric> {
                     await Clipboard.setData(ClipboardData(text: commitUrl));
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Commit URL copied')),
+                      SnackBar(content: Text(display.text('homeOverview.commitUrlCopied'))),
                     );
                   },
                   child: metric,

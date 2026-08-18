@@ -194,7 +194,7 @@ class _GenericScreenBody extends StatelessWidget {
     final display = DisplayScope.of(context);
     final headline = data.useCaseJa.isNotEmpty
         ? data.useCaseJa
-        : templateLabel(templateForScreenId(data.id));
+        : templateLabel(display, templateForScreenId(data.id));
     final subline = _hasDomainInfo
         ? '${data.domainEmoji} ${data.domainJa} · ${data.templateJa}テンプレート · Screen ${data.id}'
         : display.text(

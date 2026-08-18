@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/shared/widgets/composition_studio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/display_test_harness.dart';
+
 void main() {
   testWidgets('shows the Stage 1 songwriting workspace', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
-          body: SingleChildScrollView(
-            child: CompositionStudio(initialBpm: 120, initialKey: 'C'),
+      MaterialApp(
+        home: await wrapWithDisplayScope(
+          const Scaffold(
+            body: SingleChildScrollView(
+              child: CompositionStudio(initialBpm: 120, initialKey: 'C'),
+            ),
           ),
         ),
       ),
@@ -25,10 +29,12 @@ void main() {
   testWidgets('metronome can start and stop without leaving a ticker running',
       (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
-          body: SingleChildScrollView(
-            child: CompositionStudio(initialBpm: 120, initialKey: 'C'),
+      MaterialApp(
+        home: await wrapWithDisplayScope(
+          const Scaffold(
+            body: SingleChildScrollView(
+              child: CompositionStudio(initialBpm: 120, initialKey: 'C'),
+            ),
           ),
         ),
       ),

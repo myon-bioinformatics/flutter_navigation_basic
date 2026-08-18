@@ -5,7 +5,10 @@ import 'package:flutter_application_1/screens/composition_generator_screen.dart'
 import 'package:flutter_application_1/screens/counter_playground_screen.dart';
 import 'package:flutter_application_1/screens/irony_generator_screen.dart';
 
-Widget _app(Widget child) => MaterialApp(home: child);
+import '../support/display_test_harness.dart';
+
+Future<Widget> _app(Widget child) async =>
+    MaterialApp(home: await wrapWithDisplayScope(child));
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +28,7 @@ void main() {
 
   testWidgets('counter supports step selection, increase, decrease and reset',
       (tester) async {
-    await tester.pumpWidget(_app(const CounterPlaygroundScreen()));
+    await tester.pumpWidget(await _app(const CounterPlaygroundScreen()));
 
     expect(find.text('Current value'), findsOneWidget);
     expect(find.text('Step 5'), findsOneWidget);
@@ -51,7 +54,7 @@ void main() {
 
   testWidgets('irony generator exposes filters and repeat actions',
       (tester) async {
-    await tester.pumpWidget(_app(const IronyGeneratorScreen()));
+    await tester.pumpWidget(await _app(const IronyGeneratorScreen()));
 
     expect(find.text('All'), findsOneWidget);
     expect(find.text('Tech'), findsWidgets);
@@ -65,7 +68,7 @@ void main() {
   });
 
   testWidgets('irony copy shows snackbar confirmation', (tester) async {
-    await tester.pumpWidget(_app(const IronyGeneratorScreen()));
+    await tester.pumpWidget(await _app(const IronyGeneratorScreen()));
 
     await tester.tap(find.byTooltip('Copy irony'));
     await tester.pump();
@@ -75,7 +78,7 @@ void main() {
 
   testWidgets('composition generator exposes richer song seed controls',
       (tester) async {
-    await tester.pumpWidget(_app(const CompositionGeneratorScreen()));
+    await tester.pumpWidget(await _app(const CompositionGeneratorScreen()));
 
     expect(find.text('Song seed'), findsOneWidget);
     expect(find.text('Generate again'), findsOneWidget);
@@ -88,7 +91,7 @@ void main() {
   });
 
   testWidgets('composition copy shows snackbar confirmation', (tester) async {
-    await tester.pumpWidget(_app(const CompositionGeneratorScreen()));
+    await tester.pumpWidget(await _app(const CompositionGeneratorScreen()));
 
     await tester.tap(find.byTooltip('Copy composition idea'));
     await tester.pump();

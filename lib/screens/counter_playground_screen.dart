@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../config/routes.dart';
+import '../shared/display/display_scope.dart';
 import '../widgets/nav_button.dart';
 
 class CounterPlaygroundScreen extends StatefulWidget {
@@ -55,22 +56,23 @@ class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
     });
   }
 
-  String get _status {
-    if (_counter == _max) return 'Maximum reached 🚀';
-    if (_counter == _min) return 'Minimum reached 🧊';
-    if (_counter >= 50) return 'High score territory 🔥';
-    if (_counter <= -50) return 'Going underground 🕳️';
-    if (_counter >= 10) return 'Too much 😈';
-    if (_counter <= -10) return 'Reverse mode 👻';
-    return 'Keep experimenting 👾';
+  String _status(DisplayController display) {
+    if (_counter == _max) return display.text('counterLegacy.statusMax');
+    if (_counter == _min) return display.text('counterLegacy.statusMin');
+    if (_counter >= 50) return display.text('counterLegacy.statusHigh');
+    if (_counter <= -50) return display.text('counterLegacy.statusLow');
+    if (_counter >= 10) return display.text('counterLegacy.statusTooMuch');
+    if (_counter <= -10) return display.text('counterLegacy.statusReverse');
+    return display.text('counterLegacy.statusNeutral');
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final display = DisplayScope.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Counter Playground 👾'),
+        title: Text(display.text('nav.counterPlayground')),
         backgroundColor: theme.colorScheme.inversePrimary,
       ),
       body: Center(
@@ -85,7 +87,7 @@ class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
                     padding: const EdgeInsets.all(24),
                     child: Column(
                       children: [
-                        const Text('Current value'),
+                        Text(display.text('counterLegacy.currentValue')),
                         const SizedBox(height: 8),
                         Semantics(
                           label: 'Counter value $_counter',
@@ -98,15 +100,15 @@ class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Text(_status, style: theme.textTheme.titleMedium),
+                        Text(_status(display), style: theme.textTheme.titleMedium),
                         const SizedBox(height: 20),
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: SegmentedButton<int>(
-                            segments: const [
-                              ButtonSegment(value: 1, label: Text('Step 1')),
-                              ButtonSegment(value: 5, label: Text('Step 5')),
-                              ButtonSegment(value: 10, label: Text('Step 10')),
+                            segments: [
+                              ButtonSegment(value: 1, label: Text(display.text('counterLegacy.step1'))),
+                              ButtonSegment(value: 5, label: Text(display.text('counterLegacy.step5'))),
+                              ButtonSegment(value: 10, label: Text(display.text('counterLegacy.step10'))),
                             ],
                             selected: {_step},
                             onSelectionChanged: (selection) {
@@ -125,24 +127,24 @@ class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
                                   ? () => _changeCounter(-_step)
                                   : null,
                               icon: const Icon(Icons.remove),
-                              label: const Text('Decrease'),
+                              label: Text(display.text('counterLegacy.decrease')),
                             ),
                             FilledButton.icon(
                               onPressed: _counter < _max
                                   ? () => _changeCounter(_step)
                                   : null,
                               icon: const Icon(Icons.add),
-                              label: const Text('Increase'),
+                              label: Text(display.text('counterLegacy.increase')),
                             ),
                             OutlinedButton.icon(
                               onPressed: _counter == 0 ? null : _reset,
                               icon: const Icon(Icons.refresh),
-                              label: const Text('Reset'),
+                              label: Text(display.text('counterLegacy.reset')),
                             ),
                             OutlinedButton.icon(
                               onPressed: _history.length > 1 ? _undo : null,
                               icon: const Icon(Icons.undo),
-                              label: const Text('Undo'),
+                              label: Text(display.text('counterLegacy.undo')),
                             ),
                           ],
                         ),
@@ -157,10 +159,10 @@ class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text('Recent values', style: theme.textTheme.titleMedium),
+                        Text(display.text('counterLegacy.recentValues'), style: theme.textTheme.titleMedium),
                         const SizedBox(height: 4),
                         Text(
-                          'Tap a value to restore it.',
+                          display.text('counterLegacy.tapToRestore'),
                           style: theme.textTheme.bodySmall,
                         ),
                         const SizedBox(height: 12),
@@ -173,8 +175,11 @@ class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
                               .map(
                                 (entry) => ActionChip(
                                   tooltip: entry.key == 0
-                                      ? 'Current value'
-                                      : 'Restore ${entry.value}',
+                                      ? display.text('counterLegacy.currentValue')
+                                      : display.text(
+                                          'counterLegacy.restoreTooltip',
+                                          arguments: {'value': entry.value},
+                                        ),
                                   onPressed: entry.key == 0
                                       ? null
                                       : () => _restoreValue(entry.value),
@@ -188,14 +193,14 @@ class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Wrap(
+                Wrap(
                   alignment: WrapAlignment.center,
                   spacing: 12,
                   runSpacing: 12,
                   children: [
-                    NavButton(label: 'Home 🏠', routeName: AppRoutes.home),
-                    NavButton(label: 'Irony Generator 🥐', routeName: AppRoutes.ironyGenerator),
-                    NavButton(label: 'Composition Generator 🎸', routeName: AppRoutes.compositionGenerator),
+                    NavButton(label: display.text('home.title'), routeName: AppRoutes.home),
+                    NavButton(label: display.text('nav.ironyGenerator'), routeName: AppRoutes.ironyGenerator),
+                    NavButton(label: display.text('nav.compositionGenerator'), routeName: AppRoutes.compositionGenerator),
                   ],
                 ),
               ],

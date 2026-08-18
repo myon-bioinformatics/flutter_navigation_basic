@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../features/composition_generator/domain/chord_theory.dart';
+import '../display/display_scope.dart';
 
 class ChordTheoryCard extends StatefulWidget {
   const ChordTheoryCard({super.key, required this.initialKey});
@@ -59,17 +60,18 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final display = DisplayScope.of(context);
     final scale = ChordTheory.scale(_key, minor: _minor);
     final leftFifth = ChordTheory.fifthNeighbor(_key, clockwise: false);
     final rightFifth = ChordTheory.fifthNeighbor(_key, clockwise: true);
     final normalizedInversion =
         ChordTheory.normalizedInversion(_modifier, _inversion);
     final inversionName = switch (normalizedInversion) {
-      0 => 'Root position',
-      1 => '1st inversion',
-      2 => '2nd inversion',
-      3 => '3rd inversion',
-      _ => 'Root position',
+      0 => display.text('chordTheory.rootPosition'),
+      1 => display.text('chordTheory.inversion1'),
+      2 => display.text('chordTheory.inversion2'),
+      3 => display.text('chordTheory.inversion3'),
+      _ => display.text('chordTheory.rootPosition'),
     };
 
     return Card(
@@ -78,11 +80,9 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Key / Chord Translator', style: theme.textTheme.titleLarge),
+            Text(display.text('chordTheory.title'), style: theme.textTheme.titleLarge),
             const SizedBox(height: 4),
-            const Text(
-              'Choose a key, move by semitone or fifth, and turn Roman-numeral progressions into concrete chord names.',
-            ),
+            Text(display.text('chordTheory.subtitle')),
             const SizedBox(height: 16),
             Wrap(
               spacing: 12,
@@ -93,9 +93,9 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
                   width: 150,
                   child: DropdownButtonFormField<String>(
                     value: _key,
-                    decoration: const InputDecoration(
-                      labelText: 'Key',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: display.text('compositionLegacy.key'),
+                      border: const OutlineInputBorder(),
                     ),
                     items: ChordTheory.selectableKeys
                         .map(
@@ -111,9 +111,9 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
                   ),
                 ),
                 SegmentedButton<bool>(
-                  segments: const [
-                    ButtonSegment(value: false, label: Text('Major')),
-                    ButtonSegment(value: true, label: Text('Minor')),
+                  segments: [
+                    ButtonSegment(value: false, label: Text(display.text('chordTheory.major'))),
+                    ButtonSegment(value: true, label: Text(display.text('chordTheory.minor'))),
                   ],
                   selected: {_minor},
                   onSelectionChanged: (value) =>
@@ -122,17 +122,17 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
                 OutlinedButton.icon(
                   onPressed: () => _transpose(-1),
                   icon: const Icon(Icons.remove),
-                  label: const Text('−1 semitone'),
+                  label: Text(display.text('chordTheory.semitoneDown')),
                 ),
                 OutlinedButton.icon(
                   onPressed: () => _transpose(1),
                   icon: const Icon(Icons.add),
-                  label: const Text('+1 semitone'),
+                  label: Text(display.text('chordTheory.semitoneUp')),
                 ),
               ],
             ),
             const SizedBox(height: 14),
-            Text('Circle-of-fifths neighbors', style: theme.textTheme.titleMedium),
+            Text(display.text('chordTheory.circleOfFifths'), style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Wrap(
               alignment: WrapAlignment.center,
@@ -159,12 +159,12 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Example in C: ← F   C   G →',
+              display.text('chordTheory.exampleInC'),
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall,
             ),
             const SizedBox(height: 16),
-            Text('Scale degrees', style: theme.textTheme.titleMedium),
+            Text(display.text('chordTheory.scaleDegrees'), style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -181,10 +181,10 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
             const SizedBox(height: 18),
             TextField(
               controller: _progressionController,
-              decoration: const InputDecoration(
-                labelText: 'Roman-numeral progression',
+              decoration: InputDecoration(
+                labelText: display.text('chordTheory.progressionLabel'),
                 hintText: 'I V vi IV · I6 IV6 · V7',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
               onChanged: (value) => setState(() => _progression = value),
             ),
@@ -196,21 +196,15 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
             const SizedBox(height: 12),
             _buildMeasureLayout(context),
             const SizedBox(height: 6),
-            const Text(
-              'The progression is wrapped into small measure blocks instead of a DAW-style endless horizontal timeline, so it stays usable on phones.',
-            ),
+            Text(display.text('chordTheory.measureWrapNote')),
             const SizedBox(height: 6),
-            const Text(
-              'In this lightweight translator, a suffix such as I6 means an added-sixth chord (C6 in C major), not figured-bass first-inversion notation.',
-            ),
+            Text(display.text('chordTheory.inversionNote')),
             const SizedBox(height: 18),
             const Divider(),
             const SizedBox(height: 10),
-            Text('Chord builder', style: theme.textTheme.titleMedium),
+            Text(display.text('chordTheory.chordBuilder'), style: theme.textTheme.titleMedium),
             const SizedBox(height: 4),
-            const Text(
-              'Choose a scale-degree root, color/extension and inversion. Seventh/add-sixth chords expose a real third inversion; triads loop the third slot back to first inversion.',
-            ),
+            Text(display.text('chordTheory.chordBuilderSubtitle')),
             const SizedBox(height: 12),
             Wrap(
               spacing: 12,
@@ -221,9 +215,9 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
                   width: 180,
                   child: DropdownButtonFormField<int>(
                     value: _builderDegree,
-                    decoration: const InputDecoration(
-                      labelText: 'Degree / root',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: display.text('chordTheory.degreeRootLabel'),
+                      border: const OutlineInputBorder(),
                     ),
                     items: [
                       for (var i = 1; i <= 7; i++)
@@ -245,9 +239,9 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
                   width: 180,
                   child: DropdownButtonFormField<String>(
                     value: _modifier,
-                    decoration: const InputDecoration(
-                      labelText: 'Quality / extension',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: display.text('chordTheory.qualityExtensionLabel'),
+                      border: const OutlineInputBorder(),
                     ),
                     items: ChordTheory.chordModifiers
                         .map(
@@ -255,7 +249,7 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
                             value: modifier,
                             child: Text(
                               modifier == 'triad'
-                                  ? 'triad / plain'
+                                  ? display.text('chordTheory.triadPlain')
                                   : modifier,
                             ),
                           ),
@@ -277,11 +271,11 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: SegmentedButton<int>(
-                segments: const [
-                  ButtonSegment(value: 0, label: Text('Root')),
-                  ButtonSegment(value: 1, label: Text('1st')),
-                  ButtonSegment(value: 2, label: Text('2nd')),
-                  ButtonSegment(value: 3, label: Text('3rd')),
+                segments: [
+                  ButtonSegment(value: 0, label: Text(display.text('chordTheory.root'))),
+                  ButtonSegment(value: 1, label: Text(display.text('chordTheory.inv1st'))),
+                  ButtonSegment(value: 2, label: Text(display.text('chordTheory.inv2nd'))),
+                  ButtonSegment(value: 3, label: Text(display.text('chordTheory.inv3rd'))),
                 ],
                 selected: {_inversion},
                 onSelectionChanged: (value) =>
@@ -309,9 +303,7 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
               ],
             ),
             const SizedBox(height: 10),
-            const Text(
-              'Supported labels: 6, m6, 7, maj7, m7, m7♭5, sus2, sus4, add9, add11, dim, aug. “aug” is the standard abbreviation for augmented.',
-            ),
+            Text(display.text('chordTheory.supportedLabelsNote')),
           ],
         ),
       ),
