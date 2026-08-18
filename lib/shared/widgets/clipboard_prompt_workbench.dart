@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../clipboard/base64_image_bridge.dart';
+import '../display/display_scope.dart';
 
 class ClipboardPromptWorkbench extends StatefulWidget {
   const ClipboardPromptWorkbench({super.key});
@@ -26,7 +27,8 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
   Uint8List? _imageBytes;
   String? _imageMimeType;
   bool _processingImage = false;
-  String _status = 'Select/copy/paste text freely, then shape it into a reusable system prompt.';
+  String _statusKey = 'clipboardWorkbench.status.initial';
+  Map<String, Object?> _statusArgs = const {};
 
   @override
   void dispose() {
@@ -45,37 +47,53 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
     final text = data?.text;
     if (!mounted) return;
     if (text == null || text.trim().isEmpty) {
-      setState(() => _status = 'Clipboard does not contain plain text.');
+      setState(() {
+        _statusKey = 'clipboardWorkbench.status.noClipboardText';
+        _statusArgs = const {};
+      });
       return;
     }
     _rawController.text = text;
-    setState(() => _status = 'Pasted ${text.length} characters from the clipboard.');
+    setState(() {
+      _statusKey = 'clipboardWorkbench.status.pasted';
+      _statusArgs = {'chars': text.length};
+    });
   }
 
   Future<void> _copyPrompt() async {
     final prompt = _buildPrompt();
     await Clipboard.setData(ClipboardData(text: prompt));
     if (!mounted) return;
-    setState(() => _status = 'Copied the composed system prompt (${prompt.length} characters).');
+    setState(() {
+      _statusKey = 'clipboardWorkbench.status.copiedPrompt';
+      _statusArgs = {'chars': prompt.length};
+    });
   }
 
   void _handleInsertedContent(KeyboardInsertedContent content) {
     final bytes = content.data;
     if (bytes == null || bytes.isEmpty || !content.mimeType.startsWith('image/')) {
-      setState(() => _status = 'Rich content was received, but no image bytes were available.');
+      setState(() {
+        _statusKey = 'clipboardWorkbench.status.noImageBytes';
+        _statusArgs = const {};
+      });
       return;
     }
     setState(() {
       _imageBytes = bytes;
       _imageMimeType = content.mimeType;
-      _status = 'Attached ${content.mimeType} (${bytes.length} bytes).';
+      _statusKey = 'clipboardWorkbench.status.attached';
+      _statusArgs = {'mimeType': content.mimeType, 'bytes': bytes.length};
     });
   }
 
   Future<void> _copyImageAsBase64() async {
     final bytes = _imageBytes;
     if (bytes == null) {
-      setState(() => _status = 'Attach or decode an image first.');
+      setState(() {
+        _statusKey = 'clipboardWorkbench.status.noImageToEncode';
+        _statusArgs = const {};
+      });
       return;
     }
     setState(() => _processingImage = true);
@@ -87,13 +105,15 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
       if (!mounted) return;
       setState(() {
         _processingImage = false;
-        _status = 'Resized to 2/3, encoded as PNG Base64, and copied (${payload.bytes.length} bytes before Base64).';
+        _statusKey = 'clipboardWorkbench.status.encoded';
+        _statusArgs = {'bytes': payload.bytes.length};
       });
     } catch (error) {
       if (!mounted) return;
       setState(() {
         _processingImage = false;
-        _status = 'Image encode failed: $error';
+        _statusKey = 'clipboardWorkbench.status.encodeFailed';
+        _statusArgs = {'error': error};
       });
     }
   }
@@ -103,12 +123,16 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
     if (!mounted) return;
     final text = data?.text ?? '';
     if (text.trim().isEmpty) {
-      setState(() => _status = 'Clipboard does not contain Base64 text.');
+      setState(() {
+        _statusKey = 'clipboardWorkbench.status.noBase64Text';
+        _statusArgs = const {};
+      });
       return;
     }
     if (text.length > _maxBase64TextChars) {
       setState(() {
-        _status = 'Base64 clipboard text is too large (${text.length} characters; limit $_maxBase64TextChars).';
+        _statusKey = 'clipboardWorkbench.status.base64TooLargeClipboard';
+        _statusArgs = {'chars': text.length, 'limit': _maxBase64TextChars};
       });
       return;
     }
@@ -120,7 +144,8 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
     final input = _base64Controller.text;
     if (input.length > _maxBase64TextChars) {
       setState(() {
-        _status = 'Base64 text is too large (${input.length} characters; limit $_maxBase64TextChars).';
+        _statusKey = 'clipboardWorkbench.status.base64TooLarge';
+        _statusArgs = {'chars': input.length, 'limit': _maxBase64TextChars};
       });
       return;
     }
@@ -129,10 +154,14 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
       setState(() {
         _imageBytes = payload.bytes;
         _imageMimeType = payload.mimeType;
-        _status = 'Parsed ${payload.mimeType} from Base64 (${payload.bytes.length} bytes); preview shown below.';
+        _statusKey = 'clipboardWorkbench.status.decoded';
+        _statusArgs = {'mimeType': payload.mimeType, 'bytes': payload.bytes.length};
       });
     } catch (error) {
-      setState(() => _status = 'Base64 decode failed: $error');
+      setState(() {
+        _statusKey = 'clipboardWorkbench.status.decodeFailed';
+        _statusArgs = {'error': error};
+      });
     }
   }
 
@@ -164,6 +193,7 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     final preview = _buildPrompt();
     return SelectionArea(
       child: Column(
@@ -171,8 +201,8 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
         children: [
           _StepCard(
             number: 1,
-            title: 'Copy / paste the source',
-            subtitle: 'Displayed text remains selectable, while this field also supports normal editing plus explicit clipboard paste.',
+            title: display.text('clipboardWorkbench.step1.title'),
+            subtitle: display.text('clipboardWorkbench.step1.subtitle'),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -185,10 +215,10 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
                     onContentInserted: _handleInsertedContent,
                     allowedMimeTypes: const ['image/png', 'image/jpeg', 'image/webp'],
                   ),
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Raw text / rough request / existing prompt',
-                    hintText: 'Paste notes, selected text, an existing prompt, requirements, or conversation excerpts here.',
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    labelText: display.text('clipboardWorkbench.step1.fieldLabel'),
+                    hintText: display.text('clipboardWorkbench.step1.fieldHint'),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -199,15 +229,18 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
                     FilledButton.icon(
                       onPressed: _pasteText,
                       icon: const Icon(Icons.content_paste_go_outlined),
-                      label: const Text('Paste text'),
+                      label: Text(display.text('clipboardWorkbench.pasteText')),
                     ),
                     OutlinedButton.icon(
                       onPressed: () {
                         _rawController.clear();
-                        setState(() => _status = 'Cleared the raw source.');
+                        setState(() {
+                          _statusKey = 'clipboardWorkbench.status.cleared';
+                          _statusArgs = const {};
+                        });
                       },
                       icon: const Icon(Icons.clear),
-                      label: const Text('Clear'),
+                      label: Text(display.text('clipboardWorkbench.clear')),
                     ),
                   ],
                 ),
@@ -217,8 +250,8 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
           const SizedBox(height: 12),
           _StepCard(
             number: 2,
-            title: 'Base64 Image Bridge',
-            subtitle: 'Dependency-free image transport: resize to 2/3 → PNG encode → Base64 copy; paste Base64 → decode → preview. Optimized for screenshots/OCR context rather than archival fidelity.',
+            title: display.text('clipboardWorkbench.step2.title'),
+            subtitle: display.text('clipboardWorkbench.step2.subtitle'),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -230,7 +263,8 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
                       : () => setState(() {
                             _imageBytes = null;
                             _imageMimeType = null;
-                            _status = 'Removed the visual reference.';
+                            _statusKey = 'clipboardWorkbench.status.removedImage';
+                            _statusArgs = const {};
                           }),
                 ),
                 const SizedBox(height: 12),
@@ -238,10 +272,10 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
                   controller: _base64Controller,
                   minLines: 2,
                   maxLines: 5,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Image Base64 / data:image/...;base64,...',
-                    hintText: 'Paste a PNG/JPEG/WebP Base64 image here, or use Paste Base64 image.',
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    labelText: display.text('clipboardWorkbench.step2.fieldLabel'),
+                    hintText: display.text('clipboardWorkbench.step2.fieldHint'),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -252,17 +286,21 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
                     FilledButton.icon(
                       onPressed: _processingImage ? null : _copyImageAsBase64,
                       icon: const Icon(Icons.copy_all_outlined),
-                      label: Text(_processingImage ? 'Encoding…' : 'Copy image as Base64 · 2/3'),
+                      label: Text(
+                        _processingImage
+                            ? display.text('clipboardWorkbench.copyImageBase64Encoding')
+                            : display.text('clipboardWorkbench.copyImageBase64'),
+                      ),
                     ),
                     OutlinedButton.icon(
                       onPressed: _pasteBase64Image,
                       icon: const Icon(Icons.content_paste_outlined),
-                      label: const Text('Paste Base64 image'),
+                      label: Text(display.text('clipboardWorkbench.pasteBase64Image')),
                     ),
                     OutlinedButton.icon(
                       onPressed: _decodeBase64Image,
                       icon: const Icon(Icons.image_search_outlined),
-                      label: const Text('Decode / preview'),
+                      label: Text(display.text('clipboardWorkbench.decodePreview')),
                     ),
                   ],
                 ),
@@ -272,23 +310,48 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
           const SizedBox(height: 12),
           _StepCard(
             number: 3,
-            title: 'Shape the instruction',
-            subtitle: 'Organize the request in human decision order: goal → context → must-have → constraints → output.',
+            title: display.text('clipboardWorkbench.step3.title'),
+            subtitle: display.text('clipboardWorkbench.step3.subtitle'),
             child: Column(
               children: [
-                _Field(controller: _goalController, label: 'Goal', hint: 'What should the assistant/system accomplish?', onChanged: () => setState(() {})),
-                _Field(controller: _contextController, label: 'Context', hint: 'Background, target users, project facts, existing behavior.', onChanged: () => setState(() {})),
-                _Field(controller: _requirementsController, label: 'Must include', hint: 'Required behavior, screens, APIs, acceptance criteria.', onChanged: () => setState(() {})),
-                _Field(controller: _constraintsController, label: 'Constraints / avoid', hint: 'Dependencies to avoid, compatibility rules, non-goals.', onChanged: () => setState(() {})),
-                _Field(controller: _outputController, label: 'Output format', hint: 'PR, patch, Markdown, JSON, implementation plan, etc.', onChanged: () => setState(() {})),
+                _Field(
+                  controller: _goalController,
+                  label: display.text('clipboardWorkbench.field.goal.label'),
+                  hint: display.text('clipboardWorkbench.field.goal.hint'),
+                  onChanged: () => setState(() {}),
+                ),
+                _Field(
+                  controller: _contextController,
+                  label: display.text('clipboardWorkbench.field.context.label'),
+                  hint: display.text('clipboardWorkbench.field.context.hint'),
+                  onChanged: () => setState(() {}),
+                ),
+                _Field(
+                  controller: _requirementsController,
+                  label: display.text('clipboardWorkbench.field.requirements.label'),
+                  hint: display.text('clipboardWorkbench.field.requirements.hint'),
+                  onChanged: () => setState(() {}),
+                ),
+                _Field(
+                  controller: _constraintsController,
+                  label: display.text('clipboardWorkbench.field.constraints.label'),
+                  hint: display.text('clipboardWorkbench.field.constraints.hint'),
+                  onChanged: () => setState(() {}),
+                ),
+                _Field(
+                  controller: _outputController,
+                  label: display.text('clipboardWorkbench.field.output.label'),
+                  hint: display.text('clipboardWorkbench.field.output.hint'),
+                  onChanged: () => setState(() {}),
+                ),
               ],
             ),
           ),
           const SizedBox(height: 12),
           _StepCard(
             number: 4,
-            title: 'Preview and copy',
-            subtitle: 'Plain Markdown stays selectable and can also be copied in one action.',
+            title: display.text('clipboardWorkbench.step4.title'),
+            subtitle: display.text('clipboardWorkbench.step4.subtitle'),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -310,13 +373,16 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
                 FilledButton.icon(
                   onPressed: _copyPrompt,
                   icon: const Icon(Icons.copy_all_outlined),
-                  label: const Text('Copy system prompt'),
+                  label: Text(display.text('clipboardWorkbench.copyPrompt')),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 12),
-          Semantics(liveRegion: true, child: Text(_status, style: Theme.of(context).textTheme.bodySmall)),
+          Semantics(
+            liveRegion: true,
+            child: Text(display.text(_statusKey, arguments: _statusArgs), style: Theme.of(context).textTheme.bodySmall),
+          ),
         ],
       ),
     );
@@ -336,6 +402,7 @@ class _ImageReferenceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     if (bytes == null) {
       return Container(
         padding: const EdgeInsets.all(16),
@@ -343,15 +410,13 @@ class _ImageReferenceCard extends StatelessWidget {
           border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Row(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.image_outlined),
-            SizedBox(width: 12),
+            const Icon(Icons.image_outlined),
+            const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                'Native rich-image clipboard access is not assumed. Use rich insertion where available, or carry an image through the standard text clipboard as a Base64 data URL.',
-              ),
+              child: Text(display.text('clipboardWorkbench.imageReference.placeholder')),
             ),
           ],
         ),
@@ -368,10 +433,10 @@ class _ImageReferenceCard extends StatelessWidget {
             width: double.infinity,
             fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) {
-              return const SizedBox(
+              return SizedBox(
                 height: 120,
                 child: Center(
-                  child: Text('Preview unavailable: invalid or unsupported image data.'),
+                  child: Text(display.text('clipboardWorkbench.imageReference.previewUnavailable')),
                 ),
               );
             },
@@ -380,8 +445,22 @@ class _ImageReferenceCard extends StatelessWidget {
         const SizedBox(height: 8),
         Row(
           children: [
-            Expanded(child: Text('${mimeType ?? 'image'} · ${bytes!.length} bytes')),
-            TextButton.icon(onPressed: onRemove, icon: const Icon(Icons.delete_outline), label: const Text('Remove')),
+            Expanded(
+              child: Text(
+                display.text(
+                  'clipboardWorkbench.imageReference.meta',
+                  arguments: {
+                    'mimeType': mimeType ?? display.text('clipboardWorkbench.imageReference.unknownMime'),
+                    'bytes': bytes!.length,
+                  },
+                ),
+              ),
+            ),
+            TextButton.icon(
+              onPressed: onRemove,
+              icon: const Icon(Icons.delete_outline),
+              label: Text(display.text('clipboardWorkbench.imageReference.remove')),
+            ),
           ],
         ),
       ],

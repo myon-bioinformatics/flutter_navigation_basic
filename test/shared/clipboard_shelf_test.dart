@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_application_1/shared/display/display_scope.dart';
 import 'package:flutter_application_1/shared/widgets/clipboard_shelf.dart';
+
+import '../support/display_test_harness.dart';
 
 void main() {
   Future<void> pumpShelf(WidgetTester tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
-          body: SingleChildScrollView(child: ClipboardShelf()),
+      await wrapWithDisplayScope(
+        const MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(child: ClipboardShelf()),
+          ),
         ),
       ),
     );
@@ -104,5 +109,29 @@ void main() {
         .whereType<String>()
         .toList();
     expect(visibleText.indexOf('first text'), lessThan(visibleText.indexOf('second text')));
+  });
+
+  testWidgets('switching the app-wide locale re-renders shelf chrome and status text', (tester) async {
+    final controller = await DisplayController.load();
+    await tester.pumpWidget(
+      DisplayScope(
+        controller: controller,
+        child: const MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(child: ClipboardShelf()),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Shelf is empty for this filter.'), findsOneWidget);
+    expect(find.text('Session-only shelf: items disappear when the app/page is restarted.'), findsOneWidget);
+
+    await controller.setLocale('ja');
+    await tester.pumpAndSettle();
+
+    expect(find.text('このフィルターに該当する棚の項目はありません。'), findsOneWidget);
+    expect(find.text('セッション限定の棚です。アプリ／ページを再起動すると項目は消えます。'), findsOneWidget);
+    expect(find.text('テキスト / URL / Markdown を追加'), findsOneWidget);
   });
 }
