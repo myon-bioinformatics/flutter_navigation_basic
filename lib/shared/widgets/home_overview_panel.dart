@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../diagnostics/build_metadata.dart';
+
 class HomeOverviewAction {
   const HomeOverviewAction({
     required this.label,
@@ -52,14 +54,39 @@ class HomeOverviewPanel extends StatelessWidget {
               const SizedBox(height: 8),
               Text(subtitle, style: Theme.of(context).textTheme.bodyLarge),
               const SizedBox(height: 18),
-              const Wrap(
+              Wrap(
                 spacing: 10,
                 runSpacing: 10,
                 children: [
-                  _Metric(label: 'Reference patterns', value: '792'),
-                  _Metric(label: 'Per category', value: '198'),
-                  _Metric(label: 'Runtime deps', value: '2'),
-                  _Metric(label: 'Stage', value: 'pre-beta'),
+                  const _Metric(label: 'Reference patterns', value: '792'),
+                  const _Metric(label: 'Per category', value: '198'),
+                  const _Metric(label: 'Runtime deps', value: '2'),
+                  const _Metric(label: 'Stage', value: 'pre-beta'),
+                  FutureBuilder<BuildMetadata>(
+                    future: BuildMetadata.load(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return const _Metric(label: 'Revision', value: 'loading…');
+                      }
+                      final revision = snapshot.data!.revision;
+                      final details = <String>[
+                        if (revision.sha != null) 'SHA: ${revision.sha}',
+                        if (revision.ref != null) 'Ref: ${revision.ref}',
+                        if (revision.committedAt != null) 'Committed: ${revision.committedAt}',
+                        if (revision.subject != null) revision.subject!,
+                        if (revision.dirty) 'Local working tree was dirty',
+                      ].join('\n');
+                      return Tooltip(
+                        message: details.isEmpty ? 'Git revision unavailable' : details,
+                        child: _Metric(
+                          label: revision.ref == null || revision.ref!.isEmpty
+                              ? 'Revision'
+                              : 'Revision · ${revision.ref}',
+                          value: revision.displaySha,
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ],
