@@ -5,15 +5,31 @@ import '../../../shared/diagnostics/build_diagnostics_card.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
 import '../../../shared/widgets/home_overview_panel.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.controller});
 
   final HomeController controller;
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  void _refresh() => setState(() {});
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Home 🏠'),
+      appBar: CustomAppBar(
+        title: 'Home 🏠',
+        actions: [
+          IconButton(
+            tooltip: 'Refresh',
+            onPressed: _refresh,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 72),
         child: Center(
@@ -22,7 +38,7 @@ class HomeScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(controller.today, style: Theme.of(context).textTheme.titleMedium),
+                Text(widget.controller.today, style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 12),
                 HomeOverviewPanel(
                   actions: [
