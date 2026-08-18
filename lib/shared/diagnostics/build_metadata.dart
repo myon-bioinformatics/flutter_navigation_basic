@@ -12,6 +12,7 @@ class BuildMetadata {
     required this.artifactBytes,
     required this.sourceBytes,
     required this.assetBytes,
+    required this.revision,
     required this.screens,
     required this.routeSources,
   });
@@ -24,6 +25,7 @@ class BuildMetadata {
   final int? artifactBytes;
   final int? sourceBytes;
   final int? assetBytes;
+  final RevisionMetadata revision;
   final Map<String, ScreenWeightMetadata> screens;
   final Map<String, RouteSourceWeightMetadata> routeSources;
 
@@ -35,6 +37,7 @@ class BuildMetadata {
     final app = json['app'] as Map<String, dynamic>? ?? const {};
     final measurement = json['measurement'] as Map<String, dynamic>? ?? const {};
     final repository = json['repository'] as Map<String, dynamic>? ?? const {};
+    final rawRevision = repository['revision'] as Map<String, dynamic>? ?? const {};
     final rawScreens = json['screens'] as Map<String, dynamic>? ?? const {};
     final rawRouteSources = json['routeSources'] as Map<String, dynamic>? ?? const {};
 
@@ -47,6 +50,7 @@ class BuildMetadata {
       artifactBytes: (measurement['artifactBytes'] as num?)?.toInt(),
       sourceBytes: (repository['sourceBytes'] as num?)?.toInt(),
       assetBytes: (repository['assetBytes'] as num?)?.toInt(),
+      revision: RevisionMetadata.fromJson(rawRevision),
       screens: {
         for (final entry in rawScreens.entries)
           entry.key: ScreenWeightMetadata.fromJson(entry.value as Map<String, dynamic>),
@@ -55,6 +59,40 @@ class BuildMetadata {
         for (final entry in rawRouteSources.entries)
           entry.key: RouteSourceWeightMetadata.fromJson(entry.value as Map<String, dynamic>),
       },
+    );
+  }
+}
+
+class RevisionMetadata {
+  const RevisionMetadata({
+    required this.sha,
+    required this.shortSha,
+    required this.ref,
+    required this.committedAt,
+    required this.subject,
+    required this.commitUrl,
+    required this.dirty,
+  });
+
+  final String? sha;
+  final String? shortSha;
+  final String? ref;
+  final String? committedAt;
+  final String? subject;
+  final String? commitUrl;
+  final bool dirty;
+
+  String get displaySha => shortSha ?? sha?.substring(0, sha!.length.clamp(0, 8)) ?? 'unknown';
+
+  factory RevisionMetadata.fromJson(Map<String, dynamic> json) {
+    return RevisionMetadata(
+      sha: json['sha'] as String?,
+      shortSha: json['shortSha'] as String?,
+      ref: json['ref'] as String?,
+      committedAt: json['committedAt'] as String?,
+      subject: json['subject'] as String?,
+      commitUrl: json['commitUrl'] as String?,
+      dirty: json['dirty'] as bool? ?? false,
     );
   }
 }
