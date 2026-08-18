@@ -18,6 +18,19 @@ class DisplayCatalog {
     'ru',
   ];
 
+  /// Shared static-UI namespaces that are part of the app-wide localization
+  /// contract. Feature data (user text, URLs, IANA IDs, API payloads, code
+  /// snippets, and empty catalogue placeholders) intentionally lives outside
+  /// this contract.
+  static const requiredNamespaces = <String>[
+    'common.',
+    'home.',
+    'hub.',
+    'nowTimeline.',
+    'coordinate.',
+    'generic.',
+  ];
+
   static Future<DisplayCatalog> load() async {
     final raw = await rootBundle.loadString('assets/display/app_text.json');
     final decoded = jsonDecode(raw) as Map<String, dynamic>;
