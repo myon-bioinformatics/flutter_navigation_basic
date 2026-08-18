@@ -42,19 +42,11 @@ void main() {
     }
   });
 
-  test('implemented feature namespaces are represented in the shared catalog', () {
+  test('required app-wide feature namespaces are represented in the catalog', () {
     final locales = loadLocales();
     final english = (locales['en'] as Map).cast<String, dynamic>();
-    const requiredPrefixes = <String>[
-      'common.',
-      'home.',
-      'hub.',
-      'nowTimeline.',
-      'coordinate.',
-      'generic.',
-    ];
 
-    for (final prefix in requiredPrefixes) {
+    for (final prefix in DisplayCatalog.requiredNamespaces) {
       expect(
         english.keys.any((key) => key.startsWith(prefix)),
         isTrue,
