@@ -210,6 +210,29 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                       const SizedBox(height: 8),
                       Text(t('coordinate.antimeridian')),
                     ],
+                    const SizedBox(height: 28),
+                    _SectionTitle(
+                      title: '4. Platform formats',
+                      icon: Icons.integration_instructions_outlined,
+                    ),
+                    const SizedBox(height: 12),
+                    _ResultCard(
+                      title: 'Google Maps JavaScript · Circle',
+                      value: area.googleMapsJavaScript,
+                      onCopy: () => _copy(
+                        area.googleMapsJavaScript,
+                        'Google Maps JavaScript circle',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _ResultCard(
+                      title: 'Apple MapKit · MKCircle (Swift)',
+                      value: area.appleMapKitSwift,
+                      onCopy: () => _copy(
+                        area.appleMapKitSwift,
+                        'Apple MapKit circle',
+                      ),
+                    ),
                   ],
                   const SizedBox(height: 28),
                   _SectionTitle(title: t('coordinate.xyzTile'), icon: Icons.grid_4x4_outlined),
