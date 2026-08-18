@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../domain/home_controller.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../shared/diagnostics/build_diagnostics_card.dart';
+import '../../../shared/display/display_scope.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
 import '../../../shared/widgets/home_overview_panel.dart';
 
@@ -19,12 +20,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Home 🏠',
+        title: display.text('home.title'),
         actions: [
           IconButton(
-            tooltip: 'Refresh',
+            tooltip: display.text('common.refresh'),
             onPressed: _refresh,
             icon: const Icon(Icons.refresh),
           ),
@@ -42,60 +44,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 12),
                 HomeOverviewPanel(
                   actions: [
-                    HomeOverviewAction(
-                      label: 'Clipboard Shelf · Core Tool #1',
-                      subtitle: 'Session-only history for text, URLs, Markdown and 2/3-scaled images with filter, ordering and bundle copy.',
-                      icon: Icons.inventory_2_outlined,
-                      onTap: AppNavigation.toClipboardShelf,
-                    ),
-                    HomeOverviewAction(
-                      label: 'Now Timeline',
-                      subtitle: 'Put people, places, schedules and events from different IANA time zones on one client-side timeline.',
-                      icon: Icons.public_outlined,
-                      onTap: AppNavigation.toNowTimeline,
-                    ),
-                    HomeOverviewAction(
-                      label: 'Latitude / Longitude',
-                      subtitle: 'Validate decimal coordinates and convert them to degrees, minutes and seconds with hemisphere labels.',
-                      icon: Icons.my_location_outlined,
-                      onTap: AppNavigation.toCoordinateTool,
-                    ),
-                    HomeOverviewAction(
-                      label: 'Bounding Box',
-                      subtitle: 'Create, validate and copy geographic bounds from four edges or from a center point and radius.',
-                      icon: Icons.crop_free_outlined,
-                      onTap: AppNavigation.toBoundingBox,
-                    ),
-                    HomeOverviewAction(
-                      label: 'Clipboard Workbench',
-                      subtitle: 'Turn source material into a structured system prompt and copy the result.',
-                      icon: Icons.content_paste_go_outlined,
-                      onTap: AppNavigation.toClipboardWorkbench,
-                    ),
-                    HomeOverviewAction(
-                      label: 'Counter Playground',
-                      subtitle: 'State transitions, undo/history and interaction basics.',
-                      icon: Icons.exposure_plus_1_outlined,
-                      onTap: AppNavigation.toCounterPlayground,
-                    ),
-                    HomeOverviewAction(
-                      label: 'Irony Generator',
-                      subtitle: 'Generate lightweight text results and revisit favorites.',
-                      icon: Icons.auto_awesome_outlined,
-                      onTap: AppNavigation.toIronyGenerator,
-                    ),
-                    HomeOverviewAction(
-                      label: 'Composition Studio',
-                      subtitle: 'Visual metronome, tap tempo, song structure, lyrics and chords in one lightweight pre-DAW workspace.',
-                      icon: Icons.music_note_outlined,
-                      onTap: AppNavigation.toCompositionGenerator,
-                    ),
-                    HomeOverviewAction(
-                      label: 'URL Parameters',
-                      subtitle: 'Inspect route/query-style parameter handling.',
-                      icon: Icons.link_outlined,
-                      onTap: AppNavigation.toScreen5,
-                    ),
+                    HomeOverviewAction(label: 'Clipboard Shelf · Core Tool #1', subtitle: 'Session-only history for text, URLs, Markdown and 2/3-scaled images with filter, ordering and bundle copy.', icon: Icons.inventory_2_outlined, onTap: AppNavigation.toClipboardShelf),
+                    HomeOverviewAction(label: 'Now Timeline', subtitle: 'Put people, places, schedules and events from different IANA time zones on one client-side timeline.', icon: Icons.public_outlined, onTap: AppNavigation.toNowTimeline),
+                    HomeOverviewAction(label: 'Latitude / Longitude', subtitle: 'Validate decimal coordinates, model loose real-world tolerance, and copy XYZ tile values.', icon: Icons.my_location_outlined, onTap: AppNavigation.toCoordinateTool),
+                    HomeOverviewAction(label: 'Bounding Box', subtitle: 'Create, validate and copy geographic bounds from four edges or from a center point and radius.', icon: Icons.crop_free_outlined, onTap: AppNavigation.toBoundingBox),
+                    HomeOverviewAction(label: 'Clipboard Workbench', subtitle: 'Turn source material into a structured system prompt and copy the result.', icon: Icons.content_paste_go_outlined, onTap: AppNavigation.toClipboardWorkbench),
+                    HomeOverviewAction(label: 'Counter Playground', subtitle: 'State transitions, undo/history and interaction basics.', icon: Icons.exposure_plus_1_outlined, onTap: AppNavigation.toCounterPlayground),
+                    HomeOverviewAction(label: 'Irony Generator', subtitle: 'Generate lightweight text results and revisit favorites.', icon: Icons.auto_awesome_outlined, onTap: AppNavigation.toIronyGenerator),
+                    HomeOverviewAction(label: 'Composition Studio', subtitle: 'Visual metronome, tap tempo, song structure, lyrics and chords in one lightweight pre-DAW workspace.', icon: Icons.music_note_outlined, onTap: AppNavigation.toCompositionGenerator),
+                    HomeOverviewAction(label: 'URL Parameters', subtitle: 'Inspect route/query-style parameter handling.', icon: Icons.link_outlined, onTap: AppNavigation.toScreen5),
                   ],
                 ),
                 const SizedBox(height: 20),
