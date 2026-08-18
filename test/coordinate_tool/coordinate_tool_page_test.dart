@@ -29,16 +29,21 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.textContaining('Building / Facility').first);
+    final presetDropdown = find.byType(DropdownButtonFormField).first;
+    await tester.ensureVisible(presetDropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(presetDropdown);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Custom').last);
     await tester.pumpAndSettle();
 
     final customRadius = find.widgetWithText(TextField, 'Custom radius (m)');
     expect(customRadius, findsOneWidget);
+    await tester.ensureVisible(customRadius);
+    await tester.pumpAndSettle();
 
     await tester.enterText(customRadius, '0');
-    await tester.tap(find.widgetWithText(FilledButton, 'Calculate'));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
 
     expect(
@@ -53,7 +58,7 @@ void main() {
     expect(find.text('Center + radius'), findsNothing);
 
     await tester.enterText(customRadius, '250');
-    await tester.tap(find.widgetWithText(FilledButton, 'Calculate'));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
 
     expect(
