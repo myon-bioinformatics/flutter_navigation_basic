@@ -114,8 +114,8 @@ void main() {
       final area = nearPole.toleranceArea(1000);
 
       expect(area.north, 90);
-      expect(area.west.abs(), 160);
-      expect(area.east.abs(), 160);
+      expect(area.west, -180);
+      expect(area.east, 180);
       expect(area.wrapsAntimeridian, isFalse);
     });
 
