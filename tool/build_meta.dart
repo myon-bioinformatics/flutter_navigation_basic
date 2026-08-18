@@ -66,6 +66,9 @@ Future<Map<String, dynamic>> _discoverRevision() async {
   final shortSha = await _gitOutput(['rev-parse', '--short=8', 'HEAD']);
   final committedAt = await _gitOutput(['show', '-s', '--format=%cI', 'HEAD']);
   final subject = await _gitOutput(['show', '-s', '--format=%s', 'HEAD']);
+  // Intentionally includes untracked files: the contract is "this build is
+  // exactly what's checked out at HEAD", not just "tracked files match HEAD".
+  // Use `--untracked-files=no` instead if that stricter contract is ever needed.
   final status = await _gitOutput(['status', '--porcelain']);
 
   final githubRef = Platform.environment['GITHUB_REF_NAME']?.trim();
