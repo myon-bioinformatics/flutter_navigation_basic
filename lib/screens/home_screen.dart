@@ -59,6 +59,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () => Navigator.pushNamed(context, AppRoutes.coordinateTool),
                     ),
                     HomeOverviewAction(
+                      label: 'Bounding Box',
+                      subtitle: 'Create, validate and copy geographic bounds from four edges or from a center point and radius.',
+                      icon: Icons.crop_free_outlined,
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.boundingBox),
+                    ),
+                    HomeOverviewAction(
                       label: 'Clipboard Workbench',
                       subtitle: 'Turn shelf/source material into a structured system prompt and copy the result.',
                       icon: Icons.content_paste_go_outlined,
