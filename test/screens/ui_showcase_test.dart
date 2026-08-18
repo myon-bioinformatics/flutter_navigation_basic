@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/screens/ui_showcase_screen.dart';
+import 'package:flutter_application_1/shared/display/display_scope.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../support/display_test_harness.dart';
 
 Future<void> _pumpLoadedShowcase(WidgetTester tester) async {
-  await tester.pumpWidget(const MaterialApp(home: UiShowcaseScreen()));
+  await tester.pumpWidget(
+    MaterialApp(home: await wrapWithDisplayScope(const UiShowcaseScreen())),
+  );
 
   // The screen loads JSON through rootBundle and shows an indeterminate progress
   // indicator while waiting. Avoid pumpAndSettle here because that animation can
@@ -70,5 +76,25 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(videoOptional, findsOneWidget);
+  });
+
+  testWidgets('renders translated chrome for a non-English display locale', (tester) async {
+    SharedPreferences.setMockInitialValues({DisplayController.preferenceKey: 'ja'});
+    final controller = await DisplayController.load();
+
+    await tester.pumpWidget(
+      MaterialApp(home: DisplayScope(controller: controller, child: const UiShowcaseScreen())),
+    );
+    for (var attempt = 0; attempt < 200; attempt++) {
+      await tester.pump();
+      if (find.byType(CircularProgressIndicator).evaluate().isEmpty) break;
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+    }
+    await tester.pump();
+
+    expect(find.text('内部デフォルト'), findsOneWidget);
+    expect(find.text('外部JSONによる上書き'), findsOneWidget);
   });
 }

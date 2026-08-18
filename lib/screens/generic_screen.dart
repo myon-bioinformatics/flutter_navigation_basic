@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../config/routes.dart';
+import '../shared/display/display_scope.dart';
 import 'pattern_template_screen.dart';
 
 class ScreenDetail {
@@ -152,10 +153,11 @@ class _GenericScreenState extends State<GenericScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     final data = _data;
     final hasUseCase = data != null && data.useCaseJa.isNotEmpty;
     final appBarTitle = data == null
-        ? 'Screen ${widget.screenId}'
+        ? display.text('generic.screenFallbackTitle', arguments: {'id': widget.screenId})
         : hasUseCase
             ? '${data.emoji} ${data.useCaseJa}'
             : 'Screen${data.id}: ${data.title} ${data.emoji}';
@@ -166,7 +168,7 @@ class _GenericScreenState extends State<GenericScreen> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
-            tooltip: 'Back to Hub',
+            tooltip: display.text('generic.backToHub'),
             onPressed: _backToHub,
             icon: const Icon(Icons.grid_view),
           ),
@@ -189,12 +191,19 @@ class _GenericScreenBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     final headline = data.useCaseJa.isNotEmpty
         ? data.useCaseJa
         : templateLabel(templateForScreenId(data.id));
     final subline = _hasDomainInfo
         ? '${data.domainEmoji} ${data.domainJa} · ${data.templateJa}テンプレート · Screen ${data.id}'
-        : 'Template ${(data.id - 1) ~/ 18 + 1} of 11 · variant ${(data.id - 1) % 18 + 1} of 18';
+        : display.text(
+            'generic.templateVariant',
+            arguments: {
+              'n': (data.id - 1) ~/ 18 + 1,
+              'v': (data.id - 1) % 18 + 1,
+            },
+          );
     final detail = data.detail;
 
     return Column(
@@ -226,7 +235,7 @@ class _GenericScreenBody extends StatelessWidget {
                   TextButton.icon(
                     onPressed: onBackToHub,
                     icon: const Icon(Icons.grid_view),
-                    label: const Text('Back to Hub'),
+                    label: Text(display.text('generic.backToHub')),
                   ),
                 ],
               ),
@@ -236,10 +245,10 @@ class _GenericScreenBody extends StatelessWidget {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    _PatternChip(label: 'Navigation', value: data.navigationPattern),
-                    _PatternChip(label: 'API', value: data.apiPattern),
-                    _PatternChip(label: 'Theme', value: data.themePattern),
-                    _PatternChip(label: 'Data', value: data.dataPattern),
+                    _PatternChip(label: display.text('generic.patternNavigation'), value: data.navigationPattern),
+                    _PatternChip(label: display.text('generic.patternApi'), value: data.apiPattern),
+                    _PatternChip(label: display.text('generic.patternTheme'), value: data.themePattern),
+                    _PatternChip(label: display.text('generic.patternData'), value: data.dataPattern),
                   ],
                 ),
               ],
@@ -259,10 +268,10 @@ class _GenericScreenBody extends StatelessWidget {
                   length: 2,
                   child: Column(
                     children: [
-                      const TabBar(
+                      TabBar(
                         tabs: [
-                          Tab(text: '用途'),
-                          Tab(text: 'UIサンプル'),
+                          Tab(text: display.text('generic.tabUseCase')),
+                          Tab(text: display.text('generic.tabUiSample')),
                         ],
                       ),
                       Expanded(
@@ -295,21 +304,22 @@ class _UseCaseTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     final textTheme = Theme.of(context).textTheme;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('目的', style: textTheme.titleSmall),
+          Text(display.text('generic.sectionPurpose'), style: textTheme.titleSmall),
           const SizedBox(height: 4),
           Text(detail.purpose),
           const SizedBox(height: 16),
-          Text('使いどころ', style: textTheme.titleSmall),
+          Text(display.text('generic.sectionWhen'), style: textTheme.titleSmall),
           const SizedBox(height: 4),
           Text(detail.when),
           const SizedBox(height: 16),
-          Text('設計ポイント', style: textTheme.titleSmall),
+          Text(display.text('generic.sectionPoints'), style: textTheme.titleSmall),
           const SizedBox(height: 4),
           ...detail.points.map(
             (point) => Padding(
@@ -318,11 +328,11 @@ class _UseCaseTab extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Text('落とし穴', style: textTheme.titleSmall),
+          Text(display.text('generic.sectionPitfall'), style: textTheme.titleSmall),
           const SizedBox(height: 4),
           Text(detail.pitfall),
           const SizedBox(height: 16),
-          Text('スニペット', style: textTheme.titleSmall),
+          Text(display.text('generic.sectionSnippet'), style: textTheme.titleSmall),
           const SizedBox(height: 4),
           Container(
             width: double.infinity,
@@ -341,10 +351,10 @@ class _UseCaseTab extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _PatternChip(label: 'Navigation', value: data.navigationPattern),
-              _PatternChip(label: 'API', value: data.apiPattern),
-              _PatternChip(label: 'Theme', value: data.themePattern),
-              _PatternChip(label: 'Data', value: data.dataPattern),
+              _PatternChip(label: display.text('generic.patternNavigation'), value: data.navigationPattern),
+              _PatternChip(label: display.text('generic.patternApi'), value: data.apiPattern),
+              _PatternChip(label: display.text('generic.patternTheme'), value: data.themePattern),
+              _PatternChip(label: display.text('generic.patternData'), value: data.dataPattern),
             ],
           ),
         ],

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import '../data/mock_api_client.dart';
+import '../shared/display/display_scope.dart';
 
 class McpIntegrationScreen extends StatefulWidget {
   const McpIntegrationScreen({super.key});
@@ -13,32 +14,46 @@ class McpIntegrationScreen extends StatefulWidget {
 class _McpIntegrationScreenState extends State<McpIntegrationScreen> {
   final MockApiClient _client = MockApiClient();
   bool _loading = false;
-  String _result = 'Choose an MCP scenario.';
+  String _resultKey = 'mcp.chooseScenario';
+  Map<String, Object?> _resultArgs = const {};
 
   Future<void> _run(String scenario) async {
     setState(() {
       _loading = true;
-      _result = 'Loading $scenario…';
+      _resultKey = 'common.loadingScenario';
+      _resultArgs = {'scenario': scenario};
     });
 
     try {
       final data = await _client.fetchScenario('mcp', scenario);
       if (!mounted) return;
+      final display = DisplayScope.of(context);
 
       final status = data['simulatedStatus'];
       final request = data['request'];
       final requestBody = data['requestBody'];
       final response = const JsonEncoder.withIndent('  ').convert(data['response']);
-      final requestText = requestBody == null
+      final requestBodyText = requestBody == null
           ? ''
-          : '\nRequest body:\n${const JsonEncoder.withIndent('  ').convert(requestBody)}';
+          : display.text('mcp.requestBodyText', arguments: {
+              'body': const JsonEncoder.withIndent('  ').convert(requestBody),
+            });
 
       setState(() {
-        _result = '$request\nSimulated HTTP $status$requestText\n\nResponse:\n$response';
+        _resultKey = 'mcp.result';
+        _resultArgs = {
+          'request': request,
+          'status': status,
+          'requestBodyText': requestBodyText,
+          'response': response,
+        };
       });
     } catch (error) {
       if (!mounted) return;
-      setState(() => _result = 'Request failed\n$error');
+      setState(() {
+        _resultKey = 'common.requestFailed';
+        _resultArgs = {'error': error};
+      });
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -46,30 +61,29 @@ class _McpIntegrationScreenState extends State<McpIntegrationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const scenarios = <(String, String, IconData)>[
-      ('toolList', 'tool list', Icons.list_alt_outlined),
-      ('toolCall', 'tool call', Icons.play_arrow_outlined),
-      ('success', 'success result', Icons.check_circle_outline),
-      ('malformedArguments', 'malformed arguments', Icons.data_object_outlined),
-      ('toolError', 'tool error', Icons.warning_amber_outlined),
+    final display = DisplayScope.of(context);
+    final scenarios = <(String, String, IconData)>[
+      ('toolList', display.text('mcp.scenarioToolList'), Icons.list_alt_outlined),
+      ('toolCall', display.text('mcp.scenarioToolCall'), Icons.play_arrow_outlined),
+      ('success', display.text('mcp.scenarioSuccess'), Icons.check_circle_outline),
+      ('malformedArguments', display.text('mcp.scenarioMalformed'), Icons.data_object_outlined),
+      ('toolError', display.text('mcp.scenarioError'), Icons.warning_amber_outlined),
     ];
+    final result = display.text(_resultKey, arguments: _resultArgs);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('External Integration · MCP'),
+        title: Text(display.text('mcp.title')),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('MCP Demo', style: Theme.of(context).textTheme.headlineSmall),
+          Text(display.text('mcp.headline'), style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 8),
-          const Text(
-            'tool list / tool call / success result / malformed arguments / tool error を1ページで確認します。'
-            ' 現段階ではMCPクライアントUIを固めるためのモックです。',
-          ),
+          Text(display.text('mcp.description')),
           const SizedBox(height: 12),
-          SelectableText('Mock: ${MockApiClient.defaultBaseUrl}'),
+          SelectableText(display.text('common.mockLabel', arguments: {'url': MockApiClient.defaultBaseUrl})),
           const SizedBox(height: 20),
           Wrap(
             spacing: 10,
@@ -89,7 +103,7 @@ class _McpIntegrationScreenState extends State<McpIntegrationScreen> {
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: SelectableText(_result),
+              child: SelectableText(result),
             ),
           ),
         ],
