@@ -46,19 +46,14 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
   }
 
   void _convert() {
+    CoordinateValue value;
+    XyzTile tile;
     try {
-      final value = CoordinateValue.parse(
+      value = CoordinateValue.parse(
         latitude: _latitude.text,
         longitude: _longitude.text,
       );
-      final area = value.toleranceArea(_selectedRadius());
-      final tile = value.xyzTile(_zoom);
-      setState(() {
-        _value = value;
-        _area = area;
-        _tile = tile;
-        _error = null;
-      });
+      tile = value.xyzTile(_zoom);
     } on FormatException catch (error) {
       setState(() {
         _value = null;
@@ -66,7 +61,23 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
         _tile = null;
         _error = error.message.toString();
       });
+      return;
     }
+
+    CoordinateToleranceArea? area;
+    String? areaError;
+    try {
+      area = value.toleranceArea(_selectedRadius());
+    } on FormatException catch (error) {
+      areaError = error.message.toString();
+    }
+
+    setState(() {
+      _value = value;
+      _area = area;
+      _tile = tile;
+      _error = areaError;
+    });
   }
 
   Future<void> _copy(String value, String label) async {
