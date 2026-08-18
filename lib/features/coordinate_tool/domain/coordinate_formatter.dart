@@ -206,10 +206,16 @@ class XyzTile {
       _maxMercatorLatitude,
     );
     final n = math.pow(2, zoom).toDouble();
-    final x = (((coordinate.longitude + 180) / 360) * n).floor().clamp(0, n.toInt() - 1);
+    final x = (((coordinate.longitude + 180) / 360) * n)
+        .floor()
+        .clamp(0, n.toInt() - 1)
+        .toInt();
     final latRad = latitude * math.pi / 180;
     final mercator = math.log(math.tan(math.pi / 4 + latRad / 2));
-    final y = ((1 - mercator / math.pi) / 2 * n).floor().clamp(0, n.toInt() - 1);
+    final y = ((1 - mercator / math.pi) / 2 * n)
+        .floor()
+        .clamp(0, n.toInt() - 1)
+        .toInt();
     return XyzTile(zoom: zoom, x: x, y: y);
   }
 
