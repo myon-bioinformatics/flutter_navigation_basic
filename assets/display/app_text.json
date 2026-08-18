@@ -69,7 +69,19 @@
       "nowTimeline.schedule": "Schedule",
       "nowTimeline.event": "Event",
       "nowTimeline.invalidTime": "That local time does not exist because of a daylight-saving transition.",
-      "nowTimeline.invalidFormat": "Check the date or time format."
+      "nowTimeline.invalidFormat": "Check the date or time format.",
+      "boundingBox.center": "Center: {lat}, {lon}",
+      "boundingBox.span": "Span: {lat}° lat × {lon}° lon",
+      "urlParameters.title": "URL Params(Screen 5🔗)",
+      "urlParameters.goHome": "Go to HomeApp🏠",
+      "urlParameters.case": "Case {id}: {title}",
+      "urlParameters.route": "Route: {route}",
+      "urlParameters.example": "Example: {example}",
+      "nav.counterPlayground": "Counter Playground 👾",
+      "nav.ironyGenerator": "Irony Generator 🥐",
+      "nav.compositionGenerator": "Composition Generator 🎸",
+      "compositionGenerator.title": "Composition Studio 🎸",
+      "counter.tooMuch": "Too much 😈"
     },
     "ja": {
       "common.copy": "コピー",
@@ -139,7 +151,19 @@
       "nowTimeline.schedule": "予定",
       "nowTimeline.event": "イベント",
       "nowTimeline.invalidTime": "サマータイム切替のため、その現地時刻は存在しません。",
-      "nowTimeline.invalidFormat": "日付または時刻の形式を確認してください。"
+      "nowTimeline.invalidFormat": "日付または時刻の形式を確認してください。",
+      "boundingBox.center": "中心: {lat}, {lon}",
+      "boundingBox.span": "範囲: 緯度 {lat}° × 経度 {lon}°",
+      "urlParameters.title": "URL Params(Screen 5🔗)",
+      "urlParameters.goHome": "ホームアプリへ🏠",
+      "urlParameters.case": "ケース {id}: {title}",
+      "urlParameters.route": "ルート: {route}",
+      "urlParameters.example": "例: {example}",
+      "nav.counterPlayground": "Counter Playground 👾",
+      "nav.ironyGenerator": "Irony Generator 🥐",
+      "nav.compositionGenerator": "Composition Generator 🎸",
+      "compositionGenerator.title": "Composition Studio 🎸",
+      "counter.tooMuch": "多すぎ 😈"
     },
     "fr": {
       "common.copy": "Copier",
@@ -209,7 +233,19 @@
       "nowTimeline.schedule": "Horaire",
       "nowTimeline.event": "Événement",
       "nowTimeline.invalidTime": "Cette heure locale n’existe pas à cause du passage à l’heure d’été.",
-      "nowTimeline.invalidFormat": "Vérifiez le format de la date ou de l’heure."
+      "nowTimeline.invalidFormat": "Vérifiez le format de la date ou de l’heure.",
+      "boundingBox.center": "Centre : {lat}, {lon}",
+      "boundingBox.span": "Étendue : {lat}° lat × {lon}° lon",
+      "urlParameters.title": "URL Params(Screen 5🔗)",
+      "urlParameters.goHome": "Aller à HomeApp🏠",
+      "urlParameters.case": "Cas {id} : {title}",
+      "urlParameters.route": "Route : {route}",
+      "urlParameters.example": "Exemple : {example}",
+      "nav.counterPlayground": "Counter Playground 👾",
+      "nav.ironyGenerator": "Irony Generator 🥐",
+      "nav.compositionGenerator": "Composition Generator 🎸",
+      "compositionGenerator.title": "Composition Studio 🎸",
+      "counter.tooMuch": "Trop 😈"
     },
     "es": {
       "common.copy": "Copiar",
@@ -279,7 +315,19 @@
       "nowTimeline.schedule": "Horario",
       "nowTimeline.event": "Evento",
       "nowTimeline.invalidTime": "Esa hora local no existe por el cambio al horario de verano.",
-      "nowTimeline.invalidFormat": "Comprueba el formato de la fecha o la hora."
+      "nowTimeline.invalidFormat": "Comprueba el formato de la fecha o la hora.",
+      "boundingBox.center": "Centro: {lat}, {lon}",
+      "boundingBox.span": "Extensión: {lat}° lat × {lon}° lon",
+      "urlParameters.title": "URL Params(Screen 5🔗)",
+      "urlParameters.goHome": "Ir a HomeApp🏠",
+      "urlParameters.case": "Caso {id}: {title}",
+      "urlParameters.route": "Ruta: {route}",
+      "urlParameters.example": "Ejemplo: {example}",
+      "nav.counterPlayground": "Counter Playground 👾",
+      "nav.ironyGenerator": "Irony Generator 🥐",
+      "nav.compositionGenerator": "Composition Generator 🎸",
+      "compositionGenerator.title": "Composition Studio 🎸",
+      "counter.tooMuch": "Demasiado 😈"
     },
     "pt": {
       "common.copy": "Copiar",
@@ -349,7 +397,19 @@
       "nowTimeline.schedule": "Horário",
       "nowTimeline.event": "Evento",
       "nowTimeline.invalidTime": "Esse horário local não existe por causa da mudança do horário de verão.",
-      "nowTimeline.invalidFormat": "Verifique o formato da data ou da hora."
+      "nowTimeline.invalidFormat": "Verifique o formato da data ou da hora.",
+      "boundingBox.center": "Centro: {lat}, {lon}",
+      "boundingBox.span": "Extensão: {lat}° lat × {lon}° lon",
+      "urlParameters.title": "URL Params(Screen 5🔗)",
+      "urlParameters.goHome": "Ir para o HomeApp🏠",
+      "urlParameters.case": "Caso {id}: {title}",
+      "urlParameters.route": "Rota: {route}",
+      "urlParameters.example": "Exemplo: {example}",
+      "nav.counterPlayground": "Counter Playground 👾",
+      "nav.ironyGenerator": "Irony Generator 🥐",
+      "nav.compositionGenerator": "Composition Generator 🎸",
+      "compositionGenerator.title": "Composition Studio 🎸",
+      "counter.tooMuch": "Demais 😈"
     },
     "ar": {
       "common.copy": "نسخ",
@@ -419,7 +479,19 @@
       "nowTimeline.schedule": "جدول",
       "nowTimeline.event": "حدث",
       "nowTimeline.invalidTime": "هذا الوقت المحلي غير موجود بسبب تغيير التوقيت الصيفي.",
-      "nowTimeline.invalidFormat": "تحقق من تنسيق التاريخ أو الوقت."
+      "nowTimeline.invalidFormat": "تحقق من تنسيق التاريخ أو الوقت.",
+      "boundingBox.center": "المركز: {lat}, {lon}",
+      "boundingBox.span": "الامتداد: {lat}° خط عرض × {lon}° خط طول",
+      "urlParameters.title": "URL Params(Screen 5🔗)",
+      "urlParameters.goHome": "الانتقال إلى HomeApp🏠",
+      "urlParameters.case": "الحالة {id}: {title}",
+      "urlParameters.route": "المسار: {route}",
+      "urlParameters.example": "مثال: {example}",
+      "nav.counterPlayground": "Counter Playground 👾",
+      "nav.ironyGenerator": "Irony Generator 🥐",
+      "nav.compositionGenerator": "Composition Generator 🎸",
+      "compositionGenerator.title": "Composition Studio 🎸",
+      "counter.tooMuch": "أكثر من اللازم 😈"
     },
     "zh": {
       "common.copy": "复制",
@@ -489,7 +561,19 @@
       "nowTimeline.schedule": "日程",
       "nowTimeline.event": "事件",
       "nowTimeline.invalidTime": "由于夏令时切换，该当地时间不存在。",
-      "nowTimeline.invalidFormat": "请检查日期或时间格式。"
+      "nowTimeline.invalidFormat": "请检查日期或时间格式。",
+      "boundingBox.center": "中心：{lat}, {lon}",
+      "boundingBox.span": "跨度：纬度 {lat}° × 经度 {lon}°",
+      "urlParameters.title": "URL Params(Screen 5🔗)",
+      "urlParameters.goHome": "前往 HomeApp🏠",
+      "urlParameters.case": "案例 {id}：{title}",
+      "urlParameters.route": "路由：{route}",
+      "urlParameters.example": "示例：{example}",
+      "nav.counterPlayground": "Counter Playground 👾",
+      "nav.ironyGenerator": "Irony Generator 🥐",
+      "nav.compositionGenerator": "Composition Generator 🎸",
+      "compositionGenerator.title": "Composition Studio 🎸",
+      "counter.tooMuch": "太多了 😈"
     },
     "ru": {
       "common.copy": "Копировать",
@@ -559,7 +643,19 @@
       "nowTimeline.schedule": "Расписание",
       "nowTimeline.event": "Событие",
       "nowTimeline.invalidTime": "Это местное время не существует из-за перехода на летнее время.",
-      "nowTimeline.invalidFormat": "Проверьте формат даты или времени."
+      "nowTimeline.invalidFormat": "Проверьте формат даты или времени.",
+      "boundingBox.center": "Центр: {lat}, {lon}",
+      "boundingBox.span": "Диапазон: {lat}° широта × {lon}° долгота",
+      "urlParameters.title": "URL Params(Screen 5🔗)",
+      "urlParameters.goHome": "Перейти в HomeApp🏠",
+      "urlParameters.case": "Случай {id}: {title}",
+      "urlParameters.route": "Маршрут: {route}",
+      "urlParameters.example": "Пример: {example}",
+      "nav.counterPlayground": "Counter Playground 👾",
+      "nav.ironyGenerator": "Irony Generator 🥐",
+      "nav.compositionGenerator": "Composition Generator 🎸",
+      "compositionGenerator.title": "Composition Studio 🎸",
+      "counter.tooMuch": "Слишком много 😈"
     }
   }
 }

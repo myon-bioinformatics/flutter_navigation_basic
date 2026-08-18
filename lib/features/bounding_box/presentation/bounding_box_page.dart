@@ -172,8 +172,14 @@ class _BoundingBoxPageState extends State<BoundingBoxPage> {
                 ],
                 if (box != null) ...[
                   const SizedBox(height: 20),
-                  Text('Center: ${box.centerLatitude.toStringAsFixed(6)}, ${box.centerLongitude.toStringAsFixed(6)}'),
-                  Text('Span: ${box.latitudeSpan.toStringAsFixed(6)}° lat × ${box.longitudeSpan.toStringAsFixed(6)}° lon'),
+                  Text(display.text('boundingBox.center', arguments: {
+                    'lat': box.centerLatitude.toStringAsFixed(6),
+                    'lon': box.centerLongitude.toStringAsFixed(6),
+                  })),
+                  Text(display.text('boundingBox.span', arguments: {
+                    'lat': box.latitudeSpan.toStringAsFixed(6),
+                    'lon': box.longitudeSpan.toStringAsFixed(6),
+                  })),
                   if (box.wrapsAntimeridian)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),

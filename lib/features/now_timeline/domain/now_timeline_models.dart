@@ -52,14 +52,12 @@ class TimelineEntry {
 
 class NowTimelineStore {
   static const _entriesKey = 'now_timeline.entries.v1';
-  static const _localeKey = 'now_timeline.locale.v1';
 
   // Chains writes so they land on disk in call order rather than completion
-  // order. Without this, two rapid saveEntries()/saveLocale() calls (e.g.
-  // fast double-tap add/delete) can race on the underlying platform channel
-  // and let an older snapshot overwrite a newer one.
+  // order. Without this, two rapid saveEntries() calls (e.g. fast
+  // double-tap add/delete) can race on the underlying platform channel and
+  // let an older snapshot overwrite a newer one.
   Future<void> _entriesWriteQueue = Future.value();
-  Future<void> _localeWriteQueue = Future.value();
 
   Future<List<TimelineEntry>> loadEntries() async {
     final prefs = await SharedPreferences.getInstance();
@@ -83,22 +81,6 @@ class NowTimelineStore {
       _entriesKey,
       jsonEncode(entries.map((entry) => entry.toJson()).toList()),
     );
-  }
-
-  Future<String> loadLocale() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_localeKey) ?? 'en';
-  }
-
-  Future<void> saveLocale(String locale) {
-    final scheduled = _localeWriteQueue.then((_) => _writeLocale(locale));
-    _localeWriteQueue = scheduled.catchError((_) {});
-    return scheduled;
-  }
-
-  Future<void> _writeLocale(String locale) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_localeKey, locale);
   }
 
   static List<TimelineEntry> defaultEntries() => const [

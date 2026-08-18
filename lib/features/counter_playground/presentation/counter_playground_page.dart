@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../domain/counter_playground_controller.dart';
 import '../../../core/navigation/app_navigation.dart';
+import '../../../shared/display/display_scope.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
 import '../../../shared/widgets/custom_button.dart';
 
@@ -22,8 +23,9 @@ class _CounterPlaygroundPageState extends State<CounterPlaygroundPage> {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Counter Playground 👾'),
+      appBar: CustomAppBar(title: display.text('nav.counterPlayground')),
       body: ListenableBuilder(
         listenable: widget.controller,
         builder: (context, child) => SingleChildScrollView(
@@ -36,7 +38,7 @@ class _CounterPlaygroundPageState extends State<CounterPlaygroundPage> {
               ),
               const SizedBox(height: 20),
               Text(
-                widget.controller.isTooMuch ? 'Too much 😈' : '',
+                widget.controller.isTooMuch ? display.text('counter.tooMuch') : '',
                 style: const TextStyle(fontSize: 24),
               ),
               const SizedBox(height: 20),
@@ -50,13 +52,13 @@ class _CounterPlaygroundPageState extends State<CounterPlaygroundPage> {
                 spacing: 12,
                 runSpacing: 12,
                 children: [
-                  CustomButton(label: 'Home 🏠', onPressed: AppNavigation.toHome),
+                  CustomButton(label: display.text('home.title'), onPressed: AppNavigation.toHome),
                   CustomButton(
-                    label: 'Irony Generator 🥐',
+                    label: display.text('nav.ironyGenerator'),
                     onPressed: AppNavigation.toIronyGenerator,
                   ),
                   CustomButton(
-                    label: 'Composition Generator 🎸',
+                    label: display.text('nav.compositionGenerator'),
                     onPressed: AppNavigation.toCompositionGenerator,
                   ),
                 ],

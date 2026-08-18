@@ -3,10 +3,12 @@ import 'package:flutter_application_1/features/coordinate_tool/domain/coordinate
 import 'package:flutter_application_1/features/coordinate_tool/presentation/coordinate_tool_page.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/display_test_harness.dart';
+
 void main() {
   testWidgets('shows point, tolerance, bounds and XYZ tile outputs', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(home: CoordinateToolPage()),
+      MaterialApp(home: await wrapWithDisplayScope(const CoordinateToolPage())),
     );
     await tester.pumpAndSettle();
 
@@ -26,7 +28,7 @@ void main() {
 
   testWidgets('invalid custom radius keeps point and controls recoverable', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(home: CoordinateToolPage()),
+      MaterialApp(home: await wrapWithDisplayScope(const CoordinateToolPage())),
     );
     await tester.pumpAndSettle();
 

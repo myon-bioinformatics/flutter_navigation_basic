@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../../shared/display/display_catalog.dart';
+import '../../../shared/display/display_scope.dart';
 import '../domain/now_timeline_models.dart';
 
 class NowTimelinePage extends StatefulWidget {
@@ -15,9 +15,7 @@ class NowTimelinePage extends StatefulWidget {
 class _NowTimelinePageState extends State<NowTimelinePage> {
   final _store = NowTimelineStore();
   List<TimelineEntry> _entries = const [];
-  String _locale = 'en';
   DateTime _nowUtc = DateTime.now().toUtc();
-  DisplayCatalog? _catalog;
   Timer? _ticker;
   bool _loading = true;
 
@@ -37,23 +35,12 @@ class _NowTimelinePageState extends State<NowTimelinePage> {
   }
 
   Future<void> _load() async {
-    final catalog = await DisplayCatalog.load();
     final entries = await _store.loadEntries();
-    final locale = await _store.loadLocale();
     if (!mounted) return;
     setState(() {
-      _catalog = catalog;
       _entries = entries;
-      _locale = catalog.supports(locale) ? locale : 'en';
       _loading = false;
     });
-  }
-
-  String _t(String key) => _catalog?.text(_locale, 'nowTimeline.$key') ?? key;
-
-  Future<void> _setLocale(String value) async {
-    setState(() => _locale = value);
-    await _store.saveLocale(value);
   }
 
   Future<void> _delete(TimelineEntry entry) async {
@@ -63,14 +50,10 @@ class _NowTimelinePageState extends State<NowTimelinePage> {
   }
 
   Future<void> _addEntry() async {
-    final catalog = _catalog;
-    if (catalog == null) return;
+    final display = DisplayScope.of(context);
     final created = await showDialog<TimelineEntry>(
       context: context,
-      builder: (_) => _AddTimelineEntryDialog(
-        catalog: catalog,
-        locale: _locale,
-      ),
+      builder: (_) => _AddTimelineEntryDialog(display: display),
     );
     if (created == null) return;
     final next = [..._entries, created];
@@ -80,36 +63,19 @@ class _NowTimelinePageState extends State<NowTimelinePage> {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
+    String t(String key) => display.text('nowTimeline.$key');
     return Scaffold(
       appBar: AppBar(
-        title: Text(_t('title')),
-        actions: [
-          if (_catalog != null)
-            DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _locale,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                items: DisplayCatalog.supportedLocales
-                    .map(
-                      (locale) => DropdownMenuItem(
-                        value: locale,
-                        child: Text(locale.toUpperCase()),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) _setLocale(value);
-                },
-              ),
-            ),
-        ],
+        title: Text(t('title')),
+        actions: const [DisplayLocalePicker(compact: true)],
       ),
       floatingActionButton: _loading
           ? null
           : FloatingActionButton.extended(
               onPressed: _addEntry,
               icon: const Icon(Icons.add),
-              label: Text(_t('add')),
+              label: Text(t('add')),
             ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -122,25 +88,25 @@ class _NowTimelinePageState extends State<NowTimelinePage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        _t('subtitle'),
+                        t('subtitle'),
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        _t('unsupported'),
+                        t('unsupported'),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                       const SizedBox(height: 20),
                       _NowStrip(
                         entries: _entries,
                         nowUtc: _nowUtc,
-                        text: _t,
+                        text: t,
                       ),
                       const SizedBox(height: 24),
                       _Timeline(
                         entries: _entries,
                         nowUtc: _nowUtc,
-                        text: _t,
+                        text: t,
                         onDelete: _delete,
                       ),
                     ],
@@ -326,13 +292,9 @@ class _TimelineRow {
 }
 
 class _AddTimelineEntryDialog extends StatefulWidget {
-  const _AddTimelineEntryDialog({
-    required this.catalog,
-    required this.locale,
-  });
+  const _AddTimelineEntryDialog({required this.display});
 
-  final DisplayCatalog catalog;
-  final String locale;
+  final DisplayController display;
 
   @override
   State<_AddTimelineEntryDialog> createState() => _AddTimelineEntryDialogState();
@@ -348,10 +310,7 @@ class _AddTimelineEntryDialogState extends State<_AddTimelineEntryDialog> {
   String _zone = IanaTimeRules.supportedZones.first;
   String? _error;
 
-  String _t(String key) => widget.catalog.text(
-        widget.locale,
-        'nowTimeline.$key',
-      );
+  String _t(String key) => widget.display.text('nowTimeline.$key');
 
   @override
   void initState() {
