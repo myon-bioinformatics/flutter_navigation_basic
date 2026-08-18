@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../diagnostics/build_metadata.dart';
 
 class HomeOverviewAction {
   const HomeOverviewAction({
@@ -20,11 +23,16 @@ class HomeOverviewPanel extends StatelessWidget {
     required this.actions,
     this.title = 'Flutter Navigation Basic',
     this.subtitle = 'Explore navigation, API, UI/theme, and data-processing patterns from one dashboard.',
+    this.metadataLoader = BuildMetadata.load,
   });
 
   final List<HomeOverviewAction> actions;
   final String title;
   final String subtitle;
+
+  /// Overridable for tests so revision-metric loading can be driven
+  /// deterministically instead of depending on real asset I/O timing.
+  final Future<BuildMetadata> Function() metadataLoader;
 
   @override
   Widget build(BuildContext context) {
@@ -52,14 +60,15 @@ class HomeOverviewPanel extends StatelessWidget {
               const SizedBox(height: 8),
               Text(subtitle, style: Theme.of(context).textTheme.bodyLarge),
               const SizedBox(height: 18),
-              const Wrap(
+              Wrap(
                 spacing: 10,
                 runSpacing: 10,
                 children: [
-                  _Metric(label: 'Reference patterns', value: '792'),
-                  _Metric(label: 'Per category', value: '198'),
-                  _Metric(label: 'Runtime deps', value: '2'),
-                  _Metric(label: 'Stage', value: 'pre-beta'),
+                  const _Metric(label: 'Reference patterns', value: '792'),
+                  const _Metric(label: 'Per category', value: '198'),
+                  const _Metric(label: 'Runtime deps', value: '2'),
+                  const _Metric(label: 'Stage', value: 'pre-beta'),
+                  _RevisionMetric(loader: metadataLoader),
                 ],
               ),
             ],
@@ -105,6 +114,76 @@ class _Metric extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
         child: Text('$value · $label'),
       ),
+    );
+  }
+}
+
+class _RevisionMetric extends StatefulWidget {
+  const _RevisionMetric({required this.loader});
+
+  final Future<BuildMetadata> Function() loader;
+
+  @override
+  State<_RevisionMetric> createState() => _RevisionMetricState();
+}
+
+class _RevisionMetricState extends State<_RevisionMetric> {
+  // Loaded once per widget lifetime so parent rebuilds (e.g. the Home
+  // screen's Refresh action calling setState) reuse the same Future
+  // instead of re-reading the asset and flashing back to "loading…".
+  late final Future<BuildMetadata> _metadata;
+
+  @override
+  void initState() {
+    super.initState();
+    _metadata = widget.loader();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<BuildMetadata>(
+      future: _metadata,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const _Metric(label: 'Revision', value: 'loading…');
+        }
+        final revision = snapshot.data!.revision;
+        final details = <String>[
+          if (revision.sha != null) 'SHA: ${revision.sha}',
+          if (revision.ref != null) 'Ref: ${revision.ref}',
+          if (revision.committedAt != null) 'Committed: ${revision.committedAt}',
+          if (revision.subject != null) revision.subject!,
+          if (revision.commitUrl != null) revision.commitUrl!,
+          if (revision.dirty) 'Local working tree was dirty',
+        ].join('\n');
+        final commitUrl = revision.commitUrl;
+        final metric = _Metric(
+          label: revision.ref == null || revision.ref!.isEmpty
+              ? 'Revision'
+              : 'Revision · ${revision.ref}',
+          value: revision.displaySha,
+        );
+        return Tooltip(
+          message: details.isEmpty
+              ? 'Git revision unavailable'
+              : commitUrl == null
+                  ? details
+                  : '$details\n(tap to copy commit URL)',
+          child: commitUrl == null
+              ? metric
+              : InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () async {
+                    await Clipboard.setData(ClipboardData(text: commitUrl));
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Commit URL copied')),
+                    );
+                  },
+                  child: metric,
+                ),
+        );
+      },
     );
   }
 }
