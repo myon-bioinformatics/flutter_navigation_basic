@@ -112,7 +112,7 @@ void main() {
   });
 
   testWidgets('switching the app-wide locale re-renders shelf chrome and status text', (tester) async {
-    final controller = await DisplayController.load();
+    final controller = await loadTestDisplayController();
     await tester.pumpWidget(
       DisplayScope(
         controller: controller,

@@ -28,7 +28,7 @@ void main() {
   });
 
   testWidgets('switching the app-wide locale re-renders workbench chrome and status text', (tester) async {
-    final controller = await DisplayController.load();
+    final controller = await loadTestDisplayController();
     await tester.pumpWidget(
       DisplayScope(
         controller: controller,
@@ -55,7 +55,7 @@ void main() {
   });
 
   testWidgets('goal field label reflects locale while composed prompt headers stay literal English', (tester) async {
-    final controller = await DisplayController.load();
+    final controller = await loadTestDisplayController();
     await tester.pumpWidget(
       DisplayScope(
         controller: controller,
