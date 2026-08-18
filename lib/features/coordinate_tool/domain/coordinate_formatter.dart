@@ -126,9 +126,10 @@ class CoordinateToleranceArea {
 
     final rawWest = center.longitude - longitudeDelta;
     final rawEast = center.longitude + longitudeDelta;
-    final west = _normalizeLongitude(rawWest);
-    final east = _normalizeLongitude(rawEast);
-    final wraps = longitudeDelta < 180 && (rawWest < -180 || rawEast > 180);
+    final fullLongitudeRange = longitudeDelta >= 180;
+    final west = fullLongitudeRange ? -180.0 : _normalizeLongitude(rawWest);
+    final east = fullLongitudeRange ? 180.0 : _normalizeLongitude(rawEast);
+    final wraps = !fullLongitudeRange && (rawWest < -180 || rawEast > 180);
 
     return CoordinateToleranceArea(
       center: center,
