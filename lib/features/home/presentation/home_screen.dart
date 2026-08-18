@@ -45,6 +45,12 @@ class HomeScreen extends StatelessWidget {
                       onTap: AppNavigation.toCoordinateTool,
                     ),
                     HomeOverviewAction(
+                      label: 'Bounding Box',
+                      subtitle: 'Create, validate and copy geographic bounds from four edges or from a center point and radius.',
+                      icon: Icons.crop_free_outlined,
+                      onTap: AppNavigation.toBoundingBox,
+                    ),
+                    HomeOverviewAction(
                       label: 'Clipboard Workbench',
                       subtitle: 'Turn source material into a structured system prompt and copy the result.',
                       icon: Icons.content_paste_go_outlined,
