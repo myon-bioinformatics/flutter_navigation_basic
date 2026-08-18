@@ -18,6 +18,14 @@ class DisplayCatalog {
     'ru',
   ];
 
+  static const requiredNamespaces = <String>[
+    'common.',
+    'home.',
+    'coordinate.',
+    'boundingBox.',
+    'nowTimeline.',
+  ];
+
   static Future<DisplayCatalog> load() async {
     final raw = await rootBundle.loadString('assets/display/app_text.json');
     final decoded = jsonDecode(raw) as Map<String, dynamic>;
@@ -32,8 +40,19 @@ class DisplayCatalog {
     return DisplayCatalog._(values);
   }
 
-  String text(String locale, String key) =>
-      _values[locale]?[key] ?? _values['en']?[key] ?? key;
+  String text(
+    String locale,
+    String key, {
+    Map<String, Object?> arguments = const {},
+  }) {
+    var value = _values[locale]?[key] ?? _values['en']?[key] ?? key;
+    for (final entry in arguments.entries) {
+      value = value.replaceAll('{${entry.key}}', '${entry.value ?? ''}');
+    }
+    return value;
+  }
 
   bool supports(String locale) => supportedLocales.contains(locale);
+
+  Set<String> keys(String locale) => _values[locale]?.keys.toSet() ?? const {};
 }

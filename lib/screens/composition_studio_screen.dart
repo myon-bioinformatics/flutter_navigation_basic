@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../config/routes.dart';
 import '../data/composer.dart';
+import '../shared/display/display_scope.dart';
 import '../shared/widgets/chord_theory_card.dart';
 import '../shared/widgets/composition_studio.dart';
 import '../shared/widgets/note_sequence_card.dart';
@@ -32,9 +33,10 @@ class _CompositionStudioScreenState extends State<CompositionStudioScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Composition Studio 🎸'),
+        title: Text(display.text('compositionGenerator.title')),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: SingleChildScrollView(
@@ -54,15 +56,18 @@ class _CompositionStudioScreenState extends State<CompositionStudioScreen> {
                 const SizedBox(height: 16),
                 const NoteSequenceCard(),
                 const SizedBox(height: 20),
-                const Wrap(
+                Wrap(
                   alignment: WrapAlignment.center,
                   spacing: 12,
                   runSpacing: 12,
                   children: [
-                    NavButton(label: 'Song Seed Generator', routeName: AppRoutes.compositionSeedGenerator),
-                    NavButton(label: 'Home 🏠', routeName: AppRoutes.home),
-                    NavButton(label: 'Counter Playground 👾', routeName: AppRoutes.counterPlayground),
-                    NavButton(label: 'Irony Generator 🥐', routeName: AppRoutes.ironyGenerator),
+                    NavButton(
+                      label: display.text('compositionStudio.songSeedGenerator'),
+                      routeName: AppRoutes.compositionSeedGenerator,
+                    ),
+                    NavButton(label: display.text('home.title'), routeName: AppRoutes.home),
+                    NavButton(label: display.text('nav.counterPlayground'), routeName: AppRoutes.counterPlayground),
+                    NavButton(label: display.text('nav.ironyGenerator'), routeName: AppRoutes.ironyGenerator),
                   ],
                 ),
               ],

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../display/display_scope.dart';
+
 class AppErrorWidget extends StatelessWidget {
   const AppErrorWidget({super.key, required this.message, this.onRetry});
 
@@ -8,6 +10,7 @@ class AppErrorWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.maybeOf(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -17,7 +20,10 @@ class AppErrorWidget extends StatelessWidget {
           Text(message, textAlign: TextAlign.center),
           if (onRetry != null) ...[
             const SizedBox(height: 16),
-            ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
+            ElevatedButton(
+              onPressed: onRetry,
+              child: Text(display?.text('common.retry') ?? 'Retry'),
+            ),
           ],
         ],
       ),

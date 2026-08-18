@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/navigation/app_navigation.dart';
+import '../../../shared/display/display_scope.dart';
 import '../../../shared/widgets/chord_theory_card.dart';
 import '../../../shared/widgets/composition_studio.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
@@ -15,8 +16,9 @@ class CompositionGeneratorPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Composition Studio 🎸'),
+      appBar: CustomAppBar(title: display.text('compositionGenerator.title')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 72),
         child: Center(
@@ -38,13 +40,13 @@ class CompositionGeneratorPage extends StatelessWidget {
                   spacing: 12,
                   runSpacing: 12,
                   children: [
-                    CustomButton(label: 'Home 🏠', onPressed: AppNavigation.toHome),
+                    CustomButton(label: display.text('home.title'), onPressed: AppNavigation.toHome),
                     CustomButton(
-                      label: 'Counter Playground 👾',
+                      label: display.text('nav.counterPlayground'),
                       onPressed: AppNavigation.toCounterPlayground,
                     ),
                     CustomButton(
-                      label: 'Irony Generator 🥐',
+                      label: display.text('nav.ironyGenerator'),
                       onPressed: AppNavigation.toIronyGenerator,
                     ),
                   ],

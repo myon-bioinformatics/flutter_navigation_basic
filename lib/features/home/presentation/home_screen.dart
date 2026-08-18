@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../domain/home_controller.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../shared/diagnostics/build_diagnostics_card.dart';
+import '../../../shared/display/display_scope.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
 import '../../../shared/widgets/home_overview_panel.dart';
 
@@ -19,12 +20,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
+    final weekdayLabels = <String>[
+      display.text('common.weekday.mon'),
+      display.text('common.weekday.tue'),
+      display.text('common.weekday.wed'),
+      display.text('common.weekday.thu'),
+      display.text('common.weekday.fri'),
+      display.text('common.weekday.sat'),
+      display.text('common.weekday.sun'),
+    ];
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Home 🏠',
+        title: display.text('home.title'),
         actions: [
           IconButton(
-            tooltip: 'Refresh',
+            tooltip: display.text('common.refresh'),
             onPressed: _refresh,
             icon: const Icon(Icons.refresh),
           ),
@@ -38,64 +49,21 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(widget.controller.today, style: Theme.of(context).textTheme.titleMedium),
+                Text(widget.controller.today(weekdayLabels), style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 12),
                 HomeOverviewPanel(
+                  title: display.text('homeOverview.title'),
+                  subtitle: display.text('homeOverview.subtitle'),
                   actions: [
-                    HomeOverviewAction(
-                      label: 'Clipboard Shelf · Core Tool #1',
-                      subtitle: 'Session-only history for text, URLs, Markdown and 2/3-scaled images with filter, ordering and bundle copy.',
-                      icon: Icons.inventory_2_outlined,
-                      onTap: AppNavigation.toClipboardShelf,
-                    ),
-                    HomeOverviewAction(
-                      label: 'Now Timeline',
-                      subtitle: 'Put people, places, schedules and events from different IANA time zones on one client-side timeline.',
-                      icon: Icons.public_outlined,
-                      onTap: AppNavigation.toNowTimeline,
-                    ),
-                    HomeOverviewAction(
-                      label: 'Latitude / Longitude',
-                      subtitle: 'Validate decimal coordinates and convert them to degrees, minutes and seconds with hemisphere labels.',
-                      icon: Icons.my_location_outlined,
-                      onTap: AppNavigation.toCoordinateTool,
-                    ),
-                    HomeOverviewAction(
-                      label: 'Bounding Box',
-                      subtitle: 'Create, validate and copy geographic bounds from four edges or from a center point and radius.',
-                      icon: Icons.crop_free_outlined,
-                      onTap: AppNavigation.toBoundingBox,
-                    ),
-                    HomeOverviewAction(
-                      label: 'Clipboard Workbench',
-                      subtitle: 'Turn source material into a structured system prompt and copy the result.',
-                      icon: Icons.content_paste_go_outlined,
-                      onTap: AppNavigation.toClipboardWorkbench,
-                    ),
-                    HomeOverviewAction(
-                      label: 'Counter Playground',
-                      subtitle: 'State transitions, undo/history and interaction basics.',
-                      icon: Icons.exposure_plus_1_outlined,
-                      onTap: AppNavigation.toCounterPlayground,
-                    ),
-                    HomeOverviewAction(
-                      label: 'Irony Generator',
-                      subtitle: 'Generate lightweight text results and revisit favorites.',
-                      icon: Icons.auto_awesome_outlined,
-                      onTap: AppNavigation.toIronyGenerator,
-                    ),
-                    HomeOverviewAction(
-                      label: 'Composition Studio',
-                      subtitle: 'Visual metronome, tap tempo, song structure, lyrics and chords in one lightweight pre-DAW workspace.',
-                      icon: Icons.music_note_outlined,
-                      onTap: AppNavigation.toCompositionGenerator,
-                    ),
-                    HomeOverviewAction(
-                      label: 'URL Parameters',
-                      subtitle: 'Inspect route/query-style parameter handling.',
-                      icon: Icons.link_outlined,
-                      onTap: AppNavigation.toScreen5,
-                    ),
+                    HomeOverviewAction(label: display.text('home.action.clipboardShelfProd.label'), subtitle: display.text('home.action.clipboardShelfProd.subtitle'), icon: Icons.inventory_2_outlined, onTap: AppNavigation.toClipboardShelf),
+                    HomeOverviewAction(label: display.text('nowTimeline.title'), subtitle: display.text('home.action.nowTimeline.subtitle'), icon: Icons.public_outlined, onTap: AppNavigation.toNowTimeline),
+                    HomeOverviewAction(label: display.text('coordinate.title'), subtitle: display.text('home.action.coordinateTool.subtitle'), icon: Icons.my_location_outlined, onTap: AppNavigation.toCoordinateTool),
+                    HomeOverviewAction(label: display.text('boundingBox.title'), subtitle: display.text('home.action.boundingBox.subtitle'), icon: Icons.crop_free_outlined, onTap: AppNavigation.toBoundingBox),
+                    HomeOverviewAction(label: display.text('home.action.clipboardWorkbenchProd.label'), subtitle: display.text('home.action.clipboardWorkbenchProd.subtitle'), icon: Icons.content_paste_go_outlined, onTap: AppNavigation.toClipboardWorkbench),
+                    HomeOverviewAction(label: display.text('home.action.counterPlaygroundProd.label'), subtitle: display.text('home.action.counterPlaygroundProd.subtitle'), icon: Icons.exposure_plus_1_outlined, onTap: AppNavigation.toCounterPlayground),
+                    HomeOverviewAction(label: display.text('home.action.ironyGeneratorProd.label'), subtitle: display.text('home.action.ironyGeneratorProd.subtitle'), icon: Icons.auto_awesome_outlined, onTap: AppNavigation.toIronyGenerator),
+                    HomeOverviewAction(label: display.text('home.action.compositionStudio.label'), subtitle: display.text('home.action.compositionStudio.subtitle'), icon: Icons.music_note_outlined, onTap: AppNavigation.toCompositionGenerator),
+                    HomeOverviewAction(label: display.text('home.action.urlParameters.label'), subtitle: display.text('home.action.urlParameters.subtitle'), icon: Icons.link_outlined, onTap: AppNavigation.toScreen5),
                   ],
                 ),
                 const SizedBox(height: 20),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../config/routes.dart';
+import '../shared/display/display_scope.dart';
 import '../shared/widgets/home_overview_panel.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -12,8 +13,16 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   DateTime get nowadays => DateTime.now();
 
-  String get today {
-    const weekdays = <String>['月', '火', '水', '木', '金', '土', '日'];
+  String _today(DisplayController display) {
+    final weekdays = <String>[
+      display.text('common.weekday.mon'),
+      display.text('common.weekday.tue'),
+      display.text('common.weekday.wed'),
+      display.text('common.weekday.thu'),
+      display.text('common.weekday.fri'),
+      display.text('common.weekday.sat'),
+      display.text('common.weekday.sun'),
+    ];
     final value = nowadays;
     final month = value.month.toString().padLeft(2, '0');
     final day = value.day.toString().padLeft(2, '0');
@@ -25,15 +34,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home 🏠'),
+        title: Text(display.text('home.title')),
         actions: [
           IconButton(
-            tooltip: 'Refresh',
+            tooltip: display.text('common.refresh'),
             onPressed: _refresh,
             icon: const Icon(Icons.refresh),
           ),
+          const DisplayLocalePicker(compact: true),
         ],
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
@@ -45,82 +56,24 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(today, style: Theme.of(context).textTheme.titleMedium),
+                Text(_today(display), style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 12),
                 HomeOverviewPanel(
+                  title: display.text('homeOverview.title'),
+                  subtitle: display.text('homeOverview.subtitle'),
                   actions: [
-                    HomeOverviewAction(
-                      label: 'Clipboard Shelf · Core Tool #1',
-                      subtitle: 'Keep a temporary session-only history of text, URLs, Markdown and 2/3-scaled images; select, sort and bundle-copy it.',
-                      icon: Icons.inventory_2_outlined,
-                      onTap: () => Navigator.pushNamed(context, AppRoutes.clipboardShelf),
-                    ),
-                    HomeOverviewAction(
-                      label: 'Now Timeline',
-                      subtitle: 'Put people, places, schedules and events from different IANA time zones on one client-side timeline.',
-                      icon: Icons.public_outlined,
-                      onTap: () => Navigator.pushNamed(context, AppRoutes.nowTimeline),
-                    ),
-                    HomeOverviewAction(
-                      label: 'Latitude / Longitude',
-                      subtitle: 'Validate decimal coordinates and convert them to degrees, minutes and seconds with hemisphere labels.',
-                      icon: Icons.my_location_outlined,
-                      onTap: () => Navigator.pushNamed(context, AppRoutes.coordinateTool),
-                    ),
-                    HomeOverviewAction(
-                      label: 'Bounding Box',
-                      subtitle: 'Create, validate and copy geographic bounds from four edges or from a center point and radius.',
-                      icon: Icons.crop_free_outlined,
-                      onTap: () => Navigator.pushNamed(context, AppRoutes.boundingBox),
-                    ),
-                    HomeOverviewAction(
-                      label: 'Clipboard Workbench',
-                      subtitle: 'Turn shelf/source material into a structured system prompt and copy the result.',
-                      icon: Icons.content_paste_go_outlined,
-                      onTap: () => Navigator.pushNamed(context, AppRoutes.clipboardWorkbench),
-                    ),
-                    HomeOverviewAction(
-                      label: 'Navigation Hub',
-                      subtitle: 'Browse the 198 navigation catalogue screens.',
-                      icon: Icons.map_outlined,
-                      onTap: () => Navigator.pushNamed(context, AppRoutes.hub),
-                    ),
-                    HomeOverviewAction(
-                      label: 'UI Showcase',
-                      subtitle: 'Material controls, responsive layout, theme and media examples.',
-                      icon: Icons.dashboard_customize_outlined,
-                      onTap: () => Navigator.pushNamed(context, AppRoutes.uiShowcase),
-                    ),
-                    HomeOverviewAction(
-                      label: 'API Integration',
-                      subtitle: 'Exercise success, timeout, auth and server-error scenarios.',
-                      icon: Icons.http_outlined,
-                      onTap: () => Navigator.pushNamed(context, AppRoutes.externalApi),
-                    ),
-                    HomeOverviewAction(
-                      label: 'MCP Integration',
-                      subtitle: 'Inspect tool-list and tool-call integration behavior.',
-                      icon: Icons.hub_outlined,
-                      onTap: () => Navigator.pushNamed(context, AppRoutes.externalMcp),
-                    ),
-                    HomeOverviewAction(
-                      label: 'Counter Playground',
-                      subtitle: 'State transitions, history and interaction basics.',
-                      icon: Icons.exposure_plus_1_outlined,
-                      onTap: () => Navigator.pushNamed(context, AppRoutes.counterPlayground),
-                    ),
-                    HomeOverviewAction(
-                      label: 'Irony Generator',
-                      subtitle: 'Generate, favorite and revisit lightweight text results.',
-                      icon: Icons.auto_awesome_outlined,
-                      onTap: () => Navigator.pushNamed(context, AppRoutes.ironyGenerator),
-                    ),
-                    HomeOverviewAction(
-                      label: 'Composition Studio',
-                      subtitle: 'Visual metronome, tap tempo, song structure, lyrics and chords in one lightweight pre-DAW workspace.',
-                      icon: Icons.music_note_outlined,
-                      onTap: () => Navigator.pushNamed(context, AppRoutes.compositionGenerator),
-                    ),
+                    HomeOverviewAction(label: display.text('home.action.clipboardShelfRef.label'), subtitle: display.text('home.action.clipboardShelfRef.subtitle'), icon: Icons.inventory_2_outlined, onTap: () => Navigator.pushNamed(context, AppRoutes.clipboardShelf)),
+                    HomeOverviewAction(label: display.text('nowTimeline.title'), subtitle: display.text('home.action.nowTimeline.subtitle'), icon: Icons.public_outlined, onTap: () => Navigator.pushNamed(context, AppRoutes.nowTimeline)),
+                    HomeOverviewAction(label: display.text('coordinate.title'), subtitle: display.text('home.action.coordinateTool.subtitle'), icon: Icons.my_location_outlined, onTap: () => Navigator.pushNamed(context, AppRoutes.coordinateTool)),
+                    HomeOverviewAction(label: display.text('boundingBox.title'), subtitle: display.text('home.action.boundingBox.subtitle'), icon: Icons.crop_free_outlined, onTap: () => Navigator.pushNamed(context, AppRoutes.boundingBox)),
+                    HomeOverviewAction(label: display.text('home.action.clipboardWorkbenchRef.label'), subtitle: display.text('home.action.clipboardWorkbenchRef.subtitle'), icon: Icons.content_paste_go_outlined, onTap: () => Navigator.pushNamed(context, AppRoutes.clipboardWorkbench)),
+                    HomeOverviewAction(label: display.text('home.action.hub.label'), subtitle: display.text('home.action.hub.subtitle'), icon: Icons.map_outlined, onTap: () => Navigator.pushNamed(context, AppRoutes.hub)),
+                    HomeOverviewAction(label: display.text('home.action.uiShowcase.label'), subtitle: display.text('home.action.uiShowcase.subtitle'), icon: Icons.dashboard_customize_outlined, onTap: () => Navigator.pushNamed(context, AppRoutes.uiShowcase)),
+                    HomeOverviewAction(label: display.text('home.action.apiIntegration.label'), subtitle: display.text('home.action.apiIntegration.subtitle'), icon: Icons.http_outlined, onTap: () => Navigator.pushNamed(context, AppRoutes.externalApi)),
+                    HomeOverviewAction(label: display.text('home.action.mcpIntegration.label'), subtitle: display.text('home.action.mcpIntegration.subtitle'), icon: Icons.hub_outlined, onTap: () => Navigator.pushNamed(context, AppRoutes.externalMcp)),
+                    HomeOverviewAction(label: display.text('home.action.counterPlaygroundRef.label'), subtitle: display.text('home.action.counterPlaygroundRef.subtitle'), icon: Icons.exposure_plus_1_outlined, onTap: () => Navigator.pushNamed(context, AppRoutes.counterPlayground)),
+                    HomeOverviewAction(label: display.text('home.action.ironyGeneratorRef.label'), subtitle: display.text('home.action.ironyGeneratorRef.subtitle'), icon: Icons.auto_awesome_outlined, onTap: () => Navigator.pushNamed(context, AppRoutes.ironyGenerator)),
+                    HomeOverviewAction(label: display.text('home.action.compositionStudio.label'), subtitle: display.text('home.action.compositionStudio.subtitle'), icon: Icons.music_note_outlined, onTap: () => Navigator.pushNamed(context, AppRoutes.compositionGenerator)),
                   ],
                 ),
               ],

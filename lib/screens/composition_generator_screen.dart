@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../config/routes.dart';
 import '../data/composer.dart';
+import '../shared/display/display_scope.dart';
 import '../widgets/nav_button.dart';
 
 class CompositionGeneratorScreen extends StatefulWidget {
@@ -108,25 +109,28 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
 
   void _saveCurrent() {
     setState(_recordCurrent);
+    final display = DisplayScope.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Composition idea saved to recent ideas')),
+      SnackBar(content: Text(display.text('compositionLegacy.savedSnackbar'))),
     );
   }
 
   Future<void> _copy() async {
     await Clipboard.setData(ClipboardData(text: _resultText));
     if (!mounted) return;
+    final display = DisplayScope.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Composition idea copied')),
+      SnackBar(content: Text(display.text('compositionLegacy.copiedSnackbar'))),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final display = DisplayScope.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Composition Generator 🎸'),
+        title: Text(display.text('nav.compositionGenerator')),
         backgroundColor: theme.colorScheme.inversePrimary,
       ),
       body: Center(
@@ -141,7 +145,7 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
                     padding: const EdgeInsets.all(24),
                     child: Column(
                       children: [
-                        Text('Song seed', style: theme.textTheme.titleMedium),
+                        Text(display.text('compositionLegacy.songSeed'), style: theme.textTheme.titleMedium),
                         const SizedBox(height: 16),
                         Wrap(
                           alignment: WrapAlignment.center,
@@ -174,20 +178,20 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
                             FilledButton.icon(
                               onPressed: _generate,
                               icon: const Icon(Icons.auto_awesome),
-                              label: const Text('Generate again'),
+                              label: Text(display.text('compositionLegacy.generateAgain')),
                             ),
                             OutlinedButton.icon(
                               onPressed: _regenerateProgression,
                               icon: const Icon(Icons.shuffle),
-                              label: const Text('Shuffle chords'),
+                              label: Text(display.text('compositionLegacy.shuffleChords')),
                             ),
                             OutlinedButton.icon(
                               onPressed: _saveCurrent,
                               icon: const Icon(Icons.bookmark_add_outlined),
-                              label: const Text('Save current'),
+                              label: Text(display.text('compositionLegacy.saveCurrent')),
                             ),
                             IconButton.filledTonal(
-                              tooltip: 'Copy composition idea',
+                              tooltip: display.text('compositionLegacy.copyTooltip'),
                               onPressed: _copy,
                               icon: const Icon(Icons.copy),
                             ),
@@ -200,8 +204,8 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
                 const SizedBox(height: 16),
                 Card(
                   child: ExpansionTile(
-                    title: const Text('Customize seed'),
-                    subtitle: const Text('Adjust the generated idea without extra packages.'),
+                    title: Text(display.text('compositionLegacy.customizeSeed')),
+                    subtitle: Text(display.text('compositionLegacy.customizeSeedSubtitle')),
                     childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     children: [
                       LayoutBuilder(
@@ -217,7 +221,7 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
                                 child: DropdownButtonFormField<String>(
                                   value: _tonicKey,
                                   isExpanded: true,
-                                  decoration: const InputDecoration(labelText: 'Key'),
+                                  decoration: InputDecoration(labelText: display.text('compositionLegacy.key')),
                                   items: Composer.diatonicScaleList
                                       .map((value) => DropdownMenuItem(value: value, child: Text(value)))
                                       .toList(),
@@ -231,7 +235,7 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
                                 child: DropdownButtonFormField<String>(
                                   value: _mode,
                                   isExpanded: true,
-                                  decoration: const InputDecoration(labelText: 'Mode'),
+                                  decoration: InputDecoration(labelText: display.text('compositionLegacy.mode')),
                                   items: Composer.modes
                                       .map((value) => DropdownMenuItem(value: value, child: Text(value)))
                                       .toList(),
@@ -245,7 +249,7 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
                                 child: DropdownButtonFormField<String>(
                                   value: _timeSignature,
                                   isExpanded: true,
-                                  decoration: const InputDecoration(labelText: 'Time signature'),
+                                  decoration: InputDecoration(labelText: display.text('compositionLegacy.timeSignature')),
                                   items: Composer.timeSignatures
                                       .map((value) => DropdownMenuItem(value: value, child: Text(value)))
                                       .toList(),
@@ -259,7 +263,7 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
                                 child: DropdownButtonFormField<String>(
                                   value: _progression,
                                   isExpanded: true,
-                                  decoration: const InputDecoration(labelText: 'Progression'),
+                                  decoration: InputDecoration(labelText: display.text('compositionLegacy.progression')),
                                   items: _progressionPool
                                       .map((value) => DropdownMenuItem(value: value, child: Text(value)))
                                       .toList(),
@@ -275,7 +279,7 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          const Text('BPM'),
+                          Text(display.text('compositionLegacy.bpm')),
                           Expanded(
                             child: Slider(
                               min: 60,
@@ -299,7 +303,7 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text('Recent ideas', style: theme.textTheme.titleMedium),
+                        Text(display.text('compositionLegacy.recentIdeas'), style: theme.textTheme.titleMedium),
                         const SizedBox(height: 8),
                         ..._history.take(5).map(
                           (item) => ListTile(
@@ -318,14 +322,14 @@ class _CompositionGeneratorScreenState extends State<CompositionGeneratorScreen>
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Wrap(
+                Wrap(
                   alignment: WrapAlignment.center,
                   spacing: 12,
                   runSpacing: 12,
                   children: [
-                    NavButton(label: 'Home 🏠', routeName: AppRoutes.home),
-                    NavButton(label: 'Counter Playground 👾', routeName: AppRoutes.counterPlayground),
-                    NavButton(label: 'Irony Generator 🥐', routeName: AppRoutes.ironyGenerator),
+                    NavButton(label: display.text('home.title'), routeName: AppRoutes.home),
+                    NavButton(label: display.text('nav.counterPlayground'), routeName: AppRoutes.counterPlayground),
+                    NavButton(label: display.text('nav.ironyGenerator'), routeName: AppRoutes.ironyGenerator),
                   ],
                 ),
               ],

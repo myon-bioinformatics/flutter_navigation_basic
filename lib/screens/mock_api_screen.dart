@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import '../data/mock_api_client.dart';
+import '../shared/display/display_scope.dart';
 
 class ApiIntegrationScreen extends StatefulWidget {
   const ApiIntegrationScreen({super.key});
@@ -13,12 +14,14 @@ class ApiIntegrationScreen extends StatefulWidget {
 class _ApiIntegrationScreenState extends State<ApiIntegrationScreen> {
   final MockApiClient _client = MockApiClient();
   bool _loading = false;
-  String _result = 'Choose an API scenario.';
+  String _resultKey = 'mockApi.chooseScenario';
+  Map<String, Object?> _resultArgs = const {};
 
   Future<void> _run(String scenario) async {
     setState(() {
       _loading = true;
-      _result = 'Loading $scenario…';
+      _resultKey = 'common.loadingScenario';
+      _resultArgs = {'scenario': scenario};
     });
 
     try {
@@ -29,11 +32,15 @@ class _ApiIntegrationScreenState extends State<ApiIntegrationScreen> {
       final request = data['request'];
       final response = const JsonEncoder.withIndent('  ').convert(data['response']);
       setState(() {
-        _result = '$request\nSimulated HTTP $status\n\n$response';
+        _resultKey = 'common.apiResult';
+        _resultArgs = {'request': request, 'status': status, 'response': response};
       });
     } catch (error) {
       if (!mounted) return;
-      setState(() => _result = 'Request failed\n$error');
+      setState(() {
+        _resultKey = 'common.requestFailed';
+        _resultArgs = {'error': error};
+      });
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -41,30 +48,29 @@ class _ApiIntegrationScreenState extends State<ApiIntegrationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const scenarios = <(String, String, IconData)>[
+    final display = DisplayScope.of(context);
+    final scenarios = <(String, String, IconData)>[
       ('get', 'GET', Icons.download_outlined),
       ('post', 'POST', Icons.upload_outlined),
-      ('timeout', 'Timeout', Icons.timer_outlined),
+      ('timeout', display.text('mockApi.scenarioTimeout'), Icons.timer_outlined),
       ('unauthorized', '401', Icons.lock_outline),
       ('serverError', '500', Icons.error_outline),
     ];
+    final result = display.text(_resultKey, arguments: _resultArgs);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('External Integration · API'),
+        title: Text(display.text('mockApi.title')),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('API Demo', style: Theme.of(context).textTheme.headlineSmall),
+          Text(display.text('mockApi.headline'), style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 8),
-          const Text(
-            'GET / POST / Timeout / 401 / 500 を1ページで確認します。'
-            ' GitHub Pagesでは公開fixtureを読み、Nodeモックでは同じケースを実際のHTTP挙動として再現できます。',
-          ),
+          Text(display.text('mockApi.description')),
           const SizedBox(height: 12),
-          SelectableText('Mock: ${MockApiClient.defaultBaseUrl}'),
+          SelectableText(display.text('common.mockLabel', arguments: {'url': MockApiClient.defaultBaseUrl})),
           const SizedBox(height: 20),
           Wrap(
             spacing: 10,
@@ -84,7 +90,7 @@ class _ApiIntegrationScreenState extends State<ApiIntegrationScreen> {
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: SelectableText(_result),
+              child: SelectableText(result),
             ),
           ),
         ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../config/routes.dart';
+import '../shared/display/display_scope.dart';
 import 'generic_screen.dart';
 
 enum _ViewMode { list, grid }
@@ -63,34 +64,36 @@ class _HubScreenState extends State<HubScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Navigation Hub 🗺️'),
+        title: Text(display.text('hub.title')),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
-            tooltip: 'External Integration · API',
+            tooltip: display.text('mockApi.title'),
             icon: const Icon(Icons.api),
             onPressed: () => Navigator.pushNamed(context, AppRoutes.externalApi),
           ),
           IconButton(
-            tooltip: 'External Integration · MCP',
+            tooltip: display.text('mcp.title'),
             icon: const Icon(Icons.hub_outlined),
             onPressed: () => Navigator.pushNamed(context, AppRoutes.externalMcp),
           ),
           IconButton(
-            tooltip: 'List view',
+            tooltip: display.text('hub.listViewTooltip'),
             icon: const Icon(Icons.list),
             onPressed: () => setState(() => _mode = _ViewMode.list),
             color: _mode == _ViewMode.list ? Colors.blue : null,
           ),
           IconButton(
-            tooltip: 'Grid view',
+            tooltip: display.text('hub.gridViewTooltip'),
             icon: const Icon(Icons.grid_view),
             onPressed: () => setState(() => _mode = _ViewMode.grid),
             color: _mode == _ViewMode.grid ? Colors.blue : null,
           ),
           const SizedBox(width: 8),
+          const DisplayLocalePicker(compact: true),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
@@ -99,7 +102,7 @@ class _HubScreenState extends State<HubScreen> {
             child: TextField(
               controller: _searchCtrl,
               decoration: InputDecoration(
-                hintText: 'Search screens…',
+                hintText: display.text('hub.searchHint'),
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
                 fillColor: Colors.white,
@@ -115,14 +118,14 @@ class _HubScreenState extends State<HubScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _filtered.isEmpty
-              ? const Center(child: Text('No screens found.'))
+              ? Center(child: Text(display.text('hub.empty')))
               : _mode == _ViewMode.list
                   ? _buildList()
                   : _buildGrid(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.pushNamed(context, AppRoutes.home),
         icon: const Icon(Icons.home),
-        label: const Text('Home'),
+        label: Text(display.text('hub.homeFab')),
       ),
     );
   }

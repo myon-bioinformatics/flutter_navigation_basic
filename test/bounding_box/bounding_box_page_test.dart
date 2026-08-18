@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/bounding_box/presentation/bounding_box_page.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/display_test_harness.dart';
+
 void main() {
   testWidgets('shows separate bounding box workflow and copy formats', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(home: BoundingBoxPage()),
+      MaterialApp(home: await wrapWithDisplayScope(const BoundingBoxPage())),
     );
     await tester.pump();
 
@@ -21,7 +23,7 @@ void main() {
 
   testWidgets('generates bounds from center and radius', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(home: BoundingBoxPage()),
+      MaterialApp(home: await wrapWithDisplayScope(const BoundingBoxPage())),
     );
     await tester.pump();
 
@@ -29,6 +31,7 @@ void main() {
     await tester.pump();
 
     expect(find.textContaining('Center: 35.681236, 139.767125'), findsOneWidget);
+    expect(find.textContaining('Span: '), findsOneWidget);
     expect(find.textContaining('wraps_antimeridian: false'), findsWidgets);
   });
 }

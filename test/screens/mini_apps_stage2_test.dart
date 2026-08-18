@@ -4,11 +4,14 @@ import 'package:flutter_application_1/screens/composition_generator_screen.dart'
 import 'package:flutter_application_1/screens/counter_playground_screen.dart';
 import 'package:flutter_application_1/screens/irony_generator_screen.dart';
 
-Widget _app(Widget child) => MaterialApp(home: child);
+import '../support/display_test_harness.dart';
+
+Future<Widget> _app(Widget child) async =>
+    MaterialApp(home: await wrapWithDisplayScope(child));
 
 void main() {
   testWidgets('counter can undo the latest value change', (tester) async {
-    await tester.pumpWidget(_app(const CounterPlaygroundScreen()));
+    await tester.pumpWidget(await _app(const CounterPlaygroundScreen()));
 
     await tester.tap(find.text('Step 5'));
     await tester.tap(find.text('Increase'));
@@ -22,7 +25,7 @@ void main() {
 
   testWidgets('irony favorites can be managed from the favorites card',
       (tester) async {
-    await tester.pumpWidget(_app(const IronyGeneratorScreen()));
+    await tester.pumpWidget(await _app(const IronyGeneratorScreen()));
 
     await tester.tap(find.text('Favorite'));
     await tester.pump();
@@ -39,7 +42,7 @@ void main() {
 
   testWidgets('composition exposes standard Flutter customization controls',
       (tester) async {
-    await tester.pumpWidget(_app(const CompositionGeneratorScreen()));
+    await tester.pumpWidget(await _app(const CompositionGeneratorScreen()));
 
     final customize = find.text('Customize seed');
     await tester.ensureVisible(customize);
@@ -52,7 +55,7 @@ void main() {
   });
 
   testWidgets('composition save current confirms the action', (tester) async {
-    await tester.pumpWidget(_app(const CompositionGeneratorScreen()));
+    await tester.pumpWidget(await _app(const CompositionGeneratorScreen()));
 
     await tester.tap(find.text('Save current'));
     await tester.pump();

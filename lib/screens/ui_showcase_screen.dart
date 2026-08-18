@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../config/routes.dart';
+import '../shared/display/display_scope.dart';
 
 class UiShowcaseConfig {
   static const UiShowcaseConfig defaults = UiShowcaseConfig(
@@ -182,6 +183,7 @@ class _UiShowcaseScreenState extends State<UiShowcaseScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    final display = DisplayScope.of(context);
     final narrow = MediaQuery.sizeOf(context).width < 900;
     return Theme(
       data: _themeFor(context),
@@ -191,32 +193,33 @@ class _UiShowcaseScreenState extends State<UiShowcaseScreen> {
             title: Text(config.title),
             actions: [
               PopupMenuButton<String>(
-                tooltip: 'Design style',
+                tooltip: display.text('uiShowcase.designStyleTooltip'),
                 initialValue: _style,
                 onSelected: (value) => setState(() => _style = value),
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'modern', child: Text('Modern')),
-                  PopupMenuItem(value: 'retro', child: Text('Retro')),
-                  PopupMenuItem(value: 'terminal', child: Text('Terminal')),
+                itemBuilder: (_) => [
+                  PopupMenuItem(value: 'modern', child: Text(display.text('uiShowcase.styleModern'))),
+                  PopupMenuItem(value: 'retro', child: Text(display.text('uiShowcase.styleRetro'))),
+                  PopupMenuItem(value: 'terminal', child: Text(display.text('uiShowcase.styleTerminal'))),
                 ],
                 icon: const Icon(Icons.palette_outlined),
               ),
               PopupMenuButton<String>(
-                tooltip: 'Brightness',
+                tooltip: display.text('uiShowcase.brightnessTooltip'),
                 initialValue: _brightnessMode,
                 onSelected: (value) => setState(() => _brightnessMode = value),
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'system', child: Text('System')),
-                  PopupMenuItem(value: 'light', child: Text('Light')),
-                  PopupMenuItem(value: 'dark', child: Text('Dark')),
+                itemBuilder: (_) => [
+                  PopupMenuItem(value: 'system', child: Text(display.text('uiShowcase.brightnessSystem'))),
+                  PopupMenuItem(value: 'light', child: Text(display.text('uiShowcase.brightnessLight'))),
+                  PopupMenuItem(value: 'dark', child: Text(display.text('uiShowcase.brightnessDark'))),
                 ],
                 icon: const Icon(Icons.brightness_6_outlined),
               ),
               IconButton(
-                tooltip: 'Home',
+                tooltip: display.text('uiShowcase.homeTooltip'),
                 onPressed: () => Navigator.pushNamed(themedContext, AppRoutes.home),
                 icon: const Icon(Icons.home_outlined),
               ),
+              const DisplayLocalePicker(compact: true),
             ],
           ),
           drawer: narrow
@@ -227,7 +230,7 @@ class _UiShowcaseScreenState extends State<UiShowcaseScreen> {
                       children: [
                         ListTile(
                           title: Text(config.title),
-                          subtitle: const Text('Standard Flutter navigation'),
+                          subtitle: Text(display.text('uiShowcase.standardNavigation')),
                         ),
                         const Divider(),
                         for (var i = 0; i < config.sections.length; i++)
@@ -350,6 +353,7 @@ class _OverviewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
@@ -359,28 +363,28 @@ class _OverviewPage extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            const Chip(label: Text('Internal defaults')),
-            const Chip(label: Text('External JSON overrides')),
-            const Chip(label: Text('Material 3')),
-            Chip(label: Text('Style: $style')),
-            Chip(label: Text('Brightness: $brightnessMode')),
+            Chip(label: Text(display.text('uiShowcase.internalDefaultsChip'))),
+            Chip(label: Text(display.text('uiShowcase.externalOverridesChip'))),
+            Chip(label: Text(display.text('uiShowcase.material3Chip'))),
+            Chip(label: Text(display.text('uiShowcase.styleChipLabel', arguments: {'style': style}))),
+            Chip(label: Text(display.text('uiShowcase.brightnessChipLabel', arguments: {'mode': brightnessMode}))),
           ],
         ),
         const SizedBox(height: 20),
-        const _InfoCard(
+        _InfoCard(
           icon: Icons.view_sidebar_outlined,
-          title: 'Responsive navigation',
-          text: 'NavigationRail on wide layouts, Drawer + NavigationBar on compact layouts.',
+          title: display.text('uiShowcase.infoResponsiveTitle'),
+          text: display.text('uiShowcase.infoResponsiveText'),
         ),
-        const _InfoCard(
+        _InfoCard(
           icon: Icons.tune_outlined,
-          title: 'Generalized configuration',
-          text: 'Dart constants are safe internal defaults. assets/ui_showcase.json can override labels and initial presentation without changing widget logic.',
+          title: display.text('uiShowcase.infoConfigTitle'),
+          text: display.text('uiShowcase.infoConfigText'),
         ),
-        const _InfoCard(
+        _InfoCard(
           icon: Icons.layers_outlined,
-          title: 'Low coupling',
-          text: 'This showcase uses Flutter/Dart SDK APIs only; no UI, state-management, media, or config package is required.',
+          title: display.text('uiShowcase.infoCouplingTitle'),
+          text: display.text('uiShowcase.infoCouplingText'),
         ),
       ],
     );
@@ -404,18 +408,19 @@ class _ComponentsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
-        Text('Common controls', style: Theme.of(context).textTheme.headlineSmall),
+        Text(display.text('uiShowcase.commonControls'), style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 16),
         TextField(
           controller: searchController,
-          decoration: const InputDecoration(
-            labelText: 'Search',
-            hintText: 'Standard TextField',
-            prefixIcon: Icon(Icons.search),
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: display.text('uiShowcase.searchLabel'),
+            hintText: display.text('uiShowcase.searchHint'),
+            prefixIcon: const Icon(Icons.search),
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 16),
@@ -423,33 +428,33 @@ class _ComponentsPage extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            FilledButton(onPressed: () {}, child: const Text('Primary')),
-            OutlinedButton(onPressed: () {}, child: const Text('Secondary')),
-            const FilterChip(label: Text('Filter'), selected: true, onSelected: null),
-            const InputChip(label: Text('Tag')),
+            FilledButton(onPressed: () {}, child: Text(display.text('uiShowcase.primaryButton'))),
+            OutlinedButton(onPressed: () {}, child: Text(display.text('uiShowcase.secondaryButton'))),
+            FilterChip(label: Text(display.text('uiShowcase.filterChip')), selected: true, onSelected: null),
+            InputChip(label: Text(display.text('uiShowcase.tagChip'))),
           ],
         ),
         const SizedBox(height: 16),
         SwitchListTile(
-          title: const Text('Notifications'),
-          subtitle: const Text('Switch / ListTile composition'),
+          title: Text(display.text('uiShowcase.notificationsTitle')),
+          subtitle: Text(display.text('uiShowcase.notificationsSubtitle')),
           value: notifications,
           onChanged: onNotificationsChanged,
         ),
         ListTile(
-          title: const Text('Density'),
+          title: Text(display.text('uiShowcase.densityTitle')),
           subtitle: Slider(
             value: density,
             onChanged: onDensityChanged,
           ),
           trailing: Text('${(density * 100).round()}%'),
         ),
-        const ExpansionTile(
-          title: Text('Expandable details'),
+        ExpansionTile(
+          title: Text(display.text('uiShowcase.expandableTitle')),
           children: [
             Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('ExpansionTile covers progressive disclosure without an external component library.'),
+              padding: const EdgeInsets.all(16),
+              child: Text(display.text('uiShowcase.expandableText')),
             ),
           ],
         ),
@@ -463,10 +468,11 @@ class _DataPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
-        Text('Data presentation', style: Theme.of(context).textTheme.headlineSmall),
+        Text(display.text('uiShowcase.dataPresentation'), style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 16),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -496,11 +502,11 @@ class _DataPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        const Card(
+        Card(
           child: ListTile(
-            leading: Icon(Icons.info_outline),
-            title: Text('API / MCP ready shell'),
-            subtitle: Text('The presentation shell stays stable while data and integration sources can be replaced later.'),
+            leading: const Icon(Icons.info_outline),
+            title: Text(display.text('uiShowcase.apiMcpShellTitle')),
+            subtitle: Text(display.text('uiShowcase.apiMcpShellText')),
           ),
         ),
       ],
@@ -524,13 +530,14 @@ class _MediaPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     final bytes = _decodeImage();
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
-        Text('Embedded media', style: Theme.of(context).textTheme.headlineSmall),
+        Text(display.text('uiShowcase.embeddedMedia'), style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 8),
-        const Text('Image bytes come from the external JSON as Base64 and are rendered with Image.memory.'),
+        Text(display.text('uiShowcase.embeddedMediaText')),
         const SizedBox(height: 16),
         AspectRatio(
           aspectRatio: 16 / 9,
@@ -542,10 +549,10 @@ class _MediaPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        const ListTile(
-          leading: Icon(Icons.video_library_outlined),
-          title: Text('Video intentionally optional'),
-          subtitle: Text('No video package is introduced solely for the catalogue. Add a platform/video implementation only when a real functional requirement needs playback.'),
+        ListTile(
+          leading: const Icon(Icons.video_library_outlined),
+          title: Text(display.text('uiShowcase.videoOptionalTitle')),
+          subtitle: Text(display.text('uiShowcase.videoOptionalText')),
         ),
       ],
     );

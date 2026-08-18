@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../shared/display/display_scope.dart';
 import '../domain/bounding_box.dart';
 
 class BoundingBoxPage extends StatefulWidget {
@@ -90,15 +91,20 @@ class _BoundingBoxPageState extends State<BoundingBoxPage> {
     await Clipboard.setData(ClipboardData(text: text));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Copied bounding box.')),
+      SnackBar(content: Text(DisplayScope.of(context).text('boundingBox.copied'))),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
+    String t(String key) => display.text(key);
     final box = _box;
     return Scaffold(
-      appBar: AppBar(title: const Text('Bounding Box')),
+      appBar: AppBar(
+        title: Text(t('boundingBox.title')),
+        actions: const [DisplayLocalePicker(compact: true)],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 72),
         child: Center(
@@ -107,123 +113,84 @@ class _BoundingBoxPageState extends State<BoundingBoxPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'Define a geographic rectangle directly, or generate one from a center point and radius.',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+                Text(t('boundingBox.subtitle'), style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 20),
                 _Section(
-                  title: 'Center + radius',
+                  title: t('boundingBox.centerRadius'),
                   child: Column(
                     children: [
                       Row(
                         children: [
-                          Expanded(
-                            child: _NumberField(
-                              controller: _centerLatitude,
-                              label: 'Center latitude',
-                            ),
-                          ),
+                          Expanded(child: _NumberField(controller: _centerLatitude, label: t('boundingBox.centerLatitude'))),
                           const SizedBox(width: 12),
-                          Expanded(
-                            child: _NumberField(
-                              controller: _centerLongitude,
-                              label: 'Center longitude',
-                            ),
-                          ),
+                          Expanded(child: _NumberField(controller: _centerLongitude, label: t('boundingBox.centerLongitude'))),
                         ],
                       ),
                       const SizedBox(height: 12),
-                      _NumberField(
-                        controller: _radiusMeters,
-                        label: 'Radius (meters)',
-                      ),
+                      _NumberField(controller: _radiusMeters, label: t('boundingBox.radius')),
                       const SizedBox(height: 12),
                       FilledButton.icon(
                         onPressed: _buildFromCenterRadius,
                         icon: const Icon(Icons.center_focus_strong),
-                        label: const Text('Generate bounds'),
+                        label: Text(t('boundingBox.generate')),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 16),
                 _Section(
-                  title: 'Manual bounds',
+                  title: t('boundingBox.manual'),
                   child: Column(
                     children: [
                       Row(
                         children: [
-                          Expanded(
-                            child: _NumberField(controller: _south, label: 'South'),
-                          ),
+                          Expanded(child: _NumberField(controller: _south, label: t('boundingBox.south'))),
                           const SizedBox(width: 12),
-                          Expanded(
-                            child: _NumberField(controller: _north, label: 'North'),
-                          ),
+                          Expanded(child: _NumberField(controller: _north, label: t('boundingBox.north'))),
                         ],
                       ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          Expanded(
-                            child: _NumberField(controller: _west, label: 'West'),
-                          ),
+                          Expanded(child: _NumberField(controller: _west, label: t('boundingBox.west'))),
                           const SizedBox(width: 12),
-                          Expanded(
-                            child: _NumberField(controller: _east, label: 'East'),
-                          ),
+                          Expanded(child: _NumberField(controller: _east, label: t('boundingBox.east'))),
                         ],
                       ),
                       const SizedBox(height: 12),
                       FilledButton.icon(
                         onPressed: _buildFromBounds,
                         icon: const Icon(Icons.crop_free),
-                        label: const Text('Validate bounds'),
+                        label: Text(t('boundingBox.validate')),
                       ),
                     ],
                   ),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 16),
-                  Text(
-                    _error!,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
-                  ),
+                  Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                 ],
                 if (box != null) ...[
                   const SizedBox(height: 20),
-                  Text(
-                    'Center: ${box.centerLatitude.toStringAsFixed(6)}, ${box.centerLongitude.toStringAsFixed(6)}',
-                  ),
-                  Text(
-                    'Span: ${box.latitudeSpan.toStringAsFixed(6)}° lat × ${box.longitudeSpan.toStringAsFixed(6)}° lon',
-                  ),
+                  Text(display.text('boundingBox.center', arguments: {
+                    'lat': box.centerLatitude.toStringAsFixed(6),
+                    'lon': box.centerLongitude.toStringAsFixed(6),
+                  })),
+                  Text(display.text('boundingBox.span', arguments: {
+                    'lat': box.latitudeSpan.toStringAsFixed(6),
+                    'lon': box.longitudeSpan.toStringAsFixed(6),
+                  })),
                   if (box.wrapsAntimeridian)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 8),
-                      child: Text(
-                        'This box crosses the antimeridian; west is numerically greater than east.',
-                      ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(t('boundingBox.antimeridian')),
                     ),
                   const SizedBox(height: 12),
-                  _CopyCard(
-                    title: 'South / West / North / East',
-                    value: box.labeledText,
-                    onCopy: () => _copy(box.labeledText),
-                  ),
+                  _CopyCard(title: 'South / West / North / East', value: box.labeledText, copyTooltip: t('common.copy'), onCopy: () => _copy(box.labeledText)),
                   const SizedBox(height: 12),
-                  _CopyCard(
-                    title: 'BBox [west, south, east, north]',
-                    value: box.bboxText,
-                    onCopy: () => _copy(box.bboxText),
-                  ),
+                  _CopyCard(title: 'BBox [west, south, east, north]', value: box.bboxText, copyTooltip: t('common.copy'), onCopy: () => _copy(box.bboxText)),
                   const SizedBox(height: 12),
-                  _CopyCard(
-                    title: 'JSON',
-                    value: box.jsonText,
-                    onCopy: () => _copy(box.jsonText),
-                  ),
+                  _CopyCard(title: 'JSON', value: box.jsonText, copyTooltip: t('common.copy'), onCopy: () => _copy(box.jsonText)),
                 ],
               ],
             ),
@@ -236,7 +203,6 @@ class _BoundingBoxPageState extends State<BoundingBoxPage> {
 
 class _Section extends StatelessWidget {
   const _Section({required this.title, required this.child});
-
   final String title;
   final Widget child;
 
@@ -258,33 +224,22 @@ class _Section extends StatelessWidget {
 
 class _NumberField extends StatelessWidget {
   const _NumberField({required this.controller, required this.label});
-
   final TextEditingController controller;
   final String label;
 
   @override
   Widget build(BuildContext context) => TextField(
         controller: controller,
-        keyboardType: const TextInputType.numberWithOptions(
-          decimal: true,
-          signed: true,
-        ),
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
+        keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
       );
 }
 
 class _CopyCard extends StatelessWidget {
-  const _CopyCard({
-    required this.title,
-    required this.value,
-    required this.onCopy,
-  });
-
+  const _CopyCard({required this.title, required this.value, required this.copyTooltip, required this.onCopy});
   final String title;
   final String value;
+  final String copyTooltip;
   final VoidCallback onCopy;
 
   @override
@@ -292,11 +247,7 @@ class _CopyCard extends StatelessWidget {
         child: ListTile(
           title: Text(title),
           subtitle: SelectableText(value),
-          trailing: IconButton(
-            tooltip: 'Copy',
-            onPressed: onCopy,
-            icon: const Icon(Icons.copy),
-          ),
+          trailing: IconButton(tooltip: copyTooltip, onPressed: onCopy, icon: const Icon(Icons.copy)),
         ),
       );
 }

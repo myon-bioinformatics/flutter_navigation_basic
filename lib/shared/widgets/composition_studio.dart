@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../../features/composition_generator/domain/metronome_timing.dart';
+import '../display/display_scope.dart';
 
 class CompositionStudio extends StatefulWidget {
   const CompositionStudio({
@@ -129,6 +130,7 @@ class _CompositionStudioState extends State<CompositionStudio>
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
     final snapshot = _snapshot;
     final beatDuration = MetronomeSnapshot.beatUnitDuration(_bpm);
     final barDuration = MetronomeSnapshot.barDuration(_bpm, _beatsPerBar);
@@ -138,13 +140,11 @@ class _CompositionStudioState extends State<CompositionStudio>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Composition Studio · ${widget.initialKey}',
+          display.text('compositionStudio.heading', arguments: {'key': widget.initialKey}),
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 6),
-        const Text(
-          'A lightweight pre-DAW workspace for tempo, form, lyrics and chords. Stage 1 intentionally has no audio backend or extra package.',
-        ),
+        Text(display.text('compositionStudio.subtitle')),
         const SizedBox(height: 16),
         _buildMetronomeCard(
           context,
@@ -169,23 +169,26 @@ class _CompositionStudioState extends State<CompositionStudio>
     bool reduceMotion,
   ) {
     final theme = Theme.of(context);
+    final display = DisplayScope.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Visual Metronome', style: theme.textTheme.titleLarge),
+            Text(display.text('compositionStudio.visualMetronome'), style: theme.textTheme.titleLarge),
             const SizedBox(height: 4),
             Text(
-              '$_beatsPerBar/$_beatUnit · BPM counts the $_beatUnit-note beat unit · ${_subdivisionsPerBeat}× subdivision',
+              display.text('compositionStudio.meterSummary', arguments: {
+                'beatsPerBar': _beatsPerBar,
+                'beatUnit': _beatUnit,
+                'subdivisions': _subdivisionsPerBeat,
+              }),
             ),
             if (_beatUnit == 8)
-              const Padding(
-                padding: EdgeInsets.only(top: 4),
-                child: Text(
-                  '6/8 Stage 1 semantics: BPM follows the eighth-note beat unit; dotted-quarter compound-meter tempo can be added later.',
-                ),
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(display.text('compositionStudio.compoundMeterNote')),
               ),
             const SizedBox(height: 16),
             Wrap(
@@ -197,7 +200,7 @@ class _CompositionStudioState extends State<CompositionStudio>
                   width: 300,
                   child: Row(
                     children: [
-                      const Text('BPM'),
+                      Text(display.text('compositionLegacy.bpm')),
                       Expanded(
                         child: Slider(
                           value: _bpm.toDouble(),
@@ -249,18 +252,26 @@ class _CompositionStudioState extends State<CompositionStudio>
                 FilledButton.icon(
                   onPressed: _toggleMetronome,
                   icon: Icon(_running ? Icons.stop : Icons.play_arrow),
-                  label: Text(_running ? 'Stop' : 'Start'),
+                  label: Text(display.text(_running ? 'compositionStudio.stop' : 'compositionStudio.start')),
                 ),
                 OutlinedButton.icon(
                   onPressed: _tap,
                   icon: const Icon(Icons.touch_app_outlined),
                   label: Text(
-                    'Tap Tempo${_tapTempo.tapCount > 1 ? ' · $_bpm BPM' : ''}',
+                    _tapTempo.tapCount > 1
+                        ? display.text('compositionStudio.tapTempoWithBpm', arguments: {'bpm': _bpm})
+                        : display.text('compositionStudio.tapTempo'),
                   ),
                 ),
-                Text('Beat ${snapshot.beatIndex + 1}/$_beatsPerBar'),
+                Text(display.text('compositionStudio.beatOf', arguments: {
+                  'index': snapshot.beatIndex + 1,
+                  'total': _beatsPerBar,
+                })),
                 Text(
-                  'Beat ${_durationLabel(beatDuration)} · Bar ${_durationLabel(barDuration)}',
+                  display.text('compositionStudio.beatBarDuration', arguments: {
+                    'beat': _durationLabel(beatDuration),
+                    'bar': _durationLabel(barDuration),
+                  }),
                 ),
               ],
             ),
@@ -329,9 +340,7 @@ class _CompositionStudioState extends State<CompositionStudio>
             const SizedBox(height: 8),
             LinearProgressIndicator(value: snapshot.phase),
             const SizedBox(height: 8),
-            const Text(
-              'Stopwatch is the timing source; Ticker only requests redraws, so frame count is never treated as musical time.',
-            ),
+            Text(display.text('compositionStudio.stopwatchNote')),
           ],
         ),
       ),
@@ -364,15 +373,16 @@ class _CompositionStudioState extends State<CompositionStudio>
   }
 
   Widget _buildStructureCard(BuildContext context) {
+    final display = DisplayScope.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Song Structure', style: Theme.of(context).textTheme.titleLarge),
+            Text(display.text('compositionStudio.songStructure'), style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 4),
-            const Text('Keep form editable in-place instead of opening another screen.'),
+            Text(display.text('compositionStudio.songStructureSubtitle')),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
@@ -386,13 +396,13 @@ class _CompositionStudioState extends State<CompositionStudio>
                           ..._sections.skip(i + 1),
                         ]),
                     avatar: PopupMenuButton<String>(
-                      tooltip: 'Reorder ${_sections[i]}',
+                      tooltip: display.text('compositionStudio.reorderTooltip', arguments: {'section': _sections[i]}),
                       icon: const Icon(Icons.swap_vert, size: 18),
                       onSelected: (value) =>
                           _moveSection(i, value == 'up' ? -1 : 1),
-                      itemBuilder: (_) => const [
-                        PopupMenuItem(value: 'up', child: Text('Move up')),
-                        PopupMenuItem(value: 'down', child: Text('Move down')),
+                      itemBuilder: (_) => [
+                        PopupMenuItem(value: 'up', child: Text(display.text('compositionStudio.moveUp'))),
+                        PopupMenuItem(value: 'down', child: Text(display.text('compositionStudio.moveDown'))),
                       ],
                     ),
                   ),
@@ -404,10 +414,10 @@ class _CompositionStudioState extends State<CompositionStudio>
                 Expanded(
                   child: TextField(
                     controller: _sectionController,
-                    decoration: const InputDecoration(
-                      labelText: 'Add section',
-                      hintText: 'Bridge, Pre-Chorus, Solo…',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: display.text('compositionStudio.addSection'),
+                      hintText: display.text('compositionStudio.addSectionHint'),
+                      border: const OutlineInputBorder(),
                     ),
                     onSubmitted: (_) => _addSection(),
                   ),
@@ -415,7 +425,7 @@ class _CompositionStudioState extends State<CompositionStudio>
                 const SizedBox(width: 8),
                 IconButton.filledTonal(
                   onPressed: _addSection,
-                  tooltip: 'Add section',
+                  tooltip: display.text('compositionStudio.addSection'),
                   icon: const Icon(Icons.add),
                 ),
               ],
@@ -427,6 +437,7 @@ class _CompositionStudioState extends State<CompositionStudio>
   }
 
   Widget _buildWritingCard(BuildContext context) {
+    final display = DisplayScope.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -435,22 +446,20 @@ class _CompositionStudioState extends State<CompositionStudio>
             final stacked = constraints.maxWidth < 720;
             final lyrics = _writingField(
               controller: _lyricsController,
-              label: 'Lyrics',
+              label: display.text('compositionStudio.lyricsLabel'),
               hint: 'Verse 1\n…\n\nChorus\n…',
             );
             final chords = _writingField(
               controller: _chordsController,
-              label: 'Chords',
+              label: display.text('compositionStudio.chordsLabel'),
               hint: '| C | Am | F | G |',
             );
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Lyrics / Chords', style: Theme.of(context).textTheme.titleLarge),
+                Text(display.text('compositionStudio.lyricsChordsHeading'), style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 4),
-                const Text(
-                  'A session-local writing surface for ideas that are not ready for a DAW yet.',
-                ),
+                Text(display.text('compositionStudio.lyricsChordsSubtitle')),
                 const SizedBox(height: 12),
                 if (stacked) ...[
                   lyrics,

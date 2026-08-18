@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../config/routes.dart';
 import '../data/ironies.dart';
+import '../shared/display/display_scope.dart';
 import '../widgets/nav_button.dart';
 
 class IronyGeneratorScreen extends StatefulWidget {
@@ -104,19 +105,21 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
   Future<void> _copy() async {
     await Clipboard.setData(ClipboardData(text: _current.text));
     if (!mounted) return;
+    final display = DisplayScope.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Copied to clipboard')),
+      SnackBar(content: Text(display.text('ironyLegacy.copiedSnackbar'))),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final display = DisplayScope.of(context);
     final isFavorite = _favorites.contains(_current.text);
     final favoriteEntries = _favoriteEntries;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Irony Generator 🥐'),
+        title: Text(display.text('nav.ironyGenerator')),
         backgroundColor: theme.colorScheme.inversePrimary,
       ),
       body: Center(
@@ -132,7 +135,7 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
                   runSpacing: 8,
                   children: [
                     ChoiceChip(
-                      label: const Text('All'),
+                      label: Text(display.text('ironyLegacy.all')),
                       selected: _tone == 'All',
                       onSelected: (_) => _selectTone('All'),
                     ),
@@ -173,15 +176,17 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
                             FilledButton.icon(
                               onPressed: _generate,
                               icon: const Icon(Icons.casino_outlined),
-                              label: const Text('Generate again'),
+                              label: Text(display.text('ironyLegacy.generateAgain')),
                             ),
                             OutlinedButton.icon(
                               onPressed: _toggleFavorite,
                               icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border),
-                              label: Text(isFavorite ? 'Favorited' : 'Favorite'),
+                              label: Text(display.text(
+                                isFavorite ? 'ironyLegacy.favorited' : 'ironyLegacy.favorite',
+                              )),
                             ),
                             IconButton.filledTonal(
-                              tooltip: 'Copy irony',
+                              tooltip: display.text('ironyLegacy.copyTooltip'),
                               onPressed: _copy,
                               icon: const Icon(Icons.copy),
                             ),
@@ -202,14 +207,14 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
                           children: [
                             Expanded(
                               child: Text(
-                                'Recent generations',
+                                display.text('ironyLegacy.recentGenerations'),
                                 style: theme.textTheme.titleMedium,
                               ),
                             ),
                             TextButton.icon(
                               onPressed: _history.length > 1 ? _clearHistory : null,
                               icon: const Icon(Icons.clear_all),
-                              label: const Text('Clear'),
+                              label: Text(display.text('ironyLegacy.clear')),
                             ),
                           ],
                         ),
@@ -238,12 +243,12 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          'Favorites · ${favoriteEntries.length}',
+                          display.text('ironyLegacy.favoritesCount', arguments: {'n': favoriteEntries.length}),
                           style: theme.textTheme.titleMedium,
                         ),
                         const SizedBox(height: 8),
                         if (favoriteEntries.isEmpty)
-                          const Text('Favorite an irony to keep it handy here.')
+                          Text(display.text('ironyLegacy.favoritesEmpty'))
                         else
                           ...favoriteEntries.map(
                             (entry) => ListTile(
@@ -253,7 +258,7 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
                               title: Text(entry.text, maxLines: 2, overflow: TextOverflow.ellipsis),
                               subtitle: Text(entry.tone),
                               trailing: IconButton(
-                                tooltip: 'Remove favorite',
+                                tooltip: display.text('ironyLegacy.removeFavoriteTooltip'),
                                 onPressed: () => _removeFavorite(entry.text),
                                 icon: const Icon(Icons.close),
                               ),
@@ -265,14 +270,14 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Wrap(
+                Wrap(
                   alignment: WrapAlignment.center,
                   spacing: 12,
                   runSpacing: 12,
                   children: [
-                    NavButton(label: 'Home 🏠', routeName: AppRoutes.home),
-                    NavButton(label: 'Counter Playground 👾', routeName: AppRoutes.counterPlayground),
-                    NavButton(label: 'Composition Generator 🎸', routeName: AppRoutes.compositionGenerator),
+                    NavButton(label: display.text('home.title'), routeName: AppRoutes.home),
+                    NavButton(label: display.text('nav.counterPlayground'), routeName: AppRoutes.counterPlayground),
+                    NavButton(label: display.text('nav.compositionGenerator'), routeName: AppRoutes.compositionGenerator),
                   ],
                 ),
               ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../shared/display/display_scope.dart';
 import '../domain/coordinate_formatter.dart';
 
 class CoordinateToolPage extends StatefulWidget {
@@ -83,18 +84,43 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
   Future<void> _copy(String value, String label) async {
     await Clipboard.setData(ClipboardData(text: value));
     if (!mounted) return;
+    final display = DisplayScope.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Copied $label.')),
+      SnackBar(
+        content: Text(
+          display.text('coordinate.copied', arguments: {'label': label}),
+        ),
+      ),
     );
+  }
+
+  String _presetLabel(DisplayController display, CoordinateTolerancePreset preset) {
+    final key = switch (preset) {
+      CoordinateTolerancePreset.exactGps => 'coordinate.preset.exactGps',
+      CoordinateTolerancePreset.building => 'coordinate.preset.building',
+      CoordinateTolerancePreset.stationCampus => 'coordinate.preset.stationCampus',
+      CoordinateTolerancePreset.park => 'coordinate.preset.park',
+      CoordinateTolerancePreset.district => 'coordinate.preset.district',
+      CoordinateTolerancePreset.custom => 'coordinate.preset.custom',
+    };
+    final label = display.text(key);
+    return preset.radiusMeters == null
+        ? label
+        : '$label · ${preset.radiusMeters!.toInt()} m';
   }
 
   @override
   Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
+    String t(String key) => display.text(key);
     final value = _value;
     final area = _area;
     final tile = _tile;
     return Scaffold(
-      appBar: AppBar(title: const Text('Latitude / Longitude')),
+      appBar: AppBar(
+        title: Text(t('coordinate.title')),
+        actions: const [DisplayLocalePicker(compact: true)],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 72),
         child: Center(
@@ -103,84 +129,52 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'Treat a coordinate as either an exact point or a loose real-world area, then copy reusable bounds, platform circle formats and map-tile values.',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+                Text(t('coordinate.subtitle'), style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 24),
-                _SectionTitle(title: '1. Point', icon: Icons.place_outlined),
+                _SectionTitle(title: t('coordinate.point'), icon: Icons.place_outlined),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _latitude,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                    signed: true,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: 'Latitude',
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                  decoration: InputDecoration(
+                    labelText: t('coordinate.latitude'),
                     helperText: '-90 to 90',
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _longitude,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                    signed: true,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: 'Longitude',
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                  decoration: InputDecoration(
+                    labelText: t('coordinate.longitude'),
                     helperText: '-180 to 180',
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 16),
                 FilledButton.icon(
                   onPressed: _convert,
                   icon: const Icon(Icons.calculate_outlined),
-                  label: const Text('Calculate'),
+                  label: Text(t('coordinate.calculate')),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 16),
-                  Text(
-                    _error!,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
-                  ),
+                  Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                 ],
                 if (value != null) ...[
                   const SizedBox(height: 20),
-                  _ResultCard(
-                    title: 'Decimal degrees',
-                    value: value.decimalDegrees,
-                    onCopy: () => _copy(value.decimalDegrees, 'decimal coordinates'),
-                  ),
+                  _ResultCard(title: t('coordinate.decimal'), value: value.decimalDegrees, copyTooltip: t('common.copy'), onCopy: () => _copy(value.decimalDegrees, t('coordinate.decimal'))),
                   const SizedBox(height: 12),
-                  _ResultCard(
-                    title: 'Degrees / minutes / seconds (DMS)',
-                    value: value.dms,
-                    onCopy: () => _copy(value.dms, 'DMS coordinates'),
-                  ),
+                  _ResultCard(title: t('coordinate.dms'), value: value.dms, copyTooltip: t('common.copy'), onCopy: () => _copy(value.dms, t('coordinate.dms'))),
                   const SizedBox(height: 28),
-                  _SectionTitle(title: '2. Tolerance', icon: Icons.radar_outlined),
+                  _SectionTitle(title: t('coordinate.tolerance'), icon: Icons.radar_outlined),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<CoordinateTolerancePreset>(
                     initialValue: _preset,
-                    decoration: const InputDecoration(
-                      labelText: 'Area preset',
-                      border: OutlineInputBorder(),
-                    ),
+                    decoration: InputDecoration(labelText: t('coordinate.areaPreset'), border: const OutlineInputBorder()),
                     items: CoordinateTolerancePreset.values
-                        .map(
-                          (preset) => DropdownMenuItem(
-                            value: preset,
-                            child: Text(
-                              preset.radiusMeters == null
-                                  ? preset.label
-                                  : '${preset.label} · ${preset.radiusMeters!.toInt()} m',
-                            ),
-                          ),
-                        )
+                        .map((preset) => DropdownMenuItem(value: preset, child: Text(_presetLabel(display, preset))))
                         .toList(),
                     onChanged: (preset) {
                       if (preset == null) return;
@@ -193,46 +187,28 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                     TextField(
                       controller: _customRadius,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(
-                        labelText: 'Custom radius (m)',
-                        helperText: 'Distance from the center point',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: t('coordinate.customRadius'),
+                        helperText: t('coordinate.radiusHelper'),
+                        border: const OutlineInputBorder(),
                       ),
                       onSubmitted: (_) => _convert(),
                     ),
                   ],
                   if (area != null) ...[
                     const SizedBox(height: 12),
-                    _ResultCard(
-                      title: 'Center + radius',
-                      value: area.centerRadiusText,
-                      onCopy: () => _copy(area.centerRadiusText, 'center and radius'),
-                    ),
+                    _ResultCard(title: t('coordinate.centerRadius'), value: area.centerRadiusText, copyTooltip: t('common.copy'), onCopy: () => _copy(area.centerRadiusText, t('coordinate.centerRadius'))),
                     const SizedBox(height: 28),
-                    _SectionTitle(title: '3. Bounds', icon: Icons.crop_free_outlined),
+                    _SectionTitle(title: t('coordinate.bounds'), icon: Icons.crop_free_outlined),
                     const SizedBox(height: 12),
-                    _ResultCard(
-                      title: 'Loose bounding box',
-                      value: area.boundsText,
-                      onCopy: () => _copy(area.boundsText, 'bounds'),
-                    ),
+                    _ResultCard(title: t('coordinate.looseBox'), value: area.boundsText, copyTooltip: t('common.copy'), onCopy: () => _copy(area.boundsText, t('coordinate.looseBox'))),
                     const SizedBox(height: 12),
-                    _ResultCard(
-                      title: 'BBox [west, south, east, north]',
-                      value: area.bboxText,
-                      onCopy: () => _copy(area.bboxText, 'bbox'),
-                    ),
+                    _ResultCard(title: 'BBox [west, south, east, north]', value: area.bboxText, copyTooltip: t('common.copy'), onCopy: () => _copy(area.bboxText, 'BBox')),
                     const SizedBox(height: 12),
-                    _ResultCard(
-                      title: 'JSON',
-                      value: area.jsonText,
-                      onCopy: () => _copy(area.jsonText, 'JSON area'),
-                    ),
+                    _ResultCard(title: 'JSON', value: area.jsonText, copyTooltip: t('common.copy'), onCopy: () => _copy(area.jsonText, 'JSON')),
                     if (area.wrapsAntimeridian) ...[
                       const SizedBox(height: 8),
-                      const Text(
-                        'This area crosses the ±180° antimeridian. Consumers of the bbox must support wrapped longitude ranges.',
-                      ),
+                      Text(t('coordinate.antimeridian')),
                     ],
                     const SizedBox(height: 28),
                     _SectionTitle(
@@ -243,6 +219,7 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                     _ResultCard(
                       title: 'Google Maps JavaScript · Circle',
                       value: area.googleMapsJavaScript,
+                      copyTooltip: t('common.copy'),
                       onCopy: () => _copy(
                         area.googleMapsJavaScript,
                         'Google Maps JavaScript circle',
@@ -252,6 +229,7 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                     _ResultCard(
                       title: 'Apple MapKit · MKCircle (Swift)',
                       value: area.appleMapKitSwift,
+                      copyTooltip: t('common.copy'),
                       onCopy: () => _copy(
                         area.appleMapKitSwift,
                         'Apple MapKit circle',
@@ -259,14 +237,11 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                     ),
                   ],
                   const SizedBox(height: 28),
-                  _SectionTitle(title: '5. XYZ tile', icon: Icons.grid_4x4_outlined),
+                  _SectionTitle(title: t('coordinate.xyzTile'), icon: Icons.grid_4x4_outlined),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<int>(
                     initialValue: _zoom,
-                    decoration: const InputDecoration(
-                      labelText: 'Web Mercator zoom',
-                      border: OutlineInputBorder(),
-                    ),
+                    decoration: InputDecoration(labelText: t('coordinate.zoom'), border: const OutlineInputBorder()),
                     items: [12, 13, 14, 15, 16, 17, 18, 19]
                         .map((zoom) => DropdownMenuItem(value: zoom, child: Text('z$zoom')))
                         .toList(),
@@ -278,23 +253,12 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                   ),
                   if (tile != null) ...[
                     const SizedBox(height: 12),
-                    _ResultCard(
-                      title: 'XYZ tile',
-                      value: tile.text,
-                      onCopy: () => _copy(tile.text, 'XYZ tile'),
-                    ),
+                    _ResultCard(title: t('coordinate.xyzTile'), value: tile.text, copyTooltip: t('common.copy'), onCopy: () => _copy(tile.text, t('coordinate.xyzTile'))),
                     const SizedBox(height: 12),
-                    _ResultCard(
-                      title: 'Tile path',
-                      value: tile.path,
-                      onCopy: () => _copy(tile.path, 'tile path'),
-                    ),
+                    _ResultCard(title: t('coordinate.tilePath'), value: tile.path, copyTooltip: t('common.copy'), onCopy: () => _copy(tile.path, t('coordinate.tilePath'))),
                   ],
                   const SizedBox(height: 16),
-                  Text(
-                    'Tolerance presets are intentionally loose heuristics for GPS drift, representative points, large facilities, parks, campuses and similar real-world ambiguity. They are not survey-grade accuracy guarantees. Google Maps and Apple MapKit outputs are derived from the same center + radius values. No map, geocoding service, server or database is used.',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+                  Text(t('coordinate.disclaimer'), style: Theme.of(context).textTheme.bodySmall),
                 ],
               ],
             ),
@@ -312,40 +276,38 @@ class _SectionTitle extends StatelessWidget {
   final IconData icon;
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon),
-        const SizedBox(width: 8),
-        Text(title, style: Theme.of(context).textTheme.titleLarge),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => Row(
+        children: [
+          Icon(icon),
+          const SizedBox(width: 8),
+          Text(title, style: Theme.of(context).textTheme.titleLarge),
+        ],
+      );
 }
 
 class _ResultCard extends StatelessWidget {
   const _ResultCard({
     required this.title,
     required this.value,
+    required this.copyTooltip,
     required this.onCopy,
   });
 
   final String title;
   final String value;
+  final String copyTooltip;
   final VoidCallback onCopy;
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        title: Text(title),
-        subtitle: SelectableText(value),
-        trailing: IconButton(
-          tooltip: 'Copy',
-          onPressed: onCopy,
-          icon: const Icon(Icons.copy),
+  Widget build(BuildContext context) => Card(
+        child: ListTile(
+          title: Text(title),
+          subtitle: SelectableText(value),
+          trailing: IconButton(
+            tooltip: copyTooltip,
+            onPressed: onCopy,
+            icon: const Icon(Icons.copy),
+          ),
         ),
-      ),
-    );
-  }
+      );
 }

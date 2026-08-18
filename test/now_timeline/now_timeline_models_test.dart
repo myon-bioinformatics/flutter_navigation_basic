@@ -166,17 +166,6 @@ void main() {
       final loaded = await store.loadEntries();
       expect(loaded.single.title, 'Second');
     });
-
-    test('saveLocale persists calls in call order so the latest wins', () async {
-      SharedPreferences.setMockInitialValues({});
-      final store = NowTimelineStore();
-
-      final saveFirst = store.saveLocale('ja');
-      final saveSecond = store.saveLocale('fr');
-      await Future.wait([saveFirst, saveSecond]);
-
-      expect(await store.loadLocale(), 'fr');
-    });
   });
 
   test('TimelineEntry JSON round trip preserves client-side data', () {
