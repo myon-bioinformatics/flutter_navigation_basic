@@ -104,7 +104,7 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Treat a coordinate as either an exact point or a loose real-world area, then copy reusable bounds and map-tile values.',
+                  'Treat a coordinate as either an exact point or a loose real-world area, then copy reusable bounds, platform circle formats and map-tile values.',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 24),
@@ -234,9 +234,32 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                         'This area crosses the ±180° antimeridian. Consumers of the bbox must support wrapped longitude ranges.',
                       ),
                     ],
+                    const SizedBox(height: 28),
+                    _SectionTitle(
+                      title: '4. Platform formats',
+                      icon: Icons.integration_instructions_outlined,
+                    ),
+                    const SizedBox(height: 12),
+                    _ResultCard(
+                      title: 'Google Maps JavaScript · Circle',
+                      value: area.googleMapsJavaScript,
+                      onCopy: () => _copy(
+                        area.googleMapsJavaScript,
+                        'Google Maps JavaScript circle',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _ResultCard(
+                      title: 'Apple MapKit · MKCircle (Swift)',
+                      value: area.appleMapKitSwift,
+                      onCopy: () => _copy(
+                        area.appleMapKitSwift,
+                        'Apple MapKit circle',
+                      ),
+                    ),
                   ],
                   const SizedBox(height: 28),
-                  _SectionTitle(title: '4. XYZ tile', icon: Icons.grid_4x4_outlined),
+                  _SectionTitle(title: '5. XYZ tile', icon: Icons.grid_4x4_outlined),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<int>(
                     initialValue: _zoom,
@@ -269,7 +292,7 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                   ],
                   const SizedBox(height: 16),
                   Text(
-                    'Tolerance presets are intentionally loose heuristics for GPS drift, representative points, large facilities, parks, campuses and similar real-world ambiguity. They are not survey-grade accuracy guarantees. No map, geocoding service, server or database is used.',
+                    'Tolerance presets are intentionally loose heuristics for GPS drift, representative points, large facilities, parks, campuses and similar real-world ambiguity. They are not survey-grade accuracy guarantees. Google Maps and Apple MapKit outputs are derived from the same center + radius values. No map, geocoding service, server or database is used.',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
