@@ -82,7 +82,11 @@ class RevisionMetadata {
   final String? commitUrl;
   final bool dirty;
 
-  String get displaySha => shortSha ?? sha?.substring(0, sha!.length.clamp(0, 8)) ?? 'unknown';
+  String get displaySha {
+    if (shortSha != null && shortSha!.isNotEmpty) return shortSha!;
+    if (sha == null || sha!.isEmpty) return 'unknown';
+    return sha!.length <= 8 ? sha! : sha!.substring(0, 8);
+  }
 
   factory RevisionMetadata.fromJson(Map<String, dynamic> json) {
     return RevisionMetadata(
