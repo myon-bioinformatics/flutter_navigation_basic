@@ -219,6 +219,7 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                     _ResultCard(
                       title: 'Google Maps JavaScript · Circle',
                       value: area.googleMapsJavaScript,
+                      copyTooltip: t('common.copy'),
                       onCopy: () => _copy(
                         area.googleMapsJavaScript,
                         'Google Maps JavaScript circle',
@@ -228,6 +229,7 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                     _ResultCard(
                       title: 'Apple MapKit · MKCircle (Swift)',
                       value: area.appleMapKitSwift,
+                      copyTooltip: t('common.copy'),
                       onCopy: () => _copy(
                         area.appleMapKitSwift,
                         'Apple MapKit circle',
