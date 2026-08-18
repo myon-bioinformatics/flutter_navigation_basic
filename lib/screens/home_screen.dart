@@ -21,11 +21,20 @@ class _HomeScreenState extends State<HomeScreen> {
     return '${value.year}/$month/$day($weekday)';
   }
 
+  void _refresh() => setState(() {});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Home 🏠'),
+        actions: [
+          IconButton(
+            tooltip: 'Refresh',
+            onPressed: _refresh,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: SingleChildScrollView(
