@@ -23,6 +23,7 @@ Future<void> main(List<String> args) async {
 
   final screenReport = await _discoverFeatureWeights();
   final routeSourceReport = await _discoverRouteSourceWeights();
+  final revision = await _discoverRevision();
   final artifact = artifactPath == null ? null : File(artifactPath);
   final analysis = analysisPath == null ? null : File(analysisPath);
   final report = <String, dynamic>{
@@ -48,6 +49,7 @@ Future<void> main(List<String> args) async {
         excludedTopLevel: {'.git', '.dart_tool', 'build'},
       ),
       'assetBytes': await directorySize(Directory('assets')),
+      'revision': revision,
     },
     'screens': screenReport,
     'routeSources': routeSourceReport,
@@ -57,6 +59,50 @@ Future<void> main(List<String> args) async {
   await output.parent.create(recursive: true);
   await output.writeAsString('${const JsonEncoder.withIndent('  ').convert(report)}\n');
   stdout.writeln('Build metadata: ${output.path}');
+}
+
+Future<Map<String, dynamic>> _discoverRevision() async {
+  final sha = await _gitOutput(['rev-parse', 'HEAD']);
+  final shortSha = await _gitOutput(['rev-parse', '--short=8', 'HEAD']);
+  final committedAt = await _gitOutput(['show', '-s', '--format=%cI', 'HEAD']);
+  final subject = await _gitOutput(['show', '-s', '--format=%s', 'HEAD']);
+  final status = await _gitOutput(['status', '--porcelain']);
+
+  final githubRef = Platform.environment['GITHUB_REF_NAME']?.trim();
+  final ref = githubRef != null && githubRef.isNotEmpty
+      ? githubRef
+      : await _gitOutput(['branch', '--show-current']);
+
+  final githubRepository = Platform.environment['GITHUB_REPOSITORY']?.trim();
+  final githubServer = Platform.environment['GITHUB_SERVER_URL']?.trim();
+  String? commitUrl;
+  if (sha != null && githubRepository != null && githubRepository.isNotEmpty) {
+    final server = githubServer != null && githubServer.isNotEmpty
+        ? githubServer
+        : 'https://github.com';
+    commitUrl = '$server/$githubRepository/commit/$sha';
+  }
+
+  return <String, dynamic>{
+    'sha': sha,
+    'shortSha': shortSha,
+    'ref': ref,
+    'committedAt': committedAt,
+    'subject': subject,
+    'commitUrl': commitUrl,
+    'dirty': status?.isNotEmpty ?? false,
+  };
+}
+
+Future<String?> _gitOutput(List<String> args) async {
+  try {
+    final result = await Process.run('git', args);
+    if (result.exitCode != 0) return null;
+    final value = result.stdout.toString().trim();
+    return value.isEmpty ? null : value;
+  } on ProcessException {
+    return null;
+  }
 }
 
 Future<Map<String, dynamic>> _discoverFeatureWeights() async {
