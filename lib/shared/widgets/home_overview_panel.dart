@@ -23,11 +23,16 @@ class HomeOverviewPanel extends StatelessWidget {
     required this.actions,
     this.title = 'Flutter Navigation Basic',
     this.subtitle = 'Explore navigation, API, UI/theme, and data-processing patterns from one dashboard.',
+    this.metadataLoader = BuildMetadata.load,
   });
 
   final List<HomeOverviewAction> actions;
   final String title;
   final String subtitle;
+
+  /// Overridable for tests so revision-metric loading can be driven
+  /// deterministically instead of depending on real asset I/O timing.
+  final Future<BuildMetadata> Function() metadataLoader;
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +68,7 @@ class HomeOverviewPanel extends StatelessWidget {
                   const _Metric(label: 'Per category', value: '198'),
                   const _Metric(label: 'Runtime deps', value: '2'),
                   const _Metric(label: 'Stage', value: 'pre-beta'),
-                  const _RevisionMetric(),
+                  _RevisionMetric(loader: metadataLoader),
                 ],
               ),
             ],
@@ -114,7 +119,9 @@ class _Metric extends StatelessWidget {
 }
 
 class _RevisionMetric extends StatefulWidget {
-  const _RevisionMetric();
+  const _RevisionMetric({required this.loader});
+
+  final Future<BuildMetadata> Function() loader;
 
   @override
   State<_RevisionMetric> createState() => _RevisionMetricState();
@@ -129,7 +136,7 @@ class _RevisionMetricState extends State<_RevisionMetric> {
   @override
   void initState() {
     super.initState();
-    _metadata = BuildMetadata.load();
+    _metadata = widget.loader();
   }
 
   @override
