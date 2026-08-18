@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/features/coordinate_tool/domain/coordinate_formatter.dart';
 import 'package:flutter_application_1/features/coordinate_tool/presentation/coordinate_tool_page.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -29,7 +30,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final presetDropdown = find.byType(DropdownButtonFormField).first;
+    final presetDropdown = find.byWidgetPredicate(
+      (widget) => widget is DropdownButtonFormField<CoordinateTolerancePreset>,
+      description: 'coordinate tolerance preset dropdown',
+    );
+    expect(presetDropdown, findsOneWidget);
     await tester.ensureVisible(presetDropdown);
     await tester.pumpAndSettle();
     await tester.tap(presetDropdown);
