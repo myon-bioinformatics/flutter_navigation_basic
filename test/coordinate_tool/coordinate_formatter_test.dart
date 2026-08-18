@@ -100,6 +100,25 @@ void main() {
       expect(area.jsonText, contains('"wraps_antimeridian": false'));
     });
 
+    test('emits directly usable Google Maps and Apple MapKit circle snippets', () {
+      final area = center.toleranceArea(350);
+
+      expect(area.googleMapsJavaScript, '''new google.maps.Circle({
+  center: {
+    lat: 35.681236,
+    lng: 139.767125
+  },
+  radius: 350
+});''');
+      expect(area.appleMapKitSwift, '''MKCircle(
+  center: CLLocationCoordinate2D(
+    latitude: 35.681236,
+    longitude: 139.767125
+  ),
+  radius: 350
+)''');
+    });
+
     test('marks bounds that cross the antimeridian', () {
       const nearDateLine = CoordinateValue(latitude: 0, longitude: 179.999);
       final area = nearDateLine.toleranceArea(1000);
