@@ -172,6 +172,22 @@ class CoordinateToleranceArea {
   }
 }''';
 
+  String get googleMapsJavaScript => '''new google.maps.Circle({
+  center: {
+    lat: ${center.latitude.toStringAsFixed(6)},
+    lng: ${center.longitude.toStringAsFixed(6)}
+  },
+  radius: ${_formatRadius(radiusMeters)}
+});''';
+
+  String get appleMapKitSwift => '''MKCircle(
+  center: CLLocationCoordinate2D(
+    latitude: ${center.latitude.toStringAsFixed(6)},
+    longitude: ${center.longitude.toStringAsFixed(6)}
+  ),
+  radius: ${_formatRadius(radiusMeters)}
+)''';
+
   static double _toRadians(double degrees) => degrees * math.pi / 180;
   static double _toDegrees(double radians) => radians * 180 / math.pi;
 
