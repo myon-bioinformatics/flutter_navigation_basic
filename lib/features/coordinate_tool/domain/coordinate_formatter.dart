@@ -115,12 +115,13 @@ class CoordinateToleranceArea {
     final latitudeDelta = _toDegrees(angular);
     final south = math.max(-90.0, center.latitude - latitudeDelta);
     final north = math.min(90.0, center.latitude + latitudeDelta);
+    final latitudeCosine = math.cos(latitudeRadians).abs();
 
     double longitudeDelta;
-    if (south <= -90 || north >= 90 || latitudeRadians.cos().abs() < 1e-12) {
+    if (south <= -90 || north >= 90 || latitudeCosine < 1e-12) {
       longitudeDelta = 180;
     } else {
-      longitudeDelta = _toDegrees(angular / latitudeRadians.cos().abs());
+      longitudeDelta = _toDegrees(angular / latitudeCosine);
       longitudeDelta = math.min(180, longitudeDelta);
     }
 
