@@ -77,7 +77,8 @@ void main() {
     expect(videoOptional, findsOneWidget);
   });
 
-  testWidgets('renders translated chrome for a non-English display locale', (tester) async {
+  testWidgets('renders translated chrome for a non-English display locale',
+      (tester) async {
     final controller = await loadTestDisplayController(
       initialValues: {DisplayController.preferenceKey: 'ja'},
     );
@@ -100,22 +101,23 @@ void main() {
     }
     await tester.pump();
 
-    // This screen owns continuously animated showcase content, so waiting for the
-    // whole tree to settle is not a valid completion condition. Advance only the
-    // bounded transition windows needed for the controls under test.
-    final scaffoldState = tester.state<ScaffoldState>(find.byType(Scaffold));
-    scaffoldState.openDrawer();
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    // Verify locale wiring through always-mounted AppBar chrome instead of the
+    // animated drawer, whose transition visibility is not the contract under test.
     expect(
-      find.text(controller.text('uiShowcase.standardNavigation')),
+      find.byTooltip(controller.text('uiShowcase.designStyleTooltip')),
+      findsOneWidget,
+    );
+    expect(
+      find.byTooltip(controller.text('uiShowcase.brightnessTooltip')),
+      findsOneWidget,
+    );
+    expect(
+      find.byTooltip(controller.text('uiShowcase.homeTooltip')),
       findsOneWidget,
     );
 
-    scaffoldState.closeDrawer();
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-
+    // The style menu itself is also catalog-driven. Advance only its bounded
+    // transition window because the showcase may own continuously animated content.
     await tester.tap(find.byIcon(Icons.palette_outlined));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
