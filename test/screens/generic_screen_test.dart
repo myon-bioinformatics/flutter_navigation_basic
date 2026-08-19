@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/screens/generic_screen.dart';
 import 'package:flutter_application_1/shared/display/display_scope.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/display_test_harness.dart';
 
@@ -31,13 +30,16 @@ Future<void> _pumpGeneric(
 void main() {
   testWidgets('non-detail screen shows translated Back-to-Hub and pattern chips', (tester) async {
     // Screen 3 is in the "realtime" domain, which has no ScreenDetail payload.
+    // Its raw description sentence ("Navigation: BasicReplace, API: HttpPut, ...")
+    // also renders on the page, so match the exact pattern-chip text rather than
+    // a substring that both the chip and the description sentence contain.
     await _pumpGeneric(tester, 3);
 
     expect(find.text('Back to Hub'), findsWidgets);
-    expect(find.textContaining('Navigation:'), findsOneWidget);
-    expect(find.textContaining('API:'), findsOneWidget);
-    expect(find.textContaining('Theme:'), findsOneWidget);
-    expect(find.textContaining('Data:'), findsOneWidget);
+    expect(find.text('Navigation: BasicReplace'), findsOneWidget);
+    expect(find.text('API: HttpPut'), findsOneWidget);
+    expect(find.text('Theme: TextButton'), findsOneWidget);
+    expect(find.text('Data: FilterNested'), findsOneWidget);
   });
 
   testWidgets('detail screen shows translated tab labels and use-case section headers', (tester) async {
@@ -58,12 +60,13 @@ void main() {
   });
 
   testWidgets('renders translated chrome for a non-English display locale', (tester) async {
-    SharedPreferences.setMockInitialValues({DisplayController.preferenceKey: 'ja'});
-    final controller = await DisplayController.load();
+    final controller = await loadTestDisplayController(
+      initialValues: {DisplayController.preferenceKey: 'ja'},
+    );
 
     await _pumpGeneric(tester, 3, controller: controller);
 
     expect(find.text('ハブに戻る'), findsWidgets);
-    expect(find.textContaining('ナビゲーション:'), findsOneWidget);
+    expect(find.text('ナビゲーション: BasicReplace'), findsOneWidget);
   });
 }

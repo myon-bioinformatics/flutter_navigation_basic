@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/screens/mock_api_screen.dart';
 import 'package:flutter_application_1/shared/display/display_scope.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/display_test_harness.dart';
 
@@ -27,8 +26,9 @@ void main() {
   });
 
   testWidgets('renders translated chrome for a non-English display locale', (tester) async {
-    SharedPreferences.setMockInitialValues({DisplayController.preferenceKey: 'ja'});
-    final controller = await DisplayController.load();
+    final controller = await loadTestDisplayController(
+      initialValues: {DisplayController.preferenceKey: 'ja'},
+    );
 
     await tester.pumpWidget(
       MaterialApp(
