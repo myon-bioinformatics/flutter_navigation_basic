@@ -85,6 +85,7 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
   Future<void> _copy(String value, String label) async {
     await Clipboard.setData(ClipboardData(text: value));
     if (!mounted) return;
+    final display = DisplayScope.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -97,7 +98,6 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
   Future<void> _openMap(Uri uri, String label) async {
     final opened = await openExternalUrl(uri);
     if (!mounted || opened) return;
-    final display = DisplayScope.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
