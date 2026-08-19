@@ -12,18 +12,19 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // "XYZ tile" is used as both the section title and the result-card title
+    // (both share the coordinate.xyzTile catalog key), so it renders twice.
     expect(find.text('1. Point'), findsOneWidget);
     expect(find.text('2. Tolerance'), findsOneWidget);
     expect(find.text('3. Bounds'), findsOneWidget);
     expect(find.text('4. Platform formats'), findsOneWidget);
-    expect(find.text('5. XYZ tile'), findsOneWidget);
+    expect(find.text('4. XYZ tile'), findsNWidgets(2));
     expect(find.text('Center + radius'), findsOneWidget);
     expect(find.text('Loose bounding box'), findsOneWidget);
     expect(find.text('BBox [west, south, east, north]'), findsOneWidget);
     expect(find.text('JSON'), findsOneWidget);
     expect(find.text('Google Maps JavaScript · Circle'), findsOneWidget);
     expect(find.text('Apple MapKit · MKCircle (Swift)'), findsOneWidget);
-    expect(find.text('XYZ tile'), findsOneWidget);
     expect(find.text('Tile path'), findsOneWidget);
     expect(find.textContaining('radius_m: 100'), findsOneWidget);
     expect(find.textContaining('new google.maps.Circle'), findsOneWidget);
@@ -65,8 +66,7 @@ void main() {
     expect(find.text('Decimal degrees'), findsOneWidget);
     expect(find.text('2. Tolerance'), findsOneWidget);
     expect(customRadius, findsOneWidget);
-    expect(find.text('5. XYZ tile'), findsOneWidget);
-    expect(find.text('XYZ tile'), findsOneWidget);
+    expect(find.text('4. XYZ tile'), findsNWidgets(2));
     expect(find.text('Center + radius'), findsNothing);
     expect(find.text('4. Platform formats'), findsNothing);
 

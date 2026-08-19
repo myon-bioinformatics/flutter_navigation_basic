@@ -4,12 +4,13 @@ import 'package:flutter_application_1/shared/display/display_scope.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../support/display_test_harness.dart';
+
 void main() {
   testWidgets('renders text from the app-wide display locale, not a screen-local store', (tester) async {
-    SharedPreferences.setMockInitialValues({
-      DisplayController.preferenceKey: 'ja',
-    });
-    final controller = await DisplayController.load();
+    final controller = await loadTestDisplayController(
+      initialValues: {DisplayController.preferenceKey: 'ja'},
+    );
 
     await tester.pumpWidget(
       MaterialApp(
@@ -22,8 +23,7 @@ void main() {
   });
 
   testWidgets('switching locale via the shared picker updates the page and does not touch the legacy key', (tester) async {
-    SharedPreferences.setMockInitialValues({});
-    final controller = await DisplayController.load();
+    final controller = await loadTestDisplayController();
 
     await tester.pumpWidget(
       MaterialApp(
