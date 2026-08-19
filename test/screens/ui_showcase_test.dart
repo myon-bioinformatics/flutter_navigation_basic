@@ -110,12 +110,16 @@ void main() {
     });
     await tester.pump(const Duration(milliseconds: 250));
 
-    expect(find.text('Embedded media'), findsOneWidget);
+    expect(
+      find.text(controller.text('uiShowcase.embeddedMedia')),
+      findsOneWidget,
+    );
     expect(find.byType(Image), findsOneWidget);
 
     // The media page is a lazily built ListView. Scroll the trailing ListTile into
     // view before asserting it instead of assuming the test viewport is tall enough.
-    final videoOptional = find.text('Video intentionally optional');
+    final videoOptional =
+        find.text(controller.text('uiShowcase.videoOptionalTitle'));
     await tester.scrollUntilVisible(
       videoOptional,
       200,
