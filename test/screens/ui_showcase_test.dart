@@ -77,8 +77,7 @@ void main() {
     expect(videoOptional, findsOneWidget);
   });
 
-  testWidgets('renders translated chrome for a non-English display locale',
-      (tester) async {
+  testWidgets('renders translated chrome for a non-English display locale', (tester) async {
     final controller = await loadTestDisplayController(
       initialValues: {DisplayController.preferenceKey: 'ja'},
     );
@@ -101,10 +100,21 @@ void main() {
     }
     await tester.pump();
 
-    // Assert translated chrome that is always mounted in the app bar rather than
-    // body chips whose presence can depend on the current viewport/transition.
-    expect(find.byTooltip('デザインスタイル'), findsOneWidget);
-    expect(find.byTooltip('明るさ'), findsOneWidget);
-    expect(find.byTooltip('ホーム'), findsOneWidget);
+    // Verify translated chrome through visible widgets rather than Tooltip
+    // implementation details, which are not guaranteed to be materialized in
+    // the widget tree until interaction.
+    final scaffoldState = tester.state<ScaffoldState>(find.byType(Scaffold));
+    scaffoldState.openDrawer();
+    await tester.pumpAndSettle();
+    expect(find.text('標準的なFlutterナビゲーション'), findsOneWidget);
+
+    scaffoldState.closeDrawer();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.palette_outlined));
+    await tester.pumpAndSettle();
+    expect(find.text('モダン'), findsOneWidget);
+    expect(find.text('レトロ'), findsOneWidget);
+    expect(find.text('ターミナル'), findsOneWidget);
   });
 }
