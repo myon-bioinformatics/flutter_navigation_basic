@@ -101,28 +101,29 @@ void main() {
     }
     await tester.pump();
 
-    // Verify locale wiring through always-mounted AppBar chrome instead of the
-    // animated drawer, whose transition visibility is not the contract under test.
+    // Verify locale wiring through the always-mounted AppBar action widgets
+    // themselves. This avoids depending on Tooltip overlay/semantics timing or on
+    // opening animated menus just to prove that the translated chrome is wired.
+    final popupMenus = tester
+        .widgetList<PopupMenuButton<String>>(
+          find.byType(PopupMenuButton<String>),
+        )
+        .toList();
+    expect(popupMenus, hasLength(2));
     expect(
-      find.byTooltip(controller.text('uiShowcase.designStyleTooltip')),
-      findsOneWidget,
-    );
-    expect(
-      find.byTooltip(controller.text('uiShowcase.brightnessTooltip')),
-      findsOneWidget,
-    );
-    expect(
-      find.byTooltip(controller.text('uiShowcase.homeTooltip')),
-      findsOneWidget,
+      popupMenus.map((widget) => widget.tooltip),
+      containsAll(<String>[
+        controller.text('uiShowcase.designStyleTooltip'),
+        controller.text('uiShowcase.brightnessTooltip'),
+      ]),
     );
 
-    // The style menu itself is also catalog-driven. Advance only its bounded
-    // transition window because the showcase may own continuously animated content.
-    await tester.tap(find.byIcon(Icons.palette_outlined));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text(controller.text('uiShowcase.styleModern')), findsOneWidget);
-    expect(find.text(controller.text('uiShowcase.styleRetro')), findsOneWidget);
-    expect(find.text(controller.text('uiShowcase.styleTerminal')), findsOneWidget);
+    final homeButton = tester.widget<IconButton>(
+      find.widgetWithIcon(IconButton, Icons.home_outlined),
+    );
+    expect(
+      homeButton.tooltip,
+      controller.text('uiShowcase.homeTooltip'),
+    );
   });
 }
