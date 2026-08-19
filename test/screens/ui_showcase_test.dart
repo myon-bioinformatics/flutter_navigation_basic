@@ -101,25 +101,40 @@ void main() {
     }
     await tester.pump();
 
-    // Verify locale wiring through the always-mounted AppBar action widgets
-    // themselves. This avoids depending on Tooltip overlay/semantics timing or on
-    // opening animated menus just to prove that the translated chrome is wired.
-    final popupMenus = tester
-        .widgetList<PopupMenuButton<String>>(
-          find.byType(PopupMenuButton<String>),
-        )
-        .toList();
-    expect(popupMenus, hasLength(2));
     expect(
-      popupMenus.map((widget) => widget.tooltip),
-      containsAll(<String>[
-        controller.text('uiShowcase.designStyleTooltip'),
-        controller.text('uiShowcase.brightnessTooltip'),
-      ]),
+      find.byType(CircularProgressIndicator),
+      findsNothing,
+      reason: 'UI Showcase config must be loaded before checking translated chrome.',
+    );
+
+    Finder popupMenuForIcon(IconData icon) => find.ancestor(
+          of: find.byIcon(icon),
+          matching: find.byWidgetPredicate(
+            (widget) => widget is PopupMenuButton<String>,
+          ),
+        );
+
+    final styleMenu = tester.widget<PopupMenuButton<String>>(
+      popupMenuForIcon(Icons.palette_outlined),
+    );
+    expect(
+      styleMenu.tooltip,
+      controller.text('uiShowcase.designStyleTooltip'),
+    );
+
+    final brightnessMenu = tester.widget<PopupMenuButton<String>>(
+      popupMenuForIcon(Icons.brightness_6_outlined),
+    );
+    expect(
+      brightnessMenu.tooltip,
+      controller.text('uiShowcase.brightnessTooltip'),
     );
 
     final homeButton = tester.widget<IconButton>(
-      find.widgetWithIcon(IconButton, Icons.home_outlined),
+      find.ancestor(
+        of: find.byIcon(Icons.home_outlined),
+        matching: find.byWidgetPredicate((widget) => widget is IconButton),
+      ),
     );
     expect(
       homeButton.tooltip,
