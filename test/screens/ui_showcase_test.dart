@@ -107,7 +107,10 @@ void main() {
     scaffoldState.openDrawer();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('標準的なFlutterナビゲーション'), findsOneWidget);
+    expect(
+      find.text(controller.text('uiShowcase.standardNavigation')),
+      findsOneWidget,
+    );
 
     scaffoldState.closeDrawer();
     await tester.pump();
@@ -116,8 +119,8 @@ void main() {
     await tester.tap(find.byIcon(Icons.palette_outlined));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('モダン'), findsOneWidget);
-    expect(find.text('レトロ'), findsOneWidget);
-    expect(find.text('ターミナル'), findsOneWidget);
+    expect(find.text(controller.text('uiShowcase.styleModern')), findsOneWidget);
+    expect(find.text(controller.text('uiShowcase.styleRetro')), findsOneWidget);
+    expect(find.text(controller.text('uiShowcase.styleTerminal')), findsOneWidget);
   });
 }
