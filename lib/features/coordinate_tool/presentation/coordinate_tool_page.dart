@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../shared/display/display_scope.dart';
+import '../../../shared/platform/open_external_url.dart';
 import '../domain/coordinate_formatter.dart';
 
 class CoordinateToolPage extends StatefulWidget {
@@ -94,6 +95,19 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
     );
   }
 
+  Future<void> _openMap(Uri uri, String label) async {
+    final opened = await openExternalUrl(uri);
+    if (!mounted || opened) return;
+    final display = DisplayScope.of(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Could not open $label.',
+        ),
+      ),
+    );
+  }
+
   String _presetLabel(DisplayController display, CoordinateTolerancePreset preset) {
     final key = switch (preset) {
       CoordinateTolerancePreset.exactGps => 'coordinate.preset.exactGps',
@@ -167,6 +181,30 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                   _ResultCard(title: t('coordinate.decimal'), value: value.decimalDegrees, copyTooltip: t('common.copy'), onCopy: () => _copy(value.decimalDegrees, t('coordinate.decimal'))),
                   const SizedBox(height: 12),
                   _ResultCard(title: t('coordinate.dms'), value: value.dms, copyTooltip: t('common.copy'), onCopy: () => _copy(value.dms, t('coordinate.dms'))),
+                  const SizedBox(height: 28),
+                  const _SectionTitle(title: 'Map links', icon: Icons.map_outlined),
+                  const SizedBox(height: 12),
+                  _MapLinkCard(
+                    title: 'Google Maps',
+                    uri: value.googleMapsUri,
+                    openLabel: 'Open in Google Maps',
+                    onOpen: () => _openMap(value.googleMapsUri, 'Google Maps'),
+                    onCopy: () => _copy(
+                      value.googleMapsUri.toString(),
+                      'Google Maps URL',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _MapLinkCard(
+                    title: 'Apple Maps',
+                    uri: value.appleMapsUri,
+                    openLabel: 'Open in Apple Maps',
+                    onOpen: () => _openMap(value.appleMapsUri, 'Apple Maps'),
+                    onCopy: () => _copy(
+                      value.appleMapsUri.toString(),
+                      'Apple Maps URL',
+                    ),
+                  ),
                   const SizedBox(height: 28),
                   _SectionTitle(title: t('coordinate.tolerance'), icon: Icons.radar_outlined),
                   const SizedBox(height: 12),
@@ -283,6 +321,55 @@ class _SectionTitle extends StatelessWidget {
           Text(title, style: Theme.of(context).textTheme.titleLarge),
         ],
       );
+}
+
+class _MapLinkCard extends StatelessWidget {
+  const _MapLinkCard({
+    required this.title,
+    required this.uri,
+    required this.openLabel,
+    required this.onOpen,
+    required this.onCopy,
+  });
+
+  final String title;
+  final Uri uri;
+  final String openLabel;
+  final VoidCallback onOpen;
+  final VoidCallback onCopy;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 4),
+            SelectableText(uri.toString()),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  tooltip: 'Copy',
+                  onPressed: onCopy,
+                  icon: const Icon(Icons.copy),
+                ),
+                FilledButton.tonalIcon(
+                  onPressed: onOpen,
+                  icon: const Icon(Icons.open_in_new),
+                  label: Text(openLabel),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _ResultCard extends StatelessWidget {
