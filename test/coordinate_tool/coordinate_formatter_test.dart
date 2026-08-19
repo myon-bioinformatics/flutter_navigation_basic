@@ -99,11 +99,11 @@ void main() {
       expect(area.centerRadiusText, contains('radius_m: 100'));
       expect(area.jsonText, contains('"wraps_antimeridian": false'));
       expect(
-        area.googleMapsUri.toString(),
+        center.googleMapsUri.toString(),
         contains('https://www.google.com/maps/search/?api=1'),
       );
       expect(area.googleMapsUri.toString(), contains('35.681236%2C139.767125'));
-      expect(area.appleMapsUri.toString(), contains('https://maps.apple.com/?'));
+      expect(center.appleMapsUri.toString(), contains('https://maps.apple.com/?'));
       expect(area.appleMapsUri.toString(), contains('ll=35.681236%2C139.767125'));
     });
 
