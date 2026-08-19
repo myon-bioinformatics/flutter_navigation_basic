@@ -17,6 +17,9 @@ void main() {
     expect(find.text('1. Point'), findsOneWidget);
     expect(find.text('2. Tolerance'), findsOneWidget);
     expect(find.text('3. Bounds'), findsOneWidget);
+    expect(find.text('Map links'), findsOneWidget);
+    expect(find.text('Open in Google Maps'), findsOneWidget);
+    expect(find.text('Open in Apple Maps'), findsOneWidget);
     expect(find.text('4. Platform formats'), findsOneWidget);
     expect(find.text('4. XYZ tile'), findsNWidgets(2));
     expect(find.text('Center + radius'), findsOneWidget);

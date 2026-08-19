@@ -44,6 +44,7 @@ class _BuildDiagnosticsCardState extends State<BuildDiagnosticsCard> {
                   children: [
                     Text('${metadata.displayVersion} · ${metadata.stage}'),
                     Text('${metadata.platform} · ${metadata.mode}'),
+                    Text('commit ${metadata.revision.displaySha}'),
                     Text('artifact ${formatDiagnosticBytes(metadata.artifactBytes)}'),
                     Text('repo ${formatDiagnosticBytes(metadata.sourceBytes)}'),
                     Text('assets ${formatDiagnosticBytes(metadata.assetBytes)}'),

@@ -42,6 +42,24 @@ class CoordinateValue {
 
   XyzTile xyzTile(int zoom) => XyzTile.fromCoordinate(this, zoom);
 
+  Uri get googleMapsUri => Uri.https(
+        'www.google.com',
+        '/maps/search/',
+        <String, String>{
+          'api': '1',
+          'query': '${latitude.toStringAsFixed(6)},${longitude.toStringAsFixed(6)}',
+        },
+      );
+
+  Uri get appleMapsUri => Uri.https(
+        'maps.apple.com',
+        '/',
+        <String, String>{
+          'll': '${latitude.toStringAsFixed(6)},${longitude.toStringAsFixed(6)}',
+          'q': 'Coordinates',
+        },
+      );
+
   static String toDms(double value, {required bool isLatitude}) {
     final absolute = value.abs();
     var degrees = absolute.floor();
@@ -187,6 +205,7 @@ class CoordinateToleranceArea {
   ),
   radius: ${_formatRadius(radiusMeters)}
 )''';
+
 
   static double _toRadians(double degrees) => degrees * math.pi / 180;
   static double _toDegrees(double radians) => radians * 180 / math.pi;

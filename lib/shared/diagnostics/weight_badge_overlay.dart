@@ -113,7 +113,7 @@ class _WeightDiagnosticsStripState extends State<WeightDiagnosticsStrip> {
                             ? 'page source ${formatDiagnosticBytes(routeSource.sourceBytes)}'
                             : 'repo ${formatDiagnosticBytes(metadata.sourceBytes)}';
                     return Text(
-                      '⚖ $pageLabel · repo ${formatDiagnosticBytes(metadata.sourceBytes)} · ${metadata.displayVersion}',
+                      '⚖ $pageLabel · repo ${formatDiagnosticBytes(metadata.sourceBytes)} · ${metadata.displayVersion} · commit ${metadata.revision.displaySha}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.labelSmall,
@@ -187,6 +187,7 @@ class _WeightBadge extends StatelessWidget {
                         Text('⚖ $compactLabel', style: Theme.of(context).textTheme.labelMedium),
                         const SizedBox(height: 4),
                         Text(metadata.displayVersion, style: Theme.of(context).textTheme.labelSmall),
+                        Text('commit ${metadata.revision.displaySha}', style: Theme.of(context).textTheme.labelSmall),
                         Text('route ${routeName ?? 'unknown'}', style: Theme.of(context).textTheme.labelSmall),
                         if (screen != null)
                           Text('feature ${formatDiagnosticBytes(screen.featureBytes)}', style: Theme.of(context).textTheme.labelSmall),
