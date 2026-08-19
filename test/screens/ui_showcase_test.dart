@@ -100,19 +100,22 @@ void main() {
     }
     await tester.pump();
 
-    // Verify translated chrome through visible widgets rather than Tooltip
-    // implementation details, which are not guaranteed to be materialized in
-    // the widget tree until interaction.
+    // This screen owns continuously animated showcase content, so waiting for the
+    // whole tree to settle is not a valid completion condition. Advance only the
+    // bounded transition windows needed for the controls under test.
     final scaffoldState = tester.state<ScaffoldState>(find.byType(Scaffold));
     scaffoldState.openDrawer();
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('標準的なFlutterナビゲーション'), findsOneWidget);
 
     scaffoldState.closeDrawer();
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     await tester.tap(find.byIcon(Icons.palette_outlined));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('モダン'), findsOneWidget);
     expect(find.text('レトロ'), findsOneWidget);
     expect(find.text('ターミナル'), findsOneWidget);
