@@ -5,10 +5,18 @@ import 'package:flutter_application_1/shared/display/display_scope.dart';
 
 import '../support/display_test_harness.dart';
 
-Future<void> _pumpLoadedShowcase(WidgetTester tester) async {
-  await tester.pumpWidget(
-    MaterialApp(home: await wrapWithDisplayScope(const UiShowcaseScreen())),
-  );
+Future<void> _pumpLoadedShowcase(
+  WidgetTester tester, {
+  DisplayController? controller,
+}) async {
+  final scopedShowcase = controller == null
+      ? await wrapWithDisplayScope(const UiShowcaseScreen())
+      : DisplayScope(
+          controller: controller,
+          child: const UiShowcaseScreen(),
+        );
+
+  await tester.pumpWidget(MaterialApp(home: scopedShowcase));
 
   // The screen loads JSON through rootBundle and shows an indeterminate progress
   // indicator while waiting. Avoid pumpAndSettle here because that animation can
@@ -84,28 +92,7 @@ void main() {
     );
     expect(controller.locale, 'ja');
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: DisplayScope(
-          controller: controller,
-          child: const UiShowcaseScreen(),
-        ),
-      ),
-    );
-    for (var attempt = 0; attempt < 200; attempt++) {
-      await tester.pump();
-      if (find.byType(CircularProgressIndicator).evaluate().isEmpty) break;
-      await tester.runAsync(() async {
-        await Future<void>.delayed(const Duration(milliseconds: 50));
-      });
-    }
-    await tester.pump();
-
-    expect(
-      find.byType(CircularProgressIndicator),
-      findsNothing,
-      reason: 'UI Showcase config must be loaded before checking translated chrome.',
-    );
+    await _pumpLoadedShowcase(tester, controller: controller);
 
     Finder popupMenuForIcon(IconData icon) => find.ancestor(
           of: find.byIcon(icon),
