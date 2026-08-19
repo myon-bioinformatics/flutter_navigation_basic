@@ -77,13 +77,20 @@ void main() {
     expect(videoOptional, findsOneWidget);
   });
 
-  testWidgets('renders translated chrome for a non-English display locale', (tester) async {
+  testWidgets('renders translated chrome for a non-English display locale',
+      (tester) async {
     final controller = await loadTestDisplayController(
       initialValues: {DisplayController.preferenceKey: 'ja'},
     );
+    expect(controller.locale, 'ja');
 
     await tester.pumpWidget(
-      MaterialApp(home: DisplayScope(controller: controller, child: const UiShowcaseScreen())),
+      MaterialApp(
+        home: DisplayScope(
+          controller: controller,
+          child: const UiShowcaseScreen(),
+        ),
+      ),
     );
     for (var attempt = 0; attempt < 200; attempt++) {
       await tester.pump();
@@ -94,7 +101,10 @@ void main() {
     }
     await tester.pump();
 
-    expect(find.text('内部デフォルト'), findsOneWidget);
-    expect(find.text('外部JSONによる上書き'), findsOneWidget);
+    // Assert translated chrome that is always mounted in the app bar rather than
+    // body chips whose presence can depend on the current viewport/transition.
+    expect(find.byTooltip('デザインスタイル'), findsOneWidget);
+    expect(find.byTooltip('明るさ'), findsOneWidget);
+    expect(find.byTooltip('ホーム'), findsOneWidget);
   });
 }
