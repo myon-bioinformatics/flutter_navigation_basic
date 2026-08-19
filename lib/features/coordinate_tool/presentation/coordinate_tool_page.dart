@@ -85,7 +85,6 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
   Future<void> _copy(String value, String label) async {
     await Clipboard.setData(ClipboardData(text: value));
     if (!mounted) return;
-    final display = DisplayScope.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
