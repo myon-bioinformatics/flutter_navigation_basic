@@ -102,9 +102,9 @@ void main() {
         center.googleMapsUri.toString(),
         contains('https://www.google.com/maps/search/?api=1'),
       );
-      expect(area.googleMapsUri.toString(), contains('35.681236%2C139.767125'));
+      expect(center.googleMapsUri.toString(), contains('35.681236%2C139.767125'));
       expect(center.appleMapsUri.toString(), contains('https://maps.apple.com/?'));
-      expect(area.appleMapsUri.toString(), contains('ll=35.681236%2C139.767125'));
+      expect(center.appleMapsUri.toString(), contains('ll=35.681236%2C139.767125'));
     });
 
     test('emits directly usable Google Maps and Apple MapKit circle snippets', () {
