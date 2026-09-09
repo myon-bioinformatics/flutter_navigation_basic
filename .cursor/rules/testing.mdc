@@ -31,3 +31,15 @@ When relevant and available:
 - `assets/diagnostics/build_meta.json` is refreshed by `dart run tool/dev.dart meta` for GitHub Pages builds. Do not write tests that assume that mutable asset remains a legacy fixture.
 - Prefer parsing fixtures via `BuildMetadata.fromJson` (or equivalent pure helpers) when testing diagnostics metadata compatibility.
 - Pip Python deps are allowlisted only at `tool/python/requirements.txt` for light calculation/oracle tests. Keep Flutter widget tests in Dart.
+- Shared calculation goldens live under `tool/python/fixtures/` and should be asserted from both Dart and pytest when both exist.
+- GitHub Pages deploys via `workflow_run` only after the Flutter workflow succeeds on `main`.
+
+## Sharded CI recovery
+
+When a sharded Flutter job fails:
+
+1. Open the failed shard log and identify the failing test path.
+2. Re-run that focused path locally (`flutter test path/to/test.dart`).
+3. Fix the failure if caused by this change.
+4. Re-run the focused test, then the smallest relevant shard/check set.
+5. Push and confirm the failed shard is green before asking for merge.

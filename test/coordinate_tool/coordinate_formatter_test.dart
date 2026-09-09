@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_application_1/features/coordinate_tool/domain/coordinate_formatter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -157,7 +160,73 @@ void main() {
       final area = nearDateLine.toleranceArea(1000);
 
       expect(area.wrapsAntimeridian, isTrue);
+      expect(area.supportsAppleMapsSpan, isFalse);
       expect(area.appleMapsAreaUri.queryParameters.containsKey('spn'), isFalse);
+    });
+
+    test('omits Apple Maps spn when longitude spans the full world', () {
+      const nearPole = CoordinateValue(latitude: 89.9999, longitude: 20);
+      final area = nearPole.toleranceArea(1000);
+
+      expect(area.spansFullLongitude, isTrue);
+      expect(area.supportsAppleMapsSpan, isFalse);
+      expect(area.appleMapsAreaUri.queryParameters.containsKey('spn'), isFalse);
+      expect(
+        CoordinateToleranceArea.zoomForRadiusMeters(
+          1000,
+          latitude: nearPole.latitude,
+        ),
+        3,
+      );
+    });
+
+    test('uses latitude-aware Google Maps zoom at high latitudes', () {
+      const arctic = CoordinateValue(latitude: 80, longitude: 0);
+      final area = arctic.toleranceArea(100);
+
+      expect(
+        CoordinateToleranceArea.zoomForRadiusMeters(100, latitude: 0),
+        greaterThan(
+          CoordinateToleranceArea.zoomForRadiusMeters(100, latitude: 80),
+        ),
+      );
+      expect(area.googleMapsAreaUri.toString(), endsWith(',14z'));
+      expect(
+        CoordinateToleranceArea.zoomForRadiusMeters(100, latitude: 85),
+        13,
+      );
+    });
+
+    test('matches shared golden vectors for zoom and span policy', () async {
+      final raw = await File('tool/python/fixtures/coordinate_area_cases.json').readAsString();
+      final payload = jsonDecode(raw) as Map<String, dynamic>;
+      final cases = payload['cases'] as List<dynamic>;
+
+      for (final entry in cases) {
+        final caseMap = entry as Map<String, dynamic>;
+        final value = CoordinateValue(
+          latitude: (caseMap['latitude'] as num).toDouble(),
+          longitude: (caseMap['longitude'] as num).toDouble(),
+        );
+        final radius = (caseMap['radius_m'] as num).toDouble();
+        final area = value.toleranceArea(radius);
+
+        expect(
+          CoordinateToleranceArea.zoomForRadiusMeters(
+            radius,
+            latitude: value.latitude,
+          ),
+          caseMap['expected_zoom'],
+          reason: caseMap['id'] as String,
+        );
+        expect(area.wrapsAntimeridian, caseMap['expect_antimeridian']);
+        expect(area.spansFullLongitude, caseMap['expect_full_longitude']);
+        expect(area.supportsAppleMapsSpan, caseMap['expect_apple_spn']);
+        expect(
+          area.appleMapsAreaUri.queryParameters.containsKey('spn'),
+          caseMap['expect_apple_spn'],
+        );
+      }
     });
 
     test('marks bounds that cross the antimeridian', () {

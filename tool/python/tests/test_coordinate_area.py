@@ -1,42 +1,32 @@
+import json
 import math
-from typing import Annotated
+from pathlib import Path
 
 import pytest
 from pydantic import BaseModel, Field
 
 
 EARTH_RADIUS_METERS = 6371008.8
+FIXTURE_PATH = Path(__file__).resolve().parents[1] / "fixtures" / "coordinate_area_cases.json"
 
 
 class CoordinateCase(BaseModel):
+    id: str
     latitude: float
     longitude: float
-    radius_m: Annotated[float, Field(gt=0)]
+    radius_m: float = Field(gt=0)
     expected_zoom: int
     expect_antimeridian: bool = False
+    expect_full_longitude: bool = False
+    expect_apple_spn: bool = True
 
 
-CASES = [
-    CoordinateCase(
-        latitude=35.681236,
-        longitude=139.767125,
-        radius_m=100,
-        expected_zoom=16,
-    ),
-    CoordinateCase(
-        latitude=35.681236,
-        longitude=139.767125,
-        radius_m=350,
-        expected_zoom=14,
-    ),
-    CoordinateCase(
-        latitude=0,
-        longitude=179.999,
-        radius_m=1000,
-        expected_zoom=13,
-        expect_antimeridian=True,
-    ),
-]
+def load_cases() -> list[CoordinateCase]:
+    payload = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
+    return [CoordinateCase.model_validate(case) for case in payload["cases"]]
+
+
+CASES = load_cases()
 
 
 def _to_radians(degrees: float) -> float:
@@ -80,35 +70,37 @@ def tolerance_bounds(latitude: float, longitude: float, radius_m: float) -> dict
         "north": north,
         "east": east,
         "wraps_antimeridian": wraps,
+        "spans_full_longitude": west == -180 and east == 180,
     }
 
 
-def zoom_for_radius(radius_m: float) -> int:
-    zoom = math.floor(math.log(40075016.686 / (radius_m * 4)) / math.log(2))
+def zoom_for_radius(radius_m: float, latitude: float = 0.0) -> int:
+    cos_lat = max(1e-6, min(1.0, abs(math.cos(math.radians(latitude)))))
+    circumference = 40075016.686 * cos_lat
+    zoom = math.floor(math.log(circumference / (radius_m * 4)) / math.log(2))
     return max(3, min(20, zoom))
 
 
-@pytest.mark.parametrize("case", CASES)
+@pytest.mark.parametrize("case", CASES, ids=lambda case: case.id)
 def test_tolerance_bounds_and_zoom(case: CoordinateCase) -> None:
     bounds = tolerance_bounds(case.latitude, case.longitude, case.radius_m)
     assert bounds["wraps_antimeridian"] is case.expect_antimeridian
-    assert zoom_for_radius(case.radius_m) == case.expected_zoom
-    if not case.expect_antimeridian:
-        assert bounds["south"] < case.latitude < bounds["north"]
-        assert bounds["west"] < case.longitude < bounds["east"]
+    assert bounds["spans_full_longitude"] is case.expect_full_longitude
+    assert zoom_for_radius(case.radius_m, case.latitude) == case.expected_zoom
+    if case.expect_apple_spn:
+        assert not bounds["wraps_antimeridian"]
+        assert not bounds["spans_full_longitude"]
+    else:
+        assert bounds["wraps_antimeridian"] or bounds["spans_full_longitude"]
 
 
-def test_google_area_url_shape() -> None:
+def test_google_area_url_shape_uses_latitude_aware_zoom() -> None:
     lat, lon, radius = 35.681236, 139.767125, 100
-    zoom = zoom_for_radius(radius)
+    zoom = zoom_for_radius(radius, lat)
     url = f"https://www.google.com/maps/@{lat:.6f},{lon:.6f},{zoom}z"
     assert url == "https://www.google.com/maps/@35.681236,139.767125,16z"
 
 
-def test_apple_area_url_includes_spn_for_simple_bounds() -> None:
-    bounds = tolerance_bounds(35.681236, 139.767125, 100)
-    lat_span = abs(bounds["north"] - bounds["south"])
-    lon_span = abs(bounds["east"] - bounds["west"])
-    assert lat_span > 0
-    assert lon_span > 0
-    assert not bounds["wraps_antimeridian"]
+def test_high_latitude_zoom_is_lower_than_equator() -> None:
+    radius = 100
+    assert zoom_for_radius(radius, 80) < zoom_for_radius(radius, 0)

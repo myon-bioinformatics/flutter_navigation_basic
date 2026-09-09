@@ -22,5 +22,6 @@ pytest tool/python/tests
 
 ## Current coverage
 
-- `tests/test_coordinate_area.py`: tolerance bounds / zoom heuristics that back
-  Google Maps and Apple Maps area URL framing.
+- `fixtures/coordinate_area_cases.json`: shared golden vectors for zoom / span policy
+- `tests/test_coordinate_area.py`: loads the shared fixture and checks latitude-aware
+  Google Maps zoom heuristics plus Apple Maps `spn` eligibility

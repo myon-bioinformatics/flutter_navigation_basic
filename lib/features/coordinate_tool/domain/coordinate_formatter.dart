@@ -208,7 +208,10 @@ class CoordinateToleranceArea {
 
   /// Viewport URL that frames the tolerance area in Google Maps.
   Uri get googleMapsAreaUri {
-    final zoom = zoomForRadiusMeters(radiusMeters);
+    final zoom = zoomForRadiusMeters(
+      radiusMeters,
+      latitude: center.latitude,
+    );
     return Uri.parse(
       'https://www.google.com/maps/@'
       '${center.latitude.toStringAsFixed(6)},'
@@ -219,14 +222,15 @@ class CoordinateToleranceArea {
 
   /// Viewport URL that frames the tolerance area in Apple Maps.
   ///
-  /// Uses `ll` + `spn` from the computed bounds. When the area wraps the
-  /// antimeridian, `spn` is omitted because a single span cannot express it.
+  /// Uses `ll` + `spn` from the computed bounds. `spn` is omitted when the
+  /// area wraps the antimeridian or spans the full longitude range, because a
+  /// single span cannot express those cases.
   Uri get appleMapsAreaUri {
     final params = <String, String>{
       'll': '${center.latitude.toStringAsFixed(6)},${center.longitude.toStringAsFixed(6)}',
       'q': 'Tolerance area',
     };
-    if (!wrapsAntimeridian) {
+    if (supportsAppleMapsSpan) {
       final latSpan = (north - south).abs();
       final lonSpan = longitudeSpanDegrees.abs();
       if (latSpan > 0 && lonSpan > 0) {
@@ -257,8 +261,13 @@ class CoordinateToleranceArea {
   )
 )''';
 
+  bool get spansFullLongitude => west == -180 && east == 180;
+
+  bool get supportsAppleMapsSpan =>
+      !wrapsAntimeridian && !spansFullLongitude;
+
   double get longitudeSpanDegrees {
-    if (west == -180 && east == 180) return 360;
+    if (spansFullLongitude) return 360;
     if (wrapsAntimeridian) {
       return (180 - west) + (east - (-180));
     }
@@ -266,10 +275,18 @@ class CoordinateToleranceArea {
   }
 
   /// Heuristic Google Maps zoom that roughly frames [radiusMeters].
-  static int zoomForRadiusMeters(double radiusMeters) {
+  ///
+  /// Uses the Web Mercator circumference at [latitude] so high-latitude areas
+  /// zoom out instead of overflowing the viewport.
+  static int zoomForRadiusMeters(
+    double radiusMeters, {
+    double latitude = 0,
+  }) {
     if (!radiusMeters.isFinite || radiusMeters <= 0) return 16;
-    // World circumference ≈ 40_075_016 m. Aim for ~4 radii across the viewport.
-    final zoom = (math.log(40075016.686 / (radiusMeters * 4)) / math.ln2)
+    final cosLatitude = math.cos(_toRadians(latitude)).abs().clamp(1e-6, 1.0);
+    final circumferenceMeters = 40075016.686 * cosLatitude;
+    // Aim for ~4 radii across the viewport width at this latitude.
+    final zoom = (math.log(circumferenceMeters / (radiusMeters * 4)) / math.ln2)
         .floor()
         .clamp(3, 20);
     return zoom;
