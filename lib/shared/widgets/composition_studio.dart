@@ -346,6 +346,9 @@ class _CompositionStudioState extends State<CompositionStudio>
   }
 
   /// Beat/subdivision labels with color on the active slot (no moving arrow).
+  ///
+  /// Uses [FittedBox] so long lines (e.g. 4/4 × 4×) scale down instead of
+  /// overflowing a narrow phone-width card.
   Widget _subdivisionHighlightRow(ThemeData theme, MetronomeSnapshot snapshot) {
     final tokens = <String>[];
     for (var beat = 1; beat <= _beatsPerBar; beat++) {
@@ -361,24 +364,32 @@ class _CompositionStudioState extends State<CompositionStudio>
       fontFamily: 'monospace',
       fontFeatures: const [FontFeature.tabularFigures()],
     );
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text('| ', style: baseStyle),
-        for (var i = 0; i < tokens.length; i++) ...[
-          if (i > 0) Text(' ', style: baseStyle),
-          Text(
-            tokens[i],
-            style: baseStyle?.copyWith(
-              color: i == active
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurfaceVariant,
-              fontWeight: i == active ? FontWeight.w700 : FontWeight.w400,
-            ),
-          ),
-        ],
-        Text(' |', style: baseStyle),
-      ],
+    final activeToken = tokens.isEmpty ? '' : tokens[active.clamp(0, tokens.length - 1)];
+    return Semantics(
+      label: 'Subdivision $activeToken, beat ${snapshot.beatIndex + 1} of $_beatsPerBar',
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.center,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('| ', style: baseStyle),
+            for (var i = 0; i < tokens.length; i++) ...[
+              if (i > 0) Text(' ', style: baseStyle),
+              Text(
+                tokens[i],
+                style: baseStyle?.copyWith(
+                  color: i == active
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
+                  fontWeight: i == active ? FontWeight.w700 : FontWeight.w400,
+                ),
+              ),
+            ],
+            Text(' |', style: baseStyle),
+          ],
+        ),
+      ),
     );
   }
 
