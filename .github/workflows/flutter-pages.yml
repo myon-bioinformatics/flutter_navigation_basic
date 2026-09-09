@@ -32,10 +32,10 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-fatal-infos
 
-      - name: Test
-        run: flutter test
+      # Full flutter test is gated by the Flutter workflow with sharded jobs.
+      # Pages keeps analyze + metadata refresh + web build for deploy latency.
 
-      # Refresh after tests so the mutable diagnostics asset does not change
+      # Refresh after analyze so the mutable diagnostics asset does not change
       # fixture assumptions. The regenerated file is still embedded in the
       # GitHub Pages web build below.
       - name: Refresh source diagnostics metadata

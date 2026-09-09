@@ -126,6 +126,40 @@ void main() {
 )''');
     });
 
+    test('builds copy-paste Google and Apple area viewport URLs', () {
+      final area = center.toleranceArea(100);
+
+      expect(
+        area.googleMapsAreaUri.toString(),
+        'https://www.google.com/maps/@35.681236,139.767125,16z',
+      );
+      expect(area.appleMapsAreaUri.toString(), contains('https://maps.apple.com/?'));
+      expect(area.appleMapsAreaUri.queryParameters['ll'], '35.681236,139.767125');
+      expect(area.appleMapsAreaUri.queryParameters['spn'], isNotNull);
+      expect(area.appleMapsAreaUri.queryParameters['q'], 'Tolerance area');
+    });
+
+    test('emits Google Rectangle and Apple MKCoordinateRegion snippets', () {
+      final area = center.toleranceArea(100);
+
+      expect(area.googleMapsRectangleJavaScript, contains('new google.maps.Rectangle({'));
+      expect(area.googleMapsRectangleJavaScript, contains('south: ${area.south.toStringAsFixed(6)}'));
+      expect(area.appleMapKitRegionSwift, contains('MKCoordinateRegion('));
+      expect(area.appleMapKitRegionSwift, contains('MKCoordinateSpan('));
+      expect(
+        area.appleMapKitRegionSwift,
+        contains('latitudeDelta: ${(area.north - area.south).abs().toStringAsFixed(6)}'),
+      );
+    });
+
+    test('omits Apple Maps spn when the area wraps the antimeridian', () {
+      const nearDateLine = CoordinateValue(latitude: 0, longitude: 179.999);
+      final area = nearDateLine.toleranceArea(1000);
+
+      expect(area.wrapsAntimeridian, isTrue);
+      expect(area.appleMapsAreaUri.queryParameters.containsKey('spn'), isFalse);
+    });
+
     test('marks bounds that cross the antimeridian', () {
       const nearDateLine = CoordinateValue(latitude: 0, longitude: 179.999);
       final area = nearDateLine.toleranceArea(1000);

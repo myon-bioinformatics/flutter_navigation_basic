@@ -4,12 +4,16 @@ This repository keeps repeatable diagnostics in Dart so local development, CI, a
 
 ## Policy
 
-- Dart / Flutter SDK APIs are the default for repository tooling.
-- Python is allowed only when the standard library or `python -m` materially simplifies an OS/network/test/packaging task that would otherwise be awkward in Dart.
-- **Do not add `requirements.txt`.** Python tooling in this repository must not require pip-installed dependencies.
+- Dart / Flutter SDK APIs are the default for repository tooling and app runtime.
+- Python stdlib / `python -m` remain preferred for simple OS/network/packaging tasks.
+- **Pip dependencies are allowlisted only at `tool/python/requirements.txt`** for
+  dev/test oracles (pytest, pydantic, etc.). Root-level or app-tree
+  `requirements.txt` files remain prohibited.
 - Runtime Flutter dependencies must never be added merely to support developer diagnostics.
 - Network probes and mocks are developer/test utilities; they are not shipped as application runtime features.
 - Generated diagnostics live under `build/` and are git-ignored.
+
+See `tool/python/README.md` for pytest setup.
 
 ## Recommended one-command entrypoint
 
