@@ -126,6 +126,53 @@ def test_flutter_json_maps_known_skip_to_xfailed() -> None:
     assert counts["failed"] == 0
 
 
+def test_flutter_json_malformed_lines_count_as_error() -> None:
+    ndjson = "\n".join(
+        [
+            json.dumps(
+                {
+                    "type": "testStart",
+                    "test": {
+                        "id": 1,
+                        "name": "works",
+                        "metadata": {"skip": False, "skipReason": None},
+                    },
+                }
+            ),
+            json.dumps(
+                {
+                    "type": "testDone",
+                    "testID": 1,
+                    "result": "success",
+                    "skipped": False,
+                    "hidden": False,
+                }
+            ),
+            "{not-json",
+            "42",
+            "",
+        ]
+    )
+    counts = counts_from_flutter_json_lines(ndjson)
+    assert counts["passed"] == 1
+    assert counts["error"] == 2  # decode failure + non-object JSON
+    summary = summarize_counts(counts, source="flutter-json")
+    assert summary["ok"] is False
+
+
+def test_flutter_json_only_garbage_is_not_ok() -> None:
+    counts = counts_from_flutter_json_lines("truncated...\n{broken")
+    assert counts == {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0,
+        "error": 2,
+    }
+    assert summarize_counts(counts, source="flutter-json")["ok"] is False
+
+
 def test_write_outcomes_json_round_trip(tmp_path: Path) -> None:
     path = tmp_path / "outcomes.json"
     payload = summarize_counts(
