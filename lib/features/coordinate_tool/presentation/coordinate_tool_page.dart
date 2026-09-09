@@ -15,6 +15,7 @@ class CoordinateToolPage extends StatefulWidget {
 class _CoordinateToolPageState extends State<CoordinateToolPage> {
   final _latitude = TextEditingController(text: '35.681236');
   final _longitude = TextEditingController(text: '139.767125');
+  final _mapsUrl = TextEditingController();
   final _customRadius = TextEditingController(text: '100');
   CoordinateTolerancePreset _preset = CoordinateTolerancePreset.building;
   int _zoom = 16;
@@ -33,6 +34,7 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
   void dispose() {
     _latitude.dispose();
     _longitude.dispose();
+    _mapsUrl.dispose();
     _customRadius.dispose();
     super.dispose();
   }
@@ -80,6 +82,20 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
       _tile = tile;
       _error = areaError;
     });
+  }
+
+  void _applyMapsUrl() {
+    final display = DisplayScope.of(context);
+    final value = CoordinateValue.tryParseMapsUrl(_mapsUrl.text);
+    if (value == null) {
+      setState(() {
+        _error = display.text('coordinate.mapsUrlInvalid');
+      });
+      return;
+    }
+    _latitude.text = value.latitude.toStringAsFixed(6);
+    _longitude.text = value.longitude.toStringAsFixed(6);
+    _convert();
   }
 
   Future<void> _copy(String value, String label) async {
@@ -147,6 +163,25 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                 const SizedBox(height: 24),
                 _SectionTitle(title: t('coordinate.point'), icon: Icons.place_outlined),
                 const SizedBox(height: 12),
+                TextField(
+                  controller: _mapsUrl,
+                  keyboardType: TextInputType.url,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _applyMapsUrl(),
+                  decoration: InputDecoration(
+                    labelText: t('coordinate.mapsUrlPaste'),
+                    helperText: t('coordinate.mapsUrlHelper'),
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.link_outlined),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: _applyMapsUrl,
+                  icon: const Icon(Icons.content_paste_go_outlined),
+                  label: Text(t('coordinate.mapsUrlApply')),
+                ),
+                const SizedBox(height: 16),
                 TextField(
                   controller: _latitude,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),

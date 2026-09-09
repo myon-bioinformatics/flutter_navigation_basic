@@ -27,6 +27,63 @@ class CoordinateValue {
     return CoordinateValue(latitude: lat, longitude: lon);
   }
 
+  /// Extracts a point from a Google Maps or Apple Maps URL/share text.
+  ///
+  /// Supports the URLs this tool emits (`query=`, `@lat,lng`, `ll=`) plus
+  /// common share forms (`q=`, `/@lat,lng` inside place paths).
+  static CoordinateValue? tryParseMapsUrl(String input) {
+    final raw = input.trim();
+    if (raw.isEmpty) return null;
+
+    // Builders encode commas as %2C in query values; decode so regexes match.
+    String text;
+    try {
+      text = Uri.decodeFull(raw.replaceAll('+', ' '));
+    } on FormatException {
+      text = raw;
+    }
+
+    // Prefer explicit query params over path `@` (place URLs can contain both).
+    final patterns = <RegExp>[
+      RegExp(
+        r'[?&#]ll=(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'[?&#](?:query|q)=(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'@(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)(?:,|/|z|\?|#|$)',
+      ),
+      // Google data=!3dLAT!4dLNG fragments in share links.
+      RegExp(
+        r'!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)',
+      ),
+    ];
+
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(text);
+      if (match == null) continue;
+      try {
+        return parse(latitude: match.group(1)!, longitude: match.group(2)!);
+      } on FormatException {
+        // Try the next pattern if this pair is out of range / non-finite.
+      }
+    }
+    return null;
+  }
+
+  static CoordinateValue parseMapsUrl(String input) {
+    final value = tryParseMapsUrl(input);
+    if (value == null) {
+      throw const FormatException(
+        'Could not find latitude/longitude in that Maps URL.',
+      );
+    }
+    return value;
+  }
+
   String get decimalDegrees =>
       '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}';
 

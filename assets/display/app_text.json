@@ -463,7 +463,11 @@
       "coordinate.appleRegion": "Apple MapKit · MKCoordinateRegion (Swift)",
       "coordinate.bbox": "BBox [west, south, east, north]",
       "coordinate.json": "JSON",
-      "coordinate.openFailed": "Could not open {label}."
+      "coordinate.openFailed": "Could not open {label}.",
+      "coordinate.mapsUrlPaste": "Paste Google / Apple Maps URL",
+      "coordinate.mapsUrlHelper": "Extracts latitude and longitude from a shared map link, then fills decimal and DMS.",
+      "coordinate.mapsUrlApply": "Use map link",
+      "coordinate.mapsUrlInvalid": "Could not find latitude/longitude in that Maps URL."
     },
     "ja": {
       "common.copy": "コピー",
@@ -927,7 +931,11 @@
       "coordinate.appleRegion": "Apple MapKit · MKCoordinateRegion (Swift)",
       "coordinate.bbox": "BBox [west, south, east, north]",
       "coordinate.json": "JSON",
-      "coordinate.openFailed": "{label} を開けませんでした。"
+      "coordinate.openFailed": "{label} を開けませんでした。",
+      "coordinate.mapsUrlPaste": "Google / Apple Maps の URL を貼り付け",
+      "coordinate.mapsUrlHelper": "共有リンクから緯度・経度を取り出し、十進度と DMS に反映します。",
+      "coordinate.mapsUrlApply": "地図リンクを反映",
+      "coordinate.mapsUrlInvalid": "その Maps URL から緯度・経度を見つけられませんでした。"
     },
     "fr": {
       "common.copy": "Copier",
@@ -1391,7 +1399,11 @@
       "coordinate.appleRegion": "Apple MapKit · MKCoordinateRegion (Swift)",
       "coordinate.bbox": "BBox [west, south, east, north]",
       "coordinate.json": "JSON",
-      "coordinate.openFailed": "Impossible d’ouvrir {label}."
+      "coordinate.openFailed": "Impossible d’ouvrir {label}.",
+      "coordinate.mapsUrlPaste": "Coller une URL Google / Apple Maps",
+      "coordinate.mapsUrlHelper": "Extrait latitude et longitude d’un lien partagé, puis remplit décimal et DMS.",
+      "coordinate.mapsUrlApply": "Utiliser le lien carte",
+      "coordinate.mapsUrlInvalid": "Impossible de trouver latitude/longitude dans cette URL Maps."
     },
     "es": {
       "common.copy": "Copiar",
@@ -1855,7 +1867,11 @@
       "coordinate.appleRegion": "Apple MapKit · MKCoordinateRegion (Swift)",
       "coordinate.bbox": "BBox [west, south, east, north]",
       "coordinate.json": "JSON",
-      "coordinate.openFailed": "No se pudo abrir {label}."
+      "coordinate.openFailed": "No se pudo abrir {label}.",
+      "coordinate.mapsUrlPaste": "Pegar URL de Google / Apple Maps",
+      "coordinate.mapsUrlHelper": "Extrae latitud y longitud de un enlace compartido y rellena decimal y DMS.",
+      "coordinate.mapsUrlApply": "Usar enlace de mapa",
+      "coordinate.mapsUrlInvalid": "No se pudo encontrar latitud/longitud en esa URL de Maps."
     },
     "pt": {
       "common.copy": "Copiar",
@@ -2319,7 +2335,11 @@
       "coordinate.appleRegion": "Apple MapKit · MKCoordinateRegion (Swift)",
       "coordinate.bbox": "BBox [west, south, east, north]",
       "coordinate.json": "JSON",
-      "coordinate.openFailed": "Não foi possível abrir {label}."
+      "coordinate.openFailed": "Não foi possível abrir {label}.",
+      "coordinate.mapsUrlPaste": "Colar URL do Google / Apple Maps",
+      "coordinate.mapsUrlHelper": "Extrai latitude e longitude de um link compartilhado e preenche decimal e DMS.",
+      "coordinate.mapsUrlApply": "Usar link do mapa",
+      "coordinate.mapsUrlInvalid": "Não foi possível encontrar latitude/longitude nessa URL do Maps."
     },
     "ar": {
       "common.copy": "نسخ",
@@ -2783,7 +2803,11 @@
       "coordinate.appleRegion": "Apple MapKit · MKCoordinateRegion (Swift)",
       "coordinate.bbox": "BBox [west, south, east, north]",
       "coordinate.json": "JSON",
-      "coordinate.openFailed": "تعذر فتح {label}."
+      "coordinate.openFailed": "تعذر فتح {label}.",
+      "coordinate.mapsUrlPaste": "الصق رابط Google / Apple Maps",
+      "coordinate.mapsUrlHelper": "يستخرج خط العرض والطول من رابط مشاركة ثم يملأ العشري وDMS.",
+      "coordinate.mapsUrlApply": "استخدام رابط الخريطة",
+      "coordinate.mapsUrlInvalid": "تعذر العثور على خط العرض/الطول في عنوان Maps هذا."
     },
     "zh": {
       "common.copy": "复制",
@@ -3247,7 +3271,11 @@
       "coordinate.appleRegion": "Apple MapKit · MKCoordinateRegion (Swift)",
       "coordinate.bbox": "BBox [west, south, east, north]",
       "coordinate.json": "JSON",
-      "coordinate.openFailed": "无法打开 {label}。"
+      "coordinate.openFailed": "无法打开 {label}。",
+      "coordinate.mapsUrlPaste": "粘贴 Google / Apple Maps 链接",
+      "coordinate.mapsUrlHelper": "从分享链接提取经纬度，并填入十进制度与 DMS。",
+      "coordinate.mapsUrlApply": "使用地图链接",
+      "coordinate.mapsUrlInvalid": "无法从该 Maps 链接中找到经纬度。"
     },
     "ru": {
       "common.copy": "Копировать",
@@ -3711,7 +3739,11 @@
       "coordinate.appleRegion": "Apple MapKit · MKCoordinateRegion (Swift)",
       "coordinate.bbox": "BBox [west, south, east, north]",
       "coordinate.json": "JSON",
-      "coordinate.openFailed": "Не удалось открыть {label}."
+      "coordinate.openFailed": "Не удалось открыть {label}.",
+      "coordinate.mapsUrlPaste": "Вставить URL Google / Apple Maps",
+      "coordinate.mapsUrlHelper": "Извлекает широту и долготу из ссылки и заполняет десятичные и DMS.",
+      "coordinate.mapsUrlApply": "Применить ссылку карты",
+      "coordinate.mapsUrlInvalid": "Не удалось найти широту/долготу в этом URL Maps."
     }
   }
 }

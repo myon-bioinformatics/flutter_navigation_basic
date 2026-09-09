@@ -72,6 +72,62 @@ void main() {
         throwsFormatException,
       );
     });
+
+    test('parses Google and Apple Maps URLs into decimal and DMS', () {
+      final googleSearch = CoordinateValue.parseMapsUrl(
+        'https://www.google.com/maps/search/?api=1&query=35.681236,139.767125',
+      );
+      expect(googleSearch.decimalDegrees, '35.681236, 139.767125');
+      expect(googleSearch.dms, '35° 40′ 52.45″ N, 139° 46′ 01.65″ E');
+
+      final googleAt = CoordinateValue.parseMapsUrl(
+        'https://www.google.com/maps/@35.681236,139.767125,16z',
+      );
+      expect(googleAt.latitude, closeTo(35.681236, 1e-9));
+      expect(googleAt.longitude, closeTo(139.767125, 1e-9));
+
+      final apple = CoordinateValue.parseMapsUrl(
+        'https://maps.apple.com/?ll=35.681236,139.767125&q=Coordinates',
+      );
+      expect(apple.decimalDegrees, '35.681236, 139.767125');
+
+      final placeShare = CoordinateValue.parseMapsUrl(
+        'https://www.google.com/maps/place/Tokyo+Station/@35.681236,139.767125,17z/data=!3d35.681236!4d139.767125',
+      );
+      expect(placeShare.latitude, closeTo(35.681236, 1e-9));
+    });
+
+    test('round-trips from builders back through Maps URL parsing', () {
+      final value = CoordinateValue.parse(
+        latitude: '35.681236',
+        longitude: '139.767125',
+      );
+      expect(
+        CoordinateValue.parseMapsUrl(value.googleMapsUri.toString()).decimalDegrees,
+        value.decimalDegrees,
+      );
+      expect(
+        CoordinateValue.parseMapsUrl(value.appleMapsUri.toString()).decimalDegrees,
+        value.decimalDegrees,
+      );
+      final area = value.toleranceArea(100);
+      expect(
+        CoordinateValue.parseMapsUrl(area.googleMapsAreaUri.toString()).decimalDegrees,
+        value.decimalDegrees,
+      );
+      expect(
+        CoordinateValue.parseMapsUrl(area.appleMapsAreaUri.toString()).decimalDegrees,
+        value.decimalDegrees,
+      );
+    });
+
+    test('rejects Maps URLs without extractable coordinates', () {
+      expect(CoordinateValue.tryParseMapsUrl('https://maps.apple.com/?q=Tokyo'), isNull);
+      expect(
+        () => CoordinateValue.parseMapsUrl('not a maps url'),
+        throwsFormatException,
+      );
+    });
   });
 
   group('CoordinateToleranceArea', () {
