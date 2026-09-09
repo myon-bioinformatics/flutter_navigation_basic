@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -9,10 +10,16 @@ class CompositionStudio extends StatefulWidget {
     super.key,
     required this.initialBpm,
     required this.initialKey,
+    @visibleForTesting this.elapsedOverride,
   });
 
   final int initialBpm;
   final String initialKey;
+
+  /// When set (tests only), musical position uses this elapsed instead of the
+  /// wall-clock [Stopwatch], so FakeAsync pumps can drive subdivision changes.
+  @visibleForTesting
+  final Duration Function()? elapsedOverride;
 
   @override
   State<CompositionStudio> createState() => _CompositionStudioState();
@@ -61,7 +68,7 @@ class _CompositionStudioState extends State<CompositionStudio>
   }
 
   MetronomeSnapshot get _snapshot => MetronomeSnapshot.fromElapsed(
-        elapsed: _clock.elapsed,
+        elapsed: widget.elapsedOverride?.call() ?? _clock.elapsed,
         bpm: _bpm,
         beatsPerBar: _beatsPerBar,
         subdivisionsPerBeat: _subdivisionsPerBeat,
@@ -364,9 +371,15 @@ class _CompositionStudioState extends State<CompositionStudio>
       fontFamily: 'monospace',
       fontFeatures: const [FontFeature.tabularFigures()],
     );
-    final activeToken = tokens.isEmpty ? '' : tokens[active.clamp(0, tokens.length - 1)];
+    final activeToken = tokens.isEmpty
+        ? ''
+        : tokens[active.clamp(0, tokens.length - 1)];
+    final spokenToken = activeToken == '&' ? 'and' : activeToken;
     return Semantics(
-      label: 'Subdivision $activeToken, beat ${snapshot.beatIndex + 1} of $_beatsPerBar',
+      // Parent label is the sole accessible summary; hide per-glyph Text nodes.
+      excludeSemantics: true,
+      label:
+          'Subdivision $spokenToken, beat ${snapshot.beatIndex + 1} of $_beatsPerBar',
       child: FittedBox(
         fit: BoxFit.scaleDown,
         alignment: Alignment.center,

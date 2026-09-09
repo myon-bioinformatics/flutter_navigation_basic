@@ -7,6 +7,7 @@ import '../support/display_test_harness.dart';
 Future<void> _pumpStudio(
   WidgetTester tester, {
   double width = 800,
+  Duration Function()? elapsedOverride,
 }) async {
   await tester.binding.setSurfaceSize(Size(width, 1200));
   addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -16,9 +17,13 @@ Future<void> _pumpStudio(
       home: await wrapWithDisplayScope(
         MediaQuery(
           data: MediaQueryData(size: Size(width, 1200)),
-          child: const Scaffold(
+          child: Scaffold(
             body: SingleChildScrollView(
-              child: CompositionStudio(initialBpm: 120, initialKey: 'C'),
+              child: CompositionStudio(
+                initialBpm: 120,
+                initialKey: 'C',
+                elapsedOverride: elapsedOverride,
+              ),
             ),
           ),
         ),
@@ -41,7 +46,8 @@ Future<void> _selectSignature(WidgetTester tester, String signature) async {
 }
 
 TextStyle? _styleForToken(WidgetTester tester, String token) {
-  final matches = find.text(token).evaluate().map((e) => e.widget).whereType<Text>();
+  final matches =
+      find.text(token).evaluate().map((e) => e.widget).whereType<Text>();
   for (final text in matches) {
     final weight = text.style?.fontWeight;
     if (weight == FontWeight.w700 || weight == FontWeight.w400) {
@@ -90,7 +96,7 @@ void main() {
   });
 
   testWidgets(
-      'narrow 4/4 × 4× subdivision labels do not overflow and mark active style',
+      'narrow 4/4 × 4× subdivision labels do not overflow and transition active style',
       (tester) async {
     final captured = <FlutterErrorDetails>[];
     final previous = FlutterError.onError;
@@ -104,7 +110,14 @@ void main() {
     };
     addTearDown(() => FlutterError.onError = previous);
 
-    await _pumpStudio(tester, width: 320);
+    // 120 BPM × 4 subdivisions → 125ms per subdivision; drive via override
+    // because wall-clock Stopwatch does not advance with FakeAsync pumps.
+    var elapsed = Duration.zero;
+    await _pumpStudio(
+      tester,
+      width: 320,
+      elapsedOverride: () => elapsed,
+    );
     await _selectSignature(tester, '4/4');
     await _selectSubdivision(tester, '4×');
 
@@ -115,16 +128,27 @@ void main() {
     expect(captured, isEmpty);
 
     final theme = Theme.of(tester.element(find.byType(CompositionStudio)));
-    final idleStyle = _styleForToken(tester, '1');
-    expect(idleStyle?.fontWeight, FontWeight.w700);
-    expect(idleStyle?.color, theme.colorScheme.primary);
 
     await tester.tap(find.widgetWithText(FilledButton, 'Start'));
-    await tester.pump(const Duration(milliseconds: 50));
+    elapsed = Duration.zero;
+    await tester.pump();
 
-    final activeStyle = _styleForToken(tester, '1');
-    expect(activeStyle?.fontWeight, FontWeight.w700);
-    expect(activeStyle?.color, theme.colorScheme.primary);
+    final firstStyle = _styleForToken(tester, '1');
+    expect(firstStyle?.fontWeight, FontWeight.w700);
+    expect(firstStyle?.color, theme.colorScheme.primary);
+
+    // Past the first subdivision boundary (~125ms).
+    elapsed = const Duration(milliseconds: 130);
+    await tester.pump();
+
+    final nextStyle = _styleForToken(tester, 'e');
+    expect(nextStyle?.fontWeight, FontWeight.w700);
+    expect(nextStyle?.color, theme.colorScheme.primary);
+
+    final priorStyle = _styleForToken(tester, '1');
+    expect(priorStyle?.fontWeight, FontWeight.w400);
+    expect(priorStyle?.color, theme.colorScheme.onSurfaceVariant);
+
     expect(tester.takeException(), isNull);
     expect(captured, isEmpty);
   });
