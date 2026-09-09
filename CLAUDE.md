@@ -7,12 +7,12 @@ Shared autonomy and escalation rules live in `AGENTS.md`. Prefer that file as th
 
 - Keep changes small and scoped to the request. Do not perform unrelated refactors or dependency upgrades.
 - Preserve existing CI, deployment, and GitHub Pages configuration unless the request explicitly requires changing it.
-- Run the smallest relevant existing checks and report the result in the pull request.
+- For implementation tasks, run the smallest relevant existing checks and report the result in the pull request.
 - The Claude GitHub Action authenticates with `CLAUDE_CODE_OAUTH_TOKEN` (not `ANTHROPIC_API_KEY`).
 
 ## Review-only requests
 
-When asked to audit, observe, or review only, leave findings as comments. Do not edit files, create commits, or open a pull request unless explicitly asked to implement a change.
+When asked to audit, observe, or review only, leave findings as comments. Do not edit files, create commits, or open a pull request unless explicitly asked to implement a change. This matches the shared task-mode rule in `AGENTS.md`.
 
 ## Role reminder
 

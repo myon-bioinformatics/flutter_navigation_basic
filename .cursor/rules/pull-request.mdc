@@ -5,6 +5,15 @@ alwaysApply: true
 
 # Pull Requests
 
+This file is Cursor-specific. After an **implementation** task, Cursor should take work through PR creation.
+Shared review/audit-only rules live in `AGENTS.md` and must not be overridden here.
+
+## When to open a PR
+
+- Implementation tasks: create a feature-branch PR after verification.
+- Review / audit-only tasks: do not edit, commit, or open a PR unless explicitly asked to implement.
+- Never merge without explicit approval.
+
 ## Before opening a PR
 
 - Review `git diff` and keep only task-related changes.
@@ -12,7 +21,7 @@ alwaysApply: true
 - Confirm secrets, tokens, and credentials are not present.
 - Confirm tests / analyze / build results for the change.
 - Call out breaking changes explicitly when they exist.
-- Work on a feature branch; do not merge without explicit approval.
+- Work on a feature branch.
 
 ## PR body template
 

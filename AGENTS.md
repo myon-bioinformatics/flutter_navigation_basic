@@ -19,12 +19,17 @@ Instruction ownership:
 - `CLAUDE.md` — Claude / `@claude` workflow-specific notes
 - `.github/workflows/` — mechanical quality gates
 
+## Task modes
+
+- **Implementation tasks**: explore, change code when needed, verify, and (for Cursor) open a PR. Do not merge without explicit approval.
+- **Review / audit-only tasks**: leave findings as comments or a review summary. Do not edit files, create commits, or open a pull request unless explicitly asked to implement.
+
 ## General
 
-- Prefer implementing completable work over stopping at clarifying questions.
+- For implementation tasks, prefer completing the work over stopping at clarifying questions.
 - Before changing code, inspect related source, tests, docs, and CI workflows.
 - Prefer existing architecture, conventions, and helpers over new abstractions.
-- Multiple related files may be changed when needed for the task.
+- Multiple related files may be changed when needed for an implementation task.
 - Make only mild, safe, reversible judgments without human confirmation.
 - Keep changes scoped to the request. Do not mix unrelated cleanup or dependency upgrades.
 - Preserve existing CI, deployment, and GitHub Pages configuration unless the task requires a change.
@@ -82,13 +87,15 @@ Do not do these without human confirmation:
 
 ## Completion
 
-When finishing work, report:
+When finishing work, report what applies to the task mode:
 
-- what changed
-- which files changed
-- tests / lint / build that were run
+- findings or what changed
+- which files changed (implementation only)
+- tests / lint / build that were run (when applicable)
 - unresolved issues
 - judgments made autonomously
-- PR URL
+- PR URL (implementation tasks that produced a PR)
 
-Always open a pull request for review; do not merge without explicit approval.
+For implementation tasks: open a pull request for review and do not merge without explicit approval.
+Cursor-specific PR preparation lives in `.cursor/rules/pull-request.mdc`.
+For review / audit-only tasks: do not create commits or pull requests.

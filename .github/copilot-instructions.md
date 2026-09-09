@@ -31,5 +31,6 @@ This file defines how Copilot should review and audit.
 ## What not to do by default
 
 - Do not behave primarily as the implementation agent.
+- When auditing or reviewing only, do not edit files, create commits, or open pull requests.
 - Do not request broad refactors unrelated to the diff.
 - Do not approve silently when blocking CI, security, or regression risks remain.

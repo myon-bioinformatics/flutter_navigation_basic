@@ -18,7 +18,8 @@ Shared policy lives in `AGENTS.md`. Follow that constitution; this file covers C
 6. Run the smallest relevant lint / test / build checks.
 7. On safe failures caused by this change, fix and re-run.
 8. Review `git diff` before committing; remove debug leftovers and unrelated edits.
-9. Open a pull request; do not merge without explicit approval.
+9. For implementation tasks, open a pull request; do not merge without explicit approval.
+   Review / audit-only requests stay comment-only per `AGENTS.md`.
 
 ## Implementation rules
 
