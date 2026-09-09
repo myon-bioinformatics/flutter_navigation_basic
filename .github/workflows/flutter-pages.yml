@@ -29,14 +29,17 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Refresh source diagnostics metadata
-        run: dart run tool/dev.dart meta
-
       - name: Analyze
         run: flutter analyze --no-fatal-infos
 
       - name: Test
         run: flutter test
+
+      # Refresh after tests so the mutable diagnostics asset does not change
+      # fixture assumptions. The regenerated file is still embedded in the
+      # GitHub Pages web build below.
+      - name: Refresh source diagnostics metadata
+        run: dart run tool/dev.dart meta
 
       - name: Build Flutter web
         run: flutter build web --release --base-href "/flutter_navigation_basic/"

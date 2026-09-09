@@ -1,0 +1,54 @@
+---
+description: Pull request preparation and body expectations
+alwaysApply: true
+---
+
+# Pull Requests
+
+This file is Cursor-specific. After an **implementation** task, Cursor should take work through PR creation.
+Shared review/audit-only rules live in `AGENTS.md` and must not be overridden here.
+
+## When to open a PR
+
+- Implementation tasks: create a feature-branch PR after verification.
+- Review / audit-only tasks: do not edit, commit, or open a PR unless explicitly asked to implement.
+- Never merge without explicit approval.
+
+## Before opening a PR
+
+- Review `git diff` and keep only task-related changes.
+- Remove debug code, temporary notes, and leftover experiments.
+- Confirm secrets, tokens, and credentials are not present.
+- Confirm tests / analyze / build results for the change.
+- Call out breaking changes explicitly when they exist.
+- Work on a feature branch.
+
+## PR body template
+
+Include these sections:
+
+### Summary
+
+What problem this solves and the high-level approach.
+
+### Changes
+
+Concrete file / behavior changes.
+
+### Test
+
+Commands run and outcomes.
+
+### Risks
+
+Compatibility, CI, deployment, or behavior risks.
+
+### Remaining issues
+
+Follow-ups, environment limits, or known gaps.
+
+## Delivery rules
+
+- Summarize autonomous judgments made during the work.
+- Keep deployment and permissions changes minimal and justified.
+- If workflows changed, note that actionlint was considered / run.

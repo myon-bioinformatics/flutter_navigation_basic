@@ -1,0 +1,36 @@
+---
+description: Safety and escalation boundaries for Cursor agents
+alwaysApply: true
+---
+
+# Safety
+
+Autonomy means deciding the next safe step, not doing anything.
+
+## Proceed autonomously when
+
+- the change is safe
+- the change is reversible
+- the change stays inside the task scope
+- the change follows existing architecture
+
+Examples: missing imports, lint/format fixes, type fixes, fixture updates, small API mismatches caused by this task, docs that must stay consistent with the code change.
+
+## Escalate to a human when
+
+- secrets would be added, changed, or displayed
+- billing / paid operations are involved
+- production systems would be changed outside the existing GitHub Pages workflow
+- destructive operations or data deletion are required
+- repository visibility would change
+- permissions would broaden materially
+- API keys / tokens would change
+- destructive migrations are required
+- the product specification would materially expand beyond the request
+
+## Workflow / deployment caution
+
+- Do not broaden GitHub Actions permissions without clear need.
+- Do not alter GitHub Pages deployment settings casually.
+- Quote YAML scalars that contain `: ` or special characters.
+- Prefer fixing CI defects over disabling checks.
