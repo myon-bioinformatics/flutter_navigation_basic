@@ -75,6 +75,9 @@ Aligned with pytest’s mix:
 
 CI uploads these counts inside the `python-oracle-summary` artifact (`pytest_outcomes.json` + `receipt.json`).
 
+Primary CI home for this directory is `.github/workflows/non-dart.yml` (stdlib Docker job + pytest).
+The Flutter workflow still runs pytest on Flutter-touching PRs for a receipt beside Dart jobs.
+
 Flutter/`package:test` has no native xfail/xpass. The Flutter JSON tally therefore
 keeps the same keys for a shared vocabulary, but **`xpassed` stays 0** in practice:
 only `known:` / `xfail:` *skips* are remapped to `xfailed`. Unexpected passes of
