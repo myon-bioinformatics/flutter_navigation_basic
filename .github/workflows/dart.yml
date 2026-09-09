@@ -118,7 +118,39 @@ jobs:
           pip install -r tool/python/requirements.txt
 
       - name: Run pytest
-        run: pytest -c tool/python/pytest.ini
+        run: python tool/python/test.py --pytest -- --oracle-mode=local
+
+      - name: Write local oracle receipt
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          out = Path("build/diagnostics/python-oracle")
+          out.mkdir(parents=True, exist_ok=True)
+          receipt = {
+              "job": "python-oracle",
+              "mode": "local",
+              "repository": "${{ github.repository }}",
+              "ref": "${{ github.ref_name }}",
+              "sha": "${{ github.sha }}",
+              "run_id": ${{ github.run_id }},
+              "run_attempt": ${{ github.run_attempt }},
+              "server_url": "${{ github.server_url }}",
+          }
+          (out / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+          print((out / "receipt.json").read_text(encoding="utf-8"))
+          PY
+          python3 -m json.tool build/diagnostics/python-oracle/receipt.json > /dev/null
+
+      - name: Upload python oracle summary artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-oracle-summary
+          path: build/diagnostics/python-oracle/
+          if-no-files-found: error
+          retention-days: 14
 
   latest-stable:
     name: Latest stable shard ${{ matrix.shard }}

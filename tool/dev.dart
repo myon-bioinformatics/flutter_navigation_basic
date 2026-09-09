@@ -41,6 +41,10 @@ Future<void> main(List<String> args) async {
     case 'mock':
       exitCode = await _forward('dart', ['run', 'tool/mock_http_server.dart', ...rest]);
       return;
+    case 'py':
+    case 'python':
+      exitCode = await _forward('python3', ['tool/python/test.py', ...rest]);
+      return;
     case 'bundle':
       exitCode = await _bundle(rest);
       return;
@@ -193,6 +197,7 @@ Usage:
   dart run tool/dev.dart mock [args]
   dart run tool/dev.dart bundle [--output path.zip]
   dart run tool/dev.dart all [--output path.zip]
+  dart run tool/dev.dart py [--actions-latest] [pytest args]
 
 Recommended one-liners:
   dart run tool/dev.dart check   # quick repository health
@@ -201,6 +206,8 @@ Recommended one-liners:
   dart run tool/dev.dart size    # refresh metadata + Android arm64 release analysis
   dart run tool/dev.dart bundle  # reusable diagnostic ZIP
   dart run tool/dev.dart all     # full validation + diagnostic ZIP
+  dart run tool/dev.dart py --actions-latest
+  dart run tool/dev.dart py --pytest -- --oracle-mode=local
 ''');
 }
 

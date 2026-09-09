@@ -5,7 +5,9 @@ This repository keeps repeatable diagnostics in Dart so local development, CI, a
 ## Policy
 
 - Dart / Flutter SDK APIs are the default for repository tooling and app runtime.
-- Python stdlib / `python -m` remain preferred for simple OS/network/packaging tasks.
+- Prefer **stdlib-first** scripts for non-compiled helpers: Python stdlib, Dart
+  toolkit, and optional Deno one-file CLIs when that fits better than pip/npm.
+- Python stdlib / `python -m` remain preferred for simple OS/network/packaging/Actions tasks.
 - **Pip dependencies are allowlisted only at `tool/python/requirements.txt`** for
   dev/test oracles (pytest, pydantic, etc.). Root-level or app-tree
   `requirements.txt` files remain prohibited.
@@ -13,7 +15,14 @@ This repository keeps repeatable diagnostics in Dart so local development, CI, a
 - Network probes and mocks are developer/test utilities; they are not shipped as application runtime features.
 - Generated diagnostics live under `build/` and are git-ignored.
 
-See `tool/python/README.md` for pytest setup.
+See `tool/python/README.md` for pytest setup, `--actions-latest`, and stdlib one-liners.
+
+```bash
+python3 tool/python/test.py --actions-latest --json
+dart run tool/dev.dart py --actions-latest
+python3 -m json.tool tool/python/fixtures/coordinate_area_cases.json | head
+```
+
 
 ## Recommended one-command entrypoint
 
