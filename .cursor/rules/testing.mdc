@@ -51,3 +51,9 @@ When a sharded Flutter job fails:
 - Pinned Flutter shards run the **full** suite (including `test/features/*_patterns`).
 - Latest-stable shards run **core** paths listed in `tool/ci/flutter_core_test_paths.txt` only (suite-load cost of ~792 pattern files dominated wall time; no single outlier test to skip).
 - Prefer documenting known gaps with pytest `xfail(reason="known: …")` or Flutter `@Skip('known: …')` so outcome receipts surface `xfailed` instead of silent omission.
+
+## Expensive job startups (pinned / Android)
+
+- Flutter workflow uses `concurrency: cancel-in-progress` so rapid PR pushes cancel superseded runs (avoid paying pinned/Android setup for abandoned SHAs).
+- Android size runs only when `android/`, `lib/`, `assets/`, or `pubspec.*` change (always on `main` pushes).
+- Pinned gate/tests/latest-stable skip when the PR touches neither Flutter surfaces nor the Flutter workflow file (e.g. docs-only).
