@@ -7,8 +7,8 @@ on:
     branches: ["main"]
 
 jobs:
-  build:
-    name: Pinned stable 3.47.0
+  gate:
+    name: Pinned gate 3.47.0
     runs-on: ubuntu-latest
 
     steps:
@@ -45,12 +45,15 @@ jobs:
             exit 1
           fi
 
-      - name: Verify no Python requirements file
+      - name: Verify Python requirements stay allowlisted
         run: |
-          if git ls-files | grep -E '(^|/)requirements\.txt$'; then
-            echo "::error::requirements.txt is prohibited. Keep repository tooling Dart-first and Python stdlib-only."
-            exit 1
-          fi
+          mapfile -t reqs < <(git ls-files | grep -E '(^|/)requirements\.txt$' || true)
+          for path in "${reqs[@]}"; do
+            if [[ "$path" != "tool/python/requirements.txt" ]]; then
+              echo "::error::Only tool/python/requirements.txt is allowed for pip deps. Found: $path"
+              exit 1
+            fi
+          done
 
       - name: Verify stdlib timezone oracle
         run: |
@@ -66,18 +69,96 @@ jobs:
       - name: Analyze project source
         run: flutter analyze --no-fatal-infos
 
-      - name: Run tests
-        run: flutter test
-
       - name: Build Flutter web
         run: flutter build web --release --base-href "/flutter_navigation_basic/"
 
       - name: Build production entrypoint
         run: flutter build web --release -t lib/main_prod.dart --base-href "/flutter_navigation_basic/"
 
-  latest-stable:
-    name: Latest stable compatibility
+  unit-tests:
+    name: Pinned tests shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter 3.47.0
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.0"
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run sharded tests
+        run: flutter test --total-shards=4 --shard-index=${{ matrix.shard }}
+
+  python-oracle:
+    name: Python pytest oracles
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: tool/python/requirements.txt
+
+      - name: Install Python test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tool/python/requirements.txt
+
+      - name: Run pytest
+        run: python tool/python/test.py --pytest -- --oracle-mode=local
+
+      - name: Write local oracle receipt
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          out = Path("build/diagnostics/python-oracle")
+          out.mkdir(parents=True, exist_ok=True)
+          receipt = {
+              "job": "python-oracle",
+              "mode": "local",
+              "repository": "${{ github.repository }}",
+              "ref": "${{ github.ref_name }}",
+              "sha": "${{ github.sha }}",
+              "run_id": ${{ github.run_id }},
+              "run_attempt": ${{ github.run_attempt }},
+              "server_url": "${{ github.server_url }}",
+          }
+          (out / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+          print((out / "receipt.json").read_text(encoding="utf-8"))
+          PY
+          python3 -m json.tool build/diagnostics/python-oracle/receipt.json > /dev/null
+
+      - name: Upload python oracle summary artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-oracle-summary
+          path: build/diagnostics/python-oracle/
+          if-no-files-found: error
+          retention-days: 14
+
+  latest-stable:
+    name: Latest stable shard ${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
 
     steps:
       - uses: actions/checkout@v4
@@ -94,16 +175,15 @@ jobs:
       - name: Resolve with latest stable toolchain
         run: flutter pub get
 
-      - name: Inspect repository with latest stable Dart
-        run: dart run tool/inspect.dart --json
-
       - name: Analyze on latest stable
+        if: matrix.shard == 0
         run: flutter analyze --no-fatal-infos
 
-      - name: Run tests on latest stable
-        run: flutter test
+      - name: Run sharded tests on latest stable
+        run: flutter test --total-shards=4 --shard-index=${{ matrix.shard }}
 
       - name: Build production entrypoint on latest stable
+        if: matrix.shard == 0
         run: flutter build web --release -t lib/main_prod.dart --base-href "/flutter_navigation_basic/"
 
   android-size:

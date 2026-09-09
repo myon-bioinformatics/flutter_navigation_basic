@@ -15,3 +15,9 @@ macos/Pods/
 # Local environment files
 .env
 .env.*
+
+# Python oracle / pytest local env
+.venv-python/
+__pycache__/
+.pytest_cache/
+*.pyc

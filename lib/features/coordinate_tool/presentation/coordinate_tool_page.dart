@@ -98,10 +98,11 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
   Future<void> _openMap(Uri uri, String label) async {
     final opened = await openExternalUrl(uri);
     if (!mounted || opened) return;
+    final display = DisplayScope.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Could not open $label.',
+          display.text('coordinate.openFailed', arguments: {'label': label}),
         ),
       ),
     );
@@ -181,27 +182,29 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                   const SizedBox(height: 12),
                   _ResultCard(title: t('coordinate.dms'), value: value.dms, copyTooltip: t('common.copy'), onCopy: () => _copy(value.dms, t('coordinate.dms'))),
                   const SizedBox(height: 28),
-                  const _SectionTitle(title: 'Map links', icon: Icons.map_outlined),
+                  _SectionTitle(title: t('coordinate.mapLinks'), icon: Icons.map_outlined),
                   const SizedBox(height: 12),
                   _MapLinkCard(
                     title: 'Google Maps',
                     uri: value.googleMapsUri,
-                    openLabel: 'Open in Google Maps',
+                    openLabel: t('coordinate.openGoogleMaps'),
+                    copyTooltip: t('common.copy'),
                     onOpen: () => _openMap(value.googleMapsUri, 'Google Maps'),
                     onCopy: () => _copy(
                       value.googleMapsUri.toString(),
-                      'Google Maps URL',
+                      t('coordinate.googleMapsUrl'),
                     ),
                   ),
                   const SizedBox(height: 12),
                   _MapLinkCard(
                     title: 'Apple Maps',
                     uri: value.appleMapsUri,
-                    openLabel: 'Open in Apple Maps',
+                    openLabel: t('coordinate.openAppleMaps'),
+                    copyTooltip: t('common.copy'),
                     onOpen: () => _openMap(value.appleMapsUri, 'Apple Maps'),
                     onCopy: () => _copy(
                       value.appleMapsUri.toString(),
-                      'Apple Maps URL',
+                      t('coordinate.appleMapsUrl'),
                     ),
                   ),
                   const SizedBox(height: 28),
@@ -236,40 +239,86 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                     const SizedBox(height: 12),
                     _ResultCard(title: t('coordinate.centerRadius'), value: area.centerRadiusText, copyTooltip: t('common.copy'), onCopy: () => _copy(area.centerRadiusText, t('coordinate.centerRadius'))),
                     const SizedBox(height: 28),
+                    _SectionTitle(title: t('coordinate.mapAreaLinks'), icon: Icons.travel_explore_outlined),
+                    const SizedBox(height: 12),
+                    _MapLinkCard(
+                      title: 'Google Maps',
+                      uri: area.googleMapsAreaUri,
+                      openLabel: t('coordinate.openGoogleMaps'),
+                      copyTooltip: t('common.copy'),
+                      onOpen: () => _openMap(area.googleMapsAreaUri, 'Google Maps'),
+                      onCopy: () => _copy(
+                        area.googleMapsAreaUri.toString(),
+                        t('coordinate.googleMapsAreaUrl'),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _MapLinkCard(
+                      title: 'Apple Maps',
+                      uri: area.appleMapsAreaUri,
+                      openLabel: t('coordinate.openAppleMaps'),
+                      copyTooltip: t('common.copy'),
+                      onOpen: () => _openMap(area.appleMapsAreaUri, 'Apple Maps'),
+                      onCopy: () => _copy(
+                        area.appleMapsAreaUri.toString(),
+                        t('coordinate.appleMapsAreaUrl'),
+                      ),
+                    ),
+                    const SizedBox(height: 28),
                     _SectionTitle(title: t('coordinate.bounds'), icon: Icons.crop_free_outlined),
                     const SizedBox(height: 12),
                     _ResultCard(title: t('coordinate.looseBox'), value: area.boundsText, copyTooltip: t('common.copy'), onCopy: () => _copy(area.boundsText, t('coordinate.looseBox'))),
                     const SizedBox(height: 12),
-                    _ResultCard(title: 'BBox [west, south, east, north]', value: area.bboxText, copyTooltip: t('common.copy'), onCopy: () => _copy(area.bboxText, 'BBox')),
+                    _ResultCard(title: t('coordinate.bbox'), value: area.bboxText, copyTooltip: t('common.copy'), onCopy: () => _copy(area.bboxText, t('coordinate.bbox'))),
                     const SizedBox(height: 12),
-                    _ResultCard(title: 'JSON', value: area.jsonText, copyTooltip: t('common.copy'), onCopy: () => _copy(area.jsonText, 'JSON')),
+                    _ResultCard(title: t('coordinate.json'), value: area.jsonText, copyTooltip: t('common.copy'), onCopy: () => _copy(area.jsonText, t('coordinate.json'))),
                     if (area.wrapsAntimeridian) ...[
                       const SizedBox(height: 8),
                       Text(t('coordinate.antimeridian')),
                     ],
                     const SizedBox(height: 28),
                     _SectionTitle(
-                      title: '4. Platform formats',
+                      title: t('coordinate.platformFormats'),
                       icon: Icons.integration_instructions_outlined,
                     ),
                     const SizedBox(height: 12),
                     _ResultCard(
-                      title: 'Google Maps JavaScript · Circle',
+                      title: t('coordinate.googleCircle'),
                       value: area.googleMapsJavaScript,
                       copyTooltip: t('common.copy'),
                       onCopy: () => _copy(
                         area.googleMapsJavaScript,
-                        'Google Maps JavaScript circle',
+                        t('coordinate.googleCircle'),
                       ),
                     ),
                     const SizedBox(height: 12),
                     _ResultCard(
-                      title: 'Apple MapKit · MKCircle (Swift)',
+                      title: t('coordinate.appleCircle'),
                       value: area.appleMapKitSwift,
                       copyTooltip: t('common.copy'),
                       onCopy: () => _copy(
                         area.appleMapKitSwift,
-                        'Apple MapKit circle',
+                        t('coordinate.appleCircle'),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _ResultCard(
+                      title: t('coordinate.googleRectangle'),
+                      value: area.googleMapsRectangleJavaScript,
+                      copyTooltip: t('common.copy'),
+                      onCopy: () => _copy(
+                        area.googleMapsRectangleJavaScript,
+                        t('coordinate.googleRectangle'),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _ResultCard(
+                      title: t('coordinate.appleRegion'),
+                      value: area.appleMapKitRegionSwift,
+                      copyTooltip: t('common.copy'),
+                      onCopy: () => _copy(
+                        area.appleMapKitRegionSwift,
+                        t('coordinate.appleRegion'),
                       ),
                     ),
                   ],
@@ -327,6 +376,7 @@ class _MapLinkCard extends StatelessWidget {
     required this.title,
     required this.uri,
     required this.openLabel,
+    required this.copyTooltip,
     required this.onOpen,
     required this.onCopy,
   });
@@ -334,6 +384,7 @@ class _MapLinkCard extends StatelessWidget {
   final String title;
   final Uri uri;
   final String openLabel;
+  final String copyTooltip;
   final VoidCallback onOpen;
   final VoidCallback onCopy;
 
@@ -353,7 +404,7 @@ class _MapLinkCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 IconButton(
-                  tooltip: 'Copy',
+                  tooltip: copyTooltip,
                   onPressed: onCopy,
                   icon: const Icon(Icons.copy),
                 ),

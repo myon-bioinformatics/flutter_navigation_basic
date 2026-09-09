@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../support/display_test_harness.dart';
 
 void main() {
-  testWidgets('shows point, tolerance, bounds, platform formats and XYZ tile outputs', (tester) async {
+  testWidgets('shows point, map links, tolerance, area maps, bounds, platform formats and XYZ', (tester) async {
     await tester.pumpWidget(
       MaterialApp(home: await wrapWithDisplayScope(const CoordinateToolPage())),
     );
@@ -17,22 +17,28 @@ void main() {
     expect(find.text('1. Point'), findsOneWidget);
     expect(find.text('2. Tolerance'), findsOneWidget);
     expect(find.text('3. Bounds'), findsOneWidget);
-    expect(find.text('Map links'), findsOneWidget);
-    expect(find.text('Open in Google Maps'), findsOneWidget);
-    expect(find.text('Open in Apple Maps'), findsOneWidget);
+    expect(find.text('Map links · point'), findsOneWidget);
+    expect(find.text('Map links · area'), findsOneWidget);
+    expect(find.text('Open in Google Maps'), findsNWidgets(2));
+    expect(find.text('Open in Apple Maps'), findsNWidgets(2));
     expect(find.text('4. Platform formats'), findsOneWidget);
-    expect(find.text('4. XYZ tile'), findsNWidgets(2));
+    expect(find.text('5. XYZ tile'), findsNWidgets(2));
     expect(find.text('Center + radius'), findsOneWidget);
     expect(find.text('Loose bounding box'), findsOneWidget);
     expect(find.text('BBox [west, south, east, north]'), findsOneWidget);
     expect(find.text('JSON'), findsOneWidget);
     expect(find.text('Google Maps JavaScript · Circle'), findsOneWidget);
     expect(find.text('Apple MapKit · MKCircle (Swift)'), findsOneWidget);
+    expect(find.text('Google Maps JavaScript · Rectangle'), findsOneWidget);
+    expect(find.text('Apple MapKit · MKCoordinateRegion (Swift)'), findsOneWidget);
     expect(find.text('Tile path'), findsOneWidget);
     expect(find.textContaining('radius_m: 100'), findsOneWidget);
     expect(find.textContaining('new google.maps.Circle'), findsOneWidget);
+    expect(find.textContaining('new google.maps.Rectangle'), findsOneWidget);
     expect(find.textContaining('MKCircle('), findsOneWidget);
+    expect(find.textContaining('MKCoordinateRegion('), findsOneWidget);
     expect(find.textContaining('16/58211/25806'), findsWidgets);
+    expect(find.textContaining('https://www.google.com/maps/@35.681236,139.767125,16z'), findsOneWidget);
   });
 
   testWidgets('invalid custom radius keeps point and controls recoverable', (tester) async {
@@ -69,8 +75,9 @@ void main() {
     expect(find.text('Decimal degrees'), findsOneWidget);
     expect(find.text('2. Tolerance'), findsOneWidget);
     expect(customRadius, findsOneWidget);
-    expect(find.text('4. XYZ tile'), findsNWidgets(2));
+    expect(find.text('5. XYZ tile'), findsNWidgets(2));
     expect(find.text('Center + radius'), findsNothing);
+    expect(find.text('Map links · area'), findsNothing);
     expect(find.text('4. Platform formats'), findsNothing);
 
     await tester.enterText(customRadius, '250');
@@ -82,6 +89,7 @@ void main() {
       findsNothing,
     );
     expect(find.text('Center + radius'), findsOneWidget);
+    expect(find.text('Map links · area'), findsOneWidget);
     expect(find.textContaining('radius_m: 250'), findsOneWidget);
     expect(find.text('4. Platform formats'), findsOneWidget);
     expect(find.textContaining('radius: 250'), findsNWidgets(2));

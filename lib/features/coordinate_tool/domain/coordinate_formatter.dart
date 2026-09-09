@@ -206,6 +206,91 @@ class CoordinateToleranceArea {
   radius: ${_formatRadius(radiusMeters)}
 )''';
 
+  /// Viewport URL that frames the tolerance area in Google Maps.
+  Uri get googleMapsAreaUri {
+    final zoom = zoomForRadiusMeters(
+      radiusMeters,
+      latitude: center.latitude,
+    );
+    return Uri.parse(
+      'https://www.google.com/maps/@'
+      '${center.latitude.toStringAsFixed(6)},'
+      '${center.longitude.toStringAsFixed(6)},'
+      '${zoom}z',
+    );
+  }
+
+  /// Viewport URL that frames the tolerance area in Apple Maps.
+  ///
+  /// Uses `ll` + `spn` from the computed bounds. `spn` is omitted when the
+  /// area wraps the antimeridian or spans the full longitude range, because a
+  /// single span cannot express those cases.
+  Uri get appleMapsAreaUri {
+    final params = <String, String>{
+      'll': '${center.latitude.toStringAsFixed(6)},${center.longitude.toStringAsFixed(6)}',
+      'q': 'Tolerance area',
+    };
+    if (supportsAppleMapsSpan) {
+      final latSpan = (north - south).abs();
+      final lonSpan = longitudeSpanDegrees.abs();
+      if (latSpan > 0 && lonSpan > 0) {
+        params['spn'] =
+            '${latSpan.toStringAsFixed(6)},${lonSpan.toStringAsFixed(6)}';
+      }
+    }
+    return Uri.https('maps.apple.com', '/', params);
+  }
+
+  String get googleMapsRectangleJavaScript => '''new google.maps.Rectangle({
+  bounds: {
+    south: ${south.toStringAsFixed(6)},
+    west: ${west.toStringAsFixed(6)},
+    north: ${north.toStringAsFixed(6)},
+    east: ${east.toStringAsFixed(6)}
+  }
+});''';
+
+  String get appleMapKitRegionSwift => '''MKCoordinateRegion(
+  center: CLLocationCoordinate2D(
+    latitude: ${center.latitude.toStringAsFixed(6)},
+    longitude: ${center.longitude.toStringAsFixed(6)}
+  ),
+  span: MKCoordinateSpan(
+    latitudeDelta: ${(north - south).abs().toStringAsFixed(6)},
+    longitudeDelta: ${longitudeSpanDegrees.abs().toStringAsFixed(6)}
+  )
+)''';
+
+  bool get spansFullLongitude => west == -180 && east == 180;
+
+  bool get supportsAppleMapsSpan =>
+      !wrapsAntimeridian && !spansFullLongitude;
+
+  double get longitudeSpanDegrees {
+    if (spansFullLongitude) return 360;
+    if (wrapsAntimeridian) {
+      return (180 - west) + (east - (-180));
+    }
+    return (east - west).abs();
+  }
+
+  /// Heuristic Google Maps zoom that roughly frames [radiusMeters].
+  ///
+  /// Uses the Web Mercator circumference at [latitude] so high-latitude areas
+  /// zoom out instead of overflowing the viewport.
+  static int zoomForRadiusMeters(
+    double radiusMeters, {
+    double latitude = 0,
+  }) {
+    if (!radiusMeters.isFinite || radiusMeters <= 0) return 16;
+    final cosLatitude = math.cos(_toRadians(latitude)).abs().clamp(1e-6, 1.0);
+    final circumferenceMeters = 40075016.686 * cosLatitude;
+    // Aim for ~4 radii across the viewport width at this latitude.
+    final zoom = (math.log(circumferenceMeters / (radiusMeters * 4)) / math.ln2)
+        .floor()
+        .clamp(3, 20);
+    return zoom;
+  }
 
   static double _toRadians(double degrees) => degrees * math.pi / 180;
   static double _toDegrees(double radians) => radians * 180 / math.pi;

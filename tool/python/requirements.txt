@@ -1,0 +1,4 @@
+# Dev/test Python dependencies for repository oracles and light calculation checks.
+# Runtime Flutter code must not depend on these packages.
+pytest==8.4.2
+pydantic==2.11.7

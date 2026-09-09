@@ -18,4 +18,8 @@ python3 tool/time/generate_timezone_cases.py
 
 The initial fixture covers `Asia/Tokyo`, `Europe/London`, and `America/New_York`, including both sides of the 2026 London and New York DST transitions.
 
-No `requirements.txt` is used or required. If the host Python installation does not provide IANA timezone data, the scripts fail with a clear message rather than adding a package dependency.
+No pip packages are required for this timezone oracle. Pip-based Python test
+deps, when needed elsewhere, are allowlisted only under
+`tool/python/requirements.txt`. If the host Python installation does not
+provide IANA timezone data, these scripts fail with a clear message rather than
+adding a package dependency.

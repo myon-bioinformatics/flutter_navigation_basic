@@ -40,6 +40,12 @@ Instruction ownership:
 - Reuse existing utilities, patterns, and feature structure when possible.
 - Avoid large refactors that are not required to complete the task.
 - Do not add dependencies unless the task cannot be completed with current packages.
+  Exception: allowlisted pip deps may live only in `tool/python/requirements.txt`
+  for dev/test Python oracles (pytest / pydantic). Do not add root-level
+  `requirements.txt` files.
+- For scripts/tests that need no compile step, prefer each language's **standard
+  library** (Dart toolkit, Python stdlib, optional Deno one-file scripts) over
+  new environment-heavy toolchains.
 - Do not broaden workflow permissions or alter deployment settings without a clear need.
 - When editing `.github/workflows/`, keep YAML scalars with `: ` or special characters quoted, and ensure actionlint passes.
 
