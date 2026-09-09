@@ -1,0 +1,14 @@
+# Non-pattern Flutter test paths for latest-stable CI shards.
+# Pinned shards still run the full suite (including *_patterns catalogues).
+# Lines starting with # are ignored.
+
+test/bounding_box
+test/coordinate_tool
+test/core
+test/now_timeline
+test/screens
+test/shared
+test/tool
+test/features/composition_generator
+test/features/home
+test/features/counter_playground_controller_test.dart

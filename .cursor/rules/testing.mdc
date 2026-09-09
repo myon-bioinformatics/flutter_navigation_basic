@@ -45,3 +45,9 @@ When a sharded Flutter job fails:
 3. Fix the failure if caused by this change.
 4. Re-run the focused test, then the smallest relevant shard/check set.
 5. Push and confirm the failed shard is green before asking for merge.
+
+## Pattern catalogues vs core suites
+
+- Pinned Flutter shards run the **full** suite (including `test/features/*_patterns`).
+- Latest-stable shards run **core** paths listed in `tool/ci/flutter_core_test_paths.txt` only (suite-load cost of ~792 pattern files dominated wall time; no single outlier test to skip).
+- Prefer documenting known gaps with pytest `xfail(reason="known: …")` or Flutter `@Skip('known: …')` so outcome receipts surface `xfailed` instead of silent omission.

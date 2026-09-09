@@ -65,6 +65,11 @@ On failure:
 - If this change caused it and the fix is safe, fix and re-run.
 - If it is a pre-existing or environment limitation, report that explicitly.
 
+Pinned Flutter CI runs the full suite (including pattern catalogues). Latest-stable
+shards smoke **core** paths only (`tool/ci/flutter_core_test_paths.txt`). Prefer
+pytest-like outcome receipts (`passed` / `failed` / `skipped` / `xfailed` /
+`xpassed` / `error`) via `tool/python` when documenting known gaps.
+
 ## Autonomous Recovery
 
 Do not ask for permission before fixing these when they are caused by the current task:
