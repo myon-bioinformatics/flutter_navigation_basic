@@ -53,16 +53,79 @@ void main() {
     });
   });
 
-  group('BuildMetadata.load backward compatibility', () {
-    test('degrades gracefully against a legacy build_meta.json without repository.revision', () async {
-      // The checked-in assets/diagnostics/build_meta.json predates this
-      // feature and has no `repository.revision` key at all, which is the
-      // real-world scenario BuildMetadata.load() must tolerate.
-      final metadata = await BuildMetadata.load();
+  group('BuildMetadata.fromJson backward compatibility', () {
+    test('degrades gracefully when repository.revision is absent', () {
+      // Use an inline legacy fixture instead of the live asset. CI refreshes
+      // assets/diagnostics/build_meta.json via `dart run tool/dev.dart meta`
+      // before the GitHub Pages web build, so the checked-in file is not a
+      // stable stand-in for "revision missing".
+      final metadata = BuildMetadata.fromJson(const {
+        'app': {
+          'version': '0.0.1',
+          'buildNumber': 1,
+          'stage': 'pre-beta',
+        },
+        'measurement': {
+          'platform': 'unmeasured',
+          'mode': 'release',
+          'artifactBytes': null,
+        },
+        'repository': {
+          'sourceBytes': null,
+          'assetBytes': null,
+        },
+        'screens': <String, Object>{},
+      });
 
       expect(metadata.revision.sha, isNull);
       expect(metadata.revision.dirty, isFalse);
       expect(metadata.revision.displaySha, 'unknown');
+      expect(metadata.version, '0.0.1');
+      expect(metadata.buildNumber, 1);
+    });
+
+    test('parses repository.revision when present', () {
+      final metadata = BuildMetadata.fromJson(const {
+        'app': {
+          'version': '0.0.1',
+          'buildNumber': 1,
+          'stage': 'pre-beta',
+        },
+        'measurement': {
+          'platform': 'android-arm64',
+          'mode': 'release',
+          'artifactBytes': 1024,
+        },
+        'repository': {
+          'sourceBytes': 2048,
+          'assetBytes': 512,
+          'revision': {
+            'sha': 'abcdef1234567890',
+            'shortSha': 'abcdef12',
+            'ref': 'main',
+            'committedAt': '2026-08-18T00:00:00Z',
+            'subject': 'feat: show deployed git revision on home',
+            'commitUrl': 'https://github.com/example/repo/commit/abcdef1234567890',
+            'dirty': false,
+          },
+        },
+        'screens': <String, Object>{},
+      });
+
+      expect(metadata.revision.sha, 'abcdef1234567890');
+      expect(metadata.revision.displaySha, 'abcdef12');
+      expect(metadata.artifactBytes, 1024);
+      expect(metadata.sourceBytes, 2048);
+      expect(metadata.assetBytes, 512);
+    });
+  });
+
+  group('BuildMetadata.load', () {
+    test('loads the checked-in diagnostics asset without throwing', () async {
+      final metadata = await BuildMetadata.load();
+
+      expect(metadata.version, isNotEmpty);
+      expect(metadata.displayVersion, startsWith('v'));
     });
   });
 }

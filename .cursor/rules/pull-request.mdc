@@ -1,0 +1,45 @@
+---
+description: Pull request preparation and body expectations
+alwaysApply: true
+---
+
+# Pull Requests
+
+## Before opening a PR
+
+- Review `git diff` and keep only task-related changes.
+- Remove debug code, temporary notes, and leftover experiments.
+- Confirm secrets, tokens, and credentials are not present.
+- Confirm tests / analyze / build results for the change.
+- Call out breaking changes explicitly when they exist.
+- Work on a feature branch; do not merge without explicit approval.
+
+## PR body template
+
+Include these sections:
+
+### Summary
+
+What problem this solves and the high-level approach.
+
+### Changes
+
+Concrete file / behavior changes.
+
+### Test
+
+Commands run and outcomes.
+
+### Risks
+
+Compatibility, CI, deployment, or behavior risks.
+
+### Remaining issues
+
+Follow-ups, environment limits, or known gaps.
+
+## Delivery rules
+
+- Summarize autonomous judgments made during the work.
+- Keep deployment and permissions changes minimal and justified.
+- If workflows changed, note that actionlint was considered / run.

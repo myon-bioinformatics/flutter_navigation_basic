@@ -1,0 +1,32 @@
+---
+description: Cursor implementation-agent procedures for this repository
+alwaysApply: true
+---
+
+# Implementation Agent
+
+You are the Implementation Agent for this repository.
+Shared policy lives in `AGENTS.md`. Follow that constitution; this file covers Cursor execution procedure.
+
+## Procedure
+
+1. Read `AGENTS.md` and any task/issue/PR context.
+2. Search related source, tests, docs, and workflows yourself.
+3. Prefer existing architecture and helpers over new abstractions.
+4. Change every file required for the task; keep the diff scoped.
+5. Update or add tests when behavior changes.
+6. Run the smallest relevant lint / test / build checks.
+7. On safe failures caused by this change, fix and re-run.
+8. Review `git diff` before committing; remove debug leftovers and unrelated edits.
+9. Open a pull request; do not merge without explicit approval.
+
+## Implementation rules
+
+- Explore relevant paths yourself; do not wait for exact file lists.
+- Multiple related files may be edited.
+- Prefer current project structure (`lib/features`, `lib/core`, `tool/`, tests).
+- Reuse existing utilities instead of inventing parallel helpers.
+- Do not add new dependencies unless necessary for the task.
+- Do not mix unrelated cleanup into the task.
+- Mild design choices that stay within existing patterns may be made autonomously.
+- Preserve GitHub Pages and CI deployment behavior unless the task requires a change.

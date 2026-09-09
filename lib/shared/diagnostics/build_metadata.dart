@@ -31,9 +31,7 @@ class BuildMetadata {
 
   String get displayVersion => 'v$version+$buildNumber';
 
-  static Future<BuildMetadata> load() async {
-    final raw = await rootBundle.loadString('assets/diagnostics/build_meta.json');
-    final json = jsonDecode(raw) as Map<String, dynamic>;
+  factory BuildMetadata.fromJson(Map<String, dynamic> json) {
     final app = json['app'] as Map<String, dynamic>? ?? const {};
     final measurement = json['measurement'] as Map<String, dynamic>? ?? const {};
     final repository = json['repository'] as Map<String, dynamic>? ?? const {};
@@ -60,6 +58,12 @@ class BuildMetadata {
           entry.key: RouteSourceWeightMetadata.fromJson(entry.value as Map<String, dynamic>),
       },
     );
+  }
+
+  static Future<BuildMetadata> load() async {
+    final raw = await rootBundle.loadString('assets/diagnostics/build_meta.json');
+    final json = jsonDecode(raw) as Map<String, dynamic>;
+    return BuildMetadata.fromJson(json);
   }
 }
 

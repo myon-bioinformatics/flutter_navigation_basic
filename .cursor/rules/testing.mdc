@@ -1,0 +1,32 @@
+---
+description: Testing and verification expectations for Cursor agents
+alwaysApply: true
+---
+
+# Testing
+
+After implementation, verify with the smallest relevant repository-supported checks.
+
+## Required mindset
+
+- Inspect related tests before and after changing behavior.
+- Add or update tests when behavior changes or a bug is fixed.
+- Prefer existing test harnesses under `test/` and toolkit scripts under `tool/`.
+- Failures caused by this change should be investigated and fixed when safe.
+- Re-run after each fix.
+- If a check cannot run in the current environment, say so explicitly in the PR.
+
+## Preferred local / CI checks
+
+When relevant and available:
+
+1. `flutter analyze --no-fatal-infos`
+2. `flutter test` (or a focused test path for the change)
+3. `flutter build web` / production entrypoint build when web output is affected
+4. `actionlint` when `.github/workflows/` changes
+5. repository toolkit checks already wired in CI (`tool/inspect.dart`, `tool/check_versions.dart`, timezone oracle, GetX-free shell checks)
+
+## Notes specific to this repository
+
+- `assets/diagnostics/build_meta.json` is refreshed by `dart run tool/dev.dart meta` for GitHub Pages builds. Do not write tests that assume that mutable asset remains a legacy fixture.
+- Prefer parsing fixtures via `BuildMetadata.fromJson` (or equivalent pure helpers) when testing diagnostics metadata compatibility.
