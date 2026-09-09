@@ -246,6 +246,17 @@ def fetch_summary_via_api(
     )
 
 
+def _current_head_sha() -> str:
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=_repo_root(),
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
+
+
 def fetch_latest_summary(
     *,
     branch: str | None = None,
@@ -256,29 +267,93 @@ def fetch_latest_summary(
     return fetch_summary_via_api(branch=branch, workflow=workflow)
 
 
+def evaluate_summary(
+    summary: ActionsSummary,
+    *,
+    allow_stale: bool = False,
+    expected_sha: str | None = None,
+) -> tuple[int, list[str]]:
+    """Return (exit_code, reasons).
+
+    Default policy:
+    - require a run
+    - require conclusion == \"success\" (cancelled/timed_out/failure/etc. are non-zero)
+    - require summary.head_sha == current git HEAD (unless allow_stale)
+    """
+    reasons: list[str] = []
+    expected = expected_sha or _current_head_sha()
+
+    if summary.run_id is None:
+        return 2, ["no workflow run found for branch/workflow"]
+
+    if summary.conclusion != "success":
+        reasons.append(
+            f"conclusion is {summary.conclusion!r} (only 'success' exits 0)"
+        )
+        return 1, reasons
+
+    if not summary.head_sha:
+        reasons.append("run head_sha is missing")
+        return 3, reasons
+
+    if summary.head_sha != expected:
+        msg = f"stale run: run head_sha {summary.head_sha} != current HEAD {expected}"
+        if allow_stale:
+            reasons.append(msg + " (--allow-stale)")
+            return 0, reasons
+        reasons.append(msg + " (pass --allow-stale to override)")
+        return 3, reasons
+
+    return 0, reasons
+
+
 def download_artifact(
     *,
     name: str,
+    summary: ActionsSummary | None = None,
     run_id: int | None = None,
     branch: str | None = None,
     workflow: str | None = "Flutter",
     dest: Path | None = None,
+    allow_stale: bool = False,
+    expected_sha: str | None = None,
 ) -> Path:
-    """Download a named artifact from the latest (or given) workflow run via gh."""
+    """Download a named artifact only from a freshness-checked green run."""
     if not _gh_available():
         raise RuntimeError("Artifact download requires the gh CLI.")
-    if run_id is None:
+    if summary is None:
         summary = fetch_summary_via_gh(branch=branch, workflow=workflow)
-        if summary.run_id is None:
-            raise RuntimeError("No workflow run found to download artifacts from.")
-        run_id = summary.run_id
+    if run_id is not None:
+        summary = ActionsSummary(
+            branch=summary.branch,
+            workflow=summary.workflow,
+            run_id=run_id,
+            head_sha=summary.head_sha if summary.run_id == run_id else summary.head_sha,
+            conclusion=summary.conclusion if summary.run_id == run_id else summary.conclusion,
+            url=summary.url,
+            checks=summary.checks if summary.run_id == run_id else summary.checks,
+            source=summary.source,
+        )
+    code, reasons = evaluate_summary(
+        summary,
+        allow_stale=allow_stale,
+        expected_sha=expected_sha,
+    )
+    if code != 0:
+        raise RuntimeError(
+            "Refusing artifact download until Actions summary is fresh/green: "
+            + "; ".join(reasons)
+        )
+    if summary.run_id is None:
+        raise RuntimeError("No workflow run id available for artifact download.")
+
     dest = dest or (_repo_root() / "build" / "diagnostics" / "actions-artifacts")
     dest.mkdir(parents=True, exist_ok=True)
     _run_gh(
         [
             "run",
             "download",
-            str(run_id),
+            str(summary.run_id),
             "--name",
             name,
             "--dir",
@@ -309,12 +384,28 @@ def write_local_summary(path: Path, summary: ActionsSummary) -> None:
     )
 
 
-def summary_to_dict(summary: ActionsSummary) -> dict[str, Any]:
+def summary_to_dict(
+    summary: ActionsSummary,
+    *,
+    allow_stale: bool = False,
+    expected_sha: str | None = None,
+) -> dict[str, Any]:
+    expected = expected_sha or _current_head_sha()
+    exit_code, reasons = evaluate_summary(
+        summary,
+        allow_stale=allow_stale,
+        expected_sha=expected,
+    )
     return {
         "branch": summary.branch,
         "workflow": summary.workflow,
         "run_id": summary.run_id,
         "head_sha": summary.head_sha,
+        "expected_sha": expected,
+        "fresh": summary.head_sha == expected,
+        "allow_stale": allow_stale,
+        "evaluation_exit_code": exit_code,
+        "evaluation_reasons": reasons,
         "conclusion": summary.conclusion,
         "url": summary.url,
         "source": summary.source,
@@ -339,12 +430,23 @@ def unpack_zip(archive: Path, dest: Path) -> Path:
     return dest
 
 
-def print_human(summary: ActionsSummary) -> None:
-    data = summary_to_dict(summary)
+def print_human(
+    summary: ActionsSummary,
+    *,
+    allow_stale: bool = False,
+    expected_sha: str | None = None,
+) -> None:
+    data = summary_to_dict(
+        summary,
+        allow_stale=allow_stale,
+        expected_sha=expected_sha,
+    )
     print(f"branch: {data['branch']}")
     print(f"workflow: {data['workflow']}")
     print(f"run_id: {data['run_id']}")
     print(f"head_sha: {data['head_sha']}")
+    print(f"expected_sha: {data['expected_sha']}")
+    print(f"fresh: {data['fresh']}")
     print(f"conclusion: {data['conclusion']}")
     print(f"url: {data['url']}")
     print(f"source: {data['source']}")
@@ -360,6 +462,10 @@ def print_human(summary: ActionsSummary) -> None:
         print("pending:")
         for row in data["pending"]:
             print(f"  - {row['name']}: {row['status']}")
+    if data["evaluation_reasons"]:
+        print("evaluation:")
+        for reason in data["evaluation_reasons"]:
+            print(f"  - {reason}")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -391,31 +497,60 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Directory for --download-artifact (default: build/diagnostics/actions-artifacts)",
     )
+    parser.add_argument(
+        "--allow-stale",
+        action="store_true",
+        help="Allow a green run whose head_sha differs from current git HEAD",
+    )
+    parser.add_argument(
+        "--expected-sha",
+        help="Override the SHA freshness check (default: git rev-parse HEAD)",
+    )
     args = parser.parse_args(argv)
 
     workflow = args.workflow or None
     summary = fetch_latest_summary(branch=args.branch, workflow=workflow)
+    data = summary_to_dict(
+        summary,
+        allow_stale=args.allow_stale,
+        expected_sha=args.expected_sha,
+    )
     if args.write:
-        write_local_summary(args.write, summary)
+        args.write.parent.mkdir(parents=True, exist_ok=True)
+        args.write.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     if args.download_artifact:
-        path = download_artifact(
-            name=args.download_artifact,
-            run_id=summary.run_id,
-            branch=args.branch,
-            workflow=workflow,
-            dest=args.artifact_dir,
-        )
+        try:
+            path = download_artifact(
+                name=args.download_artifact,
+                summary=summary,
+                branch=args.branch,
+                workflow=workflow,
+                dest=args.artifact_dir,
+                allow_stale=args.allow_stale,
+                expected_sha=args.expected_sha,
+            )
+        except RuntimeError as error:
+            print(str(error), file=sys.stderr)
+            if args.json:
+                print(json.dumps(data, indent=2))
+            else:
+                print_human(
+                    summary,
+                    allow_stale=args.allow_stale,
+                    expected_sha=args.expected_sha,
+                )
+            return int(data["evaluation_exit_code"]) or 1
         print(f"artifact_dir: {path}", file=sys.stderr)
     if args.json:
-        print(json.dumps(summary_to_dict(summary), indent=2))
+        print(json.dumps(data, indent=2))
     else:
-        print_human(summary)
+        print_human(
+            summary,
+            allow_stale=args.allow_stale,
+            expected_sha=args.expected_sha,
+        )
 
-    if summary.conclusion == "failure":
-        return 1
-    if summary.conclusion is None and summary.run_id is None:
-        return 2
-    return 0
+    return int(data["evaluation_exit_code"])
 
 
 if __name__ == "__main__":

@@ -87,6 +87,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Destination for --download-artifact",
     )
     parser.add_argument(
+        "--allow-stale",
+        action="store_true",
+        help="With --actions-latest, allow a green run whose SHA differs from HEAD",
+    )
+    parser.add_argument(
         "pytest_args",
         nargs=argparse.REMAINDER,
         help="Args passed through to pytest after --",
@@ -116,6 +121,8 @@ def main(argv: list[str] | None = None) -> int:
             actions_argv.extend(["--download-artifact", args.download_artifact])
         if args.artifact_dir is not None:
             actions_argv.extend(["--artifact-dir", str(args.artifact_dir)])
+        if args.allow_stale:
+            actions_argv.append("--allow-stale")
         code = _run_actions_latest(actions_argv)
         exit_code = code if exit_code == 0 else exit_code
 

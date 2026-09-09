@@ -27,10 +27,85 @@ jobs:
        github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     steps:
+      - name: Resolve gated commit SHA
+        id: gated
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "sha=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "sha=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Require Flutter success for target SHA
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ steps.gated.outputs.sha }}
+        run: |
+          set -euo pipefail
+          # Manual dispatch must not bypass the Flutter gate. workflow_run already
+          # implies success, but we still verify the SHA has a successful Flutter run.
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+          import sys
+
+          sha = os.environ["TARGET_SHA"]
+          raw = subprocess.check_output(
+              [
+                  "gh",
+                  "run",
+                  "list",
+                  "-R",
+                  os.environ["GITHUB_REPOSITORY"],
+                  "--workflow",
+                  "Flutter",
+                  "--commit",
+                  sha,
+                  "--json",
+                  "databaseId,conclusion,status,event,url,headSha",
+                  "--limit",
+                  "20",
+              ],
+              text=True,
+          )
+          runs = json.loads(raw)
+          ok = [
+              run
+              for run in runs
+              if run.get("headSha") == sha
+              and run.get("status") == "completed"
+              and run.get("conclusion") == "success"
+          ]
+          if not ok:
+              print(
+                  f"No successful Flutter workflow run found for SHA {sha}. "
+                  "Refusing Pages build/deploy.",
+                  file=sys.stderr,
+              )
+              print(raw, file=sys.stderr)
+              sys.exit(1)
+          chosen = ok[0]
+          print(
+              f"Flutter gate OK: run_id={chosen['databaseId']} "
+              f"event={chosen.get('event')} url={chosen.get('url')}"
+          )
+          PY
+
       - name: Check out the Flutter-gated commit
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ steps.gated.outputs.sha }}
+
+      - name: Verify checkout matches gated SHA
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          expected="${{ steps.gated.outputs.sha }}"
+          if [ "$actual" != "$expected" ]; then
+            echo "::error::Checked out $actual but gated SHA was $expected"
+            exit 1
+          fi
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -45,7 +120,7 @@ jobs:
         run: flutter analyze --no-fatal-infos
 
       # Full flutter test is gated by the Flutter workflow with sharded jobs.
-      # Pages only builds after that workflow succeeds on main.
+      # Pages only builds after that workflow succeeds for the target SHA.
 
       # Refresh after analyze so the mutable diagnostics asset does not change
       # fixture assumptions. The regenerated file is still embedded in the

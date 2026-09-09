@@ -41,7 +41,11 @@ python3 tool/python/test.py --actions-latest --json
 python3 tool/python/test.py --actions-latest --write build/diagnostics/actions-latest.json
 dart run tool/dev.dart py --actions-latest --json
 
-# Download archived CI artifact from that run
+# Freshness: by default the run head_sha must equal git HEAD.
+# Override only when intentionally inspecting an older green run:
+python3 tool/python/test.py --actions-latest --allow-stale
+
+# Download archived CI artifact from that run (also freshness-gated)
 python3 tool/python/test.py --actions-latest --download-artifact python-oracle-summary
 
 # Pytest mode switch via conftest

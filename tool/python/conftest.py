@@ -80,4 +80,4 @@ def actions_summary(pytestconfig: pytest.Config):
         branch=pytestconfig.getoption("--actions-branch"),
         workflow=pytestconfig.getoption("--actions-workflow") or None,
     )
-    return summary_to_dict(summary)
+    return summary_to_dict(summary, allow_stale=False)
