@@ -6,9 +6,84 @@ on:
   pull_request:
     branches: ["main"]
 
+# Rapid PR pushes cancel superseded runs so pinned/Android Flutter setup
+# is not paid for abandoned SHAs.
+concurrency:
+  group: flutter-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  changes:
+    name: Path filter
+    runs-on: ubuntu-latest
+    outputs:
+      flutter: ${{ steps.filter.outputs.flutter }}
+      android: ${{ steps.filter.outputs.android }}
+      python: ${{ steps.filter.outputs.python }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: filter
+        name: Classify changed paths
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            # main pushes always run the full matrix (Pages depends on green Flutter).
+            {
+              echo "flutter=true"
+              echo "android=true"
+              echo "python=true"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          mapfile -t files < <(git diff --name-only "$BASE" "$HEAD")
+
+          flutter=false
+          android=false
+          python=false
+          for f in "${files[@]}"; do
+            case "$f" in
+              tool/python/*)
+                python=true
+                ;;
+              lib/*|test/*|assets/*|web/*|android/*|ios/*|linux/*|macos/*|windows/*|pubspec.yaml|pubspec.lock|analysis_options.yaml|tool/*|.github/workflows/dart.yml)
+                flutter=true
+                ;;
+            esac
+            case "$f" in
+              android/*|lib/*|assets/*|pubspec.yaml|pubspec.lock)
+                android=true
+                ;;
+            esac
+          done
+
+          # Workflow-only edits still need a Flutter smoke (gate/paths list).
+          for f in "${files[@]}"; do
+            if [[ "$f" == ".github/workflows/dart.yml" || "$f" == tool/ci/* ]]; then
+              flutter=true
+            fi
+          done
+
+          {
+            echo "flutter=$flutter"
+            echo "android=$android"
+            echo "python=$python"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "Changed files (${#files[@]}):"
+            printf '%s\n' "${files[@]}"
+            echo "outputs: flutter=$flutter android=$android python=$python"
+          }
+
   gate:
     name: Pinned gate 3.47.0
+    needs: changes
+    if: needs.changes.outputs.flutter == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -77,6 +152,8 @@ jobs:
 
   unit-tests:
     name: Pinned tests shard ${{ matrix.shard }}
+    needs: changes
+    if: needs.changes.outputs.flutter == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -100,6 +177,9 @@ jobs:
 
   python-oracle:
     name: Python pytest oracles
+    needs: changes
+    # Cheap (~10s): run when Python or Flutter surfaces change; skip pure docs.
+    if: needs.changes.outputs.python == 'true' || needs.changes.outputs.flutter == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -118,7 +198,7 @@ jobs:
           pip install -r tool/python/requirements.txt
 
       - name: Run pytest
-        run: python tool/python/test.py --pytest -- --oracle-mode=local
+        run: python tool/python/test.py --pytest -- --oracle-mode=local --outcomes-json build/diagnostics/python-oracle/pytest_outcomes.json
 
       - name: Write local oracle receipt
         if: always()
@@ -128,6 +208,10 @@ jobs:
           from pathlib import Path
           out = Path("build/diagnostics/python-oracle")
           out.mkdir(parents=True, exist_ok=True)
+          outcomes_path = out / "pytest_outcomes.json"
+          outcomes = {}
+          if outcomes_path.is_file():
+              outcomes = json.loads(outcomes_path.read_text(encoding="utf-8"))
           receipt = {
               "job": "python-oracle",
               "mode": "local",
@@ -137,6 +221,9 @@ jobs:
               "run_id": ${{ github.run_id }},
               "run_attempt": ${{ github.run_attempt }},
               "server_url": "${{ github.server_url }}",
+              "outcomes": outcomes.get("counts", {}),
+              "outcomes_total": outcomes.get("total"),
+              "outcomes_ok": outcomes.get("ok"),
           }
           (out / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
           print((out / "receipt.json").read_text(encoding="utf-8"))
@@ -152,13 +239,18 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  # Compatibility smoke on unpinned stable: core suites only.
+  # Pattern catalogues (~792 files) stay on pinned shards — suite-load cost
+  # dominated wall time without a single outlier test to skip.
   latest-stable:
     name: Latest stable shard ${{ matrix.shard }}
+    needs: changes
+    if: needs.changes.outputs.flutter == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3]
+        shard: [0, 1]
 
     steps:
       - uses: actions/checkout@v4
@@ -179,15 +271,20 @@ jobs:
         if: matrix.shard == 0
         run: flutter analyze --no-fatal-infos
 
-      - name: Run sharded tests on latest stable
-        run: flutter test --total-shards=4 --shard-index=${{ matrix.shard }}
+      - name: Run core (non-pattern) sharded tests on latest stable
+        run: |
+          mapfile -t paths < <(grep -vE '^\s*(#|$)' tool/ci/flutter_core_test_paths.txt)
+          flutter test --total-shards=2 --shard-index=${{ matrix.shard }} "${paths[@]}"
 
       - name: Build production entrypoint on latest stable
         if: matrix.shard == 0
         run: flutter build web --release -t lib/main_prod.dart --base-href "/flutter_navigation_basic/"
 
+  # Flutter + Gradle startup is expensive; skip on PRs that cannot affect size.
   android-size:
     name: Android arm64 release size
+    needs: changes
+    if: needs.changes.outputs.android == 'true'
     runs-on: ubuntu-latest
 
     steps:

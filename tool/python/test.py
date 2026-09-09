@@ -7,6 +7,7 @@ Examples:
   python3 tool/python/test.py --actions-latest --json
   python3 tool/python/test.py --actions-latest --download-artifact python-oracle-summary
   python3 tool/python/test.py --pytest -k zoom
+  python3 tool/python/test.py --flutter-outcomes build/diagnostics/flutter-test.json
 """
 
 from __future__ import annotations
@@ -42,6 +43,22 @@ def _run_actions_latest(argv: list[str]) -> int:
     return actions_main(argv)
 
 
+def _run_flutter_outcomes(path: Path, write: Path | None, as_json: bool) -> int:
+    from outcomes import format_counts_line, load_flutter_json_file, summarize_counts, write_outcomes_json
+
+    counts = load_flutter_json_file(path)
+    payload = summarize_counts(counts, source="flutter-json")
+    payload["input"] = str(path)
+    if write is not None:
+        write_outcomes_json(write, payload)
+    if as_json:
+        print(json.dumps(payload, indent=2))
+    else:
+        print(format_counts_line(counts))
+        print(f"total={payload['total']} ok={payload['ok']}")
+    return 0 if payload["ok"] else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=(
@@ -60,9 +77,18 @@ def main(argv: list[str] | None = None) -> int:
         help="Run pytest oracles (default when no mode flags are set)",
     )
     parser.add_argument(
+        "--flutter-outcomes",
+        type=Path,
+        metavar="JSON",
+        help=(
+            "Tally Flutter --file-reporter=json outcomes "
+            "(passed/failed/skipped; known:/xfail: skips → xfailed)"
+        ),
+    )
+    parser.add_argument(
         "--json",
         action="store_true",
-        help="With --actions-latest, emit JSON",
+        help="With --actions-latest or --flutter-outcomes, emit JSON",
     )
     parser.add_argument("--branch", help="Branch override for --actions-latest")
     parser.add_argument(
@@ -73,7 +99,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--write",
         type=Path,
-        help="Write Actions summary JSON to this path",
+        help="Write Actions / Flutter outcomes JSON to this path",
     )
     parser.add_argument(
         "--download-artifact",
@@ -106,6 +132,12 @@ def main(argv: list[str] | None = None) -> int:
     ran_something = False
     exit_code = 0
 
+    if args.flutter_outcomes is not None:
+        ran_something = True
+        code = _run_flutter_outcomes(args.flutter_outcomes, args.write, args.json)
+        if code != 0:
+            exit_code = code
+
     if args.actions_latest:
         ran_something = True
         actions_argv: list[str] = []
@@ -115,7 +147,7 @@ def main(argv: list[str] | None = None) -> int:
             actions_argv.extend(["--workflow", args.workflow])
         if args.json:
             actions_argv.append("--json")
-        if args.write:
+        if args.write and args.flutter_outcomes is None:
             actions_argv.extend(["--write", str(args.write)])
         if args.download_artifact:
             actions_argv.extend(["--download-artifact", args.download_artifact])
@@ -126,11 +158,13 @@ def main(argv: list[str] | None = None) -> int:
         code = _run_actions_latest(actions_argv)
         exit_code = code if exit_code == 0 else exit_code
 
-    # Default to pytest when neither flag is set, or when --pytest is explicit.
-    if args.pytest or not args.actions_latest:
+    # Default to pytest when no other mode flags are set, or when --pytest is explicit.
+    if args.pytest or (
+        not args.actions_latest and args.flutter_outcomes is None
+    ):
         ran_something = True
         # When both modes run, force local oracle mode unless caller overrode.
-        if args.actions_latest and "--actions-latest" not in pytest_extra:
+        if args.actions_latest and "--oracle-mode" not in " ".join(pytest_extra):
             pytest_extra = ["--oracle-mode=local", *pytest_extra]
         code = _run_pytest(pytest_extra)
         if code != 0:
@@ -141,7 +175,7 @@ def main(argv: list[str] | None = None) -> int:
         return 64
 
     # Convenience: also dump a tiny JSON receipt for agent logs.
-    if args.actions_latest and args.write:
+    if args.actions_latest and args.write and args.flutter_outcomes is None:
         try:
             summary = json.loads(args.write.read_text(encoding="utf-8"))
             print(

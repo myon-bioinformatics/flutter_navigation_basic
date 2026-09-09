@@ -52,7 +52,33 @@ python3 tool/python/test.py --actions-latest --download-artifact python-oracle-s
 python3 tool/python/test.py --pytest -- --oracle-mode=local
 python3 tool/python/test.py --pytest -- --oracle-mode=actions
 python3 tool/python/test.py --pytest -- --oracle-mode=actions --actions-summary build/diagnostics/actions-latest.json
+
+# Outcome tallies (passed/failed/skipped/xfailed/xpassed/error)
+python3 tool/python/test.py --pytest -- --outcomes-json build/diagnostics/python-oracle/pytest_outcomes.json
+# Flutter JSON reporter → same status vocabulary (known:/xfail: skips count as xfailed)
+flutter test --file-reporter=json:build/diagnostics/flutter-test.json test/shared
+python3 tool/python/test.py --flutter-outcomes build/diagnostics/flutter-test.json --json
 ```
+
+## Outcome statuses
+
+Aligned with pytest’s mix:
+
+| Status | Meaning |
+| --- | --- |
+| `passed` | Asserted green |
+| `failed` | Unexpected failure |
+| `skipped` | Not run (mode/env gate, etc.) |
+| `xfailed` | Expected fail / known gap (`pytest.mark.xfail`, or Flutter skip reason `known:` / `xfail:`) |
+| `xpassed` | Marked xfail but passed |
+| `error` | Collection/setup error |
+
+CI uploads these counts inside the `python-oracle-summary` artifact (`pytest_outcomes.json` + `receipt.json`).
+
+Flutter/`package:test` has no native xfail/xpass. The Flutter JSON tally therefore
+keeps the same keys for a shared vocabulary, but **`xpassed` stays 0** in practice:
+only `known:` / `xfail:` *skips* are remapped to `xfailed`. Unexpected passes of
+those skips are not observable the way pytest `xpass` is.
 
 ## Useful stdlib one-liners
 
@@ -74,5 +100,8 @@ python3 -m http.server 8000 --directory build/web
 - `fixtures/coordinate_area_cases.json`: shared golden vectors for zoom / span policy
 - `tests/test_coordinate_area.py`: latitude-aware Maps framing oracles
 - `tests/test_actions_latest.py`: optional CI-green assertion (`--oracle-mode=actions`)
+- `tests/test_outcomes.py` / `outcomes.py`: multi-status tallies including xfail/known
+- `tests/test_known_xfail_example.py`: documents `xfail(reason="known: …")` for receipts
 - `actions_latest.py` / `test.py`: fetch latest Actions jobs + optional artifact download
 - CI uploads `python-oracle-summary` for later `--download-artifact` use
+- Latest-stable Flutter shards run **core** paths only (`tool/ci/flutter_core_test_paths.txt`); pattern catalogues stay on pinned shards
