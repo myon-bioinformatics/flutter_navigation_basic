@@ -2,6 +2,11 @@
 
 Web デバッグ対応 Playwright E2E テスト for flutter_navigation_basic。
 
+## CI
+
+- PR で `e2e/` を触ると **Non-Dart** workflow が Playwright の install + `--list` smoke だけ回す（Flutter は起動しない）。
+- フル E2E（web build + Chromium）は GitHub Actions の **Non-Dart checks → Run workflow** で `run_playwright=true` のときだけ。Flutter/Pages の必須経路には載せない。
+
 ## セットアップ
 
 ```bash

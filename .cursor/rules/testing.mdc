@@ -57,3 +57,10 @@ When a sharded Flutter job fails:
 - Flutter workflow uses `concurrency: cancel-in-progress` so rapid PR pushes cancel superseded runs (avoid paying pinned/Android setup for abandoned SHAs).
 - Android size runs only when `android/`, `lib/`, `assets/`, or `pubspec.*` change (always on `main` pushes).
 - Pinned gate/tests/latest-stable skip when the PR touches neither Flutter surfaces nor the Flutter workflow file (e.g. docs-only).
+
+## Non-Dart lane
+
+- `.github/workflows/non-dart.yml` owns Python stdlib oracles (Docker `python:3.12-slim`), pytest oracles, Playwright install smoke (`e2e/`), and manual Playwright E2E (`workflow_dispatch`).
+- Timezone / requirements allowlist checks run there — not inside the Flutter gate.
+- Shared goldens (`tool/python/fixtures/**`, `tool/time/fixtures/**`) still dual-gate Flutter + Non-Dart.
+- actionlint remains the existing Docker workflow for `.github/workflows/**`.

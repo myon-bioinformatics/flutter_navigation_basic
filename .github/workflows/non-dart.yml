@@ -1,0 +1,288 @@
+name: Non-Dart checks
+
+# Python stdlib / pytest oracles, Docker-friendly smoke, and optional
+# Playwright — kept off the Flutter critical path so Dart-only PRs do not
+# pay non-Dart startup, and non-Dart PRs do not boot Flutter.
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "tool/python/**"
+      - "tool/time/**"
+      - "e2e/**"
+      - "**/requirements.txt"
+      - ".github/workflows/non-dart.yml"
+  push:
+    branches: ["main"]
+    paths:
+      - "tool/python/**"
+      - "tool/time/**"
+      - "e2e/**"
+      - "**/requirements.txt"
+      - ".github/workflows/non-dart.yml"
+  workflow_dispatch:
+    inputs:
+      run_playwright:
+        description: "Also run Playwright E2E (needs Flutter web build)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: non-dart-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Path filter
+    runs-on: ubuntu-latest
+    outputs:
+      python: ${{ steps.filter.outputs.python }}
+      e2e: ${{ steps.filter.outputs.e2e }}
+      workflow: ${{ steps.filter.outputs.workflow }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: filter
+        name: Classify non-Dart paths
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            {
+              echo "python=true"
+              echo "e2e=true"
+              echo "workflow=true"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+            HEAD="${{ github.event.pull_request.head.sha }}"
+          else
+            # push: only force-all on the first commit of a branch (before is zeros)
+            BASE="${{ github.event.before }}"
+            HEAD="${{ github.sha }}"
+            if [[ "$BASE" =~ ^0+$ ]]; then
+              {
+                echo "python=true"
+                echo "e2e=true"
+                echo "workflow=true"
+              } >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
+          mapfile -t files < <(git diff --name-only "$BASE" "$HEAD")
+
+          python=false
+          e2e=false
+          workflow=false
+          for f in "${files[@]}"; do
+            case "$f" in
+              tool/python/*|tool/time/*)
+                python=true
+                ;;
+              e2e/*)
+                e2e=true
+                ;;
+              .github/workflows/non-dart.yml)
+                workflow=true
+                python=true
+                ;;
+            esac
+            # Any requirements.txt (including outside tool/python) must hit allowlist.
+            case "$f" in
+              requirements.txt|*/requirements.txt)
+                python=true
+                ;;
+            esac
+          done
+
+          {
+            echo "python=$python"
+            echo "e2e=$e2e"
+            echo "workflow=$workflow"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "Changed files (${#files[@]}):"
+            printf '%s\n' "${files[@]}"
+            echo "outputs: python=$python e2e=$e2e workflow=$workflow"
+          }
+
+  # Stdlib-only: no pip. Runs in an official Python container (Docker pattern).
+  python-stdlib:
+    name: Python stdlib oracles (Docker)
+    needs: changes
+    if: needs.changes.outputs.python == 'true' || needs.changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    container: python:3.12-slim
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install IANA timezone data
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          TZ: Etc/UTC
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends tzdata git
+          rm -rf /var/lib/apt/lists/*
+
+      # python:*-slim defaults to sh; keep this step POSIX (no bashisms).
+      - name: Verify pip requirements stay allowlisted
+        shell: sh
+        run: |
+          set -eu
+          count=0
+          # Word-splitting on paths is fine: requirements.txt paths have no spaces.
+          for path in $(git ls-files | grep -E '(^|/)requirements\.txt$' || true); do
+            if [ "$path" != "tool/python/requirements.txt" ]; then
+              echo "::error::Only tool/python/requirements.txt is allowed for pip deps. Found: $path"
+              exit 1
+            fi
+            count=$((count + 1))
+          done
+          echo "allowlist ok ($count requirements.txt file(s))"
+
+      - name: Verify stdlib timezone oracle
+        run: |
+          python tool/time/verify_timezone.py
+          python tool/time/generate_timezone_cases.py --check
+
+  python-pytest:
+    name: Python pytest oracles
+    needs: changes
+    if: needs.changes.outputs.python == 'true' || needs.changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: tool/python/requirements.txt
+
+      - name: Install Python test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tool/python/requirements.txt
+
+      - name: Run pytest
+        run: python tool/python/test.py --pytest -- --oracle-mode=local --outcomes-json build/diagnostics/python-oracle/pytest_outcomes.json
+
+      - name: Write local oracle receipt
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          out = Path("build/diagnostics/python-oracle")
+          out.mkdir(parents=True, exist_ok=True)
+          outcomes_path = out / "pytest_outcomes.json"
+          outcomes = {}
+          if outcomes_path.is_file():
+              outcomes = json.loads(outcomes_path.read_text(encoding="utf-8"))
+          receipt = {
+              "job": "python-pytest",
+              "workflow": "Non-Dart checks",
+              "mode": "local",
+              "repository": "${{ github.repository }}",
+              "ref": "${{ github.ref_name }}",
+              "sha": "${{ github.sha }}",
+              "run_id": ${{ github.run_id }},
+              "run_attempt": ${{ github.run_attempt }},
+              "server_url": "${{ github.server_url }}",
+              "outcomes": outcomes.get("counts", {}),
+              "outcomes_total": outcomes.get("total"),
+              "outcomes_ok": outcomes.get("ok"),
+          }
+          (out / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+          print((out / "receipt.json").read_text(encoding="utf-8"))
+          PY
+          python3 -m json.tool build/diagnostics/python-oracle/receipt.json > /dev/null
+
+      - name: Upload python oracle summary artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-oracle-summary
+          path: build/diagnostics/python-oracle/
+          if-no-files-found: error
+          retention-days: 14
+
+  # Lightweight Node check when e2e/ changes — no Flutter boot.
+  playwright-smoke:
+    name: Playwright install smoke
+    needs: changes
+    if: needs.changes.outputs.e2e == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install and list Playwright tests
+        working-directory: e2e
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+          npx playwright test --list --project=chromium
+
+  # Full E2E is opt-in (workflow_dispatch) so it stays off PR / Pages critical path.
+  playwright:
+    name: Playwright E2E (manual)
+    if: github.event_name == 'workflow_dispatch' && inputs.run_playwright
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.0"
+          cache: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Flutter deps and build web
+        run: |
+          flutter pub get
+          flutter build web --release -t lib/main_prod.dart --base-href "/"
+
+      - name: Install Playwright
+        working-directory: e2e
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+
+      - name: Serve web build and run Playwright
+        working-directory: e2e
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8080 --directory ../build/web &
+          server_pid=$!
+          trap 'kill "$server_pid" || true' EXIT
+          for _ in $(seq 1 30); do
+            if curl -fsS "http://127.0.0.1:8080" >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          npx playwright test --project=chromium
