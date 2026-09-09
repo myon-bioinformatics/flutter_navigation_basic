@@ -306,16 +306,7 @@ class _CompositionStudioState extends State<CompositionStudio>
               style: theme.textTheme.titleMedium?.copyWith(fontFamily: 'monospace'),
             ),
             const SizedBox(height: 14),
-            Text(
-              _subdivisionLine(),
-              textAlign: TextAlign.center,
-              style: theme.textTheme.titleMedium?.copyWith(fontFamily: 'monospace'),
-            ),
-            Text(
-              _subdivisionMarker(snapshot),
-              textAlign: TextAlign.center,
-              style: theme.textTheme.titleMedium?.copyWith(fontFamily: 'monospace'),
-            ),
+            _subdivisionHighlightRow(theme, snapshot),
             const SizedBox(height: 14),
             Row(
               children: [
@@ -354,7 +345,8 @@ class _CompositionStudioState extends State<CompositionStudio>
     ).join('  ');
   }
 
-  String _subdivisionLine() {
+  /// Beat/subdivision labels with color on the active slot (no moving arrow).
+  Widget _subdivisionHighlightRow(ThemeData theme, MetronomeSnapshot snapshot) {
     final tokens = <String>[];
     for (var beat = 1; beat <= _beatsPerBar; beat++) {
       tokens.add('$beat');
@@ -364,12 +356,30 @@ class _CompositionStudioState extends State<CompositionStudio>
         tokens.addAll(['e', '&', 'a']);
       }
     }
-    return '| ${tokens.join(' ')} |';
-  }
-
-  String _subdivisionMarker(MetronomeSnapshot snapshot) {
-    final slot = snapshot.beatIndex * _subdivisionsPerBeat + snapshot.subdivisionIndex;
-    return '${List.filled(slot * 2 + 2, ' ').join()}▲';
+    final active = snapshot.beatIndex * _subdivisionsPerBeat + snapshot.subdivisionIndex;
+    final baseStyle = theme.textTheme.titleMedium?.copyWith(
+      fontFamily: 'monospace',
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text('| ', style: baseStyle),
+        for (var i = 0; i < tokens.length; i++) ...[
+          if (i > 0) Text(' ', style: baseStyle),
+          Text(
+            tokens[i],
+            style: baseStyle?.copyWith(
+              color: i == active
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurfaceVariant,
+              fontWeight: i == active ? FontWeight.w700 : FontWeight.w400,
+            ),
+          ),
+        ],
+        Text(' |', style: baseStyle),
+      ],
+    );
   }
 
   Widget _buildStructureCard(BuildContext context) {

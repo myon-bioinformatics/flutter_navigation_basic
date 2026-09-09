@@ -48,4 +48,27 @@ void main() {
     await tester.pump();
     expect(find.text('Start'), findsOneWidget);
   });
+
+  testWidgets('highlights subdivision labels instead of a moving arrow',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: await wrapWithDisplayScope(
+          const Scaffold(
+            body: SingleChildScrollView(
+              child: CompositionStudio(initialBpm: 120, initialKey: 'C'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.textContaining('▲'), findsNothing);
+    expect(find.text('1'), findsWidgets);
+    expect(find.text('&'), findsWidgets);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Start'));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.textContaining('▲'), findsNothing);
+  });
 }
