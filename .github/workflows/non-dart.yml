@@ -98,17 +98,21 @@ jobs:
           apt-get install -y --no-install-recommends tzdata
           rm -rf /var/lib/apt/lists/*
 
+      # python:*-slim defaults to sh; keep this step POSIX (no bashisms).
       - name: Verify pip requirements stay allowlisted
+        shell: sh
         run: |
-          set -euo pipefail
-          mapfile -t reqs < <(git ls-files | grep -E '(^|/)requirements\.txt$' || true)
-          for path in "${reqs[@]}"; do
-            if [[ "$path" != "tool/python/requirements.txt" ]]; then
+          set -eu
+          count=0
+          # Word-splitting on paths is fine: requirements.txt paths have no spaces.
+          for path in $(git ls-files | grep -E '(^|/)requirements\.txt$' || true); do
+            if [ "$path" != "tool/python/requirements.txt" ]; then
               echo "::error::Only tool/python/requirements.txt is allowed for pip deps. Found: $path"
               exit 1
             fi
+            count=$((count + 1))
           done
-          echo "allowlist ok (${#reqs[@]} requirements.txt file(s))"
+          echo "allowlist ok ($count requirements.txt file(s))"
 
       - name: Verify stdlib timezone oracle
         run: |
