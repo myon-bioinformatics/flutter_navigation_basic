@@ -40,6 +40,9 @@ def counts_from_flutter_json_lines(lines: list[str] | str) -> dict[str, int]:
     Flutter has success / failure / error / skip. There is no native xfail;
     skip reasons that start with ``known:`` or ``xfail:`` are counted as
     ``xfailed`` so catalogues can mark known gaps without failing CI.
+
+    Malformed JSON lines and non-object JSON values increment ``error`` so a
+    truncated or corrupt reporter file cannot look like a green empty run.
     """
     if isinstance(lines, str):
         raw_lines = lines.splitlines()
@@ -56,6 +59,11 @@ def counts_from_flutter_json_lines(lines: list[str] | str) -> dict[str, int]:
         try:
             event = json.loads(line)
         except json.JSONDecodeError:
+            # Truncated/corrupt reporter output must not look like a green empty run.
+            counts["error"] += 1
+            continue
+        if not isinstance(event, dict):
+            counts["error"] += 1
             continue
         kind = event.get("type")
         if kind == "testStart":

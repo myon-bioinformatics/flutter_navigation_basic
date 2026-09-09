@@ -80,6 +80,9 @@ keeps the same keys for a shared vocabulary, but **`xpassed` stays 0** in practi
 only `known:` / `xfail:` *skips* are remapped to `xfailed`. Unexpected passes of
 those skips are not observable the way pytest `xpass` is.
 
+Malformed or non-object NDJSON lines in Flutter reporter output are counted as
+`error` (not ignored), so a truncated/corrupt file cannot look like a green empty run.
+
 ## Useful stdlib one-liners
 
 ```bash
