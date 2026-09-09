@@ -6,9 +6,80 @@ on:
   pull_request:
     branches: ["main"]
 
+# Rapid PR pushes cancel superseded runs so pinned/Android Flutter setup
+# is not paid for abandoned SHAs.
+concurrency:
+  group: flutter-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  changes:
+    name: Path filter
+    runs-on: ubuntu-latest
+    outputs:
+      flutter: ${{ steps.filter.outputs.flutter }}
+      android: ${{ steps.filter.outputs.android }}
+      python: ${{ steps.filter.outputs.python }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: filter
+        name: Classify changed paths
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            # main pushes always run the full matrix (Pages depends on green Flutter).
+            echo "flutter=true" >> "$GITHUB_OUTPUT"
+            echo "android=true" >> "$GITHUB_OUTPUT"
+            echo "python=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          mapfile -t files < <(git diff --name-only "$BASE" "$HEAD")
+
+          flutter=false
+          android=false
+          python=false
+          for f in "${files[@]}"; do
+            case "$f" in
+              tool/python/*)
+                python=true
+                ;;
+              lib/*|test/*|assets/*|web/*|android/*|ios/*|linux/*|macos/*|windows/*|pubspec.yaml|pubspec.lock|analysis_options.yaml|tool/*|.github/workflows/dart.yml)
+                flutter=true
+                ;;
+            esac
+            case "$f" in
+              android/*|lib/*|assets/*|pubspec.yaml|pubspec.lock)
+                android=true
+                ;;
+            esac
+          done
+
+          # Workflow-only edits still need a Flutter smoke (gate/paths list).
+          for f in "${files[@]}"; do
+            if [[ "$f" == ".github/workflows/dart.yml" || "$f" == tool/ci/* ]]; then
+              flutter=true
+            fi
+          done
+
+          echo "flutter=$flutter" >> "$GITHUB_OUTPUT"
+          echo "android=$android" >> "$GITHUB_OUTPUT"
+          echo "python=$python" >> "$GITHUB_OUTPUT"
+          {
+            echo "Changed files (${#files[@]}):"
+            printf '%s\n' "${files[@]}"
+            echo "outputs: flutter=$flutter android=$android python=$python"
+          }
+
   gate:
     name: Pinned gate 3.47.0
+    needs: changes
+    if: needs.changes.outputs.flutter == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -77,6 +148,8 @@ jobs:
 
   unit-tests:
     name: Pinned tests shard ${{ matrix.shard }}
+    needs: changes
+    if: needs.changes.outputs.flutter == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -100,6 +173,9 @@ jobs:
 
   python-oracle:
     name: Python pytest oracles
+    needs: changes
+    # Cheap (~10s): run when Python or Flutter surfaces change; skip pure docs.
+    if: needs.changes.outputs.python == 'true' || needs.changes.outputs.flutter == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -164,6 +240,8 @@ jobs:
   # dominated wall time without a single outlier test to skip.
   latest-stable:
     name: Latest stable shard ${{ matrix.shard }}
+    needs: changes
+    if: needs.changes.outputs.flutter == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -198,8 +276,11 @@ jobs:
         if: matrix.shard == 0
         run: flutter build web --release -t lib/main_prod.dart --base-href "/flutter_navigation_basic/"
 
+  # Flutter + Gradle startup is expensive; skip on PRs that cannot affect size.
   android-size:
     name: Android arm64 release size
+    needs: changes
+    if: needs.changes.outputs.android == 'true'
     runs-on: ubuntu-latest
 
     steps:
