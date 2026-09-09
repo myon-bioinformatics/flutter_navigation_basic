@@ -70,6 +70,10 @@ shards smoke **core** paths only (`tool/ci/flutter_core_test_paths.txt`). Prefer
 pytest-like outcome receipts (`passed` / `failed` / `skipped` / `xfailed` /
 `xpassed` / `error`) via `tool/python` when documenting known gaps.
 
+Non-Dart checks live in `.github/workflows/non-dart.yml` (Python stdlib in Docker,
+pytest oracles, optional Playwright). Keep Flutter/`Pages` free of those startups
+unless a shared golden under `tool/python/fixtures` or `tool/time/fixtures` changes.
+
 ## Autonomous Recovery
 
 Do not ask for permission before fixing these when they are caused by the current task:

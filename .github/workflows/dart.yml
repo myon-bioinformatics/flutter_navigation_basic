@@ -48,7 +48,12 @@ jobs:
           python=false
           for f in "${files[@]}"; do
             case "$f" in
-              tool/python/*)
+              # Shared goldens: Python oracle + Dart consumers must both run.
+              tool/python/fixtures/*|tool/time/fixtures/*)
+                python=true
+                flutter=true
+                ;;
+              tool/python/*|tool/time/*)
                 python=true
                 ;;
               lib/*|test/*|assets/*|web/*|android/*|ios/*|linux/*|macos/*|windows/*|pubspec.yaml|pubspec.lock|analysis_options.yaml|tool/*|.github/workflows/dart.yml)
@@ -62,9 +67,9 @@ jobs:
             esac
           done
 
-          # Workflow-only edits still need a Flutter smoke (gate/paths list).
+          # Workflow / CI path-list edits still need a Flutter smoke.
           for f in "${files[@]}"; do
-            if [[ "$f" == ".github/workflows/dart.yml" || "$f" == tool/ci/* ]]; then
+            if [[ "$f" == ".github/workflows/dart.yml" || "$f" == ".github/workflows/non-dart.yml" || "$f" == tool/ci/* ]]; then
               flutter=true
             fi
           done
@@ -120,21 +125,6 @@ jobs:
             exit 1
           fi
 
-      - name: Verify Python requirements stay allowlisted
-        run: |
-          mapfile -t reqs < <(git ls-files | grep -E '(^|/)requirements\.txt$' || true)
-          for path in "${reqs[@]}"; do
-            if [[ "$path" != "tool/python/requirements.txt" ]]; then
-              echo "::error::Only tool/python/requirements.txt is allowed for pip deps. Found: $path"
-              exit 1
-            fi
-          done
-
-      - name: Verify stdlib timezone oracle
-        run: |
-          python3 tool/time/verify_timezone.py
-          python3 tool/time/generate_timezone_cases.py --check
-
       - name: Inspect repository with shared toolkit
         run: dart run tool/inspect.dart --json
 
@@ -176,10 +166,11 @@ jobs:
         run: flutter test --total-shards=4 --shard-index=${{ matrix.shard }}
 
   python-oracle:
-    name: Python pytest oracles
+    name: Python pytest oracles (Flutter path)
     needs: changes
-    # Cheap (~10s): run when Python or Flutter surfaces change; skip pure docs.
-    if: needs.changes.outputs.python == 'true' || needs.changes.outputs.flutter == 'true'
+    # Keep a pytest receipt on Flutter-touching PRs; dedicated Non-Dart workflow
+    # covers python/time-only changes without booting Flutter.
+    if: needs.changes.outputs.flutter == 'true'
     runs-on: ubuntu-latest
 
     steps:

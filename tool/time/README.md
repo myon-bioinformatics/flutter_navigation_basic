@@ -23,3 +23,8 @@ deps, when needed elsewhere, are allowlisted only under
 `tool/python/requirements.txt`. If the host Python installation does not
 provide IANA timezone data, these scripts fail with a clear message rather than
 adding a package dependency.
+
+## CI
+
+These stdlib checks run in `.github/workflows/non-dart.yml` inside a
+`python:3.12-slim` container (with `tzdata`), not in the Flutter gate.
