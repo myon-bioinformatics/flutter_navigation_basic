@@ -20,6 +20,7 @@ jobs:
       flutter: ${{ steps.filter.outputs.flutter }}
       android: ${{ steps.filter.outputs.android }}
       python: ${{ steps.filter.outputs.python }}
+      patterns: ${{ steps.filter.outputs.patterns }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,6 +36,7 @@ jobs:
               echo "flutter=true"
               echo "android=true"
               echo "python=true"
+              echo "patterns=true"
             } >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -46,6 +48,7 @@ jobs:
           flutter=false
           android=false
           python=false
+          patterns=false
           for f in "${files[@]}"; do
             case "$f" in
               # Shared goldens: Python oracle + Dart consumers must both run.
@@ -65,6 +68,11 @@ jobs:
                 android=true
                 ;;
             esac
+            case "$f" in
+              test/features/*_patterns/*|lib/features/*_patterns/*|assets/screens.json|tool/ci/flutter_pattern_test_paths.txt)
+                patterns=true
+                ;;
+            esac
           done
 
           # Workflow / CI path-list edits still need a Flutter smoke.
@@ -78,11 +86,12 @@ jobs:
             echo "flutter=$flutter"
             echo "android=$android"
             echo "python=$python"
+            echo "patterns=$patterns"
           } >> "$GITHUB_OUTPUT"
           {
             echo "Changed files (${#files[@]}):"
             printf '%s\n' "${files[@]}"
-            echo "outputs: flutter=$flutter android=$android python=$python"
+            echo "outputs: flutter=$flutter android=$android python=$python patterns=$patterns"
           }
 
   gate:
@@ -140,10 +149,40 @@ jobs:
       - name: Build production entrypoint
         run: flutter build web --release -t lib/main_prod.dart --base-href "/flutter_navigation_basic/"
 
+  # Pinned core product suites (excludes ~792 pattern catalogue files).
   unit-tests:
-    name: Pinned tests shard ${{ matrix.shard }}
+    name: Pinned core shard ${{ matrix.shard }}
     needs: changes
     if: needs.changes.outputs.flutter == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter 3.47.0
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.0"
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run sharded core tests
+        run: |
+          mapfile -t paths < <(grep -vE '^\s*(#|$)' tool/ci/flutter_core_test_paths.txt)
+          flutter test --total-shards=2 --shard-index=${{ matrix.shard }} "${paths[@]}"
+
+  # Pattern catalogues (~792 files): suite-load dominated. Run only when
+  # pattern sources/tests or the pattern path list change (always on main).
+  unit-tests-patterns:
+    name: Pinned patterns shard ${{ matrix.shard }}
+    needs: changes
+    if: needs.changes.outputs.flutter == 'true' && needs.changes.outputs.patterns == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -162,8 +201,10 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Run sharded tests
-        run: flutter test --total-shards=4 --shard-index=${{ matrix.shard }}
+      - name: Run sharded pattern catalogue tests
+        run: |
+          mapfile -t paths < <(grep -vE '^\s*(#|$)' tool/ci/flutter_pattern_test_paths.txt)
+          flutter test --total-shards=4 --shard-index=${{ matrix.shard }} "${paths[@]}"
 
   python-oracle:
     name: Python pytest oracles (Flutter path)
@@ -231,8 +272,7 @@ jobs:
           retention-days: 14
 
   # Compatibility smoke on unpinned stable: core suites only.
-  # Pattern catalogues (~792 files) stay on pinned shards — suite-load cost
-  # dominated wall time without a single outlier test to skip.
+  # Pattern catalogues run in unit-tests-patterns when those paths change.
   latest-stable:
     name: Latest stable shard ${{ matrix.shard }}
     needs: changes

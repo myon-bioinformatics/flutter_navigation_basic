@@ -1,0 +1,8 @@
+# Pattern-catalogue Flutter test paths for the dedicated pinned patterns job.
+# Core / product tests live in flutter_core_test_paths.txt.
+# Lines starting with # are ignored.
+
+test/features/api_patterns
+test/features/data_processing_patterns
+test/features/navigation_patterns
+test/features/ui_theme_patterns
