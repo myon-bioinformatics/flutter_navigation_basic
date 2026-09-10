@@ -72,6 +72,7 @@ class _CounterPlaygroundPageState extends State<CounterPlaygroundPage> {
                               CounterPlaygroundController.min
                           ? widget.controller.decrement
                           : null,
+                      tooltip: display.text('counterLegacy.decrease'),
                       icon: const Icon(Icons.remove),
                     ),
                     HoldRepeatingButton(
@@ -79,6 +80,7 @@ class _CounterPlaygroundPageState extends State<CounterPlaygroundPage> {
                               CounterPlaygroundController.max
                           ? widget.controller.increment
                           : null,
+                      tooltip: display.text('counterLegacy.increase'),
                       icon: const Icon(Icons.add),
                     ),
                   ],

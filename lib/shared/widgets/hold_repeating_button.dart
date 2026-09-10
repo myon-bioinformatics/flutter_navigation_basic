@@ -14,11 +14,15 @@ class HoldRepeatingButton extends StatefulWidget {
     required this.onPressed,
     required this.icon,
     this.label,
+    this.tooltip,
   });
 
   final VoidCallback? onPressed;
   final Widget icon;
   final Widget? label;
+
+  /// Accessible name for icon-only buttons ([IconButton.filled] tooltip).
+  final String? tooltip;
 
   static const Duration holdDelay = Duration(milliseconds: 350);
   static const Duration holdInterval = Duration(milliseconds: 70);
@@ -104,16 +108,30 @@ class _HoldRepeatingButtonState extends State<HoldRepeatingButton> {
   @override
   Widget build(BuildContext context) {
     final label = widget.label;
-    final button = label == null
-        ? IconButton.filled(
-            onPressed: _enabled ? _handleMaterialPressed : null,
-            icon: widget.icon,
-          )
-        : FilledButton.icon(
-            onPressed: _enabled ? _handleMaterialPressed : null,
-            icon: widget.icon,
-            label: label,
-          );
+    final Widget button;
+    if (label == null) {
+      final iconButton = IconButton.filled(
+        onPressed: _enabled ? _handleMaterialPressed : null,
+        tooltip: widget.tooltip,
+        icon: widget.icon,
+      );
+      button = widget.tooltip == null
+          ? iconButton
+          : Semantics(
+              label: widget.tooltip,
+              button: true,
+              enabled: _enabled,
+              onTap: _enabled ? _handleMaterialPressed : null,
+              excludeSemantics: true,
+              child: iconButton,
+            );
+    } else {
+      button = FilledButton.icon(
+        onPressed: _enabled ? _handleMaterialPressed : null,
+        icon: widget.icon,
+        label: label,
+      );
+    }
 
     return Listener(
       onPointerDown: _enabled ? _handlePointerDown : null,

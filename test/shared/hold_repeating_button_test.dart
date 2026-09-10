@@ -73,12 +73,38 @@ void main() {
     await tester.pump(HoldRepeatingButton.holdInterval);
     expect(count, greaterThanOrEqualTo(3));
 
+    final beforeRelease = count;
     await gesture.up();
     await tester.pumpAndSettle();
-    final afterRelease = count;
-    await tester.pump(HoldRepeatingButton.holdInterval * 2);
     // Release must not add an extra Material tap on top of hold repeats.
-    expect(count, afterRelease);
+    expect(count, beforeRelease);
+    await tester.pump(HoldRepeatingButton.holdInterval * 2);
+    expect(count, beforeRelease);
+  });
+
+  testWidgets('icon-only button exposes tooltip as accessible name',
+      (tester) async {
+    final handle = tester.ensureSemantics();
+    try {
+      var count = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: HoldRepeatingButton(
+              onPressed: () => count++,
+              tooltip: 'Increase',
+              icon: const Icon(Icons.add),
+            ),
+          ),
+        ),
+      );
+
+      tester.semantics.tap(find.semantics.byLabel('Increase'));
+      await tester.pump();
+      expect(count, 1);
+    } finally {
+      handle.dispose();
+    }
   });
 
   testWidgets(
