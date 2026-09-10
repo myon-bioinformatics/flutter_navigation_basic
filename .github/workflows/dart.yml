@@ -69,7 +69,8 @@ jobs:
                 ;;
             esac
             case "$f" in
-              test/features/*_patterns/*|lib/features/*_patterns/*|assets/screens.json|tool/ci/flutter_pattern_test_paths.txt)
+              # Pattern catalogues + shared deps that can regress all ~792 controllers.
+              test/features/*_patterns/*|lib/features/*_patterns/*|assets/screens.json|tool/ci/flutter_pattern_test_paths.txt|lib/core/services/base_controller.dart|pubspec.yaml|pubspec.lock)
                 patterns=true
                 ;;
             esac
