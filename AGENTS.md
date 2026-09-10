@@ -6,10 +6,32 @@ It is not a place for large feature specifications.
 
 Role separation:
 
-- ChatGPT: architecture, requirements, pre-review
-- Cursor: implementation, tests, PR creation
-- GitHub Copilot: repository audit, PR review, CI analysis
+- ChatGPT (`gpt`): architecture, requirements, pre-review
+- Cursor (`cursor`): implementation, tests, PR creation
+- GitHub Copilot (`copilot`): repository audit, PR review, CI analysis
+- Claude (`claude` / `@claude`): on-demand GitHub assistance when mentioned
 - GitHub Actions: mechanical enforcement (lint / test / build / actionlint)
+
+### PR comment routing (`from:` / `to:`)
+
+When agents leave PR comments (review requests, fix reports, final audits), start
+with an explicit routing header so humans and other agents can scan who spoke
+and who should act next:
+
+```text
+from: cursor
+to: gpt, copilot
+
+(body)
+```
+
+Conventions:
+
+- `from:` is the author role (`cursor` / `gpt` / `copilot` / `claude` / human login)
+- `to:` lists intended readers (comma-separated). Use `@mention` in the body when
+  a GitHub notification is required (`@copilot`, `@claude`, …)
+- Keep the header on its own lines at the top; do not bury it mid-comment
+- Cursor posts use `from: cursor` on mention / status comments from PR #51 onward
 
 Instruction ownership:
 
@@ -65,9 +87,14 @@ On failure:
 - If this change caused it and the fix is safe, fix and re-run.
 - If it is a pre-existing or environment limitation, report that explicitly.
 
-Pinned Flutter CI runs the full suite (including pattern catalogues). Latest-stable
-shards smoke **core** paths only (`tool/ci/flutter_core_test_paths.txt`). Prefer
-pytest-like outcome receipts (`passed` / `failed` / `skipped` / `xfailed` /
+Pinned Flutter CI splits suites to cut wall time on ordinary feature PRs:
+
+- **Pinned core** (`tool/ci/flutter_core_test_paths.txt`) — always on Flutter-touching PRs
+- **Pinned patterns** (`tool/ci/flutter_pattern_test_paths.txt`, ~792 catalogue files) —
+  only when pattern sources/tests (or that path list) change; always on `main`
+- Latest-stable shards still smoke **core** paths only
+
+Prefer pytest-like outcome receipts (`passed` / `failed` / `skipped` / `xfailed` /
 `xpassed` / `error`) via `tool/python` when documenting known gaps.
 
 Non-Dart checks live in `.github/workflows/non-dart.yml` (Python stdlib in Docker,

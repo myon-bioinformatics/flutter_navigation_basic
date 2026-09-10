@@ -16,7 +16,10 @@ When asked to audit, observe, or review only, leave findings as comments. Do not
 
 ## Role reminder
 
-- ChatGPT: design / requirements / pre-review
-- Cursor: implementation / test / PR
-- Copilot: GitHub-side audit / CI analysis
-- Claude (`@claude`): on-demand GitHub assistance when mentioned or manually dispatched
+- ChatGPT (`gpt`): design / requirements / pre-review
+- Cursor (`cursor`): implementation / test / PR
+- Copilot (`copilot`): GitHub-side audit / CI analysis
+- Claude (`claude` / `@claude`): on-demand GitHub assistance when mentioned or manually dispatched
+
+PR comments should use the shared `from:` / `to:` routing header described in
+`AGENTS.md` (from PR #51 onward).

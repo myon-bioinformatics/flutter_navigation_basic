@@ -1,5 +1,7 @@
-# Non-pattern Flutter test paths for latest-stable CI shards.
-# Pinned shards still run the full suite (including *_patterns catalogues).
+# Non-pattern Flutter test paths for pinned-core and latest-stable CI shards.
+# Pattern catalogues (~792 files) run in the dedicated pinned-patterns job
+# (tool/ci/flutter_pattern_test_paths.txt) so ordinary feature PRs do not pay
+# the full suite-load cost on every shard.
 # Lines starting with # are ignored.
 
 test/bounding_box
@@ -12,3 +14,4 @@ test/tool
 test/features/composition_generator
 test/features/home
 test/features/counter_playground_controller_test.dart
+test/features/counter_battle_effect_test.dart

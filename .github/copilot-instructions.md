@@ -6,6 +6,15 @@ Implementation work belongs to Cursor unless a human explicitly asks you to impl
 Shared policy lives in `AGENTS.md`. Cursor-specific execution procedure lives in `.cursor/rules/`.
 This file defines how Copilot should review and audit.
 
+When posting PR comments, use the shared routing header from `AGENTS.md`:
+
+```text
+from: copilot
+to: cursor
+
+(body)
+```
+
 ## When reviewing a pull request
 
 - Focus on actual defects first.
