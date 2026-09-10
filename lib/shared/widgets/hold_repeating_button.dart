@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 /// Material button that keeps calling [onPressed] while the pointer is held.
@@ -56,6 +57,8 @@ class _HoldRepeatingButtonState extends State<HoldRepeatingButton> {
 
   void _handlePointerDown(PointerDownEvent event) {
     if (!_enabled || _activePointer != null) return;
+    // Ignore secondary / tertiary buttons (e.g. right-click on Web/desktop).
+    if (event.buttons != kPrimaryButton) return;
     _activePointer = event.pointer;
     _didRepeat = false;
     _timer = Timer(HoldRepeatingButton.holdDelay, () {

@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/shared/widgets/hold_repeating_button.dart';
@@ -145,5 +146,34 @@ void main() {
     } finally {
       handle.dispose();
     }
+  });
+
+  testWidgets('secondary mouse button hold does not start repeat',
+      (tester) async {
+    var count = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: HoldRepeatingButton(
+            onPressed: () => count++,
+            icon: const Icon(Icons.add),
+            label: const Text('Increase'),
+          ),
+        ),
+      ),
+    );
+
+    final gesture = await tester.press(
+      find.text('Increase'),
+      buttons: kSecondaryButton,
+    );
+    await tester.pump(HoldRepeatingButton.holdDelay);
+    await tester.pump(HoldRepeatingButton.holdInterval);
+    await tester.pump(HoldRepeatingButton.holdInterval);
+    expect(count, 0);
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(count, 0);
   });
 }
