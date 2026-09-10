@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../config/routes.dart';
+import '../features/counter_playground/domain/counter_battle_effect.dart';
+import '../features/counter_playground/domain/counter_playground_controller.dart';
+import '../features/counter_playground/presentation/counter_orb_burst.dart';
 import '../shared/display/display_scope.dart';
+import '../shared/widgets/hold_repeating_button.dart';
 import '../widgets/nav_button.dart';
 
 class CounterPlaygroundScreen extends StatefulWidget {
@@ -11,11 +15,9 @@ class CounterPlaygroundScreen extends StatefulWidget {
 }
 
 class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
-  static const int _min = -100;
-  static const int _max = 100;
-
   var _counter = 0;
   var _step = 1;
+  var _burstToken = 0;
   final List<int> _history = <int>[0];
 
   void _record(int value) {
@@ -24,10 +26,13 @@ class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
   }
 
   void _changeCounter(int delta) {
-    final int next = (_counter + delta).clamp(_min, _max).toInt();
+    final int next = (_counter + delta)
+        .clamp(CounterPlaygroundController.min, CounterPlaygroundController.max)
+        .toInt();
     if (next == _counter) return;
     setState(() {
       _counter = next;
+      _burstToken++;
       _record(_counter);
     });
   }
@@ -36,6 +41,7 @@ class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
     if (value == _counter) return;
     setState(() {
       _counter = value;
+      _burstToken++;
       _record(_counter);
     });
   }
@@ -45,6 +51,7 @@ class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
     setState(() {
       _history.removeAt(0);
       _counter = _history.first;
+      _burstToken++;
     });
   }
 
@@ -52,13 +59,18 @@ class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
     if (_counter == 0) return;
     setState(() {
       _counter = 0;
+      _burstToken++;
       _record(0);
     });
   }
 
   String _status(DisplayController display) {
-    if (_counter == _max) return display.text('counterLegacy.statusMax');
-    if (_counter == _min) return display.text('counterLegacy.statusMin');
+    if (_counter == CounterPlaygroundController.max) {
+      return display.text('counterLegacy.statusMax');
+    }
+    if (_counter == CounterPlaygroundController.min) {
+      return display.text('counterLegacy.statusMin');
+    }
     if (_counter >= 50) return display.text('counterLegacy.statusHigh');
     if (_counter <= -50) return display.text('counterLegacy.statusLow');
     if (_counter >= 10) return display.text('counterLegacy.statusTooMuch');
@@ -99,6 +111,26 @@ class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        Builder(
+                          builder: (context) {
+                            final effect =
+                                CounterBattleEffect.fromCounter(_counter);
+                            return CounterOrbBurst(
+                              effect: effect,
+                              playToken: _burstToken,
+                              damageLabel: display.text(
+                                'counter.battleDamage',
+                                arguments: {'amount': effect.amount},
+                              ),
+                              healLabel: display.text(
+                                'counter.battleHeal',
+                                arguments: {'amount': effect.amount},
+                              ),
+                              idleLabel: display.text('counter.battleIdle'),
+                            );
+                          },
+                        ),
                         const SizedBox(height: 8),
                         Text(_status(display), style: theme.textTheme.titleMedium),
                         const SizedBox(height: 20),
@@ -122,15 +154,15 @@ class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
                           spacing: 12,
                           runSpacing: 12,
                           children: [
-                            FilledButton.icon(
-                              onPressed: _counter > _min
+                            HoldRepeatingButton(
+                              onPressed: _counter > CounterPlaygroundController.min
                                   ? () => _changeCounter(-_step)
                                   : null,
                               icon: const Icon(Icons.remove),
                               label: Text(display.text('counterLegacy.decrease')),
                             ),
-                            FilledButton.icon(
-                              onPressed: _counter < _max
+                            HoldRepeatingButton(
+                              onPressed: _counter < CounterPlaygroundController.max
                                   ? () => _changeCounter(_step)
                                   : null,
                               icon: const Icon(Icons.add),

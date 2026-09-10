@@ -34,9 +34,12 @@ lib/
 │   └── composer.dart
 ├── features/
 │   ├── home/
-│   ├── counter_playground/        # 旧 screen2
+│   ├── counter_playground/        # 旧 screen2 · PAD-lite ダメージ/回復 + hold-to-repeat
 │   ├── irony_generator/           # 旧 screen3
-│   ├── composition_generator/     # 旧 screen4
+│   ├── composition_generator/     # 旧 screen4 · メトロノーム等
+│   ├── coordinate_tool/           # 緯度経度 · Maps URL → DMS
+│   ├── bounding_box/
+│   ├── now_timeline/
 │   └── screen5/                   # URL Parameters
 ├── screens/
 │   ├── home_screen.dart
@@ -49,6 +52,7 @@ lib/
 ├── shared/
 │   ├── themes/
 │   └── widgets/
+│       └── hold_repeating_button.dart  # Material +/- の押し続け連打
 └── widgets/
     └── nav_button.dart
 ```
@@ -58,10 +62,19 @@ lib/
 | 種別 | 正式名 | URL | 説明 |
 |------|--------|-----|------|
 | Home | Home 🏠 | `/` | アプリのトップ画面。現在日付と主要デモへのナビゲーションを表示。 |
-| Example | Counter Playground 👾 | `/examples/counter-playground` | 旧Screen2。カウンターのインクリメントと条件分岐表示のサンプル。 |
-| Example | Irony Generator 🥐 | `/examples/irony-generator` | 旧Screen3。`Ironies.ironicList` からランダムなフレーズを表示。 |
-| Example | Composition Generator 🎸 | `/examples/composition-generator` | 旧Screen4。ランダムなキーと BPM を生成するサンプル。 |
+| Tool | Coordinate Tool 📍 | `/tools/location/coordinates` | 緯度経度の検証と十進度／DMS。Google / Apple Maps の共有 URL から座標抽出も可。 |
+| Tool | Bounding Box | `/tools/location/bounding-box` | 4辺または中心＋半径から地理範囲を作成・コピー。 |
+| Tool | Now Timeline | `/tools/time/now-timeline` | 複数 IANA タイムゾーンを1本のクライアント側タイムラインにまとめる。 |
+| Example | Counter Playground 👾 | `/examples/counter-playground` | カウンターの増減・履歴・undo。正の値ぶんダメージ／負の絶対値ぶん回復の軽いオーブ演出と、押し続けで連打できる +/-。 |
+| Example | Irony Generator 🥐 | `/examples/irony-generator` | `Ironies.ironicList` からランダムなフレーズを表示。 |
+| Example | Composition Generator 🎸 | `/examples/composition-generator` | キー／BPM 生成とビジュアルメトロノーム等の軽量プレ DAW。 |
 | Catalogue | Screen 1–198 | `/screen1`〜`/screen198` | `assets/screens.json` の198件を11種類の代表UIテンプレートに18件ずつ割り当てて表示。 |
+
+### Counter Playground（PAD-lite）
+
+- **ダメージ / 回復**: カウンターが正ならその値だけダメージ、負なら絶対値ぶん回復としてラベル表示。
+- **オーブ**: 炎・水・木・光・闇（攻撃）／ハート系（回復）の絵文字を軽い float アニメで表示（アセットなし）。
+- **+/-**: `HoldRepeatingButton`（Material ボタン + `Listener` + `Timer`）。短押しは1回、押し続けで連打。VoiceOver / キーボードは Material の `onPressed` 経由。
 
 元の `screen2/3/4` というファイル名・クラス名・featureディレクトリ名は意味ベースに変更しています。これらの手書きデモは `/examples/...` に分離し、`/screen1`〜`/screen198` はすべてパターンカタログ用として確保します。
 
@@ -132,4 +145,4 @@ npx playwright install chromium
 npx playwright test --project=chromium
 ```
 
-Pull Requestでは `.github/workflows/dart.yml` が analyze / test / Flutter Web build を検証します。`main` へのpush後は `.github/workflows/flutter-pages.yml` が同じ検証を通してGitHub Pagesへデプロイします。
+Pull Requestでは `.github/workflows/dart.yml` が analyze / test / Flutter Web build を検証します。Python / Playwright 系は `.github/workflows/non-dart.yml` が担当します。`main` への push 後は `.github/workflows/flutter-pages.yml` が同じ検証を通して GitHub Pages へデプロイします。
