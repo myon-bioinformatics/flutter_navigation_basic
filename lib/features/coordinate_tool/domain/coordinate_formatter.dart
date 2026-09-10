@@ -36,14 +36,20 @@ class CoordinateValue {
     if (raw.isEmpty) return null;
 
     // Builders encode commas as %2C in query values; decode so regexes match.
+    // Invalid escapes throw ArgumentError (not FormatException) on some SDKs.
     String text;
     try {
       text = Uri.decodeFull(raw.replaceAll('+', ' '));
     } on FormatException {
       text = raw;
+    } on ArgumentError {
+      text = raw;
     }
 
-    // Prefer explicit query params over path `@` (place URLs can contain both).
+    // Priority (first match wins):
+    // 1) explicit `ll=` / `query=` / `q=` (tool builders + share params)
+    // 2) `!3dLAT!4dLNG` place pin (prefer over `@`, which is often viewport center)
+    // 3) `@lat,lng` path / viewport center
     final patterns = <RegExp>[
       RegExp(
         r'[?&#]ll=(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)',
@@ -54,11 +60,10 @@ class CoordinateValue {
         caseSensitive: false,
       ),
       RegExp(
-        r'@(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)(?:,|/|z|\?|#|$)',
-      ),
-      // Google data=!3dLAT!4dLNG fragments in share links.
-      RegExp(
         r'!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)',
+      ),
+      RegExp(
+        r'@(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)(?:,|/|z|\?|#|$)',
       ),
     ];
 

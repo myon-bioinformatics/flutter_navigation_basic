@@ -92,9 +92,34 @@ void main() {
       expect(apple.decimalDegrees, '35.681236, 139.767125');
 
       final placeShare = CoordinateValue.parseMapsUrl(
-        'https://www.google.com/maps/place/Tokyo+Station/@35.681236,139.767125,17z/data=!3d35.681236!4d139.767125',
+        // `@` is a different viewport center; place pin is `!3d/!4d`.
+        'https://www.google.com/maps/place/Tokyo+Station/@35.680000,139.760000,17z/data=!3d35.681236!4d139.767125',
       );
       expect(placeShare.latitude, closeTo(35.681236, 1e-9));
+      expect(placeShare.longitude, closeTo(139.767125, 1e-9));
+    });
+
+    test('prefers !3d/!4d place pin over differing @ viewport center', () {
+      final value = CoordinateValue.parseMapsUrl(
+        'https://www.google.com/maps/place/Example/@-33.870000,-70.670000,15z/data=!3d-33.868800!4d-70.669300',
+      );
+      expect(value.latitude, closeTo(-33.8688, 1e-9));
+      expect(value.longitude, closeTo(-70.6693, 1e-9));
+    });
+
+    test('parses percent-encoded query commas and ignores bad percent escapes', () {
+      final encoded = CoordinateValue.parseMapsUrl(
+        'https://www.google.com/maps/search/?api=1&query=35.681236%2C139.767125',
+      );
+      expect(encoded.decimalDegrees, '35.681236, 139.767125');
+
+      // Malformed % must not throw; may simply fail to extract.
+      expect(
+        CoordinateValue.tryParseMapsUrl(
+          'https://www.google.com/maps/search/?api=1&query=35.681236%ZZ139.767125',
+        ),
+        isNull,
+      );
     });
 
     test('round-trips from builders back through Maps URL parsing', () {
