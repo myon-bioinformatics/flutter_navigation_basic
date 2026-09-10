@@ -94,4 +94,63 @@ void main() {
     expect(find.text('4. Platform formats'), findsOneWidget);
     expect(find.textContaining('radius: 250'), findsNWidgets(2));
   });
+
+  testWidgets('applies Google/Apple Maps URL into decimal and DMS', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(home: await wrapWithDisplayScope(const CoordinateToolPage())),
+    );
+    await tester.pumpAndSettle();
+
+    final mapsUrl = find.widgetWithText(
+      TextField,
+      'Paste Google / Apple Maps URL',
+    );
+    expect(mapsUrl, findsOneWidget);
+    await tester.ensureVisible(mapsUrl);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      mapsUrl,
+      'https://maps.apple.com/?ll=-33.868800,-70.669300&q=Coordinates',
+    );
+    await tester.tap(find.text('Use map link'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('-33.868800, -70.669300'), findsOneWidget);
+    expect(
+      find.textContaining('S'),
+      findsWidgets,
+    );
+    expect(
+      find.textContaining('W'),
+      findsWidgets,
+    );
+    expect(
+      find.text(CoordinateValue.parse(
+        latitude: '-33.8688',
+        longitude: '-70.6693',
+      ).dms),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('shows error for Maps URL without coordinates', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(home: await wrapWithDisplayScope(const CoordinateToolPage())),
+    );
+    await tester.pumpAndSettle();
+
+    final mapsUrl = find.widgetWithText(
+      TextField,
+      'Paste Google / Apple Maps URL',
+    );
+    await tester.enterText(mapsUrl, 'https://maps.apple.com/?q=Tokyo');
+    await tester.tap(find.text('Use map link'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Could not find latitude/longitude in that Maps URL.'),
+      findsOneWidget,
+    );
+  });
 }

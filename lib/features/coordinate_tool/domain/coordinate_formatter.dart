@@ -27,6 +27,68 @@ class CoordinateValue {
     return CoordinateValue(latitude: lat, longitude: lon);
   }
 
+  /// Extracts a point from a Google Maps or Apple Maps URL/share text.
+  ///
+  /// Supports the URLs this tool emits (`query=`, `@lat,lng`, `ll=`) plus
+  /// common share forms (`q=`, `/@lat,lng` inside place paths).
+  static CoordinateValue? tryParseMapsUrl(String input) {
+    final raw = input.trim();
+    if (raw.isEmpty) return null;
+
+    // Builders encode commas as %2C in query values; decode so regexes match.
+    // Invalid escapes throw ArgumentError (not FormatException) on some SDKs.
+    String text;
+    try {
+      text = Uri.decodeFull(raw.replaceAll('+', ' '));
+    } on FormatException {
+      text = raw;
+    } on ArgumentError {
+      text = raw;
+    }
+
+    // Priority (first match wins):
+    // 1) explicit `ll=` / `query=` / `q=` (tool builders + share params)
+    // 2) `!3dLAT!4dLNG` place pin (prefer over `@`, which is often viewport center)
+    // 3) `@lat,lng` path / viewport center
+    final patterns = <RegExp>[
+      RegExp(
+        r'[?&#]ll=(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'[?&#](?:query|q)=(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)',
+      ),
+      RegExp(
+        r'@(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)(?:,|/|z|\?|#|$)',
+      ),
+    ];
+
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(text);
+      if (match == null) continue;
+      try {
+        return parse(latitude: match.group(1)!, longitude: match.group(2)!);
+      } on FormatException {
+        // Try the next pattern if this pair is out of range / non-finite.
+      }
+    }
+    return null;
+  }
+
+  static CoordinateValue parseMapsUrl(String input) {
+    final value = tryParseMapsUrl(input);
+    if (value == null) {
+      throw const FormatException(
+        'Could not find latitude/longitude in that Maps URL.',
+      );
+    }
+    return value;
+  }
+
   String get decimalDegrees =>
       '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}';
 
