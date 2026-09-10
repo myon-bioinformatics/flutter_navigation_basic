@@ -124,7 +124,7 @@ class _CounterOrbBurstState extends State<CounterOrbBurst>
         const SizedBox(height: 4),
         AnimatedDefaultTextStyle(
           duration: const Duration(milliseconds: 200),
-          style: theme.textTheme.titleMedium!.copyWith(
+          style: (theme.textTheme.titleMedium ?? const TextStyle()).copyWith(
             color: accent,
             fontWeight: FontWeight.w700,
           ),
