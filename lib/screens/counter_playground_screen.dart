@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/routes.dart';
 import '../features/counter_playground/domain/counter_battle_effect.dart';
+import '../features/counter_playground/domain/counter_playground_controller.dart';
 import '../features/counter_playground/presentation/counter_orb_burst.dart';
 import '../shared/display/display_scope.dart';
 import '../shared/widgets/hold_repeating_button.dart';
@@ -14,9 +15,6 @@ class CounterPlaygroundScreen extends StatefulWidget {
 }
 
 class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
-  static const int _min = -100;
-  static const int _max = 100;
-
   var _counter = 0;
   var _step = 1;
   var _burstToken = 0;
@@ -28,7 +26,9 @@ class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
   }
 
   void _changeCounter(int delta) {
-    final int next = (_counter + delta).clamp(_min, _max).toInt();
+    final int next = (_counter + delta)
+        .clamp(CounterPlaygroundController.min, CounterPlaygroundController.max)
+        .toInt();
     if (next == _counter) return;
     setState(() {
       _counter = next;
@@ -65,8 +65,12 @@ class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
   }
 
   String _status(DisplayController display) {
-    if (_counter == _max) return display.text('counterLegacy.statusMax');
-    if (_counter == _min) return display.text('counterLegacy.statusMin');
+    if (_counter == CounterPlaygroundController.max) {
+      return display.text('counterLegacy.statusMax');
+    }
+    if (_counter == CounterPlaygroundController.min) {
+      return display.text('counterLegacy.statusMin');
+    }
     if (_counter >= 50) return display.text('counterLegacy.statusHigh');
     if (_counter <= -50) return display.text('counterLegacy.statusLow');
     if (_counter >= 10) return display.text('counterLegacy.statusTooMuch');
@@ -151,14 +155,14 @@ class _CounterPlaygroundScreenState extends State<CounterPlaygroundScreen> {
                           runSpacing: 12,
                           children: [
                             HoldRepeatingButton(
-                              onPressed: _counter > _min
+                              onPressed: _counter > CounterPlaygroundController.min
                                   ? () => _changeCounter(-_step)
                                   : null,
                               icon: const Icon(Icons.remove),
                               label: Text(display.text('counterLegacy.decrease')),
                             ),
                             HoldRepeatingButton(
-                              onPressed: _counter < _max
+                              onPressed: _counter < CounterPlaygroundController.max
                                   ? () => _changeCounter(_step)
                                   : null,
                               icon: const Icon(Icons.add),

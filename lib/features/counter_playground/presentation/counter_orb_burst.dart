@@ -35,7 +35,7 @@ class _CounterOrbBurstState extends State<CounterOrbBurst>
     parent: _controller,
     curve: Curves.easeOutCubic,
   );
-  late final Animation<double> _fade = Tween<double>(begin: 1, end: 0).animate(
+  late final Animation<double> _fade = Tween<double>(begin: 0.25, end: 1).animate(
     CurvedAnimation(
       parent: _controller,
       curve: const Interval(0.35, 1, curve: Curves.easeIn),
@@ -51,8 +51,7 @@ class _CounterOrbBurstState extends State<CounterOrbBurst>
   @override
   void didUpdateWidget(covariant CounterOrbBurst oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.effect.counter != widget.effect.counter ||
-        oldWidget.playToken != widget.playToken) {
+    if (oldWidget.playToken != widget.playToken) {
       _playIfNeeded();
     }
   }
@@ -92,28 +91,32 @@ class _CounterOrbBurstState extends State<CounterOrbBurst>
         SizedBox(
           height: 56,
           child: effect.isIdle
-              ? Center(
-                  child: Text(
-                    '👾',
-                    style: theme.textTheme.headlineSmall,
+              ? ExcludeSemantics(
+                  child: Center(
+                    child: Text(
+                      '👾',
+                      style: theme.textTheme.headlineSmall,
+                    ),
                   ),
                 )
               : AnimatedBuilder(
                   animation: _controller,
                   builder: (context, child) {
                     return Opacity(
-                      opacity: 0.25 + (0.75 * (1 - _fade.value)),
+                      opacity: _fade.value,
                       child: Transform.translate(
                         offset: Offset(0, -18 * _rise.value),
                         child: child,
                       ),
                     );
                   },
-                  child: Center(
-                    child: Text(
-                      effect.orbs.join(' '),
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 28, height: 1.1),
+                  child: ExcludeSemantics(
+                    child: Center(
+                      child: Text(
+                        effect.orbs.join(' '),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 28, height: 1.1),
+                      ),
                     ),
                   ),
                 ),

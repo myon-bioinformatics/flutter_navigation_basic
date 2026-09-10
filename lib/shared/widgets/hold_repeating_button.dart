@@ -4,9 +4,10 @@ import 'package:flutter/material.dart';
 
 /// Material button that keeps calling [onPressed] while the pointer is held.
 ///
-/// Uses [Listener] + [Timer] (common Flutter pattern for stepper / volume-style
-/// hold-to-repeat). A short press fires once; holding after
-/// [holdDelay] repeats every [holdInterval].
+/// Single taps, keyboard activation, and accessibility use the Material
+/// button's real [onPressed]. [Listener] only starts repeating after
+/// [holdDelay]; if a hold already repeated, the trailing Material tap is
+/// swallowed once so it does not double-fire.
 class HoldRepeatingButton extends StatefulWidget {
   const HoldRepeatingButton({
     super.key,
@@ -29,60 +30,76 @@ class HoldRepeatingButton extends StatefulWidget {
 class _HoldRepeatingButtonState extends State<HoldRepeatingButton> {
   Timer? _timer;
   int? _activePointer;
+  bool _didRepeat = false;
 
   bool get _enabled => widget.onPressed != null;
 
-  void _clear() {
+  void _clearTimers() {
     _timer?.cancel();
     _timer = null;
     _activePointer = null;
   }
 
+  void _handleMaterialPressed() {
+    if (!_enabled) return;
+    if (_didRepeat) {
+      // Hold already applied increments; ignore the release tap once.
+      _didRepeat = false;
+      return;
+    }
+    widget.onPressed!();
+  }
+
   void _handlePointerDown(PointerDownEvent event) {
     if (!_enabled || _activePointer != null) return;
     _activePointer = event.pointer;
-    widget.onPressed!();
+    _didRepeat = false;
     _timer = Timer(HoldRepeatingButton.holdDelay, () {
+      if (!_enabled || _activePointer == null) return;
+      _didRepeat = true;
+      widget.onPressed!();
       _timer = Timer.periodic(HoldRepeatingButton.holdInterval, (_) {
         final action = widget.onPressed;
         if (action == null) {
-          _clear();
+          _clearTimers();
           return;
         }
+        _didRepeat = true;
         action();
       });
     });
   }
 
   void _handlePointerEnd(PointerEvent event) {
-    if (event.pointer == _activePointer) _clear();
+    if (event.pointer != _activePointer) return;
+    _clearTimers();
   }
 
   @override
   void didUpdateWidget(covariant HoldRepeatingButton oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!_enabled) _clear();
+    if (!_enabled) {
+      _clearTimers();
+      _didRepeat = false;
+    }
   }
 
   @override
   void dispose() {
-    _clear();
+    _clearTimers();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final label = widget.label;
-    // onPressed stays non-null while enabled so Material styling / a11y match
-    // a normal button; the real work runs from [Listener] to support hold.
-    final VoidCallback? materialAction = _enabled ? () {} : null;
     final button = label == null
         ? IconButton.filled(
-            onPressed: materialAction,
+            onPressed: _enabled ? _handleMaterialPressed : null,
             icon: widget.icon,
           )
         : FilledButton.icon(
-            onPressed: materialAction,
+            onPressed: _enabled ? _handleMaterialPressed : null,
             icon: widget.icon,
             label: label,
           );
