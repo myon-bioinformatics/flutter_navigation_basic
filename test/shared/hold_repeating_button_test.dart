@@ -80,4 +80,44 @@ void main() {
     // Release must not add an extra Material tap on top of hold repeats.
     expect(count, afterRelease);
   });
+
+  testWidgets(
+      'drag-off after hold does not suppress the next semantics tap',
+      (tester) async {
+    final handle = tester.ensureSemantics();
+    try {
+      var count = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: HoldRepeatingButton(
+                onPressed: () => count++,
+                icon: const Icon(Icons.add),
+                label: const Text('Increase'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final gesture = await tester.press(find.text('Increase'));
+      await tester.pump(HoldRepeatingButton.holdDelay);
+      await tester.pump(HoldRepeatingButton.holdInterval);
+      expect(count, greaterThanOrEqualTo(1));
+
+      // Move outside the button then release so Material cancels the tap.
+      await gesture.moveBy(const Offset(0, 400));
+      await gesture.up();
+      await tester.pump();
+      await tester.pump(); // post-frame sticky clear
+
+      final afterDragOff = count;
+      tester.semantics.tap(find.semantics.byLabel('Increase'));
+      await tester.pump();
+      expect(count, afterDragOff + 1);
+    } finally {
+      handle.dispose();
+    }
+  });
 }

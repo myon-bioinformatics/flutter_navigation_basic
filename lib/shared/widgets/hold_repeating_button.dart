@@ -72,7 +72,18 @@ class _HoldRepeatingButtonState extends State<HoldRepeatingButton> {
 
   void _handlePointerEnd(PointerEvent event) {
     if (event.pointer != _activePointer) return;
+    final hadRepeated = _didRepeat;
     _clearTimers();
+    // After a hold, Material may still deliver one release tap (consumed by
+    // `_handleMaterialPressed`) or cancel the tap when the pointer leaves.
+    // Clear any unconsumed sticky flag after this frame so the next
+    // keyboard / semantics activation is not suppressed.
+    if (hadRepeated) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _didRepeat = false;
+      });
+    }
   }
 
   @override

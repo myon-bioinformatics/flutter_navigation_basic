@@ -51,5 +51,23 @@ void main() {
       expect(controller.counter, 0);
       expect(controller.battleEffect.isIdle, isTrue);
     });
+
+    test('clamps at max without changing burstToken', () {
+      controller.changeBy(CounterPlaygroundController.max);
+      final token = controller.burstToken;
+      expect(controller.counter, CounterPlaygroundController.max);
+      controller.increment();
+      expect(controller.counter, CounterPlaygroundController.max);
+      expect(controller.burstToken, token);
+    });
+
+    test('clamps at min without changing burstToken', () {
+      controller.changeBy(CounterPlaygroundController.min);
+      final token = controller.burstToken;
+      expect(controller.counter, CounterPlaygroundController.min);
+      controller.decrement();
+      expect(controller.counter, CounterPlaygroundController.min);
+      expect(controller.burstToken, token);
+    });
   });
 }
