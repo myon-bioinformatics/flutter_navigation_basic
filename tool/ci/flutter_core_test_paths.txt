@@ -15,3 +15,4 @@ test/features/composition_generator
 test/features/home
 test/features/counter_playground_controller_test.dart
 test/features/counter_battle_effect_test.dart
+test/features/irony_generator_interaction_test.dart
