@@ -30,6 +30,8 @@ class _ImageRectOverlayState extends State<ImageRectOverlay> {
   Offset? _lastLocal;
   /// Normalized origin for outside-drag create; null when resizing/moving.
   Offset? _createOrigin;
+  /// Latest create-drag rect held locally so pan-end cannot sanitize a stale parent value.
+  NormalizedRect? _liveCreateRect;
 
   static const double _handleHitSlop = 18;
 
@@ -92,11 +94,17 @@ class _ImageRectOverlayState extends State<ImageRectOverlay> {
       final ny = (details.localPosition.dy / size.height).clamp(0.0, 1.0);
       _createOrigin = Offset(nx, ny);
       _activeHandle = null;
-      widget.onRectChanged(
-        NormalizedRect.fromDiagonal(x0: nx, y0: ny, x1: nx, y1: ny),
+      final created = NormalizedRect.fromDiagonal(
+        x0: nx,
+        y0: ny,
+        x1: nx,
+        y1: ny,
       );
+      _liveCreateRect = created;
+      widget.onRectChanged(created);
     } else {
       _createOrigin = null;
+      _liveCreateRect = null;
       _activeHandle = hit;
     }
     _lastLocal = details.localPosition;
@@ -109,14 +117,14 @@ class _ImageRectOverlayState extends State<ImageRectOverlay> {
     if (origin != null) {
       final nx = (details.localPosition.dx / size.width).clamp(0.0, 1.0);
       final ny = (details.localPosition.dy / size.height).clamp(0.0, 1.0);
-      widget.onRectChanged(
-        NormalizedRect.fromDiagonal(
-          x0: origin.dx,
-          y0: origin.dy,
-          x1: nx,
-          y1: ny,
-        ),
+      final created = NormalizedRect.fromDiagonal(
+        x0: origin.dx,
+        y0: origin.dy,
+        x1: nx,
+        y1: ny,
       );
+      _liveCreateRect = created;
+      widget.onRectChanged(created);
       return;
     }
 
@@ -129,14 +137,20 @@ class _ImageRectOverlayState extends State<ImageRectOverlay> {
     widget.onRectChanged(widget.rect.resized(handle: handle, dx: dx, dy: dy));
   }
 
-  void _onPanEnd(DragEndDetails details) {
-    if (_createOrigin != null) {
-      widget.onRectChanged(widget.rect.sanitized());
+  void _finishCreateGesture() {
+    final live = _liveCreateRect;
+    if (_createOrigin != null && live != null) {
+      widget.onRectChanged(live.sanitized());
     }
     _createOrigin = null;
+    _liveCreateRect = null;
     _activeHandle = null;
     _lastLocal = null;
   }
+
+  void _onPanEnd(DragEndDetails details) => _finishCreateGesture();
+
+  void _onPanCancel() => _finishCreateGesture();
 
   @override
   Widget build(BuildContext context) {
@@ -152,6 +166,7 @@ class _ImageRectOverlayState extends State<ImageRectOverlay> {
             onPanStart: (details) => _onPanStart(details, size),
             onPanUpdate: (details) => _onPanUpdate(details, size),
             onPanEnd: _onPanEnd,
+            onPanCancel: _onPanCancel,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Stack(
