@@ -117,23 +117,31 @@ class NormalizedRect {
       case NormalizedRectHandle.topLeft:
         l += dx;
         t += dy;
+        break;
       case NormalizedRectHandle.topRight:
         r += dx;
         t += dy;
+        break;
       case NormalizedRectHandle.bottomLeft:
         l += dx;
         b += dy;
+        break;
       case NormalizedRectHandle.bottomRight:
         r += dx;
         b += dy;
+        break;
       case NormalizedRectHandle.left:
         l += dx;
+        break;
       case NormalizedRectHandle.right:
         r += dx;
+        break;
       case NormalizedRectHandle.top:
         t += dy;
+        break;
       case NormalizedRectHandle.bottom:
         b += dy;
+        break;
     }
     return NormalizedRect(left: l, top: t, right: r, bottom: b).sanitized();
   }

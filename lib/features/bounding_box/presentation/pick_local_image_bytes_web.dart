@@ -17,21 +17,24 @@ Future<Uint8List?> pickLocalImageBytes() {
     }
   }
 
-  input.onChange.listen((_) async {
+  input.onChange.listen((_) {
     final files = input.files;
     if (files == null || files.isEmpty) {
       finish(null);
       return;
     }
     final reader = html.FileReader();
+    reader.onError.listen((_) => finish(null));
+    reader.onAbort.listen((_) => finish(null));
+    reader.onLoad.listen((_) {
+      final result = reader.result;
+      if (result is ByteBuffer) {
+        finish(result.asUint8List());
+      } else {
+        finish(null);
+      }
+    });
     reader.readAsArrayBuffer(files.first);
-    await reader.onLoad.first;
-    final result = reader.result;
-    if (result is ByteBuffer) {
-      finish(result.asUint8List());
-    } else {
-      finish(null);
-    }
   });
 
   // Best-effort cancel detection when the dialog closes without a selection.
