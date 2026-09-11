@@ -117,7 +117,9 @@ class _IronyGeneratorPageState extends State<IronyGeneratorPage>
                   child: KeyedSubtree(
                     key: const ValueKey('irony-message-card'),
                     child: AnimatedScale(
-                      duration: const Duration(milliseconds: 140),
+                      duration: reduceMotion
+                          ? Duration.zero
+                          : const Duration(milliseconds: 140),
                       scale: _isDragging ? 1.035 : 1,
                       child: Card(
                         key: _cardKey,
@@ -138,12 +140,15 @@ class _IronyGeneratorPageState extends State<IronyGeneratorPage>
                                   onPanEnd: (_) => _finishDrag(arenaSize),
                                   onPanCancel: () =>
                                       setState(() => _isDragging = false),
-                                  child: const Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 32,
-                                      vertical: 8,
+                                  child: Semantics(
+                                    label: 'Drag to move card',
+                                    child: const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 32,
+                                        vertical: 8,
+                                      ),
+                                      child: Icon(Icons.drag_indicator),
                                     ),
-                                    child: Icon(Icons.drag_indicator),
                                   ),
                                 ),
                                 const SizedBox(height: 8),
