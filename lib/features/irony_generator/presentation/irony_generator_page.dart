@@ -19,7 +19,9 @@ class IronyGeneratorPage extends StatefulWidget {
 
 class _IronyGeneratorPageState extends State<IronyGeneratorPage>
     with SingleTickerProviderStateMixin {
+  final GlobalKey _arenaKey = GlobalKey();
   final GlobalKey _cardKey = GlobalKey();
+  final GlobalKey _handleKey = GlobalKey();
   Offset _offset = Offset.zero;
   bool _isDragging = false;
 
@@ -51,26 +53,75 @@ class _IronyGeneratorPageState extends State<IronyGeneratorPage>
     setState(() => _offset += details.delta);
   }
 
-  void _finishDrag(Size arenaSize) {
-    final renderObject = _cardKey.currentContext?.findRenderObject();
-    final cardSize = renderObject is RenderBox ? renderObject.size : Size.zero;
-    final cardBounds = Rect.fromCenter(
-      center: arenaSize.center(_offset),
-      width: cardSize.width,
-      height: cardSize.height,
+  /// Paint-accurate bounds in arena coordinates (includes AnimatedScale).
+  Rect? _paintBoundsInArena(GlobalKey key) {
+    final arenaBox = _arenaKey.currentContext?.findRenderObject();
+    final box = key.currentContext?.findRenderObject();
+    if (arenaBox is! RenderBox || box is! RenderBox || !box.hasSize) {
+      return null;
+    }
+    return MatrixUtils.transformRect(
+      box.getTransformTo(arenaBox),
+      Offset.zero & box.size,
     );
-    final isOutside = !cardBounds.overlaps(Offset.zero & arenaSize);
+  }
 
-    if (isOutside) {
+  Rect _clampRectInside(Rect rect, Rect viewport, {double padding = 8}) {
+    final inset = viewport.deflate(padding);
+    var dx = 0.0;
+    var dy = 0.0;
+
+    if (rect.width >= inset.width) {
+      dx = inset.center.dx - rect.center.dx;
+    } else {
+      if (rect.left < inset.left) dx = inset.left - rect.left;
+      if (rect.right > inset.right) dx = inset.right - rect.right;
+    }
+
+    if (rect.height >= inset.height) {
+      dy = inset.center.dy - rect.center.dy;
+    } else {
+      if (rect.top < inset.top) dy = inset.top - rect.top;
+      if (rect.bottom > inset.bottom) dy = inset.bottom - rect.bottom;
+    }
+
+    return rect.shift(Offset(dx, dy));
+  }
+
+  void _finishDrag(Size arenaSize) {
+    final viewport = Offset.zero & arenaSize;
+    final cardBounds = _paintBoundsInArena(_cardKey);
+    final handleBounds = _paintBoundsInArena(_handleKey);
+
+    if (cardBounds == null) {
+      setState(() => _isDragging = false);
+      return;
+    }
+
+    final fullyOutside = !cardBounds.overlaps(viewport);
+    if (fullyOutside) {
       setState(() {
         _offset = Offset.zero;
         _isDragging = false;
       });
       widget.controller.generateNext();
       _spawnController.forward(from: 0);
-    } else {
-      setState(() => _isDragging = false);
+      return;
     }
+
+    final handleUnreachable =
+        handleBounds == null || !handleBounds.overlaps(viewport);
+    if (handleUnreachable && handleBounds != null) {
+      final clamped = _clampRectInside(handleBounds, viewport);
+      final delta = clamped.center - handleBounds.center;
+      setState(() {
+        _offset += delta;
+        _isDragging = false;
+      });
+      return;
+    }
+
+    setState(() => _isDragging = false);
   }
 
   @override
@@ -92,7 +143,10 @@ class _IronyGeneratorPageState extends State<IronyGeneratorPage>
       body: LayoutBuilder(
         builder: (context, constraints) {
           final arenaSize = constraints.biggest;
-          return Stack(
+          return KeyedSubtree(
+            key: const ValueKey('irony-drag-arena'),
+            child: Stack(
+            key: _arenaKey,
             clipBehavior: Clip.hardEdge,
             children: [
               Positioned.fill(
@@ -141,9 +195,9 @@ class _IronyGeneratorPageState extends State<IronyGeneratorPage>
                                   onPanCancel: () =>
                                       setState(() => _isDragging = false),
                                   child: Semantics(
+                                    key: _handleKey,
                                     label: display
                                         .text('ironyGenerator.dragHandle'),
-                                    button: true,
                                     child: const Padding(
                                       padding: EdgeInsets.symmetric(
                                         horizontal: 32,
@@ -218,6 +272,7 @@ class _IronyGeneratorPageState extends State<IronyGeneratorPage>
                 ),
               ),
             ],
+          ),
           );
         },
       ),
