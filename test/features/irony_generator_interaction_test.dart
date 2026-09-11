@@ -22,17 +22,19 @@ void main() {
 
     final card = find.byKey(const ValueKey('irony-message-card'));
     final initialCenter = tester.getCenter(card);
-    expect(find.byType(SelectableText), findsOneWidget);
     final initialIrony = controller.irony;
+    expect(find.byType(SelectableText), findsOneWidget);
+    expect(find.text(initialIrony), findsOneWidget);
 
     await tester.drag(find.byIcon(Icons.drag_indicator), const Offset(48, 32));
     await tester.pumpAndSettle();
 
     final movedCenter = tester.getCenter(card);
+    expect(controller.irony, initialIrony);
+    expect(find.text(initialIrony), findsOneWidget);
+    expect(find.byType(SelectableText), findsOneWidget);
     expect(movedCenter.dx, closeTo(initialCenter.dx + 48, 1));
     expect(movedCenter.dy, closeTo(initialCenter.dy + 32, 1));
-    expect(find.byType(SelectableText), findsOneWidget);
-    expect(controller.irony, initialIrony);
   });
 
   testWidgets('moving the card fully outside spawns a different irony',

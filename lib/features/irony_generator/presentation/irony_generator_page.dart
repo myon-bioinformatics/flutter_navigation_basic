@@ -141,7 +141,9 @@ class _IronyGeneratorPageState extends State<IronyGeneratorPage>
                                   onPanCancel: () =>
                                       setState(() => _isDragging = false),
                                   child: Semantics(
-                                    label: 'Drag to move card',
+                                    label: display
+                                        .text('ironyGenerator.dragHandle'),
+                                    button: true,
                                     child: const Padding(
                                       padding: EdgeInsets.symmetric(
                                         horizontal: 32,
