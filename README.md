@@ -63,7 +63,7 @@ lib/
 |------|--------|-----|------|
 | Home | Home 🏠 | `/` | アプリのトップ画面。現在日付と主要デモへのナビゲーションを表示。 |
 | Tool | Coordinate Tool 📍 | `/tools/location/coordinates` | 緯度経度の検証と十進度／DMS。Google / Apple Maps の共有 URL から座標抽出も可。 |
-| Tool | Bounding Box | `/tools/location/bounding-box` | 4辺または中心＋半径から地理範囲を作成・コピー。 |
+| Tool | 写真館 / Photo Studio | `/tools/location/bounding-box` | 写真に枠を載せたり、4辺または中心＋半径から地理範囲を作成・コピーしたりするコーナー。 |
 | Tool | Now Timeline | `/tools/time/now-timeline` | 複数 IANA タイムゾーンを1本のクライアント側タイムラインにまとめる。 |
 | Example | Counter Playground 👾 | `/examples/counter-playground` | カウンターの増減・履歴・undo。正の値ぶんダメージ／負の絶対値ぶん回復の軽いオーブ演出と、押し続けで連打できる +/-。 |
 | Example | Irony Generator 🥐 | `/examples/irony-generator` | `Ironies.ironicList` からランダムなフレーズを表示。 |

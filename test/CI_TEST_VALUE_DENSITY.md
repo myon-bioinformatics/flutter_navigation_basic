@@ -15,7 +15,7 @@ Goals:
 
 Representative suites to validate first:
 
-- Bounding Box
+- Photo Studio (Bounding Box)
 - Home Overview
 - Clipboard Shelf / Workbench
 - Composition Studio

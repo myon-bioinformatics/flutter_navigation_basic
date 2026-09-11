@@ -27,8 +27,8 @@ void main() {
   testWidgets('shows separate bounding box workflow and copy formats', (tester) async {
     await _pumpPage(tester);
 
-    expect(find.text('Bounding Box'), findsOneWidget);
-    expect(find.text('Image overlay'), findsOneWidget);
+    expect(find.text('Photo Studio'), findsOneWidget);
+    expect(find.text('Studio'), findsOneWidget);
     expect(find.text('Center + radius'), findsOneWidget);
     expect(find.text('Manual bounds'), findsOneWidget);
     expect(find.text('Generate bounds'), findsOneWidget);
@@ -57,7 +57,7 @@ void main() {
     expect(find.textContaining('wraps_antimeridian: false'), findsWidgets);
   });
 
-  testWidgets('loads overlay image while keeping an adjustable rectangle', (tester) async {
+  testWidgets('loads studio photo while keeping an adjustable rectangle', (tester) async {
     await _pumpPage(
       tester,
       page: BoundingBoxPage(imageBytesPicker: () async => _tinyPng),
@@ -75,7 +75,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.textContaining('Image loaded'), findsOneWidget);
+    expect(find.textContaining('Photo loaded'), findsOneWidget);
     expect(find.textContaining('left:'), findsOneWidget);
 
     await tester.ensureVisible(find.text('Clear image'));
