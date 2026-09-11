@@ -94,6 +94,15 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
     setState(() => _favorites.remove(text));
   }
 
+  void _removeHistory(IronyEntry entry) {
+    setState(() {
+      _history.removeWhere((item) => item.text == entry.text);
+      if (_history.isEmpty) {
+        _history.add(_current);
+      }
+    });
+  }
+
   void _clearHistory() {
     setState(() {
       _history
@@ -225,9 +234,23 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
                             contentPadding: EdgeInsets.zero,
                             leading: Text(entry.tone),
                             title: Text(entry.text, maxLines: 2, overflow: TextOverflow.ellipsis),
-                            trailing: _favorites.contains(entry.text)
-                                ? const Icon(Icons.favorite, size: 18)
-                                : null,
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (_favorites.contains(entry.text))
+                                  const Padding(
+                                    padding: EdgeInsets.only(right: 4),
+                                    child: Icon(Icons.favorite, size: 18),
+                                  ),
+                                IconButton(
+                                  tooltip: display.text(
+                                    'ironyLegacy.removeRecentTooltip',
+                                  ),
+                                  onPressed: () => _removeHistory(entry),
+                                  icon: const Icon(Icons.close),
+                                ),
+                              ],
+                            ),
                             onTap: () => _selectEntry(entry),
                           ),
                         ),
