@@ -43,5 +43,54 @@ void main() {
       expect(resized.left, closeTo(0.2, 1e-9));
       expect(resized.top, closeTo(0.2, 1e-9));
     });
+
+    test('fromDiagonal keeps the drag origin for every direction', () {
+      const originX = 0.5;
+      const originY = 0.5;
+
+      final downRight = NormalizedRect.fromDiagonal(
+        x0: originX,
+        y0: originY,
+        x1: 0.8,
+        y1: 0.9,
+      );
+      expect(downRight.left, originX);
+      expect(downRight.top, originY);
+      expect(downRight.right, 0.8);
+      expect(downRight.bottom, 0.9);
+
+      final upLeft = NormalizedRect.fromDiagonal(
+        x0: originX,
+        y0: originY,
+        x1: 0.2,
+        y1: 0.1,
+      );
+      expect(upLeft.left, 0.2);
+      expect(upLeft.top, 0.1);
+      expect(upLeft.right, originX);
+      expect(upLeft.bottom, originY);
+
+      final upRight = NormalizedRect.fromDiagonal(
+        x0: originX,
+        y0: originY,
+        x1: 0.7,
+        y1: 0.2,
+      );
+      expect(upRight.left, originX);
+      expect(upRight.top, 0.2);
+      expect(upRight.right, 0.7);
+      expect(upRight.bottom, originY);
+
+      final downLeft = NormalizedRect.fromDiagonal(
+        x0: originX,
+        y0: originY,
+        x1: 0.1,
+        y1: 0.75,
+      );
+      expect(downLeft.left, 0.1);
+      expect(downLeft.top, originY);
+      expect(downLeft.right, originX);
+      expect(downLeft.bottom, 0.75);
+    });
   });
 }

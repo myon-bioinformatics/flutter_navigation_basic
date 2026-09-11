@@ -23,6 +23,21 @@ class NormalizedRect {
 
   static const double minSize = 0.04;
 
+  /// Builds a rectangle from two opposite corners (any drag direction).
+  /// Does not enforce [minSize]; call [sanitized] when a usable box is required.
+  factory NormalizedRect.fromDiagonal({
+    required double x0,
+    required double y0,
+    required double x1,
+    required double y1,
+  }) {
+    final left = math.min(x0, x1).clamp(0.0, 1.0).toDouble();
+    final right = math.max(x0, x1).clamp(0.0, 1.0).toDouble();
+    final top = math.min(y0, y1).clamp(0.0, 1.0).toDouble();
+    final bottom = math.max(y0, y1).clamp(0.0, 1.0).toDouble();
+    return NormalizedRect(left: left, top: top, right: right, bottom: bottom);
+  }
+
   final double left;
   final double top;
   final double right;

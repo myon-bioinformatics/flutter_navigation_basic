@@ -10,7 +10,11 @@ Future<Uint8List?> pickLocalImageBytes() {
     ..style.display = 'none';
   html.document.body?.append(input);
 
+  StreamSubscription<html.Event>? focusSubscription;
+
   void finish(Uint8List? bytes) {
+    focusSubscription?.cancel();
+    focusSubscription = null;
     input.remove();
     if (!completer.isCompleted) {
       completer.complete(bytes);
@@ -37,9 +41,10 @@ Future<Uint8List?> pickLocalImageBytes() {
     reader.readAsArrayBuffer(files.first);
   });
 
-  // Best-effort cancel detection when the dialog closes without a selection.
-  input.onBlur.listen((_) {
-    Future<void>.delayed(const Duration(milliseconds: 400), () {
+  // Hidden inputs rarely blur. When the file dialog closes (select or cancel),
+  // the window typically regains focus — use that to settle a cancelled pick.
+  focusSubscription = html.window.onFocus.listen((_) {
+    Future<void>.delayed(const Duration(milliseconds: 300), () {
       if (!completer.isCompleted) {
         finish(null);
       }

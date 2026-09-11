@@ -28,6 +28,8 @@ class ImageRectOverlay extends StatefulWidget {
 class _ImageRectOverlayState extends State<ImageRectOverlay> {
   NormalizedRectHandle? _activeHandle;
   Offset? _lastLocal;
+  /// Normalized origin for outside-drag create; null when resizing/moving.
+  Offset? _createOrigin;
 
   static const double _handleHitSlop = 18;
 
@@ -88,22 +90,39 @@ class _ImageRectOverlayState extends State<ImageRectOverlay> {
     if (hit == null) {
       final nx = (details.localPosition.dx / size.width).clamp(0.0, 1.0);
       final ny = (details.localPosition.dy / size.height).clamp(0.0, 1.0);
+      _createOrigin = Offset(nx, ny);
+      _activeHandle = null;
       widget.onRectChanged(
-        NormalizedRect(left: nx, top: ny, right: nx, bottom: ny).sanitized(),
+        NormalizedRect.fromDiagonal(x0: nx, y0: ny, x1: nx, y1: ny),
       );
-      _activeHandle = NormalizedRectHandle.bottomRight;
     } else {
+      _createOrigin = null;
       _activeHandle = hit;
     }
     _lastLocal = details.localPosition;
   }
 
   void _onPanUpdate(DragUpdateDetails details, Size size) {
-    final handle = _activeHandle;
-    final last = _lastLocal;
-    if (handle == null || last == null || size.width <= 0 || size.height <= 0) {
+    if (size.width <= 0 || size.height <= 0) return;
+
+    final origin = _createOrigin;
+    if (origin != null) {
+      final nx = (details.localPosition.dx / size.width).clamp(0.0, 1.0);
+      final ny = (details.localPosition.dy / size.height).clamp(0.0, 1.0);
+      widget.onRectChanged(
+        NormalizedRect.fromDiagonal(
+          x0: origin.dx,
+          y0: origin.dy,
+          x1: nx,
+          y1: ny,
+        ),
+      );
       return;
     }
+
+    final handle = _activeHandle;
+    final last = _lastLocal;
+    if (handle == null || last == null) return;
     final dx = (details.localPosition.dx - last.dx) / size.width;
     final dy = (details.localPosition.dy - last.dy) / size.height;
     _lastLocal = details.localPosition;
@@ -111,6 +130,10 @@ class _ImageRectOverlayState extends State<ImageRectOverlay> {
   }
 
   void _onPanEnd(DragEndDetails details) {
+    if (_createOrigin != null) {
+      widget.onRectChanged(widget.rect.sanitized());
+    }
+    _createOrigin = null;
     _activeHandle = null;
     _lastLocal = null;
   }

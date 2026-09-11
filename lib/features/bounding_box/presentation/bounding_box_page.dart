@@ -115,6 +115,7 @@ class _BoundingBoxPageState extends State<BoundingBoxPage> {
     final display = DisplayScope.of(context);
     try {
       final validated = await decodeRasterImageBytes(rawBytes);
+      if (!mounted) return;
       if (validated == null) {
         setState(() => _overlayStatus = display.text('boundingBox.imageError'));
         return;
