@@ -73,16 +73,17 @@ void main() {
 
     await tester.tap(find.text('Generate again'));
     await tester.pump();
-    expect(find.byTooltip('Remove from recent'), findsWidgets);
 
-    final firstRecentClose = find.byTooltip('Remove from recent').first;
-    await tester.ensureVisible(firstRecentClose);
-    await tester.tap(firstRecentClose);
+    // Only non-current history rows expose the remove button.
+    expect(find.byTooltip('Remove from recent'), findsOneWidget);
+
+    final removeButton = find.byTooltip('Remove from recent');
+    await tester.ensureVisible(removeButton);
+    await tester.tap(removeButton);
     await tester.pump();
 
-    // Current irony remains visible; only one history row should remain
-    // after removing the older recent entry (history always keeps current).
-    expect(find.byTooltip('Remove from recent'), findsOneWidget);
+    // Only the current entry remains.
+    expect(find.byTooltip('Remove from recent'), findsNothing);
   });
 
   testWidgets('irony copy shows snackbar confirmation', (tester) async {
