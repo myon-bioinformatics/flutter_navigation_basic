@@ -69,6 +69,7 @@ void main() {
       styleMenu.tooltip,
       controller.text('uiShowcase.designStyleTooltip'),
     );
+    expect(styleMenu.tooltip, 'colorSchemeSeed');
 
     final brightnessMenu = tester.widget<PopupMenuButton<String>>(
       popupMenuForIcon(Icons.brightness_6_outlined),
@@ -89,10 +90,21 @@ void main() {
       controller.text('uiShowcase.homeTooltip'),
     );
 
+    // Switch back to English so Flutter Color identifiers are asserted
+    // against the factual catalog labels.
+    await tester.runAsync(() => controller.setLocale('en'));
+    await tester.pump();
+
     final scaffoldState = tester.state<ScaffoldState>(find.byType(Scaffold));
     scaffoldState.openDrawer();
     await tester.pumpAndSettle();
     expect(find.byType(Drawer), findsOneWidget);
+    expect(find.text(controller.text('uiShowcase.drawerHome')), findsOneWidget);
+    expect(
+      find.textContaining('Colors.indigo'),
+      findsWidgets,
+      reason: 'Overview chip / palette menu should expose the Flutter Color name',
+    );
 
     scaffoldState.closeDrawer();
     await tester.pumpAndSettle();

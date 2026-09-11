@@ -7,7 +7,7 @@ This document defines the completion line for the presentation layer before the 
 Keep a reusable set of common Flutter screens that:
 
 - covers representative mobile, tablet, web, and desktop navigation/layout patterns;
-- demonstrates light, dark, modern, retro, and terminal-like presentation without a UI framework dependency;
+- demonstrates System/Light/Dark brightness and colorSchemeSeed presets (Colors.indigo / Colors.deepOrange / Colors.green) without a UI framework dependency;
 - keeps business/integration logic replaceable while the presentation shell remains stable;
 - prefers Dart/Flutter SDK APIs when they are sufficient;
 - uses external configuration for replaceable content/defaults and internal configuration for safe fallback behavior;
@@ -28,8 +28,8 @@ Keep a reusable set of common Flutter screens that:
 | Responsive layout | mobile/tablet/web/desktop category plus responsive showcase shell | Covered |
 | Accessibility | semantics category plus explicit semantics in mini apps | Covered |
 | Light / dark | UI/theme catalogue plus runtime System / Light / Dark switch in UI Showcase | Covered |
-| Modern | Material 3 default style | Covered |
-| Retro / terminal | lightweight style variants in UI Showcase, no theme package | Covered representative sample |
+| Material 3 / colorSchemeSeed | UI Showcase toggles `ThemeData.useMaterial3` and `colorSchemeSeed` (`Colors.indigo` / `Colors.deepOrange` / `Colors.green`) | Covered |
+| ColorScheme seed presets | Named with Flutter Color identifiers rather than marketing labels (Modern/Retro/Terminal) | Covered representative sample |
 | Image | Base64 external setting → `dart:convert` → `Image.memory` | Covered |
 | Video | No package added solely for catalogue completeness | Optional until a real playback requirement exists |
 
