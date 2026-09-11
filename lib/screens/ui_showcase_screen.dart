@@ -124,6 +124,7 @@ class _UiShowcaseScreenState extends State<UiShowcaseScreen> {
     }
   }
 
+  /// Maps showcase style presets to ThemeData.colorSchemeSeed colors.
   Color _seedColor() {
     switch (_style) {
       case 'retro':
@@ -141,6 +142,13 @@ class _UiShowcaseScreenState extends State<UiShowcaseScreen> {
       brightness: _brightness(context),
       colorSchemeSeed: _seedColor(),
       fontFamily: _style == 'terminal' ? 'monospace' : null,
+    );
+  }
+
+  void _goHome(BuildContext context) {
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      AppRoutes.home,
+      (route) => false,
     );
   }
 
@@ -216,7 +224,7 @@ class _UiShowcaseScreenState extends State<UiShowcaseScreen> {
               ),
               IconButton(
                 tooltip: display.text('uiShowcase.homeTooltip'),
-                onPressed: () => Navigator.pushNamed(themedContext, AppRoutes.home),
+                onPressed: () => _goHome(themedContext),
                 icon: const Icon(Icons.home_outlined),
               ),
               const DisplayLocalePicker(compact: true),
@@ -233,6 +241,14 @@ class _UiShowcaseScreenState extends State<UiShowcaseScreen> {
                           subtitle: Text(display.text('uiShowcase.standardNavigation')),
                         ),
                         const Divider(),
+                        ListTile(
+                          leading: const Icon(Icons.home_outlined),
+                          title: Text(display.text('uiShowcase.drawerHome')),
+                          onTap: () {
+                            Navigator.of(themedContext).pop();
+                            _goHome(themedContext);
+                          },
+                        ),
                         for (var i = 0; i < config.sections.length; i++)
                           ListTile(
                             selected: _selectedIndex == i,
@@ -256,6 +272,11 @@ class _UiShowcaseScreenState extends State<UiShowcaseScreen> {
                 NavigationRail(
                   selectedIndex: _selectedIndex,
                   extended: MediaQuery.sizeOf(themedContext).width >= 1180,
+                  leading: IconButton(
+                    tooltip: display.text('uiShowcase.drawerHome'),
+                    onPressed: () => _goHome(themedContext),
+                    icon: const Icon(Icons.home_outlined),
+                  ),
                   onDestinationSelected: (index) => setState(() => _selectedIndex = index),
                   destinations: _railDestinations(config),
                 ),
@@ -351,9 +372,21 @@ class _OverviewPage extends StatelessWidget {
     required this.brightnessMode,
   });
 
+  String _styleLabelKey(String style) {
+    switch (style) {
+      case 'retro':
+        return 'uiShowcase.styleRetro';
+      case 'terminal':
+        return 'uiShowcase.styleTerminal';
+      default:
+        return 'uiShowcase.styleModern';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final display = DisplayScope.of(context);
+    final styleLabel = display.text(_styleLabelKey(style));
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
@@ -366,8 +399,30 @@ class _OverviewPage extends StatelessWidget {
             Chip(label: Text(display.text('uiShowcase.internalDefaultsChip'))),
             Chip(label: Text(display.text('uiShowcase.externalOverridesChip'))),
             Chip(label: Text(display.text('uiShowcase.material3Chip'))),
-            Chip(label: Text(display.text('uiShowcase.styleChipLabel', arguments: {'style': style}))),
-            Chip(label: Text(display.text('uiShowcase.brightnessChipLabel', arguments: {'mode': brightnessMode}))),
+            Chip(
+              label: Text(
+                display.text(
+                  'uiShowcase.styleChipLabel',
+                  arguments: {'style': styleLabel},
+                ),
+              ),
+            ),
+            Chip(
+              label: Text(
+                display.text(
+                  'uiShowcase.brightnessChipLabel',
+                  arguments: {
+                    'mode': display.text(
+                      switch (brightnessMode) {
+                        'light' => 'uiShowcase.brightnessLight',
+                        'dark' => 'uiShowcase.brightnessDark',
+                        _ => 'uiShowcase.brightnessSystem',
+                      },
+                    ),
+                  },
+                ),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 20),
