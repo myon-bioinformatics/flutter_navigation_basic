@@ -66,6 +66,15 @@ class _IronyGeneratorPageState extends State<IronyGeneratorPage>
     );
   }
 
+  static const double _handleSafePadding = 8;
+
+  bool _rectFullyInside(Rect inner, Rect outer) {
+    return inner.left >= outer.left &&
+        inner.top >= outer.top &&
+        inner.right <= outer.right &&
+        inner.bottom <= outer.bottom;
+  }
+
   Rect _clampRectInside(Rect rect, Rect viewport, {double padding = 8}) {
     final inset = viewport.deflate(padding);
     var dx = 0.0;
@@ -109,10 +118,19 @@ class _IronyGeneratorPageState extends State<IronyGeneratorPage>
       return;
     }
 
-    final handleUnreachable =
-        handleBounds == null || !handleBounds.overlaps(viewport);
+    // Require the whole handle (plus safe padding) to sit inside the arena.
+    // A 1px overlap is not enough to keep dragging reliably.
+    final handleUnreachable = handleBounds == null ||
+        !_rectFullyInside(
+          handleBounds,
+          viewport.deflate(_handleSafePadding),
+        );
     if (handleUnreachable && handleBounds != null) {
-      final clamped = _clampRectInside(handleBounds, viewport);
+      final clamped = _clampRectInside(
+        handleBounds,
+        viewport,
+        padding: _handleSafePadding,
+      );
       final delta = clamped.center - handleBounds.center;
       setState(() {
         _offset += delta;

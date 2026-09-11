@@ -15,6 +15,13 @@ Future<void> _pan(WidgetTester tester, Finder handle, Offset delta) async {
   await tester.pumpAndSettle();
 }
 
+bool _rectFullyInside(Rect inner, Rect outer) {
+  return inner.left >= outer.left &&
+      inner.top >= outer.top &&
+      inner.right <= outer.right &&
+      inner.bottom <= outer.bottom;
+}
+
 void main() {
   testWidgets('message stays selectable and keeps its dragged position',
       (tester) async {
@@ -106,9 +113,55 @@ void main() {
     final handleAfter = tester.getRect(handle);
     final arenaAfter = tester.getRect(arena);
     expect(
-      handleAfter.overlaps(arenaAfter),
+      _rectFullyInside(handleAfter, arenaAfter.deflate(8)),
       isTrue,
-      reason: 'unreachable handle should snap back into the arena',
+      reason: 'handle should snap fully inside the padded arena',
+    );
+  });
+
+  testWidgets(
+      'barely-visible handle still snaps back into the safe inset',
+      (tester) async {
+    final controller = IronyGeneratorController(random: Random(17));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: await wrapWithDisplayScope(
+          IronyGeneratorPage(controller: controller),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final firstIrony = controller.irony;
+    final handle = find.byIcon(Icons.drag_indicator);
+    final card = find.byKey(const ValueKey('irony-message-card'));
+    final arena = find.byKey(const ValueKey('irony-drag-arena'));
+
+    final handleRect = tester.getRect(handle);
+    final cardRect = tester.getRect(card);
+    final arenaRect = tester.getRect(arena);
+
+    // Leave only ~4px of the handle overlapping the arena. That still
+    // overlaps, but is outside the 8px safe inset and must snap back.
+    final deltaY = arenaRect.top - handleRect.bottom + 4;
+    expect(handleRect.bottom + deltaY, closeTo(arenaRect.top + 4, 0.5));
+    expect(
+      cardRect.bottom + deltaY,
+      greaterThan(arenaRect.top),
+      reason: 'precondition: card body must remain partially visible',
+    );
+
+    await _pan(tester, handle, Offset(0, deltaY));
+
+    expect(controller.irony, firstIrony);
+    expect(find.text(firstIrony), findsOneWidget);
+
+    final handleAfter = tester.getRect(handle);
+    final arenaAfter = tester.getRect(arena);
+    expect(
+      _rectFullyInside(handleAfter, arenaAfter.deflate(8)),
+      isTrue,
+      reason: 'a few overlapping pixels must still trigger snap-back',
     );
   });
 }
