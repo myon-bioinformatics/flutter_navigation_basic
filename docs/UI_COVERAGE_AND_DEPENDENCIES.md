@@ -28,7 +28,7 @@ Keep a reusable set of common Flutter screens that:
 | Responsive layout | mobile/tablet/web/desktop category plus responsive showcase shell | Covered |
 | Accessibility | semantics category plus explicit semantics in mini apps | Covered |
 | Light / dark | UI/theme catalogue plus runtime System / Light / Dark switch in UI Showcase | Covered |
-| Material 3 / colorSchemeSeed | UI Showcase toggles `ThemeData.useMaterial3` and `colorSchemeSeed` (`Colors.indigo` / `Colors.deepOrange` / `Colors.green`) | Covered |
+| Material 3 / colorSchemeSeed | UI Showcase uses `ThemeData.useMaterial3: true` and toggles `colorSchemeSeed` (`Colors.indigo` / `Colors.deepOrange` / `Colors.green`) | Covered |
 | ColorScheme seed presets | Named with Flutter Color identifiers rather than marketing labels (Modern/Retro/Terminal) | Covered representative sample |
 | Image | Base64 external setting → `dart:convert` → `Image.memory` | Covered |
 | Video | No package added solely for catalogue completeness | Optional until a real playback requirement exists |
