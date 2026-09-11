@@ -78,11 +78,11 @@ void main() {
     expect(find.textContaining('Photo loaded'), findsOneWidget);
     expect(find.textContaining('left:'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('Clear image'));
-    await tester.tap(find.text('Clear image'));
+    await tester.ensureVisible(find.text('Clear photo'));
+    await tester.tap(find.text('Clear photo'));
     await tester.pump();
 
-    expect(find.textContaining('Image cleared'), findsOneWidget);
+    expect(find.textContaining('Photo cleared'), findsOneWidget);
     expect(find.textContaining('left:'), findsOneWidget);
   });
 }
