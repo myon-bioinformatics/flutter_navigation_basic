@@ -94,6 +94,18 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
     setState(() => _favorites.remove(text));
   }
 
+  void _removeHistory(IronyEntry entry) {
+    // Keep the currently displayed irony in recent history; only older
+    // rows are removable from the list.
+    if (entry.text == _current.text) return;
+    setState(() {
+      _history.removeWhere((item) => item.text == entry.text);
+      if (!_history.any((item) => item.text == _current.text)) {
+        _history.insert(0, _current);
+      }
+    });
+  }
+
   void _clearHistory() {
     setState(() {
       _history
@@ -220,16 +232,45 @@ class _IronyGeneratorScreenState extends State<IronyGeneratorScreen> {
                         ),
                         const SizedBox(height: 8),
                         ..._history.take(5).map(
-                          (entry) => ListTile(
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                            leading: Text(entry.tone),
-                            title: Text(entry.text, maxLines: 2, overflow: TextOverflow.ellipsis),
-                            trailing: _favorites.contains(entry.text)
-                                ? const Icon(Icons.favorite, size: 18)
-                                : null,
-                            onTap: () => _selectEntry(entry),
-                          ),
+                          (entry) {
+                            final isCurrent = entry.text == _current.text;
+                            final isFavorite = _favorites.contains(entry.text);
+                            final Widget? trailing;
+                            if (!isCurrent || isFavorite) {
+                              trailing = Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (isFavorite)
+                                    const Padding(
+                                      padding: EdgeInsets.only(right: 4),
+                                      child: Icon(Icons.favorite, size: 18),
+                                    ),
+                                  if (!isCurrent)
+                                    IconButton(
+                                      tooltip: display.text(
+                                        'ironyLegacy.removeRecentTooltip',
+                                      ),
+                                      onPressed: () => _removeHistory(entry),
+                                      icon: const Icon(Icons.close),
+                                    ),
+                                ],
+                              );
+                            } else {
+                              trailing = null;
+                            }
+                            return ListTile(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              leading: Text(entry.tone),
+                              title: Text(
+                                entry.text,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              trailing: trailing,
+                              onTap: () => _selectEntry(entry),
+                            );
+                          },
                         ),
                       ],
                     ),

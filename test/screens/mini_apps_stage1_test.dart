@@ -67,6 +67,25 @@ void main() {
     expect(find.text('Favorites · 1'), findsOneWidget);
   });
 
+  testWidgets('irony recent generations can be removed with the close button',
+      (tester) async {
+    await tester.pumpWidget(await _app(const IronyGeneratorScreen()));
+
+    await tester.tap(find.text('Generate again'));
+    await tester.pump();
+
+    // Only non-current history rows expose the remove button.
+    expect(find.byTooltip('Remove from recent'), findsOneWidget);
+
+    final removeButton = find.byTooltip('Remove from recent');
+    await tester.ensureVisible(removeButton);
+    await tester.tap(removeButton);
+    await tester.pump();
+
+    // Only the current entry remains.
+    expect(find.byTooltip('Remove from recent'), findsNothing);
+  });
+
   testWidgets('irony copy shows snackbar confirmation', (tester) async {
     await tester.pumpWidget(await _app(const IronyGeneratorScreen()));
 
