@@ -56,7 +56,6 @@ void main() {
   });
 
   testWidgets('outside drag up-left from center expands toward the origin', (tester) async {
-    var rect = NormalizedRect.initial;
     NormalizedRect? last;
 
     await tester.binding.setSurfaceSize(const Size(400, 400));
@@ -69,16 +68,16 @@ void main() {
             builder: (context, setState) {
               return ImageRectOverlay(
                 // Put existing rect away so center of canvas is empty.
-                rect: const NormalizedRect(
-                  left: 0.8,
-                  top: 0.8,
-                  right: 0.95,
-                  bottom: 0.95,
-                ),
+                rect: last ??
+                    const NormalizedRect(
+                      left: 0.8,
+                      top: 0.8,
+                      right: 0.95,
+                      bottom: 0.95,
+                    ),
                 height: 300,
                 onRectChanged: (next) {
-                  last = next;
-                  setState(() => rect = next);
+                  setState(() => last = next);
                 },
               );
             },
