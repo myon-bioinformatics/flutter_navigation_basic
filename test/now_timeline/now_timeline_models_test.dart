@@ -144,7 +144,7 @@ void main() {
       final store = NowTimelineStore();
       const first = [
         TimelineEntry(
-          id: '1',
+          timelineEntryId: '1',
           title: 'First',
           kind: TimelineKind.person,
           zoneName: 'Asia/Tokyo',
@@ -152,7 +152,7 @@ void main() {
       ];
       const second = [
         TimelineEntry(
-          id: '1',
+          timelineEntryId: '1',
           title: 'Second',
           kind: TimelineKind.person,
           zoneName: 'Asia/Tokyo',
@@ -170,7 +170,7 @@ void main() {
 
   test('TimelineEntry JSON round trip preserves client-side data', () {
     const entry = TimelineEntry(
-      id: 'x',
+      timelineEntryId: 'x',
       title: 'Dentist',
       kind: TimelineKind.schedule,
       zoneName: 'Asia/Tokyo',
@@ -179,10 +179,20 @@ void main() {
       note: 'Tue',
     );
     final restored = TimelineEntry.fromJson(entry.toJson());
-    expect(restored.id, entry.id);
+    expect(restored.timelineEntryId, entry.timelineEntryId);
     expect(restored.kind, entry.kind);
     expect(restored.zoneName, entry.zoneName);
     expect(restored.localStartMinute, 540);
     expect(restored.localEndMinute, 1110);
+  });
+
+  test('TimelineEntry.fromJson accepts legacy bare id keys', () {
+    final restored = TimelineEntry.fromJson({
+      'id': 'legacy',
+      'title': 'Old',
+      'kind': 'person',
+      'zoneName': 'Asia/Tokyo',
+    });
+    expect(restored.timelineEntryId, 'legacy');
   });
 }

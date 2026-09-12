@@ -298,7 +298,7 @@ void main() {
             latitude: value.latitude,
           ),
           caseMap['expected_zoom'],
-          reason: caseMap['id'] as String,
+          reason: caseMap['coordinateAreaCaseId'] as String,
         );
         expect(area.wrapsAntimeridian, caseMap['expect_antimeridian']);
         expect(area.spansFullLongitude, caseMap['expect_full_longitude']);

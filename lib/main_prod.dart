@@ -23,18 +23,25 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: AppNavigation.navigatorKey,
-      title: AppConfig.appName,
-      theme: AppTheme.light,
-      debugShowCheckedModeBanner: false,
-      initialRoute: RouteNames.home,
-      routes: AppNavigation.routes,
-      navigatorObservers: [RouteDiagnosticsObserver.instance],
-      builder: (context, child) => WeightBadgeOverlay(
-        preferFeatureWeights: true,
-        child: child ?? const SizedBox.shrink(),
-      ),
+    final display = DisplayScope.of(context);
+    return ListenableBuilder(
+      listenable: display,
+      builder: (context, _) {
+        return MaterialApp(
+          navigatorKey: AppNavigation.navigatorKey,
+          title: AppConfig.appName,
+          theme: AppTheme.light,
+          locale: display.flutterLocale,
+          debugShowCheckedModeBanner: false,
+          initialRoute: RouteNames.home,
+          routes: AppNavigation.routes,
+          navigatorObservers: [RouteDiagnosticsObserver.instance],
+          builder: (context, child) => WeightBadgeOverlay(
+            preferFeatureWeights: true,
+            child: child ?? const SizedBox.shrink(),
+          ),
+        );
+      },
     );
   }
 }

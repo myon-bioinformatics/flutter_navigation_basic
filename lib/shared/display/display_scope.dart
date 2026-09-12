@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'display_catalog.dart';
+import 'display_locale_codes.dart';
 
 class DisplayController extends ChangeNotifier {
   DisplayController._(this.catalog, this._preferences, this._locale);
@@ -13,17 +14,22 @@ class DisplayController extends ChangeNotifier {
   final SharedPreferences _preferences;
   String _locale;
 
+  /// Canonical ISO 639-3 locale code (e.g. `eng`, `jpn`).
   String get locale => _locale;
+
+  /// BCP 47 language tag for Flutter / HTML / external APIs.
+  String get bcp47LanguageTag => DisplayLocaleCodes.toBcp47LanguageTag(_locale);
+
+  Locale get flutterLocale => DisplayLocaleCodes.toFlutterLocale(_locale);
 
   static Future<DisplayController> load() async {
     final catalog = await DisplayCatalog.load();
     final preferences = await SharedPreferences.getInstance();
     final saved = preferences.getString(preferenceKey);
     final legacy = preferences.getString(legacyNowTimelinePreferenceKey);
-    final candidate = saved ?? legacy ?? 'en';
-    final locale = catalog.supports(candidate) ? candidate : 'en';
+    final locale = DisplayLocaleCodes.canonicalize(saved ?? legacy);
 
-    if (saved == null) {
+    if (saved != locale) {
       await preferences.setString(preferenceKey, locale);
     }
 
@@ -37,8 +43,12 @@ class DisplayController extends ChangeNotifier {
       catalog.text(_locale, key, arguments: arguments);
 
   Future<void> setLocale(String value) async {
-    final resolved = catalog.supports(value) ? value : 'en';
-    if (_locale == resolved) return;
+    final resolved = DisplayLocaleCodes.canonicalize(value);
+    if (_locale == resolved) {
+      // Still rewrite prefs when a legacy two-letter code was passed in.
+      await _preferences.setString(preferenceKey, resolved);
+      return;
+    }
     _locale = resolved;
     notifyListeners();
     await _preferences.setString(preferenceKey, resolved);

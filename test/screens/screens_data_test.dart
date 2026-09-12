@@ -47,7 +47,7 @@ void main() {
 
     expect(screens, hasLength(198));
 
-    final ids = screens.map((s) => s.id).toList();
+    final ids = screens.map((s) => s.screenDataId).toList();
     expect(ids.toSet(), hasLength(198));
     expect(ids.toSet(), equals(Set<int>.from(List.generate(198, (i) => i + 1))));
 
@@ -61,17 +61,17 @@ void main() {
     expect(strippedEmojis.toSet(), hasLength(198));
 
     for (final screen in screens) {
-      final domainIndex = (screen.id - 1) % 18;
-      final templateIndex = (screen.id - 1) ~/ 18;
+      final domainIndex = (screen.screenDataId - 1) % 18;
+      final templateIndex = (screen.screenDataId - 1) ~/ 18;
 
       expect(screen.domainKey, domainOrder[domainIndex],
-          reason: 'screen ${screen.id} domainKey mismatch');
+          reason: 'screen ${screen.screenDataId} domainKey mismatch');
       expect(screen.templateJa, templateJaOrder[templateIndex],
-          reason: 'screen ${screen.id} templateJa mismatch');
+          reason: 'screen ${screen.screenDataId} templateJa mismatch');
       expect(screen.useCaseKey, startsWith('${screen.domainKey}.'),
-          reason: 'screen ${screen.id} useCaseKey should be namespaced by domainKey');
+          reason: 'screen ${screen.screenDataId} useCaseKey should be namespaced by domainKey');
       expect(screen.templateOverride, isNull,
-          reason: 'screen ${screen.id} templateOverride should stay null in this batch');
+          reason: 'screen ${screen.screenDataId} templateOverride should stay null in this batch');
 
       // Pre-existing keys must survive untouched.
       expect(screen.name, isNotEmpty);
@@ -123,17 +123,17 @@ void main() {
     for (final screen in detailScreens) {
       final detail = screen.detail!;
       expect(detail.purpose, isNotEmpty,
-          reason: 'screen ${screen.id} detail.purpose should not be empty');
+          reason: 'screen ${screen.screenDataId} detail.purpose should not be empty');
       expect(detail.when, isNotEmpty,
-          reason: 'screen ${screen.id} detail.when should not be empty');
+          reason: 'screen ${screen.screenDataId} detail.when should not be empty');
       expect(detail.pitfall, isNotEmpty,
-          reason: 'screen ${screen.id} detail.pitfall should not be empty');
+          reason: 'screen ${screen.screenDataId} detail.pitfall should not be empty');
       expect(detail.snippet, isNotEmpty,
-          reason: 'screen ${screen.id} detail.snippet should not be empty');
+          reason: 'screen ${screen.screenDataId} detail.snippet should not be empty');
       expect(detail.points, hasLength(3),
-          reason: 'screen ${screen.id} detail.points should have 3 items');
+          reason: 'screen ${screen.screenDataId} detail.points should have 3 items');
       expect(detail.points.every((p) => p.isNotEmpty), isTrue,
-          reason: 'screen ${screen.id} detail.points should not contain empty strings');
+          reason: 'screen ${screen.screenDataId} detail.points should not contain empty strings');
     }
   });
 }

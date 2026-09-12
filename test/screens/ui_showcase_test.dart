@@ -58,9 +58,9 @@ void main() {
           ),
         );
 
-    await tester.runAsync(() => controller.setLocale('ja'));
+    await tester.runAsync(() => controller.setLocale('jpn'));
     await tester.pump();
-    expect(controller.locale, 'ja');
+    expect(controller.locale, 'jpn');
 
     final styleMenu = tester.widget<PopupMenuButton<String>>(
       popupMenuForIcon(Icons.palette_outlined),
@@ -92,7 +92,7 @@ void main() {
 
     // Switch back to English so Flutter Color identifiers are asserted
     // against the factual catalog labels.
-    await tester.runAsync(() => controller.setLocale('en'));
+    await tester.runAsync(() => controller.setLocale('eng'));
     await tester.pump();
 
     final scaffoldState = tester.state<ScaffoldState>(find.byType(Scaffold));

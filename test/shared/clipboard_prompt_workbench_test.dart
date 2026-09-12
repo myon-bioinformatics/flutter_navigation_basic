@@ -43,7 +43,7 @@ void main() {
     expect(find.text('Shape the instruction'), findsOneWidget);
     expect(find.text('Select/copy/paste text freely, then shape it into a reusable system prompt.'), findsOneWidget);
 
-    await controller.setLocale('fr');
+    await controller.setLocale('fra');
     await tester.pumpAndSettle();
 
     expect(find.text('Structurer l\'instruction'), findsOneWidget);
@@ -67,7 +67,7 @@ void main() {
       ),
     );
 
-    await controller.setLocale('ja');
+    await controller.setLocale('jpn');
     await tester.pumpAndSettle();
 
     expect(find.widgetWithText(TextField, '目的'), findsOneWidget);

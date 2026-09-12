@@ -2,21 +2,14 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 
+import 'display_locale_codes.dart';
+
 class DisplayCatalog {
   DisplayCatalog._(this._values);
 
   final Map<String, Map<String, String>> _values;
 
-  static const supportedLocales = <String>[
-    'en',
-    'ja',
-    'fr',
-    'es',
-    'pt',
-    'ar',
-    'zh',
-    'ru',
-  ];
+  static const supportedLocales = DisplayLocaleCodes.supported;
 
   static const requiredNamespaces = <String>[
     'common.',
@@ -45,14 +38,19 @@ class DisplayCatalog {
     String key, {
     Map<String, Object?> arguments = const {},
   }) {
-    var value = _values[locale]?[key] ?? _values['en']?[key] ?? key;
+    final resolved = DisplayLocaleCodes.canonicalize(locale);
+    var value = _values[resolved]?[key] ??
+        _values[DisplayLocaleCodes.eng]?[key] ??
+        key;
     for (final entry in arguments.entries) {
       value = value.replaceAll('{${entry.key}}', '${entry.value ?? ''}');
     }
     return value;
   }
 
-  bool supports(String locale) => supportedLocales.contains(locale);
+  bool supports(String locale) => DisplayLocaleCodes.isKnown(locale);
 
-  Set<String> keys(String locale) => _values[locale]?.keys.toSet() ?? const {};
+  Set<String> keys(String locale) =>
+      _values[DisplayLocaleCodes.canonicalize(locale)]?.keys.toSet() ??
+      const {};
 }

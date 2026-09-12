@@ -6,7 +6,7 @@ enum TimelineKind { person, place, schedule, event }
 
 class TimelineEntry {
   const TimelineEntry({
-    required this.id,
+    required this.timelineEntryId,
     required this.title,
     required this.kind,
     required this.zoneName,
@@ -16,7 +16,7 @@ class TimelineEntry {
     this.note = '',
   });
 
-  final String id;
+  final String timelineEntryId;
   final String title;
   final TimelineKind kind;
   final String zoneName;
@@ -26,7 +26,7 @@ class TimelineEntry {
   final String note;
 
   Map<String, Object?> toJson() => {
-        'id': id,
+        'timelineEntryId': timelineEntryId,
         'title': title,
         'kind': kind.name,
         'zoneName': zoneName,
@@ -37,8 +37,9 @@ class TimelineEntry {
       };
 
   factory TimelineEntry.fromJson(Map<String, Object?> json) {
+    final rawId = json['timelineEntryId'] ?? json['id'];
     return TimelineEntry(
-      id: json['id']! as String,
+      timelineEntryId: rawId! as String,
       title: json['title']! as String,
       kind: TimelineKind.values.byName(json['kind']! as String),
       zoneName: json['zoneName']! as String,
@@ -85,19 +86,19 @@ class NowTimelineStore {
 
   static List<TimelineEntry> defaultEntries() => const [
         TimelineEntry(
-          id: 'me-tokyo',
+          timelineEntryId: 'me-tokyo',
           title: 'Me',
           kind: TimelineKind.person,
           zoneName: 'Asia/Tokyo',
         ),
         TimelineEntry(
-          id: 'friend-london',
+          timelineEntryId: 'friend-london',
           title: 'Friend',
           kind: TimelineKind.person,
           zoneName: 'Europe/London',
         ),
         TimelineEntry(
-          id: 'dentist',
+          timelineEntryId: 'dentist',
           title: 'Dentist',
           kind: TimelineKind.schedule,
           zoneName: 'Asia/Tokyo',
@@ -105,7 +106,7 @@ class NowTimelineStore {
           localEndMinute: 18 * 60 + 30,
         ),
         TimelineEntry(
-          id: 'nyc',
+          timelineEntryId: 'nyc',
           title: 'New York',
           kind: TimelineKind.place,
           zoneName: 'America/New_York',
