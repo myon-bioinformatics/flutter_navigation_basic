@@ -61,11 +61,12 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
   double _stampScale = 1;
   Size _canvasSize = _fallbackCanvasSize;
   String? _status;
-  PhotoStudioSnapshot? _undo;
+  final _undoHistory = <PhotoStudioSnapshot>[];
+  static const _maxUndo = 20;
 
   void _pushUndo() {
-    _undo = PhotoStudioSnapshot(
-      imageBytes: _imageBytes == null ? null : List<int>.from(_imageBytes!),
+    _undoHistory.add(PhotoStudioSnapshot(
+      imageBytes: _imageBytes, // share reference — never mutate bytes in place
       rectLeft: _rect.left,
       rectTop: _rect.top,
       rectRight: _rect.right,
@@ -75,15 +76,17 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       stamps: List<EmojiStamp>.from(_stamps),
       selectedEmojiStampId: _selectedEmojiStampId,
       stampScale: _stampScale,
-    );
+    ));
+    if (_undoHistory.length > _maxUndo) {
+      _undoHistory.removeAt(0);
+    }
   }
 
   void _undoOnce() {
-    final snap = _undo;
-    if (snap == null) return;
+    if (_undoHistory.isEmpty) return;
+    final snap = _undoHistory.removeLast();
     setState(() {
-      _imageBytes =
-          snap.imageBytes == null ? null : Uint8List.fromList(snap.imageBytes!);
+      _imageBytes = snap.imageBytes;
       _rect = NormalizedRect(
         left: snap.rectLeft,
         top: snap.rectTop,
@@ -95,7 +98,6 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       _stamps = List<EmojiStamp>.from(snap.stamps);
       _selectedEmojiStampId = snap.selectedEmojiStampId;
       _stampScale = snap.stampScale;
-      _undo = null;
       _status = DisplayScope.of(context).text('photoStudio.undoDone');
     });
   }
@@ -308,7 +310,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
             actions: [
               IconButton(
                 tooltip: t('photoStudio.undo'),
-                onPressed: _undo == null ? null : _undoOnce,
+                onPressed: _undoHistory.isEmpty ? null : _undoOnce,
                 icon: const Icon(Icons.undo),
               ),
               const DisplayLocalePicker(compact: true),
@@ -499,7 +501,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                 label: Text(t('photoStudio.resetRect')),
                               ),
                               OutlinedButton.icon(
-                                onPressed: _undo == null ? null : _undoOnce,
+                                onPressed: _undoHistory.isEmpty ? null : _undoOnce,
                                 icon: const Icon(Icons.undo),
                                 label: Text(t('photoStudio.undo')),
                               ),

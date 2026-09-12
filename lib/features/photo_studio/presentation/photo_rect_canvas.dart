@@ -318,12 +318,14 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
             },
             onPointerUp: (_) {
               final local = _tapDownLocal;
-              // If a pan claimed this pointer, _tapDownLocal was cleared in
-              // onPanStart. A true tap still has the down position.
+              _tapDownLocal = null;
               if (local != null && !_placedEmojiForPointer) {
                 _handleTapAt(local, size);
               }
-              _tapDownLocal = null;
+              // Reset gesture-lifecycle state after a true tap so the next
+              // stamp drag gets its own undo snapshot.  For pan gestures,
+              // local is null here (cleared in onPanStart) so this is a no-op.
+              if (local != null) _finishGesture();
             },
             onPointerCancel: (_) {
               _tapDownLocal = null;

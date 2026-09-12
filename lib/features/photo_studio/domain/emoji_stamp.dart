@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 /// A stamp-like emoji overlay in normalized canvas space.
 class EmojiStamp {
   const EmojiStamp({
@@ -34,7 +36,12 @@ class EmojiStamp {
       );
 }
 
-/// One-level undo snapshot of studio mutable state.
+/// Bounded undo snapshot of studio mutable state.
+///
+/// [imageBytes] holds a direct reference to the `Uint8List` rather than a
+/// deep copy — callers must never mutate the bytes in place (only replace the
+/// reference on load/clear). This lets multiple snapshots share the same
+/// allocation when the image has not changed.
 class PhotoStudioSnapshot {
   const PhotoStudioSnapshot({
     required this.imageBytes,
@@ -49,7 +56,7 @@ class PhotoStudioSnapshot {
     required this.stampScale,
   });
 
-  final List<int>? imageBytes;
+  final Uint8List? imageBytes;
   final double rectLeft;
   final double rectTop;
   final double rectRight;
