@@ -104,7 +104,10 @@ python3 -m http.server 8000 --directory build/web
 ## Current coverage
 
 - `fixtures/coordinate_area_cases.json`: shared golden vectors for zoom / span policy
+- `fixtures/photo_studio_geometry_cases.json`: shared Photo Studio geometry vectors
+  (Dart `studio_geometry_test.dart` is primary; pytest is an optional cross-check)
 - `tests/test_coordinate_area.py`: latitude-aware Maps framing oracles
+- `tests/test_photo_studio_geometry.py`: optional Python cross-check of studio geometry
 - `tests/test_actions_latest.py`: optional CI-green assertion (`--oracle-mode=actions`)
 - `tests/test_outcomes.py` / `outcomes.py`: multi-status tallies including xfail/known
 - `tests/test_known_xfail_example.py`: documents `xfail(reason="known: …")` for receipts
