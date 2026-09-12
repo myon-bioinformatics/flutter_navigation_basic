@@ -1,6 +1,9 @@
-"""Photo-studio geometry oracle (midpoints, circle, triangle, intersections).
+"""Optional photo-studio geometry cross-check (midpoints, circle, triangle).
 
-Dart `StudioGeometry` mirrors these helpers so UI math and pytest stay aligned.
+Primary assertions live in Dart `test/photo_studio/studio_geometry_test.dart`,
+which loads the same `photo_studio_geometry_cases.json` fixtures. This module
+recomputes expected geometry in Python as a thin oracle — keep it when useful
+for local/Non-Dart CI, but do not treat it as the app's source of truth.
 """
 
 from __future__ import annotations

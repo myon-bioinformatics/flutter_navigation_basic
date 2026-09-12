@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/emoji_stamp.dart';
-import 'package:flutter_application_1/features/photo_studio/domain/photo_studio_test_probe.dart';
+import 'package:flutter_application_1/features/photo_studio/testing/photo_studio_test_probe.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/normalized_rect.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/studio_frame_style.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/compose_studio_image.dart';

@@ -1,18 +1,17 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../shared/clipboard/base64_image_bridge.dart';
 import '../../../shared/display/display_scope.dart';
 import '../domain/emoji_stamp.dart';
-import '../domain/photo_studio_test_probe.dart';
+import '../testing/photo_studio_test_probe.dart';
 import '../domain/normalized_rect.dart';
 import '../domain/studio_frame_style.dart';
 import '../domain/studio_geometry.dart';
-import 'compose_studio_image.dart';
+import 'export_studio_png.dart';
 import 'photo_rect_canvas.dart';
 import 'pick_local_image_bytes.dart';
-import 'save_image_bytes.dart';
 
 typedef StudioImageSaver = Future<bool> Function({
   required Uint8List bytes,
@@ -34,7 +33,8 @@ class PhotoStudioPage extends StatefulWidget {
   /// Optional override for save/download (tests inject a fake saver).
   final StudioImageSaver? imageSaver;
 
-  /// Optional probe for widget tests (coords, undo depth, shared image refs).
+  /// Test-only diagnostic hook (coords, undo depth, shared image refs).
+  @visibleForTesting
   final ValueChanged<PhotoStudioTestProbe>? onTestProbe;
 
   @override
@@ -288,19 +288,14 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       final logicalSize = _canvasSize.width > 0 && _canvasSize.height > 0
           ? _canvasSize
           : _fallbackCanvasSize;
-      final png = await composeStudioPng(
+      final ok = await exportStudioPng(
         logicalSize: logicalSize,
         rect: _rect,
         shape: _shape,
         strokeColor: Color(_strokeArgb),
         stamps: _stamps,
         imageBytes: _imageBytes,
-      );
-      final saver = widget.imageSaver ?? saveImageBytes;
-      final ok = await saver(
-        bytes: png,
-        fileName: kStudioExportFileName,
-        mimeType: kStudioExportMimeType,
+        saver: widget.imageSaver,
       );
       if (!mounted) return;
       setState(() {
