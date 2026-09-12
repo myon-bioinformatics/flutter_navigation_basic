@@ -127,7 +127,7 @@ void main() {
     expect(find.text('Shelf is empty for this filter.'), findsOneWidget);
     expect(find.text('Session-only shelf: items disappear when the app/page is restarted.'), findsOneWidget);
 
-    await controller.setLocale('ja');
+    await controller.setLocale('jpn');
     await tester.pumpAndSettle();
 
     expect(find.text('このフィルターに該当する棚の項目はありません。'), findsOneWidget);

@@ -9,7 +9,7 @@ import '../support/display_test_harness.dart';
 void main() {
   testWidgets('renders text from the app-wide display locale, not a screen-local store', (tester) async {
     final controller = await loadTestDisplayController(
-      initialValues: {DisplayController.preferenceKey: 'ja'},
+      initialValues: {DisplayController.preferenceKey: 'jpn'},
     );
 
     await tester.pumpWidget(
@@ -36,13 +36,13 @@ void main() {
 
     await tester.tap(find.byType(DropdownButton<String>));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('JA').last);
+    await tester.tap(find.text('JPN').last);
     await tester.pumpAndSettle();
 
     expect(find.text('人・場所・予定・イベントを1本の時間軸にまとめます。'), findsOneWidget);
 
     final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getString(DisplayController.preferenceKey), 'ja');
+    expect(prefs.getString(DisplayController.preferenceKey), 'jpn');
     expect(prefs.getString(DisplayController.legacyNowTimelinePreferenceKey), isNull);
   });
 }

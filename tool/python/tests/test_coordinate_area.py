@@ -11,7 +11,7 @@ FIXTURE_PATH = Path(__file__).resolve().parents[1] / "fixtures" / "coordinate_ar
 
 
 class CoordinateCase(BaseModel):
-    id: str
+    coordinateAreaCaseId: str
     latitude: float
     longitude: float
     radius_m: float = Field(gt=0)
@@ -81,7 +81,7 @@ def zoom_for_radius(radius_m: float, latitude: float = 0.0) -> int:
     return max(3, min(20, zoom))
 
 
-@pytest.mark.parametrize("case", CASES, ids=lambda case: case.id)
+@pytest.mark.parametrize("case", CASES, ids=lambda case: case.coordinateAreaCaseId)
 def test_tolerance_bounds_and_zoom(case: CoordinateCase) -> None:
     bounds = tolerance_bounds(case.latitude, case.longitude, case.radius_m)
     assert bounds["wraps_antimeridian"] is case.expect_antimeridian

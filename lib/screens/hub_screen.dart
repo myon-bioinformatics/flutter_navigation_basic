@@ -53,7 +53,7 @@ class _HubScreenState extends State<HubScreen> {
   }
 
   void _navigate(ScreenData s) {
-    Navigator.pushNamed(context, '/screen${s.id}');
+    Navigator.pushNamed(context, '/screen${s.screenDataId}');
   }
 
   @override
@@ -136,7 +136,7 @@ class _HubScreenState extends State<HubScreen> {
       itemBuilder: (context, i) {
         final s = _filtered[i];
         return ListTile(
-          key: Key('screen-item-${s.id}'),
+          key: Key('screen-item-${s.screenDataId}'),
           leading: CircleAvatar(child: Text(s.emoji)),
           title: Text('${s.name}: ${s.title}'),
           subtitle: Text(
@@ -164,7 +164,7 @@ class _HubScreenState extends State<HubScreen> {
       itemBuilder: (context, i) {
         final s = _filtered[i];
         return InkWell(
-          key: Key('screen-grid-${s.id}'),
+          key: Key('screen-grid-${s.screenDataId}'),
           onTap: () => _navigate(s),
           borderRadius: BorderRadius.circular(12),
           child: Card(

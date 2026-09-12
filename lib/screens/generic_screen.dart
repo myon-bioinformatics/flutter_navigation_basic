@@ -31,7 +31,7 @@ class ScreenDetail {
 }
 
 class ScreenData {
-  final int id;
+  final int screenDataId;
   final String name;
   final String title;
   final String emoji;
@@ -52,7 +52,7 @@ class ScreenData {
   final ScreenDetail? detail;
 
   const ScreenData({
-    required this.id,
+    required this.screenDataId,
     required this.name,
     required this.title,
     required this.emoji,
@@ -74,7 +74,7 @@ class ScreenData {
   });
 
   factory ScreenData.fromJson(Map<String, dynamic> json) => ScreenData(
-        id: json['id'] as int,
+        screenDataId: (json['screenDataId'] ?? json['id']) as int,
         name: json['name'] as String,
         title: json['title'] as String,
         emoji: json['emoji'] as String,
@@ -132,9 +132,9 @@ class _GenericScreenState extends State<GenericScreen> {
   Future<void> _loadData() async {
     final screens = await ScreensConfig.load();
     final data = screens.firstWhere(
-      (s) => s.id == widget.screenId,
+      (s) => s.screenDataId == widget.screenId,
       orElse: () => ScreenData(
-        id: widget.screenId,
+        screenDataId: widget.screenId,
         name: 'Screen${widget.screenId}',
         title: 'Screen ${widget.screenId}',
         emoji: '📱',
@@ -157,10 +157,10 @@ class _GenericScreenState extends State<GenericScreen> {
     final data = _data;
     final hasUseCase = data != null && data.useCaseJa.isNotEmpty;
     final appBarTitle = data == null
-        ? display.text('generic.screenFallbackTitle', arguments: {'id': widget.screenId})
+        ? display.text('generic.screenFallbackTitle', arguments: {'screenDataId': widget.screenId})
         : hasUseCase
             ? '${data.emoji} ${data.useCaseJa}'
-            : 'Screen${data.id}: ${data.title} ${data.emoji}';
+            : 'Screen${data.screenDataId}: ${data.title} ${data.emoji}';
 
     return Scaffold(
       appBar: AppBar(
@@ -194,14 +194,14 @@ class _GenericScreenBody extends StatelessWidget {
     final display = DisplayScope.of(context);
     final headline = data.useCaseJa.isNotEmpty
         ? data.useCaseJa
-        : templateLabel(display, templateForScreenId(data.id));
+        : templateLabel(display, templateForScreenId(data.screenDataId));
     final subline = _hasDomainInfo
-        ? '${data.domainEmoji} ${data.domainJa} · ${data.templateJa}テンプレート · Screen ${data.id}'
+        ? '${data.domainEmoji} ${data.domainJa} · ${data.templateJa}テンプレート · Screen ${data.screenDataId}'
         : display.text(
             'generic.templateVariant',
             arguments: {
-              'n': (data.id - 1) ~/ 18 + 1,
-              'v': (data.id - 1) % 18 + 1,
+              'n': (data.screenDataId - 1) ~/ 18 + 1,
+              'v': (data.screenDataId - 1) % 18 + 1,
             },
           );
     final detail = data.detail;
@@ -259,7 +259,7 @@ class _GenericScreenBody extends StatelessWidget {
         Expanded(
           child: detail == null
               ? PatternTemplateBody(
-                  screenId: data.id,
+                  screenId: data.screenDataId,
                   title: data.title,
                   description: data.description,
                   templateOverride: data.templateOverride,
@@ -279,7 +279,7 @@ class _GenericScreenBody extends StatelessWidget {
                           children: [
                             _UseCaseTab(data: data, detail: detail),
                             PatternTemplateBody(
-                              screenId: data.id,
+                              screenId: data.screenDataId,
                               title: data.title,
                               description: data.description,
                               templateOverride: data.templateOverride,

@@ -196,126 +196,126 @@ class UrlParams {
 class UrlParamsCases {
   static const List<UrlParamCase> cases = [
     UrlParamCase(
-      id: 1,
+      urlParamCaseId: 1,
       title: 'パスパラメータ → String',
       route: '/user/:id',
       example: '/user/42',
       getter: "UrlParams.pathString('id')",
     ),
     UrlParamCase(
-      id: 2,
+      urlParamCaseId: 2,
       title: 'パスパラメータ → int',
       route: '/item/:id',
       example: '/item/10',
       getter: "UrlParams.pathInt('id')",
     ),
     UrlParamCase(
-      id: 3,
+      urlParamCaseId: 3,
       title: 'パスパラメータ → double',
       route: '/price/:amount',
       example: '/price/3.14',
       getter: "UrlParams.pathDouble('amount')",
     ),
     UrlParamCase(
-      id: 4,
+      urlParamCaseId: 4,
       title: 'パスパラメータ → bool',
       route: '/feature/:enabled',
       example: '/feature/true',
       getter: "UrlParams.pathBool('enabled')",
     ),
     UrlParamCase(
-      id: 5,
+      urlParamCaseId: 5,
       title: 'パスパラメータの存在確認',
       route: '/resource/:key',
       example: '/resource/abc',
       getter: "UrlParams.hasPath('key')",
     ),
     UrlParamCase(
-      id: 6,
+      urlParamCaseId: 6,
       title: 'クエリパラメータ → String',
       route: '/search',
       example: '/search?q=flutter',
       getter: "UrlParams.queryString('q')",
     ),
     UrlParamCase(
-      id: 7,
+      urlParamCaseId: 7,
       title: 'クエリパラメータ → int',
       route: '/list',
       example: '/list?page=2',
       getter: "UrlParams.queryInt('page')",
     ),
     UrlParamCase(
-      id: 8,
+      urlParamCaseId: 8,
       title: 'クエリパラメータ → double',
       route: '/map',
       example: '/map?zoom=1.5',
       getter: "UrlParams.queryDouble('zoom')",
     ),
     UrlParamCase(
-      id: 9,
+      urlParamCaseId: 9,
       title: 'クエリパラメータ → bool',
       route: '/settings',
       example: '/settings?darkMode=true',
       getter: "UrlParams.queryBool('darkMode')",
     ),
     UrlParamCase(
-      id: 10,
+      urlParamCaseId: 10,
       title: 'クエリパラメータの存在確認',
       route: '/page',
       example: '/page?debug=1',
       getter: "UrlParams.hasQuery('debug')",
     ),
     UrlParamCase(
-      id: 11,
+      urlParamCaseId: 11,
       title: 'カンマ区切りクエリ → List<String>',
       route: '/filter',
       example: '/filter?tags=flutter,dart',
       getter: "UrlParams.queryList('tags')",
     ),
     UrlParamCase(
-      id: 12,
+      urlParamCaseId: 12,
       title: 'カンマ区切りクエリ → List<int>',
       route: '/batch',
       example: '/batch?ids=1,2,3',
       getter: "UrlParams.queryIntList('ids')",
     ),
     UrlParamCase(
-      id: 13,
+      urlParamCaseId: 13,
       title: '全パスパラメータを Map で取得',
       route: '/user/:userId/post/:postId',
       example: '/user/1/post/99',
       getter: 'UrlParams.allPathParams()',
     ),
     UrlParamCase(
-      id: 14,
+      urlParamCaseId: 14,
       title: '全クエリパラメータを Map で取得',
       route: '/search',
       example: '/search?q=hello&lang=ja',
       getter: 'UrlParams.allQueryParams()',
     ),
     UrlParamCase(
-      id: 15,
+      urlParamCaseId: 15,
       title: 'パスパラメータ → DateTime',
       route: '/schedule/:date',
       example: '/schedule/2024-01-15',
       getter: "UrlParams.pathDate('date')",
     ),
     UrlParamCase(
-      id: 16,
+      urlParamCaseId: 16,
       title: 'クエリパラメータ → DateTime',
       route: '/events',
       example: '/events?from=2024-01-01',
       getter: "UrlParams.queryDate('from')",
     ),
     UrlParamCase(
-      id: 17,
+      urlParamCaseId: 17,
       title: 'パスパラメータ → Enum',
       route: '/mode/:type',
       example: '/mode/dark',
       getter: "UrlParams.pathEnum('type', values, fallback: fallback)",
     ),
     UrlParamCase(
-      id: 18,
+      urlParamCaseId: 18,
       title: 'クエリパラメータ → Enum',
       route: '/sort',
       example: '/sort?order=asc',
@@ -326,14 +326,14 @@ class UrlParamsCases {
 
 class UrlParamCase {
   const UrlParamCase({
-    required this.id,
+    required this.urlParamCaseId,
     required this.title,
     required this.route,
     required this.example,
     required this.getter,
   });
 
-  final int id;
+  final int urlParamCaseId;
   final String title;
   final String route;
   final String example;

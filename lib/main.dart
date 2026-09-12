@@ -43,18 +43,27 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: AppConfig.appName,
-      theme: AppConfig.theme,
-      routes: AppRoutes.routes,
-      initialRoute: AppRoutes.home,
-      navigatorObservers: [RouteDiagnosticsObserver.instance],
-      builder: (context, child) => Column(
-        children: [
-          Expanded(child: child ?? const SizedBox.shrink()),
-          const WeightDiagnosticsStrip(),
-        ],
-      ),
+    final display = DisplayScope.of(context);
+    return ListenableBuilder(
+      listenable: display,
+      builder: (context, _) {
+        return MaterialApp(
+          title: AppConfig.appName,
+          theme: AppConfig.theme,
+          // External BCP 47 boundary: catalog stores ISO 639-3 (`ind`), Flutter
+          // Locale / HTML lang need short tags (`id`).
+          locale: display.flutterLocale,
+          routes: AppRoutes.routes,
+          initialRoute: AppRoutes.home,
+          navigatorObservers: [RouteDiagnosticsObserver.instance],
+          builder: (context, child) => Column(
+            children: [
+              Expanded(child: child ?? const SizedBox.shrink()),
+              const WeightDiagnosticsStrip(),
+            ],
+          ),
+        );
+      },
     );
   }
 }

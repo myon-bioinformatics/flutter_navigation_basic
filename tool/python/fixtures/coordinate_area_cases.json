@@ -3,64 +3,64 @@
   "description": "Shared golden vectors for coordinate tolerance / Maps area framing. Consumed by Dart tests and tool/python pytest.",
   "cases": [
     {
-      "id": "tokyo-building-100m",
       "latitude": 35.681236,
       "longitude": 139.767125,
       "radius_m": 100,
       "expected_zoom": 16,
       "expect_antimeridian": false,
       "expect_full_longitude": false,
-      "expect_apple_spn": true
+      "expect_apple_spn": true,
+      "coordinateAreaCaseId": "tokyo-building-100m"
     },
     {
-      "id": "tokyo-station-350m",
       "latitude": 35.681236,
       "longitude": 139.767125,
       "radius_m": 350,
       "expected_zoom": 14,
       "expect_antimeridian": false,
       "expect_full_longitude": false,
-      "expect_apple_spn": true
+      "expect_apple_spn": true,
+      "coordinateAreaCaseId": "tokyo-station-350m"
     },
     {
-      "id": "antimeridian-1000m",
       "latitude": 0,
       "longitude": 179.999,
       "radius_m": 1000,
       "expected_zoom": 13,
       "expect_antimeridian": true,
       "expect_full_longitude": false,
-      "expect_apple_spn": false
+      "expect_apple_spn": false,
+      "coordinateAreaCaseId": "antimeridian-1000m"
     },
     {
-      "id": "high-lat-80-100m",
       "latitude": 80,
       "longitude": 0,
       "radius_m": 100,
       "expected_zoom": 14,
       "expect_antimeridian": false,
       "expect_full_longitude": false,
-      "expect_apple_spn": true
+      "expect_apple_spn": true,
+      "coordinateAreaCaseId": "high-lat-80-100m"
     },
     {
-      "id": "high-lat-85-100m",
       "latitude": 85,
       "longitude": 10,
       "radius_m": 100,
       "expected_zoom": 13,
       "expect_antimeridian": false,
       "expect_full_longitude": false,
-      "expect_apple_spn": true
+      "expect_apple_spn": true,
+      "coordinateAreaCaseId": "high-lat-85-100m"
     },
     {
-      "id": "near-pole-1000m-full-longitude",
       "latitude": 89.9999,
       "longitude": 20,
       "radius_m": 1000,
       "expected_zoom": 3,
       "expect_antimeridian": false,
       "expect_full_longitude": true,
-      "expect_apple_spn": false
+      "expect_apple_spn": false,
+      "coordinateAreaCaseId": "near-pole-1000m-full-longitude"
     }
   ]
 }

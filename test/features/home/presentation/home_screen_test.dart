@@ -34,7 +34,7 @@ void main() {
 
   testWidgets('renders translated chrome and weekday for a non-English display locale', (tester) async {
     final controller = await loadTestDisplayController(
-      initialValues: {DisplayController.preferenceKey: 'ja'},
+      initialValues: {DisplayController.preferenceKey: 'jpn'},
     );
 
     await _pumpHome(tester, controller: controller);

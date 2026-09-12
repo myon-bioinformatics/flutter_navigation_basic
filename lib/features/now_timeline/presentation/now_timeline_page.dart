@@ -44,7 +44,7 @@ class _NowTimelinePageState extends State<NowTimelinePage> {
   }
 
   Future<void> _delete(TimelineEntry entry) async {
-    final next = _entries.where((item) => item.id != entry.id).toList();
+    final next = _entries.where((item) => item.timelineEntryId != entry.timelineEntryId).toList();
     setState(() => _entries = next);
     await _store.saveEntries(next);
   }
@@ -366,7 +366,7 @@ class _AddTimelineEntryDialogState extends State<_AddTimelineEntryDialog> {
 
     Navigator.of(context).pop(
       TimelineEntry(
-        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        timelineEntryId: DateTime.now().microsecondsSinceEpoch.toString(),
         title: name,
         kind: _kind,
         zoneName: _zone,

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_application_1/shared/display/display_catalog.dart';
+import 'package:flutter_application_1/shared/display/display_locale_codes.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -16,7 +17,10 @@ void main() {
     final locales = loadLocales();
     expect(locales.keys.toSet(), DisplayCatalog.supportedLocales.toSet());
 
-    final english = (locales['en'] as Map).keys.map((key) => key.toString()).toSet();
+    final english = (locales[DisplayLocaleCodes.eng] as Map)
+        .keys
+        .map((key) => key.toString())
+        .toSet();
     expect(english, isNotEmpty);
 
     for (final locale in DisplayCatalog.supportedLocales) {
@@ -41,7 +45,8 @@ void main() {
 
   test('required app-wide namespaces are represented', () {
     final locales = loadLocales();
-    final english = (locales['en'] as Map).cast<String, dynamic>();
+    final english =
+        (locales[DisplayLocaleCodes.eng] as Map).cast<String, dynamic>();
     for (final prefix in DisplayCatalog.requiredNamespaces) {
       expect(
         english.keys.any((key) => key.startsWith(prefix)),
@@ -51,10 +56,40 @@ void main() {
     }
   });
 
-  test('UN-language locales plus Japanese and Portuguese remain available', () {
+  test('eleven ISO 639-3 locales including ind/deu/swa are available', () {
+    expect(DisplayCatalog.supportedLocales, hasLength(11));
     expect(
       DisplayCatalog.supportedLocales,
-      containsAll(const ['en', 'ja', 'fr', 'es', 'pt', 'ar', 'zh', 'ru']),
+      containsAll(const [
+        'eng',
+        'jpn',
+        'fra',
+        'spa',
+        'por',
+        'ara',
+        'zho',
+        'rus',
+        'ind',
+        'deu',
+        'swa',
+      ]),
     );
+  });
+
+  test('entity id placeholders use formal names, not bare id', () {
+    final locales = loadLocales();
+    for (final locale in DisplayCatalog.supportedLocales) {
+      final values = (locales[locale] as Map).cast<String, dynamic>();
+      expect(values['urlParameters.case'], contains('{urlParamCaseId}'));
+      expect(
+        values['generic.screenFallbackTitle'],
+        contains('{screenDataId}'),
+      );
+      expect(
+        values['patternTemplate.screenIdLabel'],
+        contains('{screenDataId}'),
+      );
+      expect(values['urlParameters.case'], isNot(contains('{id}')));
+    }
   });
 }

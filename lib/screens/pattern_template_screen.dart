@@ -125,7 +125,7 @@ class _PatternTemplateBodyState extends State<PatternTemplateBody> {
               const Divider(),
               Text(display.text(
                 'patternTemplate.screenIdLabel',
-                arguments: {'id': widget.screenId},
+                arguments: {'screenDataId': widget.screenId},
               )),
             ],
           ),

@@ -62,7 +62,7 @@ class _CaseTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              display.text('urlParameters.case', arguments: {'id': c.id, 'title': c.title}),
+              display.text('urlParameters.case', arguments: {'urlParamCaseId': c.urlParamCaseId, 'title': c.title}),
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),

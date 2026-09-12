@@ -1,7 +1,6 @@
 {
   "screens": [
     {
-      "id": 1,
       "name": "Screen1",
       "title": "BasicPush",
       "emoji": "🌐",
@@ -35,10 +34,10 @@
         ],
         "pitfall": "一覧表示のたびに各連携先の詳細情報まで取得すると通信量が増えるため、一覧APIは要約情報のみ返す設計にする。",
         "snippet": "final res = await http.get(Uri.parse('$base/integrations'));\nfinal list = (jsonDecode(res.body) as List)\n    .map((e) => Integration.fromJson(e))\n    .toList();\nsetState(() => _integrations = list);"
-      }
+      },
+      "screenDataId": 1
     },
     {
-      "id": 2,
       "name": "Screen2",
       "title": "BasicPop",
       "emoji": "👥",
@@ -72,10 +71,10 @@
         ],
         "pitfall": "アカウント一覧に権限（authorization）の情報まで混在させると、本人確認(authentication)の一覧なのか権限確認(authorization)の一覧なのか画面の責務が曖昧になる。一覧は認証状態の可視化に留め、権限管理は別画面に分離する。",
         "snippet": "final res = await http.post(\n  Uri.parse('$base/auth/accounts'),\n  headers: {'Authorization': 'Bearer $accessToken'},\n);\nif (res.statusCode == 401) {\n  return redirectToLogin(); // アクセストークン失効 → 再認証へ\n}\nfinal accounts = (jsonDecode(res.body) as List)\n    .map((e) => Account.fromJson(e))\n    .toList();\nsetState(() => _accounts = accounts);"
-      }
+      },
+      "screenDataId": 2
     },
     {
-      "id": 3,
       "name": "Screen3",
       "title": "BasicReplace",
       "emoji": "📶",
@@ -98,10 +97,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 3
     },
     {
-      "id": 4,
       "name": "Screen4",
       "title": "PushWithResult",
       "emoji": "🗃️",
@@ -124,10 +123,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 4
     },
     {
-      "id": 5,
       "name": "Screen5",
       "title": "PushAndRemoveUntil",
       "emoji": "🔢",
@@ -150,10 +149,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 5
     },
     {
-      "id": 6,
       "name": "Screen6",
       "title": "PushNamed",
       "emoji": "🔍",
@@ -176,10 +175,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 6
     },
     {
-      "id": 7,
       "name": "Screen7",
       "title": "PopUntil",
       "emoji": "📓",
@@ -202,10 +201,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 7
     },
     {
-      "id": 8,
       "name": "Screen8",
       "title": "OffAll",
       "emoji": "🗺️",
@@ -228,10 +227,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 8
     },
     {
-      "id": 9,
       "name": "Screen9",
       "title": "PushWithArguments",
       "emoji": "🌈",
@@ -254,10 +253,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 9
     },
     {
-      "id": 10,
       "name": "Screen10",
       "title": "BackButtonHandler",
       "emoji": "🖲️",
@@ -280,10 +279,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 10
     },
     {
-      "id": 11,
       "name": "Screen11",
       "title": "WillPopScope",
       "emoji": "☑️",
@@ -306,10 +305,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 11
     },
     {
-      "id": 12,
       "name": "Screen12",
       "title": "NestedNavigator",
       "emoji": "📥",
@@ -332,10 +331,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 12
     },
     {
-      "id": 13,
       "name": "Screen13",
       "title": "IndexedStack",
       "emoji": "📸",
@@ -358,10 +357,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 13
     },
     {
-      "id": 14,
       "name": "Screen14",
       "title": "BottomNavBar",
       "emoji": "📜",
@@ -384,10 +383,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 14
     },
     {
-      "id": 15,
       "name": "Screen15",
       "title": "TabBarView",
       "emoji": "📊",
@@ -410,10 +409,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 15
     },
     {
-      "id": 16,
       "name": "Screen16",
       "title": "PageView",
       "emoji": "🧫",
@@ -436,10 +435,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 16
     },
     {
-      "id": 17,
       "name": "Screen17",
       "title": "HeroAnimation",
       "emoji": "🚀",
@@ -462,10 +461,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 17
     },
     {
-      "id": 18,
       "name": "Screen18",
       "title": "FadeTransition",
       "emoji": "🔒",
@@ -488,10 +487,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 18
     },
     {
-      "id": 19,
       "name": "Screen19",
       "title": "SlideTransition",
       "emoji": "🔌",
@@ -525,10 +524,10 @@
         ],
         "pitfall": "APIエラー時に画面が真っ白になる実装は避け、エラー内容をユーザーに伝える。",
         "snippet": "final response = await http.get(uri);\nif (response.statusCode == 200) {\n  final data = jsonDecode(response.body);\n  setState(() => _detail = data);\n}"
-      }
+      },
+      "screenDataId": 19
     },
     {
-      "id": 20,
       "name": "Screen20",
       "title": "ScaleTransition",
       "emoji": "🪪",
@@ -562,10 +561,10 @@
         ],
         "pitfall": "スコープ詳細画面でアクセストークンの値自体を表示・ログ出力してしまうと漏洩リスクになる。画面にはスコープ名や権限の説明のみを表示し、トークン文字列そのものは表示しない。",
         "snippet": "final res = await http.get(\n  Uri.parse('$base/auth/tokens/$tokenId/scopes'),\n  headers: {'If-None-Match': _etag ?? ''},\n);\nif (res.statusCode == 304) return; // キャッシュ有効\nfinal scopes = (jsonDecode(res.body)['scopes'] as List).cast<String>();\nsetState(() => _scopes = scopes);"
-      }
+      },
+      "screenDataId": 20
     },
     {
-      "id": 21,
       "name": "Screen21",
       "title": "NamedRouteBasic",
       "emoji": "💬",
@@ -588,10 +587,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 21
     },
     {
-      "id": 22,
       "name": "Screen22",
       "title": "NamedRouteArguments",
       "emoji": "📄",
@@ -614,10 +613,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 22
     },
     {
-      "id": 23,
       "name": "Screen23",
       "title": "NamedRouteResult",
       "emoji": "🧭",
@@ -640,10 +639,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 23
     },
     {
-      "id": 24,
       "name": "Screen24",
       "title": "NamedRouteGuard",
       "emoji": "🎯",
@@ -666,10 +665,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 24
     },
     {
-      "id": 25,
       "name": "Screen25",
       "title": "NamedRouteMiddleware",
       "emoji": "🧐",
@@ -692,10 +691,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 25
     },
     {
-      "id": 26,
       "name": "Screen26",
       "title": "NamedRouteRedirect",
       "emoji": "🚩",
@@ -718,10 +717,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 26
     },
     {
-      "id": 27,
       "name": "Screen27",
       "title": "NamedRouteNested",
       "emoji": "🖌️",
@@ -744,10 +743,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 27
     },
     {
-      "id": 28,
       "name": "Screen28",
       "title": "NamedRouteTabBar",
       "emoji": "💻",
@@ -770,10 +769,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 28
     },
     {
-      "id": 29,
       "name": "Screen29",
       "title": "NamedRouteGroup",
       "emoji": "🗣️",
@@ -796,10 +795,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 29
     },
     {
-      "id": 30,
       "name": "Screen30",
       "title": "NamedRouteDynamic",
       "emoji": "📦",
@@ -822,10 +821,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 30
     },
     {
-      "id": 31,
       "name": "Screen31",
       "title": "NamedRouteWildcard",
       "emoji": "🔬",
@@ -848,10 +847,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 31
     },
     {
-      "id": 32,
       "name": "Screen32",
       "title": "NamedRouteTransition",
       "emoji": "🩺",
@@ -874,10 +873,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 32
     },
     {
-      "id": 33,
       "name": "Screen33",
       "title": "NamedRouteBinding",
       "emoji": "🪡",
@@ -900,10 +899,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 33
     },
     {
-      "id": 34,
       "name": "Screen34",
       "title": "NamedRouteHistory",
       "emoji": "📃",
@@ -926,10 +925,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 34
     },
     {
-      "id": 35,
       "name": "Screen35",
       "title": "NamedRouteModal",
       "emoji": "🏗️",
@@ -952,10 +951,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 35
     },
     {
-      "id": 36,
       "name": "Screen36",
       "title": "NamedRouteTabIndex",
       "emoji": "🧨",
@@ -978,10 +977,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 36
     },
     {
-      "id": 37,
       "name": "Screen37",
       "title": "NamedRouteAnimation",
       "emoji": "🛠️",
@@ -1015,10 +1014,10 @@
         ],
         "pitfall": "認可トークンやAPIキーをフォームの状態やログに平文のまま残さない。送信直前のみ保持し、画面を離れたら破棄する。",
         "snippet": "final req = http.Request(method, Uri.parse(url))\n  ..headers.addAll(headers)\n  ..body = body;\nfinal streamed = await req.send();\nfinal res = await http.Response.fromStream(streamed);"
-      }
+      },
+      "screenDataId": 37
     },
     {
-      "id": 38,
       "name": "Screen38",
       "title": "NamedRouteObserver",
       "emoji": "🔑",
@@ -1052,10 +1051,10 @@
         ],
         "pitfall": "パスワードを平文のまま変数に長く保持したり、SharedPreferencesやログに書き出すと漏洩の原因になる。送信後は速やかに変数をクリアし、平文保存は行わない。",
         "snippet": "final res = await http.post(\n  Uri.parse('$base/auth/sign-in'),\n  body: {'email': email, 'password': password},\n);\npassword = ''; // 送信後は保持しない\nif (res.statusCode == 401) {\n  setState(() => _error = '認証情報が正しくありません');\n  return;\n}\nfinal body = jsonDecode(res.body);\nawait secureStorage.write(key: 'access_token', value: body['accessToken']);\nawait secureStorage.write(key: 'refresh_token', value: body['refreshToken']);"
-      }
+      },
+      "screenDataId": 38
     },
     {
-      "id": 39,
       "name": "Screen39",
       "title": "NamedRoutePreload",
       "emoji": "📣",
@@ -1078,10 +1077,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 39
     },
     {
-      "id": 40,
       "name": "Screen40",
       "title": "NamedRouteLazy",
       "emoji": "🧾",
@@ -1104,10 +1103,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 40
     },
     {
-      "id": 41,
       "name": "Screen41",
       "title": "DeepLinkBasic",
       "emoji": "🧰",
@@ -1130,10 +1129,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 41
     },
     {
-      "id": 42,
       "name": "Screen42",
       "title": "DeepLinkArguments",
       "emoji": "🥅",
@@ -1156,10 +1155,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 42
     },
     {
-      "id": 43,
       "name": "Screen43",
       "title": "DeepLinkUniversal",
       "emoji": "🪧",
@@ -1182,10 +1181,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 43
     },
     {
-      "id": 44,
       "name": "Screen44",
       "title": "DeepLinkAppLink",
       "emoji": "🔗",
@@ -1208,10 +1207,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 44
     },
     {
-      "id": 45,
       "name": "Screen45",
       "title": "DeepLinkWebUrl",
       "emoji": "🖍️",
@@ -1234,10 +1233,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 45
     },
     {
-      "id": 46,
       "name": "Screen46",
       "title": "DeepLinkQueryParam",
       "emoji": "🪢",
@@ -1260,10 +1259,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 46
     },
     {
-      "id": 47,
       "name": "Screen47",
       "title": "DeepLinkAuthenticated",
       "emoji": "🔤",
@@ -1286,10 +1285,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 47
     },
     {
-      "id": 48,
       "name": "Screen48",
       "title": "DeepLinkFallback",
       "emoji": "📝",
@@ -1312,10 +1311,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 48
     },
     {
-      "id": 49,
       "name": "Screen49",
       "title": "DeepLinkDynamic",
       "emoji": "🧪",
@@ -1338,10 +1337,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 49
     },
     {
-      "id": 50,
       "name": "Screen50",
       "title": "DeepLinkBranch",
       "emoji": "↩️",
@@ -1364,10 +1363,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 50
     },
     {
-      "id": 51,
       "name": "Screen51",
       "title": "DeepLinkNotification",
       "emoji": "📈",
@@ -1390,10 +1389,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 51
     },
     {
-      "id": 52,
       "name": "Screen52",
       "title": "DeepLinkShare",
       "emoji": "🎬",
@@ -1416,10 +1415,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 52
     },
     {
-      "id": 53,
       "name": "Screen53",
       "title": "DeepLinkOnboarding",
       "emoji": "📰",
@@ -1442,10 +1441,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 53
     },
     {
-      "id": 54,
       "name": "Screen54",
       "title": "DeepLinkWeb",
       "emoji": "✉️",
@@ -1468,10 +1467,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 54
     },
     {
-      "id": 55,
       "name": "Screen55",
       "title": "DeepLinkDesktop",
       "emoji": "📘",
@@ -1505,10 +1504,10 @@
         ],
         "pitfall": "巨大な仕様ファイルを表示のたびに全文パースすると起動が遅くなるため、パース結果をメモリやローカルキャッシュに保持する。",
         "snippet": "final spec = jsonDecode(await rootBundle.loadString('openapi.json'));\nfinal paths = (spec['paths'] as Map).entries\n    .where((e) => e.key.contains(query))\n    .toList();"
-      }
+      },
+      "screenDataId": 55
     },
     {
-      "id": 56,
       "name": "Screen56",
       "title": "DeepLinkHistory",
       "emoji": "🕵️",
@@ -1542,10 +1541,10 @@
         ],
         "pitfall": "401（未認証）と403（権限不足）を同じエラーメッセージ・同じ遷移で扱うと、ユーザーが「ログインし直せば直る」のか「権限がないので管理者に問い合わせる」のか判断できなくなる。ステータスコードごとに導線を分ける。",
         "snippet": "final res = await http.get(\n  Uri.parse('$base/admin/users?q=$query'),\n  headers: {'Authorization': 'Bearer $accessToken'},\n);\nif (res.statusCode == 401) return redirectToLogin();\nif (res.statusCode == 403) return showPermissionDeniedDialog();\nfinal users = (jsonDecode(res.body) as List)\n    .map((e) => UserResult.fromJson(e))\n    .toList();"
-      }
+      },
+      "screenDataId": 56
     },
     {
-      "id": 57,
       "name": "Screen57",
       "title": "DeepLinkHash",
       "emoji": "🔭",
@@ -1568,10 +1567,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 57
     },
     {
-      "id": 58,
       "name": "Screen58",
       "title": "DeepLinkRestore",
       "emoji": "🗄️",
@@ -1594,10 +1593,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 58
     },
     {
-      "id": 59,
       "name": "Screen59",
       "title": "DeepLinkAnalytics",
       "emoji": "🔠",
@@ -1620,10 +1619,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 59
     },
     {
-      "id": 60,
       "name": "Screen60",
       "title": "DeepLinkLocalized",
       "emoji": "📖",
@@ -1646,10 +1645,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 60
     },
     {
-      "id": 61,
       "name": "Screen61",
       "title": "BottomNavBasic",
       "emoji": "🔡",
@@ -1672,10 +1671,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 61
     },
     {
-      "id": 62,
       "name": "Screen62",
       "title": "BottomNavBadge",
       "emoji": "🛤️",
@@ -1698,10 +1697,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 62
     },
     {
-      "id": 63,
       "name": "Screen63",
       "title": "BottomNavStatePreserve",
       "emoji": "🧶",
@@ -1724,10 +1723,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 63
     },
     {
-      "id": 64,
       "name": "Screen64",
       "title": "BottomNavHide",
       "emoji": "📡",
@@ -1750,10 +1749,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 64
     },
     {
-      "id": 65,
       "name": "Screen65",
       "title": "BottomNavCustom",
       "emoji": "🔦",
@@ -1776,10 +1775,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 65
     },
     {
-      "id": 66,
       "name": "Screen66",
       "title": "TabBarFixed",
       "emoji": "🔎",
@@ -1802,10 +1801,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 66
     },
     {
-      "id": 67,
       "name": "Screen67",
       "title": "TabBarScrollable",
       "emoji": "🧮",
@@ -1828,10 +1827,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 67
     },
     {
-      "id": 68,
       "name": "Screen68",
       "title": "TabBarIcon",
       "emoji": "🐛",
@@ -1854,10 +1853,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 68
     },
     {
-      "id": 69,
       "name": "Screen69",
       "title": "TabBarDynamic",
       "emoji": "🪵",
@@ -1880,10 +1879,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 69
     },
     {
-      "id": 70,
       "name": "Screen70",
       "title": "TabBarNested",
       "emoji": "🥽",
@@ -1906,10 +1905,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 70
     },
     {
-      "id": 71,
       "name": "Screen71",
       "title": "DrawerBasic",
       "emoji": "🏺",
@@ -1932,10 +1931,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 71
     },
     {
-      "id": 72,
       "name": "Screen72",
       "title": "DrawerEndDrawer",
       "emoji": "🕷️",
@@ -1958,10 +1957,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 72
     },
     {
-      "id": 73,
       "name": "Screen73",
       "title": "DrawerCustom",
       "emoji": "🧬",
@@ -1995,10 +1994,10 @@
         ],
         "pitfall": "3方式の説明を均等な情報量で作らないと、特定方式に誘導する印象を与えてしまう。",
         "snippet": "final tabController = TabController(length: 3, vsync: this);\nTabBarView(\n  controller: tabController,\n  children: [RestExample(), GraphQLExample(), GrpcExample()],\n);"
-      }
+      },
+      "screenDataId": 73
     },
     {
-      "id": 74,
       "name": "Screen74",
       "title": "DrawerHeader",
       "emoji": "🔏",
@@ -2032,10 +2031,10 @@
         ],
         "pitfall": "タブごとに認証成功後の処理を個別実装すると、トークン発行後の扱いがタブによってばらつき、権限チェックの抜け漏れが生まれる。認証方式が違ってもトークン取得後の処理は共通化する。",
         "snippet": "Widget buildTab(AuthMethod method) {\n  return switch (method) {\n    AuthMethod.password => PasswordSignInForm(onSuccess: _onAuthenticated),\n    AuthMethod.passkey => PasskeySignInButton(onSuccess: _onAuthenticated),\n    AuthMethod.sso => SsoSignInButton(onSuccess: _onAuthenticated),\n  };\n}\nvoid _onAuthenticated(AuthResult r) => _saveTokens(r.accessToken, r.refreshToken);"
-      }
+      },
+      "screenDataId": 74
     },
     {
-      "id": 75,
       "name": "Screen75",
       "title": "DrawerPersistent",
       "emoji": "📻",
@@ -2058,10 +2057,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 75
     },
     {
-      "id": 76,
       "name": "Screen76",
       "title": "DrawerModal",
       "emoji": "🕰️",
@@ -2084,10 +2083,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 76
     },
     {
-      "id": 77,
       "name": "Screen77",
       "title": "NavigationRail",
       "emoji": "🗒️",
@@ -2110,10 +2109,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 77
     },
     {
-      "id": 78,
       "name": "Screen78",
       "title": "NavigationRailExtended",
       "emoji": "🏷️",
@@ -2136,10 +2135,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 78
     },
     {
-      "id": 79,
       "name": "Screen79",
       "title": "AdaptiveNav",
       "emoji": "🗂️",
@@ -2162,10 +2161,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 79
     },
     {
-      "id": 80,
       "name": "Screen80",
       "title": "MultiLevelNav",
       "emoji": "🚦",
@@ -2188,10 +2187,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 80
     },
     {
-      "id": 81,
       "name": "Screen81",
       "title": "AuthGuard",
       "emoji": "🎟️",
@@ -2214,10 +2213,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 81
     },
     {
-      "id": 82,
       "name": "Screen82",
       "title": "RoleBasedNav",
       "emoji": "🪞",
@@ -2240,10 +2239,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 82
     },
     {
-      "id": 83,
       "name": "Screen83",
       "title": "OnboardingFlow",
       "emoji": "🧏",
@@ -2266,10 +2265,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 83
     },
     {
-      "id": 84,
       "name": "Screen84",
       "title": "WizardFlow",
       "emoji": "🔖",
@@ -2292,10 +2291,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 84
     },
     {
-      "id": 85,
       "name": "Screen85",
       "title": "ConditionalHome",
       "emoji": "🏬",
@@ -2318,10 +2317,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 85
     },
     {
-      "id": 86,
       "name": "Screen86",
       "title": "FeatureFlag",
       "emoji": "📛",
@@ -2344,10 +2343,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 86
     },
     {
-      "id": 87,
       "name": "Screen87",
       "title": "AgeGate",
       "emoji": "📺",
@@ -2370,10 +2369,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 87
     },
     {
-      "id": 88,
       "name": "Screen88",
       "title": "NetworkAware",
       "emoji": "🗞️",
@@ -2396,10 +2395,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 88
     },
     {
-      "id": 89,
       "name": "Screen89",
       "title": "PermissionGuard",
       "emoji": "🚛",
@@ -2422,10 +2421,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 89
     },
     {
-      "id": 90,
       "name": "Screen90",
       "title": "SubscriptionGuard",
       "emoji": "🔰",
@@ -2448,10 +2447,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 90
     },
     {
-      "id": 91,
       "name": "Screen91",
       "title": "MaintenanceMode",
       "emoji": "🤖",
@@ -2485,10 +2484,10 @@
         ],
         "pitfall": "MCPツールの呼び出し失敗を無視すると、ユーザーが原因を特定できなくなる。",
         "snippet": "final tool = mcpClient.tools[selectedIndex];\nfinal result = await mcpClient.callTool(tool.name, args);\nsetState(() => _result = result);"
-      }
+      },
+      "screenDataId": 91
     },
     {
-      "id": 92,
       "name": "Screen92",
       "title": "ForceUpdate",
       "emoji": "🔃",
@@ -2522,10 +2521,10 @@
         ],
         "pitfall": "アカウント切替時にメモリ上のキャッシュやフォーム入力を消し忘れると、前のアカウントのデータが新しいアカウントの画面に一瞬表示される「アカウント混線」が起きる。切替時は関連する状態を明示的にリセットする。",
         "snippet": "Future<void> switchAccount(Account next) async {\n  await secureStorage.write(key: 'access_token', value: next.accessToken);\n  await secureStorage.write(key: 'refresh_token', value: next.refreshToken);\n  _cache.clear(); // 前アカウントのキャッシュを破棄\n  setState(() => _currentAccount = next);\n}"
-      }
+      },
+      "screenDataId": 92
     },
     {
-      "id": 93,
       "name": "Screen93",
       "title": "KYC",
       "emoji": "🔔",
@@ -2548,10 +2547,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 93
     },
     {
-      "id": 94,
       "name": "Screen94",
       "title": "TwoFactor",
       "emoji": "📴",
@@ -2574,10 +2573,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 94
     },
     {
-      "id": 95,
       "name": "Screen95",
       "title": "ConsentFlow",
       "emoji": "🪜",
@@ -2600,10 +2599,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 95
     },
     {
-      "id": 96,
       "name": "Screen96",
       "title": "LocationGate",
       "emoji": "🕘",
@@ -2626,10 +2625,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 96
     },
     {
-      "id": 97,
       "name": "Screen97",
       "title": "DarkModeConditional",
       "emoji": "➡️",
@@ -2652,10 +2651,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 97
     },
     {
-      "id": 98,
       "name": "Screen98",
       "title": "LanguageRedirect",
       "emoji": "🔄",
@@ -2678,10 +2677,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 98
     },
     {
-      "id": 99,
       "name": "Screen99",
       "title": "ThemeConditional",
       "emoji": "🌗",
@@ -2704,10 +2703,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 99
     },
     {
-      "id": 100,
       "name": "Screen100",
       "title": "ProfileCompletion",
       "emoji": "📏",
@@ -2730,10 +2729,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 100
     },
     {
-      "id": 101,
       "name": "Screen101",
       "title": "BackStackInspect",
       "emoji": "🎧",
@@ -2756,10 +2755,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 101
     },
     {
-      "id": 102,
       "name": "Screen102",
       "title": "PopCount",
       "emoji": "🔂",
@@ -2782,10 +2781,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 102
     },
     {
-      "id": 103,
       "name": "Screen103",
       "title": "ClearStack",
       "emoji": "🧲",
@@ -2808,10 +2807,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 103
     },
     {
-      "id": 104,
       "name": "Screen104",
       "title": "HomeToRoot",
       "emoji": "🚑",
@@ -2834,10 +2833,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 104
     },
     {
-      "id": 105,
       "name": "Screen105",
       "title": "CustomBackButton",
       "emoji": "📹",
@@ -2860,10 +2859,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 105
     },
     {
-      "id": 106,
       "name": "Screen106",
       "title": "BackGesture",
       "emoji": "🎒",
@@ -2886,10 +2885,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 106
     },
     {
-      "id": 107,
       "name": "Screen107",
       "title": "AndroidBackDouble",
       "emoji": "🆚",
@@ -2912,10 +2911,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 107
     },
     {
-      "id": 108,
       "name": "Screen108",
       "title": "BackInterceptor",
       "emoji": "🙈",
@@ -2938,10 +2937,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 108
     },
     {
-      "id": 109,
       "name": "Screen109",
       "title": "PopWithData",
       "emoji": "🔀",
@@ -2975,10 +2974,10 @@
         ],
         "pitfall": "環境ごとのAPIキーをコードにハードコードすると本番キーが漏洩する恐れがあるため、設定ストレージやSecure Storageから読み込む。",
         "snippet": "Drawer(\n  child: ListView(\n    children: environments.map((e) => ListTile(\n      title: Text(e.name),\n      onTap: () => apiClient.switchEnvironment(e),\n    )).toList(),\n  ),\n);"
-      }
+      },
+      "screenDataId": 109
     },
     {
-      "id": 110,
       "name": "Screen110",
       "title": "StackDepth",
       "emoji": "📋",
@@ -3012,10 +3011,10 @@
         ],
         "pitfall": "クライアント側でメニュー項目を隠すだけで満足し、対応するAPI側の権限チェックを省略すると、URLを直接叩かれた場合に権限のないユーザーが操作できてしまう。UIの出し分けとAPIの認可チェックは必ずセットで実装する。",
         "snippet": "List<DrawerItem> buildMenu(UserRoles roles) => [\n  if (roles.contains('user')) DrawerItem('マイページ', '/me'),\n  if (roles.contains('admin')) DrawerItem('管理画面', '/admin'),\n];\n// サーバー側でも同じロールチェックを必須で行う"
-      }
+      },
+      "screenDataId": 110
     },
     {
-      "id": 111,
       "name": "Screen111",
       "title": "BreadcrumbNav",
       "emoji": "📚",
@@ -3038,10 +3037,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 111
     },
     {
-      "id": 112,
       "name": "Screen112",
       "title": "HistoryView",
       "emoji": "🧱",
@@ -3064,10 +3063,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 112
     },
     {
-      "id": 113,
       "name": "Screen113",
       "title": "NavObserver",
       "emoji": "📐",
@@ -3090,10 +3089,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 113
     },
     {
-      "id": 114,
       "name": "Screen114",
       "title": "RouterDelegate",
       "emoji": "📑",
@@ -3116,10 +3115,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 114
     },
     {
-      "id": 115,
       "name": "Screen115",
       "title": "RouteInfo",
       "emoji": "🗳️",
@@ -3142,10 +3141,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 115
     },
     {
-      "id": 116,
       "name": "Screen116",
       "title": "PopResult",
       "emoji": "🪟",
@@ -3168,10 +3167,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 116
     },
     {
-      "id": 117,
       "name": "Screen117",
       "title": "ModalBarrier",
       "emoji": "📔",
@@ -3194,10 +3193,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 117
     },
     {
-      "id": 118,
       "name": "Screen118",
       "title": "NavigationStack",
       "emoji": "🖥️",
@@ -3220,10 +3219,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 118
     },
     {
-      "id": 119,
       "name": "Screen119",
       "title": "RouteLifecycle",
       "emoji": "🤲",
@@ -3246,10 +3245,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 119
     },
     {
-      "id": 120,
       "name": "Screen120",
       "title": "StackSnapshot",
       "emoji": "🧳",
@@ -3272,10 +3271,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 120
     },
     {
-      "id": 121,
       "name": "Screen121",
       "title": "NestedNavBasic",
       "emoji": "🐞",
@@ -3298,10 +3297,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 121
     },
     {
-      "id": 122,
       "name": "Screen122",
       "title": "NestedNavTab",
       "emoji": "🆘",
@@ -3324,10 +3323,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 122
     },
     {
-      "id": 123,
       "name": "Screen123",
       "title": "NestedNavBottom",
       "emoji": "🧺",
@@ -3350,10 +3349,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 123
     },
     {
-      "id": 124,
       "name": "Screen124",
       "title": "NestedNavDrawer",
       "emoji": "🥧",
@@ -3376,10 +3375,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 124
     },
     {
-      "id": 125,
       "name": "Screen125",
       "title": "MultiNavigatorKey",
       "emoji": "🏭",
@@ -3402,10 +3401,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 125
     },
     {
-      "id": 126,
       "name": "Screen126",
       "title": "GlobalKey",
       "emoji": "🔐",
@@ -3428,10 +3427,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 126
     },
     {
-      "id": 127,
       "name": "Screen127",
       "title": "NestedNavDeepLink",
       "emoji": "🤝",
@@ -3465,10 +3464,10 @@
         ],
         "pitfall": "「同意する」ボタンだけを強調し拒否を選びにくくするダークパターンは避け、両方の選択肢を対等に扱う。",
         "snippet": "final consented = await showDialog<bool>(\n  context: context,\n  builder: (_) => ConsentDialog(scopes: requestedScopes),\n);\nif (consented == true) await savedConsent(scopes: requestedScopes);"
-      }
+      },
+      "screenDataId": 127
     },
     {
-      "id": 128,
       "name": "Screen128",
       "title": "NestedNavState",
       "emoji": "📲",
@@ -3502,10 +3501,10 @@
         ],
         "pitfall": "MFAダイアログをキャンセルした場合でも元の画面操作が続行できてしまうと、再認証を要求した意味がなくなる。キャンセル時は必ず対象操作自体も中断する。",
         "snippet": "final ok = await showMfaDialog(context);\nif (!ok) return; // キャンセル時は操作自体を中断\nfinal res = await http.post(\n  Uri.parse('$base/auth/mfa/verify'),\n  body: {'code': code},\n);\nif (res.statusCode == 401) return showMfaError();\nfinal confirmToken = jsonDecode(res.body)['confirmToken'];\nawait performSensitiveAction(confirmToken);"
-      }
+      },
+      "screenDataId": 128
     },
     {
-      "id": 129,
       "name": "Screen129",
       "title": "ShellRoute",
       "emoji": "🔁",
@@ -3528,10 +3527,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 129
     },
     {
-      "id": 130,
       "name": "Screen130",
       "title": "NestedNavGuard",
       "emoji": "🧹",
@@ -3554,10 +3553,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 130
     },
     {
-      "id": 131,
       "name": "Screen131",
       "title": "TabNestedNav",
       "emoji": "⚠️",
@@ -3580,10 +3579,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 131
     },
     {
-      "id": 132,
       "name": "Screen132",
       "title": "ChildNavigator",
       "emoji": "↕️",
@@ -3606,10 +3605,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 132
     },
     {
-      "id": 133,
       "name": "Screen133",
       "title": "CrossNavigator",
       "emoji": "✅",
@@ -3632,10 +3631,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 133
     },
     {
-      "id": 134,
       "name": "Screen134",
       "title": "NavigatorKey",
       "emoji": "🚧",
@@ -3658,10 +3657,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 134
     },
     {
-      "id": 135,
       "name": "Screen135",
       "title": "ModalStack",
       "emoji": "🪄",
@@ -3684,10 +3683,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 135
     },
     {
-      "id": 136,
       "name": "Screen136",
       "title": "OverlayNavigator",
       "emoji": "⚖️",
@@ -3710,10 +3709,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 136
     },
     {
-      "id": 137,
       "name": "Screen137",
       "title": "SidePanelNav",
       "emoji": "📢",
@@ -3736,10 +3735,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 137
     },
     {
-      "id": 138,
       "name": "Screen138",
       "title": "SplitView",
       "emoji": "♻️",
@@ -3762,10 +3761,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 138
     },
     {
-      "id": 139,
       "name": "Screen139",
       "title": "NestedNavObserver",
       "emoji": "🧯",
@@ -3788,10 +3787,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 139
     },
     {
-      "id": 140,
       "name": "Screen140",
       "title": "PopScopeNested",
       "emoji": "❗",
@@ -3814,10 +3813,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 140
     },
     {
-      "id": 141,
       "name": "Screen141",
       "title": "AnimatedPageRoute",
       "emoji": "🔺",
@@ -3840,10 +3839,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 141
     },
     {
-      "id": 142,
       "name": "Screen142",
       "title": "OpenContainer",
       "emoji": "❌",
@@ -3866,10 +3865,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 142
     },
     {
-      "id": 143,
       "name": "Screen143",
       "title": "SharedAxisTransition",
       "emoji": "🛫",
@@ -3892,10 +3891,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 143
     },
     {
-      "id": 144,
       "name": "Screen144",
       "title": "FadeThroughTransition",
       "emoji": "🚫",
@@ -3918,10 +3917,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 144
     },
     {
-      "id": 145,
       "name": "Screen145",
       "title": "MaterialMotion",
       "emoji": "🖼️",
@@ -3955,10 +3954,10 @@
         ],
         "pitfall": "接続失敗時に自動リトライを無制限に行うと過剰なリクエストになるため、リトライ回数と間隔の上限を設ける。",
         "snippet": "GridView.builder(\n  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3),\n  itemCount: connectors.length,\n  itemBuilder: (_, i) => ConnectorCard(connector: connectors[i]),\n);"
-      }
+      },
+      "screenDataId": 145
     },
     {
-      "id": 146,
       "name": "Screen146",
       "title": "AnimatedSwitcher",
       "emoji": "🧩",
@@ -3992,10 +3991,10 @@
         ],
         "pitfall": "ロール×権限グリッドに「認証済みかどうか」のような認証状態の列を混ぜると、認可（何ができるか）と認証（本人確認済みか）の軸が混同され、監査時に読み違えやすくなる。グリッドは権限情報だけに専念させる。",
         "snippet": "DataTable buildRoleGrid(List<Role> roles, List<Permission> perms) {\n  return DataTable(\n    columns: [\n      const DataColumn(label: Text('ロール')),\n      ...perms.map((p) => DataColumn(label: Text(p.name))),\n    ],\n    rows: roles.map((r) => DataRow(cells: [\n      DataCell(Text(r.name)),\n      ...perms.map((p) => DataCell(Icon(r.has(p) ? Icons.check : Icons.close))),\n    ])).toList(),\n  );\n}"
-      }
+      },
+      "screenDataId": 146
     },
     {
-      "id": 147,
       "name": "Screen147",
       "title": "AnimatedCrossFade",
       "emoji": "🟢",
@@ -4018,10 +4017,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 147
     },
     {
-      "id": 148,
       "name": "Screen148",
       "title": "CustomSlide",
       "emoji": "🧊",
@@ -4044,10 +4043,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 148
     },
     {
-      "id": 149,
       "name": "Screen149",
       "title": "RotationTransition",
       "emoji": "🔣",
@@ -4070,10 +4069,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 149
     },
     {
-      "id": 150,
       "name": "Screen150",
       "title": "FlipTransition",
       "emoji": "🧷",
@@ -4096,10 +4095,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 150
     },
     {
-      "id": 151,
       "name": "Screen151",
       "title": "CurveAnimation",
       "emoji": "🔘",
@@ -4122,10 +4121,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 151
     },
     {
-      "id": 152,
       "name": "Screen152",
       "title": "ChainedAnimation",
       "emoji": "🔳",
@@ -4148,10 +4147,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 152
     },
     {
-      "id": 153,
       "name": "Screen153",
       "title": "StaggeredAnimation",
       "emoji": "🔷",
@@ -4174,10 +4173,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 153
     },
     {
-      "id": 154,
       "name": "Screen154",
       "title": "ImplicitAnimation",
       "emoji": "🔲",
@@ -4200,10 +4199,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 154
     },
     {
-      "id": 155,
       "name": "Screen155",
       "title": "ExplicitAnimation",
       "emoji": "👆",
@@ -4226,10 +4225,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 155
     },
     {
-      "id": 156,
       "name": "Screen156",
       "title": "PredictiveBackAnim",
       "emoji": "🎴",
@@ -4252,10 +4251,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 156
     },
     {
-      "id": 157,
       "name": "Screen157",
       "title": "ParallaxTransition",
       "emoji": "🎲",
@@ -4278,10 +4277,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 157
     },
     {
-      "id": 158,
       "name": "Screen158",
       "title": "ZoomTransition",
       "emoji": "🪤",
@@ -4304,10 +4303,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 158
     },
     {
-      "id": 159,
       "name": "Screen159",
       "title": "WaveTransition",
       "emoji": "🎫",
@@ -4330,10 +4329,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 159
     },
     {
-      "id": 160,
       "name": "Screen160",
       "title": "GlassTransition",
       "emoji": "🀄",
@@ -4356,10 +4355,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 160
     },
     {
-      "id": 161,
       "name": "Screen161",
       "title": "AlertDialogBasic",
       "emoji": "🪨",
@@ -4382,10 +4381,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 161
     },
     {
-      "id": 162,
       "name": "Screen162",
       "title": "CustomDialog",
       "emoji": "🥋",
@@ -4408,10 +4407,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 162
     },
     {
-      "id": 163,
       "name": "Screen163",
       "title": "FullScreenDialog",
       "emoji": "📮",
@@ -4445,10 +4444,10 @@
         ],
         "pitfall": "受信のたびに重い処理を同期実行するとイベントを取りこぼすため、受信とハンドリングをキューで分離する。",
         "snippet": "webhookStream.listen((event) {\n  if (!verifySignature(event)) return;\n  eventQueue.add(event);\n});"
-      }
+      },
+      "screenDataId": 163
     },
     {
-      "id": 164,
       "name": "Screen164",
       "title": "BottomSheetBasic",
       "emoji": "⏳",
@@ -4482,10 +4481,10 @@
         ],
         "pitfall": "リフレッシュトークンをアクセストークンと同じ場所・同じ扱いで保存すると、片方が漏洩したときにもう片方まで危険にさらされる。用途ごとに保存先やスコープを分ける。",
         "snippet": "Future<String> ensureFreshToken() async {\n  if (!_isExpiringSoon(_accessToken)) return _accessToken!;\n  final res = await http.post(\n    Uri.parse('$base/auth/refresh'),\n    body: {'refreshToken': _refreshToken},\n  );\n  if (res.statusCode == 401) {\n    _sessionExpired = true; // 再ログインへ\n    throw SessionExpiredException();\n  }\n  _accessToken = jsonDecode(res.body)['accessToken'];\n  return _accessToken!;\n}"
-      }
+      },
+      "screenDataId": 164
     },
     {
-      "id": 165,
       "name": "Screen165",
       "title": "ModalBottomSheet",
       "emoji": "🛰️",
@@ -4508,10 +4507,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 165
     },
     {
-      "id": 166,
       "name": "Screen166",
       "title": "SnackBar",
       "emoji": "⏱️",
@@ -4534,10 +4533,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 166
     },
     {
-      "id": 167,
       "name": "Screen167",
       "title": "Tooltip",
       "emoji": "⚙️",
@@ -4560,10 +4559,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 167
     },
     {
-      "id": 168,
       "name": "Screen168",
       "title": "Popup",
       "emoji": "⌛",
@@ -4586,10 +4585,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 168
     },
     {
-      "id": 169,
       "name": "Screen169",
       "title": "ContextMenu",
       "emoji": "📤",
@@ -4612,10 +4611,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 169
     },
     {
-      "id": 170,
       "name": "Screen170",
       "title": "DropdownMenu",
       "emoji": "🚶",
@@ -4638,10 +4637,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 170
     },
     {
-      "id": 171,
       "name": "Screen171",
       "title": "DatePicker",
       "emoji": "🌓",
@@ -4664,10 +4663,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 171
     },
     {
-      "id": 172,
       "name": "Screen172",
       "title": "TimePicker",
       "emoji": "🌀",
@@ -4690,10 +4689,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 172
     },
     {
-      "id": 173,
       "name": "Screen173",
       "title": "ColorPicker",
       "emoji": "🔊",
@@ -4716,10 +4715,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 173
     },
     {
-      "id": 174,
       "name": "Screen174",
       "title": "FilePicker",
       "emoji": "🔋",
@@ -4742,10 +4741,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 174
     },
     {
-      "id": 175,
       "name": "Screen175",
       "title": "ConfirmDialog",
       "emoji": "⏲️",
@@ -4768,10 +4767,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 175
     },
     {
-      "id": 176,
       "name": "Screen176",
       "title": "FormDialog",
       "emoji": "🩹",
@@ -4794,10 +4793,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 176
     },
     {
-      "id": 177,
       "name": "Screen177",
       "title": "SearchDelegate",
       "emoji": "🕐",
@@ -4820,10 +4819,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 177
     },
     {
-      "id": 178,
       "name": "Screen178",
       "title": "ActionSheet",
       "emoji": "🏃",
@@ -4846,10 +4845,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 178
     },
     {
-      "id": 179,
       "name": "Screen179",
       "title": "BannerWidget",
       "emoji": "🛸",
@@ -4872,10 +4871,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 179
     },
     {
-      "id": 180,
       "name": "Screen180",
       "title": "DrawerModal2",
       "emoji": "🩻",
@@ -4898,10 +4897,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 180
     },
     {
-      "id": 181,
       "name": "Screen181",
       "title": "AuthFlow",
       "emoji": "🗝️",
@@ -4935,10 +4934,10 @@
         ],
         "pitfall": "APIキーを平文のSharedPreferencesに保存すると漏洩リスクが高いため、Secure Storageなど暗号化された領域に保存する。",
         "snippet": "await secureStorage.write(key: 'api_key', value: apiKey);\nawait secureStorage.write(key: 'base_url', value: baseUrl);\nfinal ok = await testConnectivity(baseUrl, apiKey);"
-      }
+      },
+      "screenDataId": 181
     },
     {
-      "id": 182,
       "name": "Screen182",
       "title": "ShoppingCart",
       "emoji": "🛡️",
@@ -4972,10 +4971,10 @@
         ],
         "pitfall": "「全端末からログアウト」のような破壊的操作を確認なしに即実行すると、誤操作で自分自身も含めた全セッションを失効させてしまう。実行前に確認ダイアログと再認証を挟む。",
         "snippet": "Future<void> revokeAllSessions() async {\n  final confirmed = await showConfirmDialog(context, '全端末からログアウトしますか？');\n  if (!confirmed) return;\n  final reauthed = await requireReauth(context);\n  if (!reauthed) return;\n  await http.post(\n    Uri.parse('$base/auth/sessions/revoke-all'),\n    headers: {'Authorization': 'Bearer $accessToken'},\n  );\n}"
-      }
+      },
+      "screenDataId": 182
     },
     {
-      "id": 183,
       "name": "Screen183",
       "title": "Onboarding",
       "emoji": "🧵",
@@ -4998,10 +4997,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 183
     },
     {
-      "id": 184,
       "name": "Screen184",
       "title": "ProfileSetup",
       "emoji": "💾",
@@ -5024,10 +5023,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 184
     },
     {
-      "id": 185,
       "name": "Screen185",
       "title": "Subscription",
       "emoji": "🪛",
@@ -5050,10 +5049,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 185
     },
     {
-      "id": 186,
       "name": "Screen186",
       "title": "MultiStepForm",
       "emoji": "🎚️",
@@ -5076,10 +5075,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 186
     },
     {
-      "id": 187,
       "name": "Screen187",
       "title": "StateRestorationNav",
       "emoji": "⌨️",
@@ -5102,10 +5101,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 187
     },
     {
-      "id": 188,
       "name": "Screen188",
       "title": "DeeplinkToNested",
       "emoji": "🛣️",
@@ -5128,10 +5127,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 188
     },
     {
-      "id": 189,
       "name": "Screen189",
       "title": "PinAuth",
       "emoji": "🎛️",
@@ -5154,10 +5153,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 189
     },
     {
-      "id": 190,
       "name": "Screen190",
       "title": "QRScan",
       "emoji": "🔧",
@@ -5180,10 +5179,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 190
     },
     {
-      "id": 191,
       "name": "Screen191",
       "title": "InAppReview",
       "emoji": "🦻",
@@ -5206,10 +5205,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 191
     },
     {
-      "id": 192,
       "name": "Screen192",
       "title": "ShareContent",
       "emoji": "🗜️",
@@ -5232,10 +5231,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 192
     },
     {
-      "id": 193,
       "name": "Screen193",
       "title": "PaymentFlow",
       "emoji": "🕹️",
@@ -5258,10 +5257,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 193
     },
     {
-      "id": 194,
       "name": "Screen194",
       "title": "SocialLogin",
       "emoji": "🚨",
@@ -5284,10 +5283,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 194
     },
     {
-      "id": 195,
       "name": "Screen195",
       "title": "NotificationNav",
       "emoji": "🧿",
@@ -5310,10 +5309,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 195
     },
     {
-      "id": 196,
       "name": "Screen196",
       "title": "WidgetToRoute",
       "emoji": "🥇",
@@ -5336,10 +5335,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 196
     },
     {
-      "id": 197,
       "name": "Screen197",
       "title": "MultiWindowNav",
       "emoji": "🚂",
@@ -5362,10 +5361,10 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 197
     },
     {
-      "id": 198,
       "name": "Screen198",
       "title": "ComprehensiveApp",
       "emoji": "🕶️",
@@ -5388,7 +5387,8 @@
         "api",
         "ui",
         "data"
-      ]
+      ],
+      "screenDataId": 198
     }
   ]
 }

@@ -11,7 +11,7 @@ enum ClipboardShelfSort { newest, oldest, manual }
 
 class ClipboardShelfItem {
   ClipboardShelfItem({
-    required this.id,
+    required this.clipboardShelfItemId,
     required this.kind,
     required this.createdAt,
     this.text,
@@ -19,7 +19,7 @@ class ClipboardShelfItem {
     this.mimeType,
   });
 
-  final int id;
+  final int clipboardShelfItemId;
   final ClipboardShelfKind kind;
   final DateTime createdAt;
   final String? text;
@@ -78,7 +78,7 @@ class _ClipboardShelfState extends State<ClipboardShelf> {
       _items.insert(
         0,
         ClipboardShelfItem(
-          id: _nextId++,
+          clipboardShelfItemId: _nextId++,
           kind: _classify(trimmed),
           createdAt: DateTime.now(),
           text: trimmed,
@@ -145,7 +145,7 @@ class _ClipboardShelfState extends State<ClipboardShelf> {
         _items.insert(
           0,
           ClipboardShelfItem(
-            id: _nextId++,
+            clipboardShelfItemId: _nextId++,
             kind: ClipboardShelfKind.image,
             createdAt: DateTime.now(),
             imageBytes: payload.bytes,
@@ -216,7 +216,7 @@ class _ClipboardShelfState extends State<ClipboardShelf> {
   String _bundleText() {
     final ordered = _selected.isEmpty
         ? _visibleItems
-        : _orderedItems(_items.where((item) => _selected.contains(item.id)));
+        : _orderedItems(_items.where((item) => _selected.contains(item.clipboardShelfItemId)));
     final buffer = StringBuffer('# Context Bundle\n\n');
     for (var i = 0; i < ordered.length; i++) {
       final item = ordered[i];
@@ -251,15 +251,15 @@ class _ClipboardShelfState extends State<ClipboardShelf> {
     });
   }
 
-  void _moveManual(int id, int delta) {
+  void _moveManual(int clipboardShelfItemId, int delta) {
     final visibleBefore = _visibleItems;
-    final visibleIndex = visibleBefore.indexWhere((item) => item.id == id);
+    final visibleIndex = visibleBefore.indexWhere((item) => item.clipboardShelfItemId == clipboardShelfItemId);
     final targetVisibleIndex = visibleIndex + delta;
     if (visibleIndex < 0 || targetVisibleIndex < 0 || targetVisibleIndex >= visibleBefore.length) {
       return;
     }
 
-    final targetId = visibleBefore[targetVisibleIndex].id;
+    final targetId = visibleBefore[targetVisibleIndex].clipboardShelfItemId;
     setState(() {
       if (_sort != ClipboardShelfSort.manual) {
         final normalized = _orderedItems(_items);
@@ -267,8 +267,8 @@ class _ClipboardShelfState extends State<ClipboardShelf> {
           ..clear()
           ..addAll(normalized);
       }
-      final index = _items.indexWhere((item) => item.id == id);
-      final targetIndex = _items.indexWhere((item) => item.id == targetId);
+      final index = _items.indexWhere((item) => item.clipboardShelfItemId == clipboardShelfItemId);
+      final targetIndex = _items.indexWhere((item) => item.clipboardShelfItemId == targetId);
       if (index < 0 || targetIndex < 0) return;
       final current = _items[index];
       _items[index] = _items[targetIndex];
@@ -379,7 +379,7 @@ class _ClipboardShelfState extends State<ClipboardShelf> {
             for (final item in visible) ...[
               _ShelfItemCard(
                 item: item,
-                selected: _selected.contains(item.id),
+                selected: _selected.contains(item.clipboardShelfItemId),
                 plainText: item.kind == ClipboardShelfKind.markdown ? _plainText(item.text ?? '') : null,
                 kindLabel: _kindDisplayLabel(display, item.kind),
                 moveUpTooltip: display.text('clipboardShelf.moveUp'),
@@ -391,18 +391,18 @@ class _ClipboardShelfState extends State<ClipboardShelf> {
                 copyPlainLabel: display.text('clipboardShelf.copyPlain'),
                 onSelected: (value) => setState(() {
                   if (value) {
-                    _selected.add(item.id);
+                    _selected.add(item.clipboardShelfItemId);
                   } else {
-                    _selected.remove(item.id);
+                    _selected.remove(item.clipboardShelfItemId);
                   }
                 }),
                 onCopyRaw: () => _copyItem(item),
                 onCopyPlain: item.kind == ClipboardShelfKind.markdown ? () => _copyItem(item, plain: true) : null,
-                onMoveUp: () => _moveManual(item.id, -1),
-                onMoveDown: () => _moveManual(item.id, 1),
+                onMoveUp: () => _moveManual(item.clipboardShelfItemId, -1),
+                onMoveDown: () => _moveManual(item.clipboardShelfItemId, 1),
                 onDelete: () => setState(() {
-                  _selected.remove(item.id);
-                  _items.removeWhere((candidate) => candidate.id == item.id);
+                  _selected.remove(item.clipboardShelfItemId);
+                  _items.removeWhere((candidate) => candidate.clipboardShelfItemId == item.clipboardShelfItemId);
                 }),
               ),
               const SizedBox(height: 8),
