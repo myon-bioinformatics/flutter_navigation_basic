@@ -135,8 +135,6 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     _emitTestProbe();
   }
 
-  void _pushUndo() => _commitUndoSnapshot(_captureSnapshot());
-
   void _beginUndoGesture() {
     _pendingUndoSnapshot ??= _captureSnapshot();
     _emitTestProbe();
