@@ -139,6 +139,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
 
   void _beginUndoGesture() {
     _pendingUndoSnapshot ??= _captureSnapshot();
+    _emitTestProbe();
   }
 
   void _endUndoGesture() {
@@ -149,7 +150,9 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       _emitTestProbe();
       return;
     }
-    _commitUndoSnapshot(pending);
+    // Rebuild Undo controls; gesture commits often follow the last mutating
+    // setState, when history was still empty and buttons were disabled.
+    setState(() => _commitUndoSnapshot(pending));
   }
 
   void _setWithUndo(VoidCallback apply) {
@@ -168,6 +171,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
 
   void _undoOnce() {
     if (_undoHistory.isEmpty) return;
+    _pendingUndoSnapshot = null;
     final snap = _undoHistory.removeLast();
     setState(() {
       // Restore the shared reference; do not allocate a new Uint8List copy.
@@ -209,15 +213,13 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       }
       final compact = await Base64ImageBridge.downscaleToPng(validated);
       if (!mounted) return;
-      _pushUndo();
-      setState(() {
+      _setStateWithUndo(() {
         _imageBytes = compact.bytes;
         _status = display.text(
           'photoStudio.imageLoaded',
           arguments: {'bytes': compact.bytes.length},
         );
       });
-      _emitTestProbe();
     } catch (_) {
       if (!mounted) return;
       setState(() => _status = display.text('photoStudio.imageError'));
@@ -467,9 +469,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                   selected: _shape == shape,
                                   onSelected: (_) {
                                     if (_shape == shape) return;
-                                    _pushUndo();
-                                    setState(() => _shape = shape);
-                                    _emitTestProbe();
+                                    _setStateWithUndo(() => _shape = shape);
                                   },
                                 ),
                             ],
@@ -488,9 +488,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                 GestureDetector(
                                   onTap: () {
                                     if (_strokeArgb == argb) return;
-                                    _pushUndo();
-                                    setState(() => _strokeArgb = argb);
-                                    _emitTestProbe();
+                                    _setStateWithUndo(() => _strokeArgb = argb);
                                   },
                                   child: Container(
                                     width: 28,

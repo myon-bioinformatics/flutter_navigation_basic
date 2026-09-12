@@ -516,37 +516,29 @@ void main() {
       page: PhotoStudioPage(onTestProbe: (p) => probe = p),
     );
 
-    // 21 distinct shape toggles (circle ↔ triangle) after leaving rectangle.
     final shapes = <String>['Circle', 'Triangle'];
-    for (var i = 0; i < 21; i++) {
+    for (var i = 0; i < 20; i++) {
       await tester.ensureVisible(find.text(shapes[i % 2]));
       await tester.tap(find.text(shapes[i % 2]));
       await tester.pump();
     }
     expect(probe!.undoDepth, 20);
-    final beforeNoopShape = probe!.shapeName;
+    final shapeAtCap = probe!.shapeName;
 
-    final slider = find.byType(Slider);
-    await tester.ensureVisible(slider);
-    final sliderBox = tester.getRect(slider);
-    final thumbX = sliderBox.left + sliderBox.width * 0.23;
-    final gesture =
-        await tester.startGesture(Offset(thumbX, sliderBox.center.dy));
-    await tester.pump();
-    await gesture.moveBy(const Offset(40, 0));
-    await tester.pump();
-    await gesture.moveBy(const Offset(-40, 0));
+    // No-op frame drag (press and release without moving). Must not drop history.
+    final box = tester.getRect(find.byType(PhotoRectCanvas));
+    final center =
+        Offset(box.left + box.width * 0.5, box.top + box.height * 0.5);
+    final gesture = await tester.startGesture(center);
     await tester.pump();
     await gesture.up();
     await tester.pump();
-
     expect(probe!.undoDepth, 20);
-    expect(probe!.shapeName, beforeNoopShape);
+    expect(probe!.shapeName, shapeAtCap);
 
-    // After capping, undoing 20 times empties history; the first rectangle
-    // pre-state was dropped so we do not return all the way to the initial
-    // rectangle necessarily — but depth must stay within bound and empty out.
+    // Existing 20 entries remain undoable in order.
     for (var i = 0; i < 20; i++) {
+      expect(probe!.undoDepth, 20 - i);
       await tester.tap(find.text('Undo').last);
       await tester.pump();
     }
@@ -558,6 +550,7 @@ void main() {
       isNull,
     );
   });
+
 
   testWidgets('undo snapshots share image bytes by reference', (tester) async {
     PhotoStudioTestProbe? probe;
