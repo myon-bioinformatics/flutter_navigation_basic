@@ -118,29 +118,465 @@ void main() {
     expect(find.textContaining('Photo cleared'), findsOneWidget);
   });
 
-  testWidgets('multi-step undo: three shape changes each revert step by step',
+  testWidgets('bounded undo restores shape then disables when empty',
       (tester) async {
-    await _pumpPage(tester);
+    PhotoStudioTestProbe? probe;
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(onTestProbe: (p) => probe = p),
+    );
 
-    // Rectangle → Circle → Triangle → back to Circle via undo
     await tester.ensureVisible(find.text('Circle'));
     await tester.tap(find.text('Circle'));
     await tester.pump();
+    expect(probe?.shapeName, 'circle');
+    expect(probe?.undoDepth, 1);
 
-    await tester.ensureVisible(find.text('Triangle'));
-    await tester.tap(find.text('Triangle'));
-    await tester.pump();
-
-    // Two changes, two undo steps.
     await tester.ensureVisible(find.text('Undo'));
     await tester.tap(find.text('Undo').last);
     await tester.pump();
+    expect(probe?.shapeName, 'rectangle');
+    expect(probe?.undoDepth, 0);
     expect(find.textContaining('Undid'), findsOneWidget);
+    expect(
+      tester
+          .widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Undo'))
+          .onPressed,
+      isNull,
+    );
+  });
 
-    // Second undo brings back the original Rectangle state.
+  testWidgets(
+      'multi-step undo restores shape, frame move, stamp place, then stamp drag',
+      (tester) async {
+    PhotoStudioTestProbe? probe;
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(onTestProbe: (p) => probe = p),
+    );
+
+    await tester.tap(find.text('Circle'));
+    await tester.pump();
+    expect(probe?.shapeName, 'circle');
+
+    final box = tester.getRect(find.byType(PhotoRectCanvas));
+    final moveStart =
+        Offset(box.left + box.width * 0.5, box.top + box.height * 0.5);
+    final moveEnd =
+        Offset(moveStart.dx + box.width * 0.1, moveStart.dy + box.height * 0.06);
+    final beforeMove = (
+      probe!.rectLeft,
+      probe!.rectTop,
+      probe!.rectRight,
+      probe!.rectBottom,
+    );
+    var gesture = await tester.startGesture(moveStart);
+    await tester.pump();
+    await gesture.moveTo(moveEnd);
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+    expect(
+      (probe!.rectLeft, probe!.rectTop, probe!.rectRight, probe!.rectBottom),
+      isNot(beforeMove),
+    );
+    final afterMove = (
+      probe!.rectLeft,
+      probe!.rectTop,
+      probe!.rectRight,
+      probe!.rectBottom,
+    );
+
+    await tester.tap(find.text('⭐'));
+    await tester.pump();
+    final place =
+        Offset(box.left + box.width * 0.18, box.top + box.height * 0.22);
+    await tester.tapAt(place);
+    await tester.pump();
+    expect(probe!.stamps, hasLength(1));
+    final placed = probe!.stamps.single;
+    expect(placed.x, closeTo(0.18, 0.04));
+    expect(placed.y, closeTo(0.22, 0.04));
+    expect(probe!.undoDepth, 3);
+
+    gesture = await tester.startGesture(place);
+    await tester.pump();
+    await gesture.moveTo(Offset(place.dx + 50, place.dy + 30));
+    await tester.pump();
+    await gesture.moveTo(Offset(place.dx + 100, place.dy + 60));
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+    expect(probe!.undoDepth, 4);
+    final dragged = probe!.stamps.single;
+    expect(dragged.x, isNot(closeTo(placed.x, 0.01)));
+    expect(dragged.y, isNot(closeTo(placed.y, 0.01)));
+
+    // Undo drag → place coords
     await tester.tap(find.text('Undo').last);
     await tester.pump();
-    expect(find.textContaining('Undid'), findsWidgets);
+    expect(probe!.undoDepth, 3);
+    expect(probe!.stamps.single.x, closeTo(placed.x, 0.001));
+    expect(probe!.stamps.single.y, closeTo(placed.y, 0.001));
+
+    // Undo place → no stamps, frame still moved
+    await tester.tap(find.text('Undo').last);
+    await tester.pump();
+    expect(probe!.undoDepth, 2);
+    expect(probe!.stamps, isEmpty);
+    expect(
+      (probe!.rectLeft, probe!.rectTop, probe!.rectRight, probe!.rectBottom),
+      afterMove,
+    );
+
+    // Undo move → pre-move rect, still circle
+    await tester.tap(find.text('Undo').last);
+    await tester.pump();
+    expect(probe!.undoDepth, 1);
+    expect(
+      (probe!.rectLeft, probe!.rectTop, probe!.rectRight, probe!.rectBottom),
+      beforeMove,
+    );
+    expect(probe!.shapeName, 'circle');
+
+    // Undo shape → rectangle; undo empty
+    await tester.tap(find.text('Undo').last);
+    await tester.pump();
+    expect(probe!.undoDepth, 0);
+    expect(probe!.shapeName, 'rectangle');
+    expect(
+      tester
+          .widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Undo'))
+          .onPressed,
+      isNull,
+    );
+  });
+
+  testWidgets('one drag with many pan updates records a single undo entry',
+      (tester) async {
+    PhotoStudioTestProbe? probe;
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(onTestProbe: (p) => probe = p),
+    );
+
+    final box = tester.getRect(find.byType(PhotoRectCanvas));
+    final start =
+        Offset(box.left + box.width * 0.5, box.top + box.height * 0.5);
+    final gesture = await tester.startGesture(start);
+    await tester.pump();
+    expect(probe!.undoDepth, 1);
+    for (var i = 1; i <= 8; i++) {
+      await gesture.moveBy(Offset(box.width * 0.01, box.height * 0.005));
+      await tester.pump();
+      expect(probe!.undoDepth, 1);
+    }
+    await gesture.up();
+    await tester.pump();
+    expect(probe!.undoDepth, 1);
+  });
+
+  testWidgets('tap place then drag are two separate undo entries',
+      (tester) async {
+    PhotoStudioTestProbe? probe;
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(onTestProbe: (p) => probe = p),
+    );
+
+    await tester.tap(find.text('⭐'));
+    await tester.pump();
+    final box = tester.getRect(find.byType(PhotoRectCanvas));
+    final place =
+        Offset(box.left + box.width * 0.14, box.top + box.height * 0.16);
+    await tester.tapAt(place);
+    await tester.pump();
+    expect(probe!.undoDepth, 1);
+    expect(probe!.stamps, hasLength(1));
+    final placed = probe!.stamps.single;
+
+    final gesture = await tester.startGesture(place);
+    await tester.pump();
+    expect(probe!.undoDepth, 2);
+    await gesture.moveTo(Offset(place.dx + 80, place.dy + 40));
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+    expect(probe!.undoDepth, 2);
+
+    await tester.tap(find.text('Undo').last);
+    await tester.pump();
+    expect(probe!.stamps.single.x, closeTo(placed.x, 0.001));
+    expect(probe!.stamps.single.y, closeTo(placed.y, 0.001));
+    expect(probe!.undoDepth, 1);
+
+    await tester.tap(find.text('Undo').last);
+    await tester.pump();
+    expect(probe!.stamps, isEmpty);
+    expect(probe!.undoDepth, 0);
+  });
+
+  testWidgets('frame create, move, and resize each undo independently',
+      (tester) async {
+    PhotoStudioTestProbe? probe;
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(onTestProbe: (p) => probe = p),
+    );
+
+    final initial = (
+      probe?.rectLeft ?? NormalizedRect.initial.left,
+      probe?.rectTop ?? NormalizedRect.initial.top,
+      probe?.rectRight ?? NormalizedRect.initial.right,
+      probe?.rectBottom ?? NormalizedRect.initial.bottom,
+    );
+    final box = tester.getRect(find.byType(PhotoRectCanvas));
+
+    // Create a new frame in empty space (outside the default rect).
+    final createStart =
+        Offset(box.left + box.width * 0.05, box.top + box.height * 0.05);
+    final createEnd =
+        Offset(box.left + box.width * 0.35, box.top + box.height * 0.4);
+    var gesture = await tester.startGesture(createStart);
+    await tester.pump();
+    await gesture.moveTo(createEnd);
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+    expect(probe!.undoDepth, 1);
+    final afterCreate = (
+      probe!.rectLeft,
+      probe!.rectTop,
+      probe!.rectRight,
+      probe!.rectBottom,
+    );
+    expect(afterCreate, isNot(initial));
+
+    final moveStart = Offset(
+      box.left + box.width * ((probe!.rectLeft + probe!.rectRight) / 2),
+      box.top + box.height * ((probe!.rectTop + probe!.rectBottom) / 2),
+    );
+    gesture = await tester.startGesture(moveStart);
+    await tester.pump();
+    await gesture.moveTo(
+      Offset(moveStart.dx + box.width * 0.08, moveStart.dy + box.height * 0.05),
+    );
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+    expect(probe!.undoDepth, 2);
+    final afterMove = (
+      probe!.rectLeft,
+      probe!.rectTop,
+      probe!.rectRight,
+      probe!.rectBottom,
+    );
+    expect(afterMove, isNot(afterCreate));
+
+    final resizeStart = Offset(
+      box.left + box.width * probe!.rectRight,
+      box.top + box.height * probe!.rectBottom,
+    );
+    gesture = await tester.startGesture(resizeStart);
+    await tester.pump();
+    await gesture.moveTo(
+      Offset(
+        resizeStart.dx + box.width * 0.06,
+        resizeStart.dy + box.height * 0.06,
+      ),
+    );
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+    expect(probe!.undoDepth, 3);
+    final afterResize = (
+      probe!.rectLeft,
+      probe!.rectTop,
+      probe!.rectRight,
+      probe!.rectBottom,
+    );
+    expect(afterResize, isNot(afterMove));
+
+    await tester.tap(find.text('Undo').last);
+    await tester.pump();
+    expect(
+      (probe!.rectLeft, probe!.rectTop, probe!.rectRight, probe!.rectBottom),
+      afterMove,
+    );
+    await tester.tap(find.text('Undo').last);
+    await tester.pump();
+    expect(
+      (probe!.rectLeft, probe!.rectTop, probe!.rectRight, probe!.rectBottom),
+      afterCreate,
+    );
+    await tester.tap(find.text('Undo').last);
+    await tester.pump();
+    expect(
+      (probe!.rectLeft, probe!.rectTop, probe!.rectRight, probe!.rectBottom),
+      initial,
+    );
+    expect(probe!.undoDepth, 0);
+  });
+
+  testWidgets('stamp drag undo restores coordinates, not only status',
+      (tester) async {
+    PhotoStudioTestProbe? probe;
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(onTestProbe: (p) => probe = p),
+    );
+
+    await tester.tap(find.text('⭐'));
+    await tester.pump();
+    final box = tester.getRect(find.byType(PhotoRectCanvas));
+    final place =
+        Offset(box.left + box.width * 0.12, box.top + box.height * 0.12);
+    await tester.tapAt(place);
+    await tester.pump();
+    final before = probe!.stamps.single;
+
+    final gesture = await tester.startGesture(place);
+    await tester.pump();
+    await gesture.moveTo(Offset(place.dx + 40, place.dy + 20));
+    await tester.pump();
+    await gesture.moveTo(Offset(place.dx + 90, place.dy + 55));
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+    expect(probe!.stamps.single.x, isNot(closeTo(before.x, 0.01)));
+
+    await tester.tap(find.text('Undo').last);
+    await tester.pump();
+    expect(probe!.stamps.single.x, closeTo(before.x, 0.001));
+    expect(probe!.stamps.single.y, closeTo(before.y, 0.001));
+    expect(find.textContaining('Undid'), findsOneWidget);
+    // Place entry remains; undo is still enabled until that is undone too.
+    expect(probe!.undoDepth, 1);
+    expect(
+      tester
+          .widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Undo'))
+          .onPressed,
+      isNotNull,
+    );
+  });
+
+  testWidgets('scale slider with many ticks records one undo entry',
+      (tester) async {
+    PhotoStudioTestProbe? probe;
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(onTestProbe: (p) => probe = p),
+    );
+
+    await tester.tap(find.text('⭐'));
+    await tester.pump();
+    final box = tester.getRect(find.byType(PhotoRectCanvas));
+    await tester.tapAt(
+      Offset(box.left + box.width * 0.2, box.top + box.height * 0.2),
+    );
+    await tester.pump();
+    expect(probe!.undoDepth, 1);
+    final beforeScale = probe!.stampScale;
+
+    final slider = find.byType(Slider);
+    await tester.ensureVisible(slider);
+    final sliderBox = tester.getRect(slider);
+    // Thumb for value 1.0 on [0.4, 3.0] ≈ 23% along the track.
+    final thumbX = sliderBox.left + sliderBox.width * 0.23;
+    final gesture =
+        await tester.startGesture(Offset(thumbX, sliderBox.center.dy));
+    await tester.pump();
+    for (var i = 1; i <= 12; i++) {
+      await gesture.moveBy(const Offset(14, 0));
+      await tester.pump();
+      expect(
+        probe!.undoDepth,
+        2,
+        reason: 'pan updates must not add extra undo entries',
+      );
+    }
+    await gesture.up();
+    await tester.pump();
+
+    expect(probe!.stampScale, greaterThan(beforeScale + 0.15));
+    expect(probe!.undoDepth, 2);
+
+    await tester.tap(find.text('Undo').last);
+    await tester.pump();
+    expect(probe!.stampScale, closeTo(beforeScale, 0.001));
+    expect(probe!.undoDepth, 1);
+  });
+
+  testWidgets('undo history caps at 20 and drops the oldest entry',
+      (tester) async {
+    PhotoStudioTestProbe? probe;
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(onTestProbe: (p) => probe = p),
+    );
+
+    // 21 distinct shape toggles (circle ↔ triangle) after leaving rectangle.
+    final shapes = <String>['Circle', 'Triangle'];
+    for (var i = 0; i < 21; i++) {
+      await tester.ensureVisible(find.text(shapes[i % 2]));
+      await tester.tap(find.text(shapes[i % 2]));
+      await tester.pump();
+    }
+    expect(probe!.undoDepth, 20);
+
+    // After capping, undoing 20 times empties history; the first rectangle
+    // pre-state was dropped so we do not return all the way to the initial
+    // rectangle necessarily — but depth must stay within bound and empty out.
+    for (var i = 0; i < 20; i++) {
+      await tester.tap(find.text('Undo').last);
+      await tester.pump();
+    }
+    expect(probe!.undoDepth, 0);
+    expect(
+      tester
+          .widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Undo'))
+          .onPressed,
+      isNull,
+    );
+  });
+
+  testWidgets('undo snapshots share image bytes by reference', (tester) async {
+    PhotoStudioTestProbe? probe;
+    final loaded = Uint8List.fromList(_tinyPng);
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(
+        imageBytesPicker: () async => loaded,
+        onTestProbe: (p) => probe = p,
+      ),
+    );
+
+    await tester.runAsync(() async {
+      final choose = find.byIcon(Icons.image_outlined);
+      await tester.ensureVisible(choose);
+      await tester.tap(choose);
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(probe?.imageBytes, isNotNull);
+    final shared = probe!.imageBytes!;
+
+    await tester.tap(find.text('Circle'));
+    await tester.pump();
+    await tester.tap(find.text('Triangle'));
+    await tester.pump();
+    await tester.tap(find.text('Rectangle'));
+    await tester.pump();
+
+    expect(probe!.undoDepth, greaterThanOrEqualTo(3));
+    // Current image and every history slot that still has a photo must share
+    // the same Uint8List instance (no deep copy per undo push).
+    expect(identical(probe!.imageBytes, shared), isTrue);
+    for (final ref in probe!.undoImageByteRefs) {
+      if (ref == null) continue;
+      expect(identical(ref, shared), isTrue);
+    }
   });
 
   testWidgets(
@@ -245,8 +681,7 @@ void main() {
     expect(h.toDouble(), closeTo(canvasSize.height * 2, 2));
   });
 
-  testWidgets('frame move undo restores pre-drag rect and consumes undo',
-      (tester) async {
+  testWidgets('frame move undo restores pre-drag rect', (tester) async {
     await _pumpPage(tester);
     final before = _rectCardText(tester);
 
@@ -302,8 +737,7 @@ void main() {
     expect(_rectCardText(tester), before);
   });
 
-  testWidgets(
-      'emoji tap places, selects, syncs scale; drag does not double-place',
+  testWidgets('emoji tap places, selects, syncs scale; drag does not double-place',
       (tester) async {
     await _pumpPage(tester);
 
@@ -358,240 +792,6 @@ void main() {
       (reselected - scaled).abs() < 0.25 || (reselected - secondScale).abs() > 0.1,
       isTrue,
       reason: 'tapping near the first stamp should change selection/scale',
-    );
-  });
-
-  testWidgets(
-      'stamp drag undo restores pre-drag coordinates as one operation',
-      (tester) async {
-    await _pumpPage(tester);
-
-    await tester.tap(find.text('⭐'));
-    await tester.pump();
-    final box = tester.getRect(find.byType(PhotoRectCanvas));
-    final place =
-        Offset(box.left + box.width * 0.12, box.top + box.height * 0.12);
-    await tester.tapAt(place);
-    await tester.pump();
-
-    // Capture normalized place coordinates from widget state.
-    final canvasBefore = tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas));
-    expect(canvasBefore.stamps, hasLength(1));
-    final placeX = canvasBefore.stamps.first.x;
-    final placeY = canvasBefore.stamps.first.y;
-
-    // Drag the stamp through multiple update events — should be one undo entry.
-    final gesture = await tester.startGesture(place);
-    await tester.pump();
-    await gesture.moveTo(Offset(place.dx + 40, place.dy + 20));
-    await tester.pump();
-    await gesture.moveTo(Offset(place.dx + 90, place.dy + 55));
-    await tester.pump();
-    await gesture.up();
-    await tester.pump();
-
-    // Stamp has moved.
-    final canvasDragged =
-        tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas));
-    expect(canvasDragged.stamps.first.x, isNot(closeTo(placeX, 0.01)));
-
-    // Undo once → back to place position.
-    await tester.tap(find.text('Undo').last);
-    await tester.pump();
-    expect(find.textContaining('Undid'), findsOneWidget);
-
-    final canvasAfterUndo =
-        tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas));
-    expect(canvasAfterUndo.stamps.first.x, closeTo(placeX, 0.02));
-    expect(canvasAfterUndo.stamps.first.y, closeTo(placeY, 0.02));
-
-    // History exhausted: button disabled.
-    expect(
-      tester
-          .widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Undo'))
-          .onPressed,
-      isNull,
-    );
-  });
-
-  testWidgets(
-      'tap place then drag creates two independent undo entries',
-      (tester) async {
-    await _pumpPage(tester);
-
-    await tester.tap(find.text('⭐'));
-    await tester.pump();
-    final box = tester.getRect(find.byType(PhotoRectCanvas));
-    final place =
-        Offset(box.left + box.width * 0.15, box.top + box.height * 0.15);
-
-    // Place via tap (1 undo entry).
-    await tester.tapAt(place);
-    await tester.pumpAndSettle();
-
-    final canvasPlaced =
-        tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas));
-    expect(canvasPlaced.stamps, hasLength(1));
-    final placedX = canvasPlaced.stamps.first.x;
-    final placedY = canvasPlaced.stamps.first.y;
-
-    // Drag the stamp (2nd undo entry).
-    final dest = Offset(place.dx + 80, place.dy + 50);
-    final gesture = await tester.startGesture(place);
-    await tester.pump();
-    await gesture.moveTo(dest);
-    await tester.pump();
-    await gesture.up();
-    await tester.pump();
-
-    final canvasDragged =
-        tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas));
-    expect(canvasDragged.stamps.first.x, isNot(closeTo(placedX, 0.02)));
-
-    // First undo: reverts drag, stamp returns to placed position.
-    await tester.tap(find.text('Undo').last);
-    await tester.pump();
-    final afterUndo1 =
-        tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas));
-    expect(afterUndo1.stamps.first.x, closeTo(placedX, 0.02));
-    expect(afterUndo1.stamps.first.y, closeTo(placedY, 0.02));
-    expect(
-      tester
-          .widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Undo'))
-          .onPressed,
-      isNotNull,
-      reason: 'Second undo entry (stamp place) must still be available',
-    );
-
-    // Second undo: reverts placement, canvas has no stamps.
-    await tester.tap(find.text('Undo').last);
-    await tester.pump();
-    final afterUndo2 =
-        tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas));
-    expect(afterUndo2.stamps, isEmpty);
-    expect(
-      tester
-          .widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Undo'))
-          .onPressed,
-      isNull,
-    );
-  });
-
-  testWidgets('undo history capped at max 20; oldest entry dropped',
-      (tester) async {
-    await _pumpPage(tester);
-
-    // 22 shape-toggle operations produce 22 pushUndo calls; only 20 are kept.
-    for (var i = 0; i < 22; i++) {
-      final shape = i.isEven ? 'Circle' : 'Rectangle';
-      await tester.ensureVisible(find.text(shape));
-      await tester.tap(find.text(shape));
-      await tester.pump();
-    }
-
-    // Should be able to undo exactly 20 times.
-    var count = 0;
-    while (true) {
-      final button = tester.widget<OutlinedButton>(
-        find.widgetWithText(OutlinedButton, 'Undo'),
-      );
-      if (button.onPressed == null) break;
-      await tester.tap(find.text('Undo').last);
-      await tester.pump();
-      count++;
-      expect(count, lessThanOrEqualTo(20),
-          reason: 'Must not exceed the bounded history limit');
-    }
-    expect(count, 20);
-  });
-
-  testWidgets(
-      'image bytes shared: multiple undo entries with same image do not lose it',
-      (tester) async {
-    // Load an image, then push several undo entries that share the same bytes.
-    // Each undo should preserve the image rather than returning null.
-    Uint8List? lastSavedBytes;
-    await _pumpPage(
-      tester,
-      page: PhotoStudioPage(
-        imageBytesPicker: () async => _tinyPng,
-        imageSaver: ({
-          required Uint8List bytes,
-          required String fileName,
-          required String mimeType,
-        }) async {
-          lastSavedBytes = bytes;
-          return true;
-        },
-      ),
-    );
-
-    // Load image.
-    await tester.runAsync(() async {
-      await tester.ensureVisible(find.byIcon(Icons.image_outlined));
-      await tester.tap(find.byIcon(Icons.image_outlined));
-      await Future<void>.delayed(const Duration(milliseconds: 200));
-    });
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-
-    // Push 5 more undo entries by changing shape (image ref is shared each time).
-    for (final shape in ['Circle', 'Triangle', 'Circle', 'Rectangle', 'Triangle']) {
-      await tester.ensureVisible(find.text(shape));
-      await tester.tap(find.text(shape));
-      await tester.pump();
-    }
-
-    // Undo all 5 shape changes — image must still be present for each step.
-    for (var i = 0; i < 5; i++) {
-      await tester.tap(find.text('Undo').last);
-      await tester.pump();
-      // Save to verify image bytes are non-null after each undo.
-      await _tapSavePng(tester);
-      expect(_isPng(lastSavedBytes!), isTrue,
-          reason: 'Image must survive undo step $i');
-    }
-  });
-
-  testWidgets('scale slider multiple ticks produce single undo entry',
-      (tester) async {
-    await _pumpPage(tester);
-
-    // Place a stamp first.
-    await tester.tap(find.text('⭐'));
-    await tester.pump();
-    final box = tester.getRect(find.byType(PhotoRectCanvas));
-    await tester.tapAt(
-      Offset(box.left + box.width * 0.5, box.top + box.height * 0.5),
-    );
-    await tester.pumpAndSettle();
-
-    final before = tester.widget<Slider>(find.byType(Slider)).value;
-
-    // Drag the slider — onChangeStart fires once, pushing exactly 1 entry.
-    await tester.drag(find.byType(Slider), const Offset(60, 0));
-    await tester.pumpAndSettle();
-
-    expect(
-      tester.widget<Slider>(find.byType(Slider)).value,
-      greaterThan(before),
-    );
-
-    // Undo the slider change.
-    await tester.tap(find.text('Undo').last);
-    await tester.pump();
-    expect(find.textContaining('Undid'), findsOneWidget);
-
-    // Undo the stamp placement.
-    await tester.tap(find.text('Undo').last);
-    await tester.pump();
-
-    // History now empty.
-    expect(
-      tester
-          .widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Undo'))
-          .onPressed,
-      isNull,
     );
   });
 

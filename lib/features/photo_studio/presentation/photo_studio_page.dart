@@ -24,6 +24,7 @@ class PhotoStudioPage extends StatefulWidget {
     super.key,
     this.imageBytesPicker,
     this.imageSaver,
+    this.onTestProbe,
   });
 
   /// Optional override for tests / non-web hosts.
@@ -31,6 +32,9 @@ class PhotoStudioPage extends StatefulWidget {
 
   /// Optional override for save/download (tests inject a fake saver).
   final StudioImageSaver? imageSaver;
+
+  /// Optional probe for widget tests (coords, undo depth, shared image refs).
+  final ValueChanged<PhotoStudioTestProbe>? onTestProbe;
 
   @override
   State<PhotoStudioPage> createState() => _PhotoStudioPageState();
@@ -51,6 +55,9 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
   /// Fallback until the first canvas layout reports its size.
   static const _fallbackCanvasSize = Size(760, 280);
 
+  /// Soft cap for undo history (oldest entries are dropped first).
+  static const _maxUndoHistory = 20;
+
   Uint8List? _imageBytes;
   NormalizedRect _rect = NormalizedRect.initial;
   StudioFrameShape _shape = StudioFrameShape.rectangle;
@@ -61,31 +68,83 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
   double _stampScale = 1;
   Size _canvasSize = _fallbackCanvasSize;
   String? _status;
-  final _undoHistory = <PhotoStudioSnapshot>[];
-  static const _maxUndo = 20;
+  final List<PhotoStudioSnapshot> _undoHistory = <PhotoStudioSnapshot>[];
+
+  PhotoStudioSnapshot _captureSnapshot() => PhotoStudioSnapshot(
+        // Share the same Uint8List across snapshots; never deep-copy rasters.
+        imageBytes: _imageBytes,
+        rectLeft: _rect.left,
+        rectTop: _rect.top,
+        rectRight: _rect.right,
+        rectBottom: _rect.bottom,
+        shapeName: _shape.name,
+        strokeArgb: _strokeArgb,
+        stamps: List<EmojiStamp>.from(_stamps),
+        selectedEmojiStampId: _selectedEmojiStampId,
+        stampScale: _stampScale,
+      );
+
+  bool _matchesSnapshot(PhotoStudioSnapshot snap) {
+    if (!identical(snap.imageBytes, _imageBytes)) return false;
+    if (snap.rectLeft != _rect.left ||
+        snap.rectTop != _rect.top ||
+        snap.rectRight != _rect.right ||
+        snap.rectBottom != _rect.bottom) {
+      return false;
+    }
+    if (snap.shapeName != _shape.name) return false;
+    if (snap.strokeArgb != _strokeArgb) return false;
+    if (snap.selectedEmojiStampId != _selectedEmojiStampId) return false;
+    if (snap.stampScale != _stampScale) return false;
+    if (snap.stamps.length != _stamps.length) return false;
+    for (var i = 0; i < snap.stamps.length; i++) {
+      if (snap.stamps[i] != _stamps[i]) return false;
+    }
+    return true;
+  }
+
+  void _emitTestProbe() {
+    final probe = widget.onTestProbe;
+    if (probe == null) return;
+    probe(
+      PhotoStudioTestProbe(
+        stamps: List<EmojiStamp>.from(_stamps),
+        undoDepth: _undoHistory.length,
+        imageBytes: _imageBytes,
+        undoImageByteRefs: [
+          for (final snap in _undoHistory) snap.imageBytes,
+        ],
+        rectLeft: _rect.left,
+        rectTop: _rect.top,
+        rectRight: _rect.right,
+        rectBottom: _rect.bottom,
+        shapeName: _shape.name,
+        strokeArgb: _strokeArgb,
+        stampScale: _stampScale,
+      ),
+    );
+  }
 
   void _pushUndo() {
-    _undoHistory.add(PhotoStudioSnapshot(
-      imageBytes: _imageBytes, // share reference — never mutate bytes in place
-      rectLeft: _rect.left,
-      rectTop: _rect.top,
-      rectRight: _rect.right,
-      rectBottom: _rect.bottom,
-      shapeName: _shape.name,
-      strokeArgb: _strokeArgb,
-      stamps: List<EmojiStamp>.from(_stamps),
-      selectedEmojiStampId: _selectedEmojiStampId,
-      stampScale: _stampScale,
-    ));
-    if (_undoHistory.length > _maxUndo) {
+    _undoHistory.add(_captureSnapshot());
+    while (_undoHistory.length > _maxUndoHistory) {
       _undoHistory.removeAt(0);
     }
+    _emitTestProbe();
+  }
+
+  void _discardLastUndoIfUnchanged() {
+    if (_undoHistory.isEmpty) return;
+    if (!_matchesSnapshot(_undoHistory.last)) return;
+    _undoHistory.removeLast();
+    _emitTestProbe();
   }
 
   void _undoOnce() {
     if (_undoHistory.isEmpty) return;
     final snap = _undoHistory.removeLast();
     setState(() {
+      // Restore the shared reference; do not allocate a new Uint8List copy.
       _imageBytes = snap.imageBytes;
       _rect = NormalizedRect(
         left: snap.rectLeft,
@@ -100,7 +159,10 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       _stampScale = snap.stampScale;
       _status = DisplayScope.of(context).text('photoStudio.undoDone');
     });
+    _emitTestProbe();
   }
+
+  bool get _canUndo => _undoHistory.isNotEmpty;
 
   Future<void> _copy(String text) async {
     await Clipboard.setData(ClipboardData(text: text));
@@ -129,6 +191,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
           arguments: {'bytes': compact.bytes.length},
         );
       });
+      _emitTestProbe();
     } catch (_) {
       if (!mounted) return;
       setState(() => _status = display.text('photoStudio.imageError'));
@@ -188,11 +251,15 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       _imageBytes = null;
       _status = DisplayScope.of(context).text('photoStudio.imageCleared');
     });
+    _discardLastUndoIfUnchanged();
+    _emitTestProbe();
   }
 
   void _resetRect() {
     _pushUndo();
     setState(() => _rect = NormalizedRect.initial);
+    _discardLastUndoIfUnchanged();
+    _emitTestProbe();
   }
 
   Future<void> _savePng() async {
@@ -229,6 +296,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
 
   void _onRectChanged(NormalizedRect rect) {
     setState(() => _rect = rect);
+    _emitTestProbe();
   }
 
   void _onStampsChanged(List<EmojiStamp> stamps) {
@@ -257,6 +325,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
         }
       }
     });
+    _emitTestProbe();
   }
 
   void _onSelectedEmojiStampIdChanged(String? emojiStampId) {
@@ -268,6 +337,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
         _stampScale = match.first.scale;
       }
     });
+    _emitTestProbe();
   }
 
   void _applyStampScale(double scale) {
@@ -283,6 +353,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
             stamp,
       ];
     });
+    _emitTestProbe();
   }
 
   void _onCanvasSizeChanged(Size size) {
@@ -310,7 +381,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
             actions: [
               IconButton(
                 tooltip: t('photoStudio.undo'),
-                onPressed: _undoHistory.isEmpty ? null : _undoOnce,
+                onPressed: _canUndo ? _undoOnce : null,
                 icon: const Icon(Icons.undo),
               ),
               const DisplayLocalePicker(compact: true),
@@ -357,6 +428,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                 _onSelectedEmojiStampIdChanged,
                             pendingEmoji: _pendingEmoji,
                             onEditStart: _pushUndo,
+                            onEditEnd: _discardLastUndoIfUnchanged,
                             onCanvasSizeChanged: _onCanvasSizeChanged,
                           ),
                           const SizedBox(height: 12),
@@ -377,6 +449,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                     if (_shape == shape) return;
                                     _pushUndo();
                                     setState(() => _shape = shape);
+                                    _emitTestProbe();
                                   },
                                 ),
                             ],
@@ -397,6 +470,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                     if (_strokeArgb == argb) return;
                                     _pushUndo();
                                     setState(() => _strokeArgb = argb);
+                                    _emitTestProbe();
                                   },
                                   child: Container(
                                     width: 28,
@@ -466,6 +540,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                             label: _stampScale.toStringAsFixed(1),
                             onChangeStart: (_) => _pushUndo(),
                             onChanged: _applyStampScale,
+                            onChangeEnd: (_) => _discardLastUndoIfUnchanged(),
                           ),
                           const SizedBox(height: 8),
                           Wrap(
@@ -501,7 +576,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                 label: Text(t('photoStudio.resetRect')),
                               ),
                               OutlinedButton.icon(
-                                onPressed: _undoHistory.isEmpty ? null : _undoOnce,
+                                onPressed: _canUndo ? _undoOnce : null,
                                 icon: const Icon(Icons.undo),
                                 label: Text(t('photoStudio.undo')),
                               ),
