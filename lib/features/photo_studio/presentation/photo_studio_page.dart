@@ -48,15 +48,18 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     '🍀',
   ];
 
+  /// Fallback until the first canvas layout reports its size.
+  static const _fallbackCanvasSize = Size(760, 280);
+
   Uint8List? _imageBytes;
   NormalizedRect _rect = NormalizedRect.initial;
   StudioFrameShape _shape = StudioFrameShape.rectangle;
   int _strokeArgb = StudioFrameColors.purple;
   List<EmojiStamp> _stamps = const [];
-  String? _selectedStampId;
+  String? _selectedEmojiStampId;
   String? _pendingEmoji;
   double _stampScale = 1;
-  StudioExportFormat _exportFormat = StudioExportFormat.png;
+  Size _canvasSize = _fallbackCanvasSize;
   String? _status;
   PhotoStudioSnapshot? _undo;
 
@@ -70,7 +73,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       shapeName: _shape.name,
       strokeArgb: _strokeArgb,
       stamps: List<EmojiStamp>.from(_stamps),
-      selectedStampId: _selectedStampId,
+      selectedEmojiStampId: _selectedEmojiStampId,
       stampScale: _stampScale,
     );
   }
@@ -90,7 +93,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       _shape = StudioFrameShape.values.byName(snap.shapeName);
       _strokeArgb = snap.strokeArgb;
       _stamps = List<EmojiStamp>.from(snap.stamps);
-      _selectedStampId = snap.selectedStampId;
+      _selectedEmojiStampId = snap.selectedEmojiStampId;
       _stampScale = snap.stampScale;
       _undo = null;
       _status = DisplayScope.of(context).text('photoStudio.undoDone');
@@ -137,8 +140,8 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     if (bytes == null || bytes.isEmpty) {
       if (!kIsWeb && widget.imageBytesPicker == null) {
         setState(
-          () => _status =
-              DisplayScope.of(context).text('photoStudio.pickImageUnavailable'),
+          () => _status = DisplayScope.of(context)
+              .text('photoStudio.pickImageUnavailable'),
         );
       }
       return;
@@ -173,6 +176,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     }
     final payload = Base64ImagePayload(bytes: bytes, mimeType: 'image/png');
     await _copy(payload.dataUrl);
+    if (!mounted) return;
     setState(() => _status = display.text('photoStudio.imageCopied'));
   }
 
@@ -189,11 +193,14 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     setState(() => _rect = NormalizedRect.initial);
   }
 
-  Future<void> _saveExport() async {
+  Future<void> _savePng() async {
     final display = DisplayScope.of(context);
     try {
+      final logicalSize = _canvasSize.width > 0 && _canvasSize.height > 0
+          ? _canvasSize
+          : _fallbackCanvasSize;
       final png = await composeStudioPng(
-        logicalSize: const Size(760, 280),
+        logicalSize: logicalSize,
         rect: _rect,
         shape: _shape,
         strokeColor: Color(_strokeArgb),
@@ -203,14 +210,13 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       final saver = widget.imageSaver ?? saveImageBytes;
       final ok = await saver(
         bytes: png,
-        fileName: 'photo-studio.${_exportFormat.fileExtension}',
-        mimeType: _exportFormat.mimeType,
+        fileName: kStudioExportFileName,
+        mimeType: kStudioExportMimeType,
       );
       if (!mounted) return;
       setState(() {
         _status = display.text(
           ok ? 'photoStudio.saveDone' : 'photoStudio.saveUnavailable',
-          arguments: {'format': _exportFormat.fileExtension},
         );
       });
     } catch (_) {
@@ -225,13 +231,25 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
 
   void _onStampsChanged(List<EmojiStamp> stamps) {
     setState(() {
+      final previousIds = _stamps.map((s) => s.emojiStampId).toSet();
       _stamps = stamps;
       if (_pendingEmoji != null) {
         _pendingEmoji = null;
       }
-      final selected = _selectedStampId;
-      if (selected != null) {
-        final match = stamps.where((s) => s.emojiStampId == selected);
+      // A newly placed stamp should become selected with its own scale (1.0).
+      final added = stamps
+          .where((s) => !previousIds.contains(s.emojiStampId))
+          .toList();
+      if (added.isNotEmpty) {
+        final newest = added.last;
+        _selectedEmojiStampId = newest.emojiStampId;
+        _stampScale = newest.scale;
+        return;
+      }
+      final selectedEmojiStampId = _selectedEmojiStampId;
+      if (selectedEmojiStampId != null) {
+        final match =
+            stamps.where((s) => s.emojiStampId == selectedEmojiStampId);
         if (match.isNotEmpty) {
           _stampScale = match.first.scale;
         }
@@ -239,16 +257,35 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     });
   }
 
+  void _onSelectedEmojiStampIdChanged(String? emojiStampId) {
+    setState(() {
+      _selectedEmojiStampId = emojiStampId;
+      if (emojiStampId == null) return;
+      final match = _stamps.where((s) => s.emojiStampId == emojiStampId);
+      if (match.isNotEmpty) {
+        _stampScale = match.first.scale;
+      }
+    });
+  }
+
   void _applyStampScale(double scale) {
     setState(() {
       _stampScale = scale;
-      final id = _selectedStampId;
-      if (id == null) return;
+      final selectedEmojiStampId = _selectedEmojiStampId;
+      if (selectedEmojiStampId == null) return;
       _stamps = [
         for (final stamp in _stamps)
-          if (stamp.emojiStampId == id) stamp.copyWith(scale: scale) else stamp,
+          if (stamp.emojiStampId == selectedEmojiStampId)
+            stamp.copyWith(scale: scale)
+          else
+            stamp,
       ];
     });
+  }
+
+  void _onCanvasSizeChanged(Size size) {
+    if (size == _canvasSize) return;
+    setState(() => _canvasSize = size);
   }
 
   @override
@@ -312,25 +349,27 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                             shape: _shape,
                             strokeColor: Color(_strokeArgb),
                             stamps: _stamps,
-                            onStampsChanged: (stamps) {
-                              _pushUndo();
-                              _onStampsChanged(stamps);
-                            },
-                            selectedStampId: _selectedStampId,
-                            onSelectedStampIdChanged: (id) =>
-                                setState(() => _selectedStampId = id),
+                            onStampsChanged: _onStampsChanged,
+                            selectedEmojiStampId: _selectedEmojiStampId,
+                            onSelectedEmojiStampIdChanged:
+                                _onSelectedEmojiStampIdChanged,
                             pendingEmoji: _pendingEmoji,
+                            onEditStart: _pushUndo,
+                            onCanvasSizeChanged: _onCanvasSizeChanged,
                           ),
                           const SizedBox(height: 12),
-                          Text(t('photoStudio.frameShape'),
-                              style: Theme.of(context).textTheme.titleSmall),
+                          Text(
+                            t('photoStudio.frameShape'),
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
                           const SizedBox(height: 8),
                           Wrap(
                             spacing: 8,
                             children: [
                               for (final shape in StudioFrameShape.values)
                                 ChoiceChip(
-                                  label: Text(t('photoStudio.shape.${shape.name}')),
+                                  label:
+                                      Text(t('photoStudio.shape.${shape.name}')),
                                   selected: _shape == shape,
                                   onSelected: (_) {
                                     if (_shape == shape) return;
@@ -341,8 +380,10 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                             ],
                           ),
                           const SizedBox(height: 12),
-                          Text(t('photoStudio.frameColor'),
-                              style: Theme.of(context).textTheme.titleSmall),
+                          Text(
+                            t('photoStudio.frameColor'),
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
                           const SizedBox(height: 8),
                           Wrap(
                             spacing: 8,
@@ -363,7 +404,9 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                       shape: BoxShape.circle,
                                       border: Border.all(
                                         color: _strokeArgb == argb
-                                            ? Theme.of(context).colorScheme.onSurface
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
                                             : Theme.of(context)
                                                 .colorScheme
                                                 .outlineVariant,
@@ -375,8 +418,10 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                             ],
                           ),
                           const SizedBox(height: 12),
-                          Text(t('photoStudio.stamps'),
-                              style: Theme.of(context).textTheme.titleSmall),
+                          Text(
+                            t('photoStudio.stamps'),
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
                           const SizedBox(height: 8),
                           Wrap(
                             spacing: 8,
@@ -384,7 +429,10 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                             children: [
                               for (final emoji in _emojiPalette)
                                 ActionChip(
-                                  label: Text(emoji, style: const TextStyle(fontSize: 18)),
+                                  label: Text(
+                                    emoji,
+                                    style: const TextStyle(fontSize: 18),
+                                  ),
                                   onPressed: () {
                                     setState(() {
                                       _pendingEmoji =
@@ -433,8 +481,9 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                 label: Text(t('photoStudio.pasteBase64Image')),
                               ),
                               FilledButton.tonalIcon(
-                                onPressed:
-                                    _imageBytes == null ? null : _copyImageBase64,
+                                onPressed: _imageBytes == null
+                                    ? null
+                                    : _copyImageBase64,
                                 icon: const Icon(Icons.copy_all_outlined),
                                 label: Text(t('photoStudio.copyImage')),
                               ),
@@ -457,27 +506,23 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                             ],
                           ),
                           const SizedBox(height: 12),
-                          Text(t('photoStudio.saveAs'),
-                              style: Theme.of(context).textTheme.titleSmall),
+                          Text(
+                            t('photoStudio.saveAs'),
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
                           const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              for (final format in StudioExportFormat.values)
-                                ChoiceChip(
-                                  label: Text(format.fileExtension.toUpperCase()),
-                                  selected: _exportFormat == format,
-                                  onSelected: (_) =>
-                                      setState(() => _exportFormat = format),
-                                ),
-                              FilledButton.icon(
-                                onPressed: _saveExport,
-                                icon: const Icon(Icons.download_outlined),
-                                label: Text(t('photoStudio.saveFile')),
-                              ),
-                            ],
+                          Text(
+                            t('photoStudio.savePngOnlyHint'),
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: FilledButton.icon(
+                              onPressed: _savePng,
+                              icon: const Icon(Icons.download_outlined),
+                              label: Text(t('photoStudio.saveFile')),
+                            ),
                           ),
                           if (_status != null) ...[
                             const SizedBox(height: 8),

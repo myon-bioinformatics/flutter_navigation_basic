@@ -45,7 +45,7 @@ class PhotoStudioSnapshot {
     required this.shapeName,
     required this.strokeArgb,
     required this.stamps,
-    required this.selectedStampId,
+    required this.selectedEmojiStampId,
     required this.stampScale,
   });
 
@@ -57,6 +57,6 @@ class PhotoStudioSnapshot {
   final String shapeName;
   final int strokeArgb;
   final List<EmojiStamp> stamps;
-  final String? selectedStampId;
+  final String? selectedEmojiStampId;
   final double stampScale;
 }

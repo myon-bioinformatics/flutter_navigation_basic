@@ -21,9 +21,11 @@ class PhotoRectCanvas extends StatefulWidget {
     this.strokeColor,
     this.stamps = const <EmojiStamp>[],
     this.onStampsChanged,
-    this.selectedStampId,
-    this.onSelectedStampIdChanged,
+    this.selectedEmojiStampId,
+    this.onSelectedEmojiStampIdChanged,
     this.pendingEmoji,
+    this.onEditStart,
+    this.onCanvasSizeChanged,
   });
 
   final NormalizedRect rect;
@@ -34,11 +36,18 @@ class PhotoRectCanvas extends StatefulWidget {
   final Color? strokeColor;
   final List<EmojiStamp> stamps;
   final ValueChanged<List<EmojiStamp>>? onStampsChanged;
-  final String? selectedStampId;
-  final ValueChanged<String?>? onSelectedStampIdChanged;
+  final String? selectedEmojiStampId;
+  final ValueChanged<String?>? onSelectedEmojiStampIdChanged;
 
-  /// When set, the next canvas press places this emoji as a stamp.
+  /// When set, the next canvas tap places this emoji as a stamp.
   final String? pendingEmoji;
+
+  /// Fired once at the start of a user gesture that mutates frame/stamps
+  /// (create/move/resize frame, place/drag stamp). Not on every pan update.
+  final VoidCallback? onEditStart;
+
+  /// Reports the laid-out canvas size so export can match on-screen aspect.
+  final ValueChanged<Size>? onCanvasSizeChanged;
 
   @override
   State<PhotoRectCanvas> createState() => _PhotoRectCanvasState();
@@ -49,9 +58,17 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
   Offset? _lastLocal;
   Offset? _createOrigin;
   NormalizedRect? _liveCreateRect;
-  String? _draggingStampId;
+  String? _draggingEmojiStampId;
+  bool _editStartNotified = false;
+  Size? _lastReportedSize;
 
   static const double _handleHitSlop = 18;
+
+  void _notifyEditStart() {
+    if (_editStartNotified) return;
+    _editStartNotified = true;
+    widget.onEditStart?.call();
+  }
 
   double _stampHitRadius(Size size, EmojiStamp stamp) {
     final base = math.min(size.width, size.height) * 0.05 * stamp.scale;
@@ -118,42 +135,83 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
     return null;
   }
 
+  void _selectEmojiStamp(String? emojiStampId) {
+    widget.onSelectedEmojiStampIdChanged?.call(emojiStampId);
+  }
+
+  void _placePendingEmoji(Offset local, Size size) {
+    final pending = widget.pendingEmoji;
+    if (pending == null || pending.isEmpty) return;
+    if (_placedEmojiForPointer) return;
+
+    _notifyEditStart();
+    _placedEmojiForPointer = true;
+    final nx = (local.dx / size.width).clamp(0.0, 1.0);
+    final ny = (local.dy / size.height).clamp(0.0, 1.0);
+    final emojiStampId = 'stamp-${DateTime.now().microsecondsSinceEpoch}';
+    final next = <EmojiStamp>[
+      ...widget.stamps,
+      EmojiStamp(
+        emojiStampId: emojiStampId,
+        emoji: pending,
+        x: nx,
+        y: ny,
+        scale: 1,
+      ),
+    ];
+    widget.onStampsChanged?.call(next);
+    _selectEmojiStamp(emojiStampId);
+    _draggingEmojiStampId = emojiStampId;
+  }
+
+  Offset? _tapDownLocal;
+  bool _placedEmojiForPointer = false;
+
+  void _handleTapAt(Offset local, Size size) {
+    final stamp = _hitStamp(local, size);
+    if (stamp != null) {
+      _selectEmojiStamp(stamp.emojiStampId);
+      return;
+    }
+    if (widget.pendingEmoji != null &&
+        widget.pendingEmoji!.isNotEmpty &&
+        !_placedEmojiForPointer) {
+      _placePendingEmoji(local, size);
+    }
+  }
+
   void _onPanStart(DragStartDetails details, Size size) {
+    _tapDownLocal = null;
     final stamp = _hitStamp(details.localPosition, size);
     if (stamp != null) {
-      _draggingStampId = stamp.emojiStampId;
+      _notifyEditStart();
+      _draggingEmojiStampId = stamp.emojiStampId;
       _activeHandle = null;
       _createOrigin = null;
       _liveCreateRect = null;
-      widget.onSelectedStampIdChanged?.call(stamp.emojiStampId);
+      _selectEmojiStamp(stamp.emojiStampId);
       _lastLocal = details.localPosition;
       return;
     }
 
     final pending = widget.pendingEmoji;
     if (pending != null && pending.isNotEmpty) {
-      final nx = (details.localPosition.dx / size.width).clamp(0.0, 1.0);
-      final ny = (details.localPosition.dy / size.height).clamp(0.0, 1.0);
-      final id = 'stamp-${DateTime.now().microsecondsSinceEpoch}';
-      final next = <EmojiStamp>[
-        ...widget.stamps,
-        EmojiStamp(
-          emojiStampId: id,
-          emoji: pending,
-          x: nx,
-          y: ny,
-          scale: 1,
-        ),
-      ];
-      widget.onStampsChanged?.call(next);
-      widget.onSelectedStampIdChanged?.call(id);
-      _draggingStampId = id;
+      // Near-taps often lose the tap arena to pan. Place once here, then drag
+      // the new stamp so we never double-place with a later onTap.
+      if (!_placedEmojiForPointer) {
+        _placePendingEmoji(details.localPosition, size);
+      }
+      // _placePendingEmoji sets _draggingEmojiStampId when it places.
+      _activeHandle = null;
+      _createOrigin = null;
+      _liveCreateRect = null;
       _lastLocal = details.localPosition;
       return;
     }
 
     final hit = _hitTest(details.localPosition, size);
     if (hit == null) {
+      _notifyEditStart();
       final nx = (details.localPosition.dx / size.width).clamp(0.0, 1.0);
       final ny = (details.localPosition.dy / size.height).clamp(0.0, 1.0);
       _createOrigin = Offset(nx, ny);
@@ -167,6 +225,7 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
       _liveCreateRect = created;
       widget.onRectChanged(created);
     } else {
+      _notifyEditStart();
       _createOrigin = null;
       _liveCreateRect = null;
       _activeHandle = hit;
@@ -177,13 +236,13 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
   void _onPanUpdate(DragUpdateDetails details, Size size) {
     if (size.width <= 0 || size.height <= 0) return;
 
-    final draggingId = _draggingStampId;
-    if (draggingId != null) {
+    final draggingEmojiStampId = _draggingEmojiStampId;
+    if (draggingEmojiStampId != null) {
       final nx = (details.localPosition.dx / size.width).clamp(0.0, 1.0);
       final ny = (details.localPosition.dy / size.height).clamp(0.0, 1.0);
       widget.onStampsChanged?.call([
         for (final stamp in widget.stamps)
-          if (stamp.emojiStampId == draggingId)
+          if (stamp.emojiStampId == draggingEmojiStampId)
             stamp.copyWith(x: nx, y: ny)
           else
             stamp,
@@ -223,8 +282,21 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
     _createOrigin = null;
     _liveCreateRect = null;
     _activeHandle = null;
-    _draggingStampId = null;
+    _draggingEmojiStampId = null;
     _lastLocal = null;
+    _editStartNotified = false;
+    _placedEmojiForPointer = false;
+  }
+
+  void _reportSizeIfNeeded(Size size) {
+    if (_lastReportedSize == size) return;
+    _lastReportedSize = size;
+    final notify = widget.onCanvasSizeChanged;
+    if (notify == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      notify(size);
+    });
   }
 
   @override
@@ -237,38 +309,61 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final size = Size(constraints.maxWidth, widget.height);
-          return GestureDetector(
+          _reportSizeIfNeeded(size);
+          return Listener(
             behavior: HitTestBehavior.opaque,
-            onPanStart: (details) => _onPanStart(details, size),
-            onPanUpdate: (details) => _onPanUpdate(details, size),
-            onPanEnd: (_) => _finishGesture(),
-            onPanCancel: _finishGesture,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  ColoredBox(color: scheme.surfaceContainerHighest),
-                  if (widget.imageBytes != null)
-                    Image.memory(
-                      widget.imageBytes!,
-                      fit: BoxFit.contain,
-                      gaplessPlayback: true,
-                      filterQuality: FilterQuality.medium,
-                    )
-                  else
-                    CustomPaint(painter: _CheckerPainter(scheme.outlineVariant)),
-                  CustomPaint(
-                    painter: _FrameCanvasPainter(
-                      rect: widget.rect,
-                      shape: widget.shape,
-                      accent: accent,
-                      dim: scheme.scrim.withValues(alpha: 0.28),
-                      stamps: widget.stamps,
-                      selectedStampId: widget.selectedStampId,
+            onPointerDown: (event) {
+              _tapDownLocal = event.localPosition;
+              _placedEmojiForPointer = false;
+            },
+            onPointerUp: (_) {
+              final local = _tapDownLocal;
+              // If a pan claimed this pointer, _tapDownLocal was cleared in
+              // onPanStart. A true tap still has the down position.
+              if (local != null && !_placedEmojiForPointer) {
+                _handleTapAt(local, size);
+              }
+              _tapDownLocal = null;
+            },
+            onPointerCancel: (_) {
+              _tapDownLocal = null;
+              _placedEmojiForPointer = false;
+            },
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onPanStart: (details) => _onPanStart(details, size),
+              onPanUpdate: (details) => _onPanUpdate(details, size),
+              onPanEnd: (_) => _finishGesture(),
+              onPanCancel: _finishGesture,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ColoredBox(color: scheme.surfaceContainerHighest),
+                    if (widget.imageBytes != null)
+                      Image.memory(
+                        widget.imageBytes!,
+                        fit: BoxFit.contain,
+                        gaplessPlayback: true,
+                        filterQuality: FilterQuality.medium,
+                      )
+                    else
+                      CustomPaint(
+                        painter: _CheckerPainter(scheme.outlineVariant),
+                      ),
+                    CustomPaint(
+                      painter: _FrameCanvasPainter(
+                        rect: widget.rect,
+                        shape: widget.shape,
+                        accent: accent,
+                        dim: scheme.scrim.withValues(alpha: 0.28),
+                        stamps: widget.stamps,
+                        selectedEmojiStampId: widget.selectedEmojiStampId,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );
@@ -285,7 +380,7 @@ class _FrameCanvasPainter extends CustomPainter {
     required this.accent,
     required this.dim,
     required this.stamps,
-    required this.selectedStampId,
+    required this.selectedEmojiStampId,
   });
 
   final NormalizedRect rect;
@@ -293,7 +388,7 @@ class _FrameCanvasPainter extends CustomPainter {
   final Color accent;
   final Color dim;
   final List<EmojiStamp> stamps;
-  final String? selectedStampId;
+  final String? selectedEmojiStampId;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -358,7 +453,7 @@ class _FrameCanvasPainter extends CustomPainter {
         stamp.y * size.height - tp.height / 2,
       );
       tp.paint(canvas, origin);
-      if (stamp.emojiStampId == selectedStampId) {
+      if (stamp.emojiStampId == selectedEmojiStampId) {
         canvas.drawRRect(
           RRect.fromRectAndRadius(
             Rect.fromLTWH(
@@ -385,7 +480,7 @@ class _FrameCanvasPainter extends CustomPainter {
       oldDelegate.accent != accent ||
       oldDelegate.dim != dim ||
       oldDelegate.stamps != stamps ||
-      oldDelegate.selectedStampId != selectedStampId;
+      oldDelegate.selectedEmojiStampId != selectedEmojiStampId;
 }
 
 class _CheckerPainter extends CustomPainter {

@@ -31,3 +31,9 @@ copy, and mirrored punctuation in `assets/display/app_text.json` when needed.
 Avoid a large Flutter `Directionality` / layout RTL rewrite unless a future
 task explicitly asks for it — that grows logic surface area without improving
 the phrase catalog itself.
+
+## Photo Studio export
+
+Photo Studio export is **PNG only** (`photo-studio.png`, `image/png`). JPEG,
+JPG, and WebP are not supported; keep the Flutter/Dart/browser stack thin and
+avoid extra encoder packages or upload backends for alternate formats.

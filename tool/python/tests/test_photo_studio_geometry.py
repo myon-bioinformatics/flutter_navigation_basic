@@ -10,7 +10,7 @@ import math
 from pathlib import Path
 
 import pytest
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 FIXTURE_PATH = (
@@ -134,6 +134,27 @@ def test_triangle_geometry(case: GeometryCase) -> None:
     for actual, expected in zip(mids, case.expected_triangle_midpoints, strict=True):
         assert actual.x == pytest.approx(expected.x)
         assert actual.y == pytest.approx(expected.y)
+
+
+@pytest.mark.parametrize("case", CASES, ids=lambda c: c.photoStudioGeometryCaseId)
+def test_fixture_expected_crossing(case: GeometryCase) -> None:
+    """When present, expected_crossing must match the bounds' diagonal intersection."""
+    if case.expected_crossing is None:
+        return
+    b = case.bounds
+    hit = segment_intersection(
+        b.left,
+        b.top,
+        b.right,
+        b.bottom,
+        b.left,
+        b.bottom,
+        b.right,
+        b.top,
+    )
+    assert hit is not None
+    assert hit.x == pytest.approx(case.expected_crossing.x)
+    assert hit.y == pytest.approx(case.expected_crossing.y)
 
 
 def test_crossing_diagonals_intersect_at_center() -> None:

@@ -8,24 +8,15 @@ import '../domain/emoji_stamp.dart';
 import '../domain/normalized_rect.dart';
 import '../domain/studio_frame_style.dart';
 
-enum StudioExportFormat { png, jpg, jpeg, webp }
-
-extension StudioExportFormatX on StudioExportFormat {
-  String get mimeType => switch (this) {
-        StudioExportFormat.png => 'image/png',
-        StudioExportFormat.jpg || StudioExportFormat.jpeg => 'image/jpeg',
-        StudioExportFormat.webp => 'image/webp',
-      };
-
-  String get fileExtension => switch (this) {
-        StudioExportFormat.png => 'png',
-        StudioExportFormat.jpg => 'jpg',
-        StudioExportFormat.jpeg => 'jpeg',
-        StudioExportFormat.webp => 'webp',
-      };
-}
+/// Photo Studio export is PNG-only (filename `photo-studio.png`, MIME `image/png`).
+/// JPEG / JPG / WebP are intentionally unsupported to keep dependencies thin.
+const String kStudioExportFileName = 'photo-studio.png';
+const String kStudioExportMimeType = 'image/png';
 
 /// Composites the studio canvas into PNG bytes (source for download helpers).
+///
+/// [logicalSize] should match the on-screen canvas size so stamp/frame layout
+/// matches what the user sees (including narrow viewports under 760px wide).
 Future<Uint8List> composeStudioPng({
   required Size logicalSize,
   required NormalizedRect rect,
