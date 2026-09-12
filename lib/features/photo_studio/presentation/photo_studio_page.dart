@@ -4,27 +4,98 @@ import 'package:flutter/services.dart';
 
 import '../../../shared/clipboard/base64_image_bridge.dart';
 import '../../../shared/display/display_scope.dart';
+import '../domain/emoji_stamp.dart';
 import '../domain/normalized_rect.dart';
+import '../domain/studio_frame_style.dart';
+import '../domain/studio_geometry.dart';
+import 'compose_studio_image.dart';
 import 'photo_rect_canvas.dart';
 import 'pick_local_image_bytes.dart';
+import 'save_image_bytes.dart';
+
+typedef StudioImageSaver = Future<bool> Function({
+  required Uint8List bytes,
+  required String fileName,
+  required String mimeType,
+});
 
 class PhotoStudioPage extends StatefulWidget {
   const PhotoStudioPage({
     super.key,
     this.imageBytesPicker,
+    this.imageSaver,
   });
 
   /// Optional override for tests / non-web hosts.
   final Future<Uint8List?> Function()? imageBytesPicker;
+
+  /// Optional override for save/download (tests inject a fake saver).
+  final StudioImageSaver? imageSaver;
 
   @override
   State<PhotoStudioPage> createState() => _PhotoStudioPageState();
 }
 
 class _PhotoStudioPageState extends State<PhotoStudioPage> {
+  static const _emojiPalette = <String>[
+    '⭐',
+    '❤️',
+    '😊',
+    '🔥',
+    '📷',
+    '🌸',
+    '✨',
+    '🍀',
+  ];
+
   Uint8List? _imageBytes;
   NormalizedRect _rect = NormalizedRect.initial;
+  StudioFrameShape _shape = StudioFrameShape.rectangle;
+  int _strokeArgb = StudioFrameColors.purple;
+  List<EmojiStamp> _stamps = const [];
+  String? _selectedStampId;
+  String? _pendingEmoji;
+  double _stampScale = 1;
+  StudioExportFormat _exportFormat = StudioExportFormat.png;
   String? _status;
+  PhotoStudioSnapshot? _undo;
+
+  void _pushUndo() {
+    _undo = PhotoStudioSnapshot(
+      imageBytes: _imageBytes == null ? null : List<int>.from(_imageBytes!),
+      rectLeft: _rect.left,
+      rectTop: _rect.top,
+      rectRight: _rect.right,
+      rectBottom: _rect.bottom,
+      shapeName: _shape.name,
+      strokeArgb: _strokeArgb,
+      stamps: List<EmojiStamp>.from(_stamps),
+      selectedStampId: _selectedStampId,
+      stampScale: _stampScale,
+    );
+  }
+
+  void _undoOnce() {
+    final snap = _undo;
+    if (snap == null) return;
+    setState(() {
+      _imageBytes =
+          snap.imageBytes == null ? null : Uint8List.fromList(snap.imageBytes!);
+      _rect = NormalizedRect(
+        left: snap.rectLeft,
+        top: snap.rectTop,
+        right: snap.rectRight,
+        bottom: snap.rectBottom,
+      );
+      _shape = StudioFrameShape.values.byName(snap.shapeName);
+      _strokeArgb = snap.strokeArgb;
+      _stamps = List<EmojiStamp>.from(snap.stamps);
+      _selectedStampId = snap.selectedStampId;
+      _stampScale = snap.stampScale;
+      _undo = null;
+      _status = DisplayScope.of(context).text('photoStudio.undoDone');
+    });
+  }
 
   Future<void> _copy(String text) async {
     await Clipboard.setData(ClipboardData(text: text));
@@ -45,6 +116,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       }
       final compact = await Base64ImageBridge.downscaleToPng(validated);
       if (!mounted) return;
+      _pushUndo();
       setState(() {
         _imageBytes = compact.bytes;
         _status = display.text(
@@ -92,7 +164,20 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     }
   }
 
+  Future<void> _copyImageBase64() async {
+    final display = DisplayScope.of(context);
+    final bytes = _imageBytes;
+    if (bytes == null) {
+      setState(() => _status = display.text('photoStudio.noImageToCopy'));
+      return;
+    }
+    final payload = Base64ImagePayload(bytes: bytes, mimeType: 'image/png');
+    await _copy(payload.dataUrl);
+    setState(() => _status = display.text('photoStudio.imageCopied'));
+  }
+
   void _clearImage() {
+    _pushUndo();
     setState(() {
       _imageBytes = null;
       _status = DisplayScope.of(context).text('photoStudio.imageCleared');
@@ -100,93 +185,327 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
   }
 
   void _resetRect() {
+    _pushUndo();
     setState(() => _rect = NormalizedRect.initial);
+  }
+
+  Future<void> _saveExport() async {
+    final display = DisplayScope.of(context);
+    try {
+      final png = await composeStudioPng(
+        logicalSize: const Size(760, 280),
+        rect: _rect,
+        shape: _shape,
+        strokeColor: Color(_strokeArgb),
+        stamps: _stamps,
+        imageBytes: _imageBytes,
+      );
+      final saver = widget.imageSaver ?? saveImageBytes;
+      final ok = await saver(
+        bytes: png,
+        fileName: 'photo-studio.${_exportFormat.fileExtension}',
+        mimeType: _exportFormat.mimeType,
+      );
+      if (!mounted) return;
+      setState(() {
+        _status = display.text(
+          ok ? 'photoStudio.saveDone' : 'photoStudio.saveUnavailable',
+          arguments: {'format': _exportFormat.fileExtension},
+        );
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _status = display.text('photoStudio.saveError'));
+    }
+  }
+
+  void _onRectChanged(NormalizedRect rect) {
+    setState(() => _rect = rect);
+  }
+
+  void _onStampsChanged(List<EmojiStamp> stamps) {
+    setState(() {
+      _stamps = stamps;
+      if (_pendingEmoji != null) {
+        _pendingEmoji = null;
+      }
+      final selected = _selectedStampId;
+      if (selected != null) {
+        final match = stamps.where((s) => s.emojiStampId == selected);
+        if (match.isNotEmpty) {
+          _stampScale = match.first.scale;
+        }
+      }
+    });
+  }
+
+  void _applyStampScale(double scale) {
+    setState(() {
+      _stampScale = scale;
+      final id = _selectedStampId;
+      if (id == null) return;
+      _stamps = [
+        for (final stamp in _stamps)
+          if (stamp.emojiStampId == id) stamp.copyWith(scale: scale) else stamp,
+      ];
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final display = DisplayScope.of(context);
-    String t(String key) => display.text(key);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(t('photoStudio.title')),
-        actions: const [DisplayLocalePicker(compact: true)],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 72),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  t('photoStudio.subtitle'),
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 20),
-                _Section(
-                  title: t('photoStudio.studio'),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        t('photoStudio.studioSubtitle'),
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        t('photoStudio.studioHint'),
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 12),
-                      PhotoRectCanvas(
-                        rect: _rect,
-                        imageBytes: _imageBytes,
-                        onRectChanged: (rect) => setState(() => _rect = rect),
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
+    String t(String key, {Map<String, Object?> arguments = const {}}) =>
+        display.text(key, arguments: arguments);
+    final geometry = StudioGeometry.describe(_rect, _shape);
+
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.keyZ, control: true): _undoOnce,
+        const SingleActivator(LogicalKeyboardKey.keyZ, meta: true): _undoOnce,
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(t('photoStudio.title')),
+            actions: [
+              IconButton(
+                tooltip: t('photoStudio.undo'),
+                onPressed: _undo == null ? null : _undoOnce,
+                icon: const Icon(Icons.undo),
+              ),
+              const DisplayLocalePicker(compact: true),
+            ],
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 72),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 760),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      t('photoStudio.subtitle'),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 20),
+                    _Section(
+                      title: t('photoStudio.studio'),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          FilledButton.tonalIcon(
-                            onPressed: _pickImage,
-                            icon: const Icon(Icons.image_outlined),
-                            label: Text(t('photoStudio.pickImage')),
+                          Text(
+                            t('photoStudio.studioSubtitle'),
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
-                          FilledButton.tonalIcon(
-                            onPressed: _pasteBase64,
-                            icon: const Icon(Icons.content_paste),
-                            label: Text(t('photoStudio.pasteBase64Image')),
+                          const SizedBox(height: 8),
+                          Text(
+                            t('photoStudio.studioHint'),
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
-                          OutlinedButton.icon(
-                            onPressed: _imageBytes == null ? null : _clearImage,
-                            icon: const Icon(Icons.hide_image_outlined),
-                            label: Text(t('photoStudio.clearImage')),
+                          const SizedBox(height: 12),
+                          PhotoRectCanvas(
+                            rect: _rect,
+                            imageBytes: _imageBytes,
+                            onRectChanged: _onRectChanged,
+                            shape: _shape,
+                            strokeColor: Color(_strokeArgb),
+                            stamps: _stamps,
+                            onStampsChanged: (stamps) {
+                              _pushUndo();
+                              _onStampsChanged(stamps);
+                            },
+                            selectedStampId: _selectedStampId,
+                            onSelectedStampIdChanged: (id) =>
+                                setState(() => _selectedStampId = id),
+                            pendingEmoji: _pendingEmoji,
                           ),
-                          OutlinedButton.icon(
-                            onPressed: _resetRect,
-                            icon: const Icon(Icons.crop_square_outlined),
-                            label: Text(t('photoStudio.resetRect')),
+                          const SizedBox(height: 12),
+                          Text(t('photoStudio.frameShape'),
+                              style: Theme.of(context).textTheme.titleSmall),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              for (final shape in StudioFrameShape.values)
+                                ChoiceChip(
+                                  label: Text(t('photoStudio.shape.${shape.name}')),
+                                  selected: _shape == shape,
+                                  onSelected: (_) {
+                                    if (_shape == shape) return;
+                                    _pushUndo();
+                                    setState(() => _shape = shape);
+                                  },
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(t('photoStudio.frameColor'),
+                              style: Theme.of(context).textTheme.titleSmall),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final argb in StudioFrameColors.presets)
+                                GestureDetector(
+                                  onTap: () {
+                                    if (_strokeArgb == argb) return;
+                                    _pushUndo();
+                                    setState(() => _strokeArgb = argb);
+                                  },
+                                  child: Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      color: Color(argb),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: _strokeArgb == argb
+                                            ? Theme.of(context).colorScheme.onSurface
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .outlineVariant,
+                                        width: _strokeArgb == argb ? 2.5 : 1,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(t('photoStudio.stamps'),
+                              style: Theme.of(context).textTheme.titleSmall),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final emoji in _emojiPalette)
+                                ActionChip(
+                                  label: Text(emoji, style: const TextStyle(fontSize: 18)),
+                                  onPressed: () {
+                                    setState(() {
+                                      _pendingEmoji =
+                                          _pendingEmoji == emoji ? null : emoji;
+                                    });
+                                  },
+                                  backgroundColor: _pendingEmoji == emoji
+                                      ? Theme.of(context)
+                                          .colorScheme
+                                          .secondaryContainer
+                                      : null,
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            t(
+                              'photoStudio.stampScale',
+                              arguments: {
+                                'scale': _stampScale.toStringAsFixed(1),
+                              },
+                            ),
+                          ),
+                          Slider(
+                            value: _stampScale.clamp(0.4, 3.0),
+                            min: 0.4,
+                            max: 3.0,
+                            divisions: 26,
+                            label: _stampScale.toStringAsFixed(1),
+                            onChangeStart: (_) => _pushUndo(),
+                            onChanged: _applyStampScale,
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              FilledButton.tonalIcon(
+                                onPressed: _pickImage,
+                                icon: const Icon(Icons.image_outlined),
+                                label: Text(t('photoStudio.pickImage')),
+                              ),
+                              FilledButton.tonalIcon(
+                                onPressed: _pasteBase64,
+                                icon: const Icon(Icons.content_paste),
+                                label: Text(t('photoStudio.pasteBase64Image')),
+                              ),
+                              FilledButton.tonalIcon(
+                                onPressed:
+                                    _imageBytes == null ? null : _copyImageBase64,
+                                icon: const Icon(Icons.copy_all_outlined),
+                                label: Text(t('photoStudio.copyImage')),
+                              ),
+                              OutlinedButton.icon(
+                                onPressed:
+                                    _imageBytes == null ? null : _clearImage,
+                                icon: const Icon(Icons.hide_image_outlined),
+                                label: Text(t('photoStudio.clearImage')),
+                              ),
+                              OutlinedButton.icon(
+                                onPressed: _resetRect,
+                                icon: const Icon(Icons.crop_square_outlined),
+                                label: Text(t('photoStudio.resetRect')),
+                              ),
+                              OutlinedButton.icon(
+                                onPressed: _undo == null ? null : _undoOnce,
+                                icon: const Icon(Icons.undo),
+                                label: Text(t('photoStudio.undo')),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(t('photoStudio.saveAs'),
+                              style: Theme.of(context).textTheme.titleSmall),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              for (final format in StudioExportFormat.values)
+                                ChoiceChip(
+                                  label: Text(format.fileExtension.toUpperCase()),
+                                  selected: _exportFormat == format,
+                                  onSelected: (_) =>
+                                      setState(() => _exportFormat = format),
+                                ),
+                              FilledButton.icon(
+                                onPressed: _saveExport,
+                                icon: const Icon(Icons.download_outlined),
+                                label: Text(t('photoStudio.saveFile')),
+                              ),
+                            ],
+                          ),
+                          if (_status != null) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              _status!,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                          const SizedBox(height: 12),
+                          _CopyCard(
+                            title: t('photoStudio.rectLabel'),
+                            value: _rect.labeledText,
+                            copyTooltip: t('common.copy'),
+                            onCopy: () => _copy(_rect.csvText),
+                          ),
+                          const SizedBox(height: 8),
+                          _CopyCard(
+                            title: t('photoStudio.geometryLabel'),
+                            value: geometry,
+                            copyTooltip: t('common.copy'),
+                            onCopy: () => _copy(geometry),
                           ),
                         ],
                       ),
-                      if (_status != null) ...[
-                        const SizedBox(height: 8),
-                        Text(_status!, style: Theme.of(context).textTheme.bodySmall),
-                      ],
-                      const SizedBox(height: 12),
-                      _CopyCard(
-                        title: t('photoStudio.rectLabel'),
-                        value: _rect.labeledText,
-                        copyTooltip: t('common.copy'),
-                        onCopy: () => _copy(_rect.csvText),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

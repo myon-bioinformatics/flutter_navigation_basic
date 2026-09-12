@@ -1,12 +1,15 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import '../domain/emoji_stamp.dart';
 import '../domain/normalized_rect.dart';
+import '../domain/studio_frame_style.dart';
 
-/// Local image canvas with a normalized rectangle that works with or without
-/// an image. Rectangle state is owned by the parent.
+/// Local image canvas with a normalized frame that works with or without an
+/// image. Rectangle / stamp state is owned by the parent.
 class PhotoRectCanvas extends StatefulWidget {
   const PhotoRectCanvas({
     super.key,
@@ -14,12 +17,28 @@ class PhotoRectCanvas extends StatefulWidget {
     required this.onRectChanged,
     this.imageBytes,
     this.height = 280,
+    this.shape = StudioFrameShape.rectangle,
+    this.strokeColor,
+    this.stamps = const <EmojiStamp>[],
+    this.onStampsChanged,
+    this.selectedStampId,
+    this.onSelectedStampIdChanged,
+    this.pendingEmoji,
   });
 
   final NormalizedRect rect;
   final ValueChanged<NormalizedRect> onRectChanged;
   final Uint8List? imageBytes;
   final double height;
+  final StudioFrameShape shape;
+  final Color? strokeColor;
+  final List<EmojiStamp> stamps;
+  final ValueChanged<List<EmojiStamp>>? onStampsChanged;
+  final String? selectedStampId;
+  final ValueChanged<String?>? onSelectedStampIdChanged;
+
+  /// When set, the next canvas press places this emoji as a stamp.
+  final String? pendingEmoji;
 
   @override
   State<PhotoRectCanvas> createState() => _PhotoRectCanvasState();
@@ -28,12 +47,26 @@ class PhotoRectCanvas extends StatefulWidget {
 class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
   NormalizedRectHandle? _activeHandle;
   Offset? _lastLocal;
-  /// Normalized origin for outside-drag create; null when resizing/moving.
   Offset? _createOrigin;
-  /// Latest create-drag rect held locally so pan-end cannot sanitize a stale parent value.
   NormalizedRect? _liveCreateRect;
+  String? _draggingStampId;
 
   static const double _handleHitSlop = 18;
+
+  double _stampHitRadius(Size size, EmojiStamp stamp) {
+    final base = math.min(size.width, size.height) * 0.05 * stamp.scale;
+    return math.max(18.0, base);
+  }
+
+  EmojiStamp? _hitStamp(Offset local, Size size) {
+    for (final stamp in widget.stamps.reversed) {
+      final center = Offset(stamp.x * size.width, stamp.y * size.height);
+      if ((center - local).distance <= _stampHitRadius(size, stamp)) {
+        return stamp;
+      }
+    }
+    return null;
+  }
 
   NormalizedRectHandle? _hitTest(Offset local, Size size) {
     final rect = widget.rect.toPixelRect(size);
@@ -54,24 +87,24 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
         rect.left - _handleHitSlop / 2,
         rect.top + _handleHitSlop,
         _handleHitSlop,
-        mathMax(0, rect.height - _handleHitSlop * 2),
+        math.max(0.0, rect.height - _handleHitSlop * 2),
       ),
       NormalizedRectHandle.right: Rect.fromLTWH(
         rect.right - _handleHitSlop / 2,
         rect.top + _handleHitSlop,
         _handleHitSlop,
-        mathMax(0, rect.height - _handleHitSlop * 2),
+        math.max(0.0, rect.height - _handleHitSlop * 2),
       ),
       NormalizedRectHandle.top: Rect.fromLTWH(
         rect.left + _handleHitSlop,
         rect.top - _handleHitSlop / 2,
-        mathMax(0, rect.width - _handleHitSlop * 2),
+        math.max(0.0, rect.width - _handleHitSlop * 2),
         _handleHitSlop,
       ),
       NormalizedRectHandle.bottom: Rect.fromLTWH(
         rect.left + _handleHitSlop,
         rect.bottom - _handleHitSlop / 2,
-        mathMax(0, rect.width - _handleHitSlop * 2),
+        math.max(0.0, rect.width - _handleHitSlop * 2),
         _handleHitSlop,
       ),
     };
@@ -85,9 +118,40 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
     return null;
   }
 
-  double mathMax(double a, double b) => a > b ? a : b;
-
   void _onPanStart(DragStartDetails details, Size size) {
+    final stamp = _hitStamp(details.localPosition, size);
+    if (stamp != null) {
+      _draggingStampId = stamp.emojiStampId;
+      _activeHandle = null;
+      _createOrigin = null;
+      _liveCreateRect = null;
+      widget.onSelectedStampIdChanged?.call(stamp.emojiStampId);
+      _lastLocal = details.localPosition;
+      return;
+    }
+
+    final pending = widget.pendingEmoji;
+    if (pending != null && pending.isNotEmpty) {
+      final nx = (details.localPosition.dx / size.width).clamp(0.0, 1.0);
+      final ny = (details.localPosition.dy / size.height).clamp(0.0, 1.0);
+      final id = 'stamp-${DateTime.now().microsecondsSinceEpoch}';
+      final next = <EmojiStamp>[
+        ...widget.stamps,
+        EmojiStamp(
+          emojiStampId: id,
+          emoji: pending,
+          x: nx,
+          y: ny,
+          scale: 1,
+        ),
+      ];
+      widget.onStampsChanged?.call(next);
+      widget.onSelectedStampIdChanged?.call(id);
+      _draggingStampId = id;
+      _lastLocal = details.localPosition;
+      return;
+    }
+
     final hit = _hitTest(details.localPosition, size);
     if (hit == null) {
       final nx = (details.localPosition.dx / size.width).clamp(0.0, 1.0);
@@ -113,6 +177,20 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
   void _onPanUpdate(DragUpdateDetails details, Size size) {
     if (size.width <= 0 || size.height <= 0) return;
 
+    final draggingId = _draggingStampId;
+    if (draggingId != null) {
+      final nx = (details.localPosition.dx / size.width).clamp(0.0, 1.0);
+      final ny = (details.localPosition.dy / size.height).clamp(0.0, 1.0);
+      widget.onStampsChanged?.call([
+        for (final stamp in widget.stamps)
+          if (stamp.emojiStampId == draggingId)
+            stamp.copyWith(x: nx, y: ny)
+          else
+            stamp,
+      ]);
+      return;
+    }
+
     final origin = _createOrigin;
     if (origin != null) {
       final nx = (details.localPosition.dx / size.width).clamp(0.0, 1.0);
@@ -137,7 +215,7 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
     widget.onRectChanged(widget.rect.resized(handle: handle, dx: dx, dy: dy));
   }
 
-  void _finishCreateGesture() {
+  void _finishGesture() {
     final live = _liveCreateRect;
     if (_createOrigin != null && live != null) {
       widget.onRectChanged(live.sanitized());
@@ -145,16 +223,14 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
     _createOrigin = null;
     _liveCreateRect = null;
     _activeHandle = null;
+    _draggingStampId = null;
     _lastLocal = null;
   }
-
-  void _onPanEnd(DragEndDetails details) => _finishCreateGesture();
-
-  void _onPanCancel() => _finishCreateGesture();
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final accent = widget.strokeColor ?? scheme.primary;
     return SizedBox(
       height: widget.height,
       width: double.infinity,
@@ -165,8 +241,8 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
             behavior: HitTestBehavior.opaque,
             onPanStart: (details) => _onPanStart(details, size),
             onPanUpdate: (details) => _onPanUpdate(details, size),
-            onPanEnd: _onPanEnd,
-            onPanCancel: _onPanCancel,
+            onPanEnd: (_) => _finishGesture(),
+            onPanCancel: _finishGesture,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Stack(
@@ -183,10 +259,13 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
                   else
                     CustomPaint(painter: _CheckerPainter(scheme.outlineVariant)),
                   CustomPaint(
-                    painter: _RectCanvasPainter(
+                    painter: _FrameCanvasPainter(
                       rect: widget.rect,
-                      accent: scheme.primary,
-                      dim: scheme.scrim.withValues(alpha: 0.35),
+                      shape: widget.shape,
+                      accent: accent,
+                      dim: scheme.scrim.withValues(alpha: 0.28),
+                      stamps: widget.stamps,
+                      selectedStampId: widget.selectedStampId,
                     ),
                   ),
                 ],
@@ -199,16 +278,22 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
   }
 }
 
-class _RectCanvasPainter extends CustomPainter {
-  _RectCanvasPainter({
+class _FrameCanvasPainter extends CustomPainter {
+  _FrameCanvasPainter({
     required this.rect,
+    required this.shape,
     required this.accent,
     required this.dim,
+    required this.stamps,
+    required this.selectedStampId,
   });
 
   final NormalizedRect rect;
+  final StudioFrameShape shape;
   final Color accent;
   final Color dim;
+  final List<EmojiStamp> stamps;
+  final String? selectedStampId;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -221,9 +306,26 @@ class _RectCanvasPainter extends CustomPainter {
 
     final border = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
+      ..strokeWidth = 2.5
       ..color = accent;
-    canvas.drawRect(pixel, border);
+
+    switch (shape) {
+      case StudioFrameShape.rectangle:
+        canvas.drawRect(pixel, border);
+      case StudioFrameShape.circle:
+        canvas.drawCircle(
+          pixel.center,
+          math.min(pixel.width, pixel.height) / 2,
+          border,
+        );
+      case StudioFrameShape.triangle:
+        final path = Path()
+          ..moveTo(pixel.center.dx, pixel.top)
+          ..lineTo(pixel.right, pixel.bottom)
+          ..lineTo(pixel.left, pixel.bottom)
+          ..close();
+        canvas.drawPath(path, border);
+    }
 
     final handlePaint = Paint()..color = accent;
     final handleOutline = Paint()
@@ -243,16 +345,47 @@ class _RectCanvasPainter extends CustomPainter {
       canvas.drawCircle(point, 5, handlePaint);
       canvas.drawCircle(point, 5, handleOutline);
     }
+
+    for (final stamp in stamps) {
+      final fontSize =
+          math.min(size.width, size.height) * 0.1 * stamp.scale.clamp(0.4, 3.0);
+      final tp = TextPainter(
+        text: TextSpan(text: stamp.emoji, style: TextStyle(fontSize: fontSize)),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      final origin = Offset(
+        stamp.x * size.width - tp.width / 2,
+        stamp.y * size.height - tp.height / 2,
+      );
+      tp.paint(canvas, origin);
+      if (stamp.emojiStampId == selectedStampId) {
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(
+              origin.dx - 4,
+              origin.dy - 4,
+              tp.width + 8,
+              tp.height + 8,
+            ),
+            const Radius.circular(8),
+          ),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.5
+            ..color = accent,
+        );
+      }
+    }
   }
 
   @override
-  bool shouldRepaint(covariant _RectCanvasPainter oldDelegate) =>
-      oldDelegate.rect.left != rect.left ||
-      oldDelegate.rect.top != rect.top ||
-      oldDelegate.rect.right != rect.right ||
-      oldDelegate.rect.bottom != rect.bottom ||
+  bool shouldRepaint(covariant _FrameCanvasPainter oldDelegate) =>
+      oldDelegate.rect != rect ||
+      oldDelegate.shape != shape ||
       oldDelegate.accent != accent ||
-      oldDelegate.dim != dim;
+      oldDelegate.dim != dim ||
+      oldDelegate.stamps != stamps ||
+      oldDelegate.selectedStampId != selectedStampId;
 }
 
 class _CheckerPainter extends CustomPainter {
