@@ -23,10 +23,12 @@ void main() {
     expect(find.text('Open in Apple Maps'), findsNWidgets(2));
     expect(find.text('4. Platform formats'), findsOneWidget);
     expect(find.text('5. XYZ tile'), findsNWidgets(2));
-    expect(find.text('Center + radius'), findsOneWidget);
-    expect(find.text('Loose bounding box'), findsOneWidget);
-    expect(find.text('BBox [west, south, east, north]'), findsOneWidget);
-    expect(find.text('JSON'), findsOneWidget);
+    expect(find.text('6. Manual box'), findsOneWidget);
+    expect(find.text('Generate bounds'), findsOneWidget);
+    expect(find.text('From center + radius'), findsOneWidget);
+    expect(find.text('From four edges'), findsOneWidget);
+    expect(find.text('BBox [west, south, east, north]'), findsWidgets);
+    expect(find.text('JSON'), findsWidgets);
     expect(find.text('Google Maps JavaScript · Circle'), findsOneWidget);
     expect(find.text('Apple MapKit · MKCircle (Swift)'), findsOneWidget);
     expect(find.text('Google Maps JavaScript · Rectangle'), findsOneWidget);
@@ -76,6 +78,8 @@ void main() {
     expect(find.text('2. Tolerance'), findsOneWidget);
     expect(customRadius, findsOneWidget);
     expect(find.text('5. XYZ tile'), findsNWidgets(2));
+    expect(find.text('6. Manual box'), findsOneWidget);
+    expect(find.text('Generate bounds'), findsOneWidget);
     expect(find.text('Center + radius'), findsNothing);
     expect(find.text('Map links · area'), findsNothing);
     expect(find.text('4. Platform formats'), findsNothing);
@@ -88,7 +92,7 @@ void main() {
       find.text('Custom radius must be a number greater than zero.'),
       findsNothing,
     );
-    expect(find.text('Center + radius'), findsOneWidget);
+    expect(find.text('From center + radius'), findsOneWidget);
     expect(find.text('Map links · area'), findsOneWidget);
     expect(find.textContaining('radius_m: 250'), findsOneWidget);
     expect(find.text('4. Platform formats'), findsOneWidget);
@@ -152,5 +156,66 @@ void main() {
       find.text('Could not find latitude/longitude in that Maps URL.'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('generates manual box from center and radius', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(home: await wrapWithDisplayScope(const CoordinateToolPage())),
+    );
+    await tester.pumpAndSettle();
+
+    final radiusField = find.widgetWithText(TextField, 'Radius (meters)');
+    await tester.ensureVisible(radiusField);
+    await tester.enterText(radiusField, '500');
+    await tester.pump();
+
+    final generate = find.text('Generate bounds');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pump();
+
+    expect(find.textContaining('Center:'), findsWidgets);
+    expect(find.textContaining('Span:'), findsWidgets);
+    expect(find.text('BBox [west, south, east, north]'), findsWidgets);
+  });
+
+
+  testWidgets('invalid point keeps manual box visible and usable', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(home: await wrapWithDisplayScope(const CoordinateToolPage())),
+    );
+    await tester.pumpAndSettle();
+
+    final latitude = find.widgetWithText(TextField, 'Latitude');
+    await tester.ensureVisible(latitude);
+    await tester.enterText(latitude, 'not-a-number');
+    final calculate = find.text('Calculate');
+    await tester.ensureVisible(calculate);
+    await tester.tap(calculate);
+    await tester.pumpAndSettle();
+
+    // Point-derived sections should disappear; manual box must remain.
+    expect(find.text('2. Tolerance'), findsNothing);
+
+    expect(find.text('1. Point'), findsOneWidget);
+    expect(find.text('6. Manual box'), findsOneWidget);
+    expect(find.text('Generate bounds'), findsOneWidget);
+    expect(find.text('Validate bounds'), findsOneWidget);
+
+    // Manual four-edge validation still works without a valid point.
+    final south = find.widgetWithText(TextField, 'South');
+    await tester.ensureVisible(south);
+    await tester.enterText(south, '35.67');
+    await tester.enterText(find.widgetWithText(TextField, 'North'), '35.69');
+    await tester.enterText(find.widgetWithText(TextField, 'West'), '170');
+    await tester.enterText(find.widgetWithText(TextField, 'East'), '-170');
+
+    final validate = find.text('Validate bounds');
+    await tester.ensureVisible(validate);
+    await tester.tap(validate);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('wraps_antimeridian: true'), findsWidgets);
+    expect(find.text('BBox [west, south, east, north]'), findsWidgets);
   });
 }

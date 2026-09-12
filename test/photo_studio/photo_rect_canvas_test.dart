@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/features/bounding_box/domain/normalized_rect.dart';
-import 'package:flutter_application_1/features/bounding_box/presentation/image_rect_overlay.dart';
+import 'package:flutter_application_1/features/photo_studio/domain/normalized_rect.dart';
+import 'package:flutter_application_1/features/photo_studio/presentation/photo_rect_canvas.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -16,7 +16,7 @@ void main() {
         home: Scaffold(
           body: StatefulBuilder(
             builder: (context, setState) {
-              return ImageRectOverlay(
+              return PhotoRectCanvas(
                 rect: rect,
                 height: 300,
                 onRectChanged: (next) {
@@ -31,7 +31,7 @@ void main() {
     );
     await tester.pump();
 
-    final overlay = find.byType(ImageRectOverlay);
+    final overlay = find.byType(PhotoRectCanvas);
     final box = tester.getRect(overlay);
     // Start in the top-left empty area (outside the default 0.2–0.8 rect).
     final start = Offset(box.left + box.width * 0.05, box.top + box.height * 0.05);
@@ -66,7 +66,7 @@ void main() {
         home: Scaffold(
           body: StatefulBuilder(
             builder: (context, setState) {
-              return ImageRectOverlay(
+              return PhotoRectCanvas(
                 // Put existing rect away so center of canvas is empty.
                 rect: last ??
                     const NormalizedRect(
@@ -87,7 +87,7 @@ void main() {
     );
     await tester.pump();
 
-    final box = tester.getRect(find.byType(ImageRectOverlay));
+    final box = tester.getRect(find.byType(PhotoRectCanvas));
     final start = Offset(box.left + box.width * 0.5, box.top + box.height * 0.5);
     final end = Offset(box.left + box.width * 0.2, box.top + box.height * 0.2);
 

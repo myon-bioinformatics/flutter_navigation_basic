@@ -22,7 +22,7 @@ class DisplayCatalog {
     'common.',
     'home.',
     'coordinate.',
-    'boundingBox.',
+    'photoStudio.',
     'nowTimeline.',
   ];
 

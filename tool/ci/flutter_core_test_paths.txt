@@ -4,7 +4,7 @@
 # the full suite-load cost on every shard.
 # Lines starting with # are ignored.
 
-test/bounding_box
+test/photo_studio
 test/coordinate_tool
 test/core
 test/now_timeline

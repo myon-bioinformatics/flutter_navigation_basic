@@ -37,8 +37,8 @@ lib/
 │   ├── counter_playground/        # 旧 screen2 · PAD-lite ダメージ/回復 + hold-to-repeat
 │   ├── irony_generator/           # 旧 screen3
 │   ├── composition_generator/     # 旧 screen4 · メトロノーム等
-│   ├── coordinate_tool/           # 緯度経度 · Maps URL → DMS
-│   ├── bounding_box/
+│   ├── coordinate_tool/           # 緯度経度 · Maps URL → DMS · 手動 Box
+│   ├── photo_studio/              # 写真館 · 枠付きキャンバス
 │   ├── now_timeline/
 │   └── screen5/                   # URL Parameters
 ├── screens/
@@ -62,8 +62,8 @@ lib/
 | 種別 | 正式名 | URL | 説明 |
 |------|--------|-----|------|
 | Home | Home 🏠 | `/` | アプリのトップ画面。現在日付と主要デモへのナビゲーションを表示。 |
-| Tool | Coordinate Tool 📍 | `/tools/location/coordinates` | 緯度経度の検証と十進度／DMS。Google / Apple Maps の共有 URL から座標抽出も可。 |
-| Tool | Bounding Box | `/tools/location/bounding-box` | 4辺または中心＋半径から地理範囲を作成・コピー。 |
+| Tool | Latitude / Longitude 📍 | `/tools/location/coordinates` | 緯度経度の検証・十進度／DMS・地図リンクに加え、手動の地理Box作成・コピー。Google / Apple Maps の共有 URL から座標抽出も可。 |
+| Tool | 写真館 / Photo Studio | `/tools/media/photo-studio` | 写真の上に枠や印を載せるコーナー（旧 `/tools/location/bounding-box` は互換のため残置）。 |
 | Tool | Now Timeline | `/tools/time/now-timeline` | 複数 IANA タイムゾーンを1本のクライアント側タイムラインにまとめる。 |
 | Example | Counter Playground 👾 | `/examples/counter-playground` | カウンターの増減・履歴・undo。正の値ぶんダメージ／負の絶対値ぶん回復の軽いオーブ演出と、押し続けで連打できる +/-。 |
 | Example | Irony Generator 🥐 | `/examples/irony-generator` | `Ironies.ironicList` からランダムなフレーズを表示。 |

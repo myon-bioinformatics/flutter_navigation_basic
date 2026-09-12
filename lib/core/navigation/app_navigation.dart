@@ -5,7 +5,7 @@ import '../../features/home/domain/home_controller.dart';
 import '../../features/clipboard_shelf/presentation/clipboard_shelf_page.dart';
 import '../../features/now_timeline/presentation/now_timeline_page.dart';
 import '../../features/coordinate_tool/presentation/coordinate_tool_page.dart';
-import '../../features/bounding_box/presentation/bounding_box_page.dart';
+import '../../features/photo_studio/presentation/photo_studio_page.dart';
 import '../../features/counter_playground/presentation/counter_playground_page.dart';
 import '../../features/counter_playground/domain/counter_playground_controller.dart';
 import '../../features/irony_generator/presentation/irony_generator_page.dart';
@@ -34,7 +34,8 @@ class AppNavigation {
         RouteNames.clipboardShelf: (_) => const ClipboardShelfPage(),
         RouteNames.nowTimeline: (_) => const NowTimelinePage(),
         RouteNames.coordinateTool: (_) => const CoordinateToolPage(),
-        RouteNames.boundingBox: (_) => const BoundingBoxPage(),
+        RouteNames.photoStudio: (_) => const PhotoStudioPage(),
+        RouteNames.boundingBox: (_) => const PhotoStudioPage(),
         RouteNames.counterPlayground: (_) => CounterPlaygroundPage(
               controller: CounterPlaygroundController(),
             ),
@@ -55,7 +56,8 @@ class AppNavigation {
   static void toClipboardShelf() => _navigator.pushNamed(RouteNames.clipboardShelf);
   static void toNowTimeline() => _navigator.pushNamed(RouteNames.nowTimeline);
   static void toCoordinateTool() => _navigator.pushNamed(RouteNames.coordinateTool);
-  static void toBoundingBox() => _navigator.pushNamed(RouteNames.boundingBox);
+  static void toPhotoStudio() => _navigator.pushNamed(RouteNames.photoStudio);
+  static void toBoundingBox() => _navigator.pushNamed(RouteNames.photoStudio);
   static void toCounterPlayground() =>
       _navigator.pushNamed(RouteNames.counterPlayground);
   static void toIronyGenerator() => _navigator.pushNamed(RouteNames.ironyGenerator);

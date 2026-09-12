@@ -7,8 +7,8 @@ import '../domain/normalized_rect.dart';
 
 /// Local image canvas with a normalized rectangle that works with or without
 /// an image. Rectangle state is owned by the parent.
-class ImageRectOverlay extends StatefulWidget {
-  const ImageRectOverlay({
+class PhotoRectCanvas extends StatefulWidget {
+  const PhotoRectCanvas({
     super.key,
     required this.rect,
     required this.onRectChanged,
@@ -22,10 +22,10 @@ class ImageRectOverlay extends StatefulWidget {
   final double height;
 
   @override
-  State<ImageRectOverlay> createState() => _ImageRectOverlayState();
+  State<PhotoRectCanvas> createState() => _PhotoRectCanvasState();
 }
 
-class _ImageRectOverlayState extends State<ImageRectOverlay> {
+class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
   NormalizedRectHandle? _activeHandle;
   Offset? _lastLocal;
   /// Normalized origin for outside-drag create; null when resizing/moving.
@@ -183,7 +183,7 @@ class _ImageRectOverlayState extends State<ImageRectOverlay> {
                   else
                     CustomPaint(painter: _CheckerPainter(scheme.outlineVariant)),
                   CustomPaint(
-                    painter: _RectOverlayPainter(
+                    painter: _RectCanvasPainter(
                       rect: widget.rect,
                       accent: scheme.primary,
                       dim: scheme.scrim.withValues(alpha: 0.35),
@@ -199,8 +199,8 @@ class _ImageRectOverlayState extends State<ImageRectOverlay> {
   }
 }
 
-class _RectOverlayPainter extends CustomPainter {
-  _RectOverlayPainter({
+class _RectCanvasPainter extends CustomPainter {
+  _RectCanvasPainter({
     required this.rect,
     required this.accent,
     required this.dim,
@@ -246,7 +246,7 @@ class _RectOverlayPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _RectOverlayPainter oldDelegate) =>
+  bool shouldRepaint(covariant _RectCanvasPainter oldDelegate) =>
       oldDelegate.rect.left != rect.left ||
       oldDelegate.rect.top != rect.top ||
       oldDelegate.rect.right != rect.right ||
