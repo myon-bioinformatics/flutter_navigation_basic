@@ -1,4 +1,4 @@
-import 'package:flutter_application_1/features/bounding_box/domain/bounding_box.dart';
+import 'package:flutter_application_1/features/coordinate_tool/domain/bounding_box.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

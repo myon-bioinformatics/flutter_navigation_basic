@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../shared/display/display_scope.dart';
 import '../../../shared/platform/open_external_url.dart';
+import '../domain/bounding_box.dart';
 import '../domain/coordinate_formatter.dart';
 
 class CoordinateToolPage extends StatefulWidget {
@@ -17,6 +18,15 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
   final _longitude = TextEditingController(text: '139.767125');
   final _mapsUrl = TextEditingController();
   final _customRadius = TextEditingController(text: '100');
+  final _boxSouth = TextEditingController(text: '35.676746');
+  final _boxWest = TextEditingController(text: '139.756060');
+  final _boxNorth = TextEditingController(text: '35.685726');
+  final _boxEast = TextEditingController(text: '139.778190');
+  final _boxCenterLatitude = TextEditingController(text: '35.681236');
+  final _boxCenterLongitude = TextEditingController(text: '139.767125');
+  final _boxRadiusMeters = TextEditingController(text: '1000');
+  BoundingBox? _manualBox;
+  String? _manualBoxError;
   CoordinateTolerancePreset _preset = CoordinateTolerancePreset.building;
   int _zoom = 16;
   CoordinateValue? _value;
@@ -28,6 +38,7 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
   void initState() {
     super.initState();
     _convert();
+    _validateManualBox();
   }
 
   @override
@@ -36,6 +47,13 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
     _longitude.dispose();
     _mapsUrl.dispose();
     _customRadius.dispose();
+    _boxSouth.dispose();
+    _boxWest.dispose();
+    _boxNorth.dispose();
+    _boxEast.dispose();
+    _boxCenterLatitude.dispose();
+    _boxCenterLongitude.dispose();
+    _boxRadiusMeters.dispose();
     super.dispose();
   }
 
@@ -137,6 +155,57 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
     return preset.radiusMeters == null
         ? label
         : '$label · ${preset.radiusMeters!.toInt()} m';
+  }
+
+  void _validateManualBox() {
+    try {
+      final box = BoundingBox.fromBounds(
+        south: _boxSouth.text,
+        west: _boxWest.text,
+        north: _boxNorth.text,
+        east: _boxEast.text,
+      );
+      setState(() {
+        _manualBox = box;
+        _manualBoxError = null;
+      });
+    } on FormatException catch (error) {
+      setState(() {
+        _manualBox = null;
+        _manualBoxError = error.message;
+      });
+    }
+  }
+
+  void _generateManualBox() {
+    try {
+      final latitude = double.parse(_boxCenterLatitude.text.trim());
+      final longitude = double.parse(_boxCenterLongitude.text.trim());
+      final radius = double.parse(_boxRadiusMeters.text.trim());
+      final box = BoundingBox.fromCenterRadius(
+        latitude: latitude,
+        longitude: longitude,
+        radiusMeters: radius,
+      );
+      _boxSouth.text = box.south.toStringAsFixed(6);
+      _boxWest.text = box.west.toStringAsFixed(6);
+      _boxNorth.text = box.north.toStringAsFixed(6);
+      _boxEast.text = box.east.toStringAsFixed(6);
+      setState(() {
+        _manualBox = box;
+        _manualBoxError = null;
+      });
+    } on FormatException catch (error) {
+      setState(() {
+        _manualBox = null;
+        _manualBoxError = error.message;
+      });
+    } catch (error) {
+      setState(() {
+        _manualBox = null;
+        _manualBoxError = error.toString();
+      });
+    }
   }
 
   @override
@@ -379,6 +448,144 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                     _ResultCard(title: t('coordinate.tilePath'), value: tile.path, copyTooltip: t('common.copy'), onCopy: () => _copy(tile.path, t('coordinate.tilePath'))),
                   ],
                   const SizedBox(height: 16),
+
+                  const SizedBox(height: 28),
+                  _SectionTitle(title: t('coordinate.manualBox'), icon: Icons.crop_free_outlined),
+                  const SizedBox(height: 8),
+                  Text(t('coordinate.manualBoxSubtitle'), style: Theme.of(context).textTheme.bodyMedium),
+                  const SizedBox(height: 12),
+                  Text(t('coordinate.boxCenterRadius'), style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _boxCenterLatitude,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                          decoration: InputDecoration(labelText: t('coordinate.boxCenterLatitude'), border: const OutlineInputBorder()),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _boxCenterLongitude,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                          decoration: InputDecoration(labelText: t('coordinate.boxCenterLongitude'), border: const OutlineInputBorder()),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _boxRadiusMeters,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(labelText: t('coordinate.boxRadius'), border: const OutlineInputBorder()),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: _generateManualBox,
+                    icon: const Icon(Icons.center_focus_strong),
+                    label: Text(t('coordinate.boxGenerate')),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(t('coordinate.boxManualEdges'), style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _boxSouth,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                          decoration: InputDecoration(labelText: t('coordinate.boxSouth'), border: const OutlineInputBorder()),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _boxNorth,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                          decoration: InputDecoration(labelText: t('coordinate.boxNorth'), border: const OutlineInputBorder()),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _boxWest,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                          decoration: InputDecoration(labelText: t('coordinate.boxWest'), border: const OutlineInputBorder()),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _boxEast,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                          decoration: InputDecoration(labelText: t('coordinate.boxEast'), border: const OutlineInputBorder()),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: _validateManualBox,
+                    icon: const Icon(Icons.crop_free),
+                    label: Text(t('coordinate.boxValidate')),
+                  ),
+                  if (_manualBoxError != null) ...[
+                    const SizedBox(height: 12),
+                    Text(_manualBoxError!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  ],
+                  if (_manualBox != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      display.text(
+                        'coordinate.boxCenter',
+                        arguments: {
+                          'lat': _manualBox!.centerLatitude.toStringAsFixed(6),
+                          'lon': _manualBox!.centerLongitude.toStringAsFixed(6),
+                        },
+                      ),
+                    ),
+                    Text(
+                      display.text(
+                        'coordinate.boxSpan',
+                        arguments: {
+                          'lat': _manualBox!.latitudeSpan.toStringAsFixed(6),
+                          'lon': _manualBox!.longitudeSpan.toStringAsFixed(6),
+                        },
+                      ),
+                    ),
+                    if (_manualBox!.wrapsAntimeridian) ...[
+                      const SizedBox(height: 8),
+                      Text(t('coordinate.boxAntimeridian')),
+                    ],
+                    const SizedBox(height: 12),
+                    _ResultCard(
+                      title: 'South / West / North / East',
+                      value: _manualBox!.labeledText,
+                      copyTooltip: t('common.copy'),
+                      onCopy: () => _copy(_manualBox!.labeledText, 'South / West / North / East'),
+                    ),
+                    const SizedBox(height: 12),
+                    _ResultCard(
+                      title: 'BBox [west, south, east, north]',
+                      value: _manualBox!.bboxText,
+                      copyTooltip: t('common.copy'),
+                      onCopy: () => _copy(_manualBox!.bboxText, 'BBox'),
+                    ),
+                    const SizedBox(height: 12),
+                    _ResultCard(
+                      title: 'JSON',
+                      value: _manualBox!.jsonText,
+                      copyTooltip: t('common.copy'),
+                      onCopy: () => _copy(_manualBox!.jsonText, 'JSON'),
+                    ),
+                  ],
+
                   Text(t('coordinate.disclaimer'), style: Theme.of(context).textTheme.bodySmall),
                 ],
               ],

@@ -1,4 +1,4 @@
-import 'package:flutter_application_1/features/bounding_box/domain/normalized_rect.dart';
+import 'package:flutter_application_1/features/photo_studio/domain/normalized_rect.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

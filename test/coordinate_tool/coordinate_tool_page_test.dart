@@ -23,10 +23,12 @@ void main() {
     expect(find.text('Open in Apple Maps'), findsNWidgets(2));
     expect(find.text('4. Platform formats'), findsOneWidget);
     expect(find.text('5. XYZ tile'), findsNWidgets(2));
-    expect(find.text('Center + radius'), findsOneWidget);
-    expect(find.text('Loose bounding box'), findsOneWidget);
-    expect(find.text('BBox [west, south, east, north]'), findsOneWidget);
-    expect(find.text('JSON'), findsOneWidget);
+    expect(find.text('6. Manual box'), findsOneWidget);
+    expect(find.text('Generate bounds'), findsOneWidget);
+    expect(find.text('From center + radius'), findsOneWidget);
+    expect(find.text('From four edges'), findsOneWidget);
+    expect(find.text('BBox [west, south, east, north]'), findsWidgets);
+    expect(find.text('JSON'), findsWidgets);
     expect(find.text('Google Maps JavaScript · Circle'), findsOneWidget);
     expect(find.text('Apple MapKit · MKCircle (Swift)'), findsOneWidget);
     expect(find.text('Google Maps JavaScript · Rectangle'), findsOneWidget);
@@ -76,6 +78,8 @@ void main() {
     expect(find.text('2. Tolerance'), findsOneWidget);
     expect(customRadius, findsOneWidget);
     expect(find.text('5. XYZ tile'), findsNWidgets(2));
+    expect(find.text('6. Manual box'), findsOneWidget);
+    expect(find.text('Generate bounds'), findsOneWidget);
     expect(find.text('Center + radius'), findsNothing);
     expect(find.text('Map links · area'), findsNothing);
     expect(find.text('4. Platform formats'), findsNothing);
@@ -88,7 +92,7 @@ void main() {
       find.text('Custom radius must be a number greater than zero.'),
       findsNothing,
     );
-    expect(find.text('Center + radius'), findsOneWidget);
+    expect(find.text('From center + radius'), findsOneWidget);
     expect(find.text('Map links · area'), findsOneWidget);
     expect(find.textContaining('radius_m: 250'), findsOneWidget);
     expect(find.text('4. Platform formats'), findsOneWidget);
@@ -152,5 +156,26 @@ void main() {
       find.text('Could not find latitude/longitude in that Maps URL.'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('generates manual box from center and radius', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(home: await wrapWithDisplayScope(const CoordinateToolPage())),
+    );
+    await tester.pumpAndSettle();
+
+    final radiusField = find.widgetWithText(TextField, 'Radius (meters)');
+    await tester.ensureVisible(radiusField);
+    await tester.enterText(radiusField, '500');
+    await tester.pump();
+
+    final generate = find.text('Generate bounds');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pump();
+
+    expect(find.textContaining('Center:'), findsWidgets);
+    expect(find.textContaining('Span:'), findsWidgets);
+    expect(find.text('BBox [west, south, east, north]'), findsWidgets);
   });
 }

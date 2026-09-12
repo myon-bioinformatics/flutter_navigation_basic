@@ -9,7 +9,7 @@ import '../screens/clipboard_shelf_screen.dart';
 import '../screens/clipboard_workbench_screen.dart';
 import '../screens/now_timeline_screen.dart';
 import '../screens/coordinate_tool_screen.dart';
-import '../screens/bounding_box_screen.dart';
+import '../screens/photo_studio_screen.dart';
 import '../screens/mock_api_screen.dart';
 import '../screens/mcp_integration_screen.dart';
 import '../screens/generic_screen.dart';
@@ -22,6 +22,8 @@ class AppRoutes {
   static const String clipboardShelf = '/core/clipboard-shelf';
   static const String nowTimeline = '/tools/time/now-timeline';
   static const String coordinateTool = '/tools/location/coordinates';
+  static const String photoStudio = '/tools/media/photo-studio';
+  // Compatibility alias for older bookmarks.
   static const String boundingBox = '/tools/location/bounding-box';
   static const String counterPlayground = '/examples/counter-playground';
   static const String ironyGenerator = '/examples/irony-generator';
@@ -52,7 +54,8 @@ class AppRoutes {
     map[clipboardShelf] = (_) => const ClipboardShelfScreen();
     map[nowTimeline] = (_) => const NowTimelineScreen();
     map[coordinateTool] = (_) => const CoordinateToolScreen();
-    map[boundingBox] = (_) => const BoundingBoxScreen();
+    map[photoStudio] = (_) => const PhotoStudioScreen();
+    map[boundingBox] = (_) => const PhotoStudioScreen();
     map[counterPlayground] = (_) => const CounterPlaygroundScreen();
     map[ironyGenerator] = (_) => const IronyGeneratorScreen();
     map[compositionGenerator] = (_) => const CompositionStudioScreen();
