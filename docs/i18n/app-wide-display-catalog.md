@@ -23,3 +23,17 @@ First-party models, JSON, and APIs use lowerCamelCase `<entityName>Id` (for exam
 ## Rollout
 
 This PR continues the app-wide migration from the current main branch without regressing Coordinate Tolerance / XYZ Tile, Photo Studio, or Home Refresh. Migrated so far: Home (both entrypoints, including weekday chrome), Latitude/Longitude (incl. manual box), Photo Studio, Now Timeline, Clipboard Shelf, Clipboard Workbench, Counter Playground, Irony Generator, Composition Studio/Generator, URL Parameters, Navigation Hub, the shared GenericScreen chrome (App bar, use-case tabs, pattern chips), UI Showcase chrome, Mock API, and MCP Integration. UI Showcase's `UiShowcaseConfig` defaults (title/subtitle/sections) and the Data page's example `DataTable` rows stay untranslated intentionally — they demonstrate literal override/example values, not chrome. Any remaining implemented, non-empty user-facing static UI text should keep migrating to the same catalog.
+
+## Arabic / RTL note
+
+Prefer **catalog/text-side** handling for Arabic: short phrases, block-level
+copy, and mirrored punctuation in `assets/display/app_text.json` when needed.
+Avoid a large Flutter `Directionality` / layout RTL rewrite unless a future
+task explicitly asks for it — that grows logic surface area without improving
+the phrase catalog itself.
+
+## Photo Studio export
+
+Photo Studio export is **PNG only** (`photo-studio.png`, `image/png`). JPEG,
+JPG, and WebP are not supported; keep the Flutter/Dart/browser stack thin and
+avoid extra encoder packages or upload backends for alternate formats.
