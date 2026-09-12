@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 /// A stamp-like emoji overlay in normalized canvas space.
 class EmojiStamp {
   const EmojiStamp({
@@ -32,9 +34,25 @@ class EmojiStamp {
         y: y ?? this.y,
         scale: scale ?? this.scale,
       );
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is EmojiStamp &&
+          emojiStampId == other.emojiStampId &&
+          emoji == other.emoji &&
+          x == other.x &&
+          y == other.y &&
+          scale == other.scale;
+
+  @override
+  int get hashCode => Object.hash(emojiStampId, emoji, x, y, scale);
 }
 
-/// One-level undo snapshot of studio mutable state.
+/// Bounded undo snapshot of studio mutable state.
+///
+/// [imageBytes] is shared by reference across snapshots that use the same
+/// loaded image; undo pushes must not deep-copy the raster payload.
 class PhotoStudioSnapshot {
   const PhotoStudioSnapshot({
     required this.imageBytes,
@@ -49,7 +67,7 @@ class PhotoStudioSnapshot {
     required this.stampScale,
   });
 
-  final List<int>? imageBytes;
+  final Uint8List? imageBytes;
   final double rectLeft;
   final double rectTop;
   final double rectRight;
@@ -58,5 +76,34 @@ class PhotoStudioSnapshot {
   final int strokeArgb;
   final List<EmojiStamp> stamps;
   final String? selectedEmojiStampId;
+  final double stampScale;
+}
+
+/// Read-only probe for widget tests (coords, undo depth, shared image refs).
+class PhotoStudioTestProbe {
+  const PhotoStudioTestProbe({
+    required this.stamps,
+    required this.undoDepth,
+    required this.imageBytes,
+    required this.undoImageByteRefs,
+    required this.rectLeft,
+    required this.rectTop,
+    required this.rectRight,
+    required this.rectBottom,
+    required this.shapeName,
+    required this.strokeArgb,
+    required this.stampScale,
+  });
+
+  final List<EmojiStamp> stamps;
+  final int undoDepth;
+  final Uint8List? imageBytes;
+  final List<Uint8List?> undoImageByteRefs;
+  final double rectLeft;
+  final double rectTop;
+  final double rectRight;
+  final double rectBottom;
+  final String shapeName;
+  final int strokeArgb;
   final double stampScale;
 }

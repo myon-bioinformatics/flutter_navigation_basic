@@ -25,6 +25,7 @@ class PhotoRectCanvas extends StatefulWidget {
     this.onSelectedEmojiStampIdChanged,
     this.pendingEmoji,
     this.onEditStart,
+    this.onEditEnd,
     this.onCanvasSizeChanged,
   });
 
@@ -45,6 +46,9 @@ class PhotoRectCanvas extends StatefulWidget {
   /// Fired once at the start of a user gesture that mutates frame/stamps
   /// (create/move/resize frame, place/drag stamp). Not on every pan update.
   final VoidCallback? onEditStart;
+
+  /// Fired when a mutating gesture ends (pan end/cancel or tap-place).
+  final VoidCallback? onEditEnd;
 
   /// Reports the laid-out canvas size so export can match on-screen aspect.
   final ValueChanged<Size>? onCanvasSizeChanged;
@@ -279,6 +283,7 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
     if (_createOrigin != null && live != null) {
       widget.onRectChanged(live.sanitized());
     }
+    final hadEdit = _editStartNotified;
     _createOrigin = null;
     _liveCreateRect = null;
     _activeHandle = null;
@@ -286,6 +291,9 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
     _lastLocal = null;
     _editStartNotified = false;
     _placedEmojiForPointer = false;
+    if (hadEdit) {
+      widget.onEditEnd?.call();
+    }
   }
 
   void _reportSizeIfNeeded(Size size) {
@@ -324,10 +332,19 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
                 _handleTapAt(local, size);
               }
               _tapDownLocal = null;
+              // Pure taps never reach onPanEnd; close gesture temp state so the
+              // next drag can take its own undo snapshot.
+              if (_editStartNotified || _draggingEmojiStampId != null) {
+                _finishGesture();
+              }
             },
             onPointerCancel: (_) {
               _tapDownLocal = null;
-              _placedEmojiForPointer = false;
+              if (_editStartNotified || _draggingEmojiStampId != null) {
+                _finishGesture();
+              } else {
+                _placedEmojiForPointer = false;
+              }
             },
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
