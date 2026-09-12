@@ -128,7 +128,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
 
   void _pushUndo() {
     _undoHistory.add(_captureSnapshot());
-    while (_undoHistory.length > _maxUndoHistory) {
+    if (_undoHistory.length > _maxUndoHistory) {
       _undoHistory.removeAt(0);
     }
     _emitTestProbe();

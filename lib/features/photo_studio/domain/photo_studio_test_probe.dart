@@ -4,10 +4,10 @@ import 'emoji_stamp.dart';
 
 /// Read-only probe for widget tests (coords, undo depth, shared image refs).
 ///
-/// Injected via [PhotoStudioPage.onTestProbe]; not referenced in production
-/// logic. Lives in `lib/` so the production widget can call the callback,
-/// but import it only from test code via
-/// `package:flutter_application_1/features/photo_studio/domain/photo_studio_test_probe.dart`.
+/// The production widget imports this class so it can invoke the optional
+/// [PhotoStudioPage.onTestProbe] callback, but the callback is a no-op when
+/// `null`, so there is no runtime cost in production builds. Callers should
+/// only supply an [onTestProbe] callback from test code.
 class PhotoStudioTestProbe {
   const PhotoStudioTestProbe({
     required this.stamps,
