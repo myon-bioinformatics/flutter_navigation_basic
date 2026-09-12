@@ -447,147 +447,145 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                     const SizedBox(height: 12),
                     _ResultCard(title: t('coordinate.tilePath'), value: tile.path, copyTooltip: t('common.copy'), onCopy: () => _copy(tile.path, t('coordinate.tilePath'))),
                   ],
-                  const SizedBox(height: 16),
-
-                  const SizedBox(height: 28),
-                  _SectionTitle(title: t('coordinate.manualBox'), icon: Icons.crop_free_outlined),
-                  const SizedBox(height: 8),
-                  Text(t('coordinate.manualBoxSubtitle'), style: Theme.of(context).textTheme.bodyMedium),
-                  const SizedBox(height: 12),
-                  Text(t('coordinate.boxCenterRadius'), style: Theme.of(context).textTheme.titleSmall),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _boxCenterLatitude,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                          decoration: InputDecoration(labelText: t('coordinate.boxCenterLatitude'), border: const OutlineInputBorder()),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: _boxCenterLongitude,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                          decoration: InputDecoration(labelText: t('coordinate.boxCenterLongitude'), border: const OutlineInputBorder()),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _boxRadiusMeters,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(labelText: t('coordinate.boxRadius'), border: const OutlineInputBorder()),
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton.icon(
-                    onPressed: _generateManualBox,
-                    icon: const Icon(Icons.center_focus_strong),
-                    label: Text(t('coordinate.boxGenerate')),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(t('coordinate.boxManualEdges'), style: Theme.of(context).textTheme.titleSmall),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _boxSouth,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                          decoration: InputDecoration(labelText: t('coordinate.boxSouth'), border: const OutlineInputBorder()),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: _boxNorth,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                          decoration: InputDecoration(labelText: t('coordinate.boxNorth'), border: const OutlineInputBorder()),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _boxWest,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                          decoration: InputDecoration(labelText: t('coordinate.boxWest'), border: const OutlineInputBorder()),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: _boxEast,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                          decoration: InputDecoration(labelText: t('coordinate.boxEast'), border: const OutlineInputBorder()),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton.icon(
-                    onPressed: _validateManualBox,
-                    icon: const Icon(Icons.crop_free),
-                    label: Text(t('coordinate.boxValidate')),
-                  ),
-                  if (_manualBoxError != null) ...[
-                    const SizedBox(height: 12),
-                    Text(_manualBoxError!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                  ],
-                  if (_manualBox != null) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      display.text(
-                        'coordinate.boxCenter',
-                        arguments: {
-                          'lat': _manualBox!.centerLatitude.toStringAsFixed(6),
-                          'lon': _manualBox!.centerLongitude.toStringAsFixed(6),
-                        },
-                      ),
-                    ),
-                    Text(
-                      display.text(
-                        'coordinate.boxSpan',
-                        arguments: {
-                          'lat': _manualBox!.latitudeSpan.toStringAsFixed(6),
-                          'lon': _manualBox!.longitudeSpan.toStringAsFixed(6),
-                        },
-                      ),
-                    ),
-                    if (_manualBox!.wrapsAntimeridian) ...[
-                      const SizedBox(height: 8),
-                      Text(t('coordinate.boxAntimeridian')),
-                    ],
-                    const SizedBox(height: 12),
-                    _ResultCard(
-                      title: 'South / West / North / East',
-                      value: _manualBox!.labeledText,
-                      copyTooltip: t('common.copy'),
-                      onCopy: () => _copy(_manualBox!.labeledText, 'South / West / North / East'),
-                    ),
-                    const SizedBox(height: 12),
-                    _ResultCard(
-                      title: 'BBox [west, south, east, north]',
-                      value: _manualBox!.bboxText,
-                      copyTooltip: t('common.copy'),
-                      onCopy: () => _copy(_manualBox!.bboxText, 'BBox'),
-                    ),
-                    const SizedBox(height: 12),
-                    _ResultCard(
-                      title: 'JSON',
-                      value: _manualBox!.jsonText,
-                      copyTooltip: t('common.copy'),
-                      onCopy: () => _copy(_manualBox!.jsonText, 'JSON'),
-                    ),
-                  ],
-
-                  Text(t('coordinate.disclaimer'), style: Theme.of(context).textTheme.bodySmall),
                 ],
+                const SizedBox(height: 28),
+                _SectionTitle(title: t('coordinate.manualBox'), icon: Icons.crop_free_outlined),
+                const SizedBox(height: 8),
+                Text(t('coordinate.manualBoxSubtitle'), style: Theme.of(context).textTheme.bodyMedium),
+                const SizedBox(height: 12),
+                Text(t('coordinate.boxCenterRadius'), style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _boxCenterLatitude,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                        decoration: InputDecoration(labelText: t('coordinate.boxCenterLatitude'), border: const OutlineInputBorder()),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _boxCenterLongitude,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                        decoration: InputDecoration(labelText: t('coordinate.boxCenterLongitude'), border: const OutlineInputBorder()),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _boxRadiusMeters,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(labelText: t('coordinate.boxRadius'), border: const OutlineInputBorder()),
+                ),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: _generateManualBox,
+                  icon: const Icon(Icons.center_focus_strong),
+                  label: Text(t('coordinate.boxGenerate')),
+                ),
+                const SizedBox(height: 16),
+                Text(t('coordinate.boxManualEdges'), style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _boxSouth,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                        decoration: InputDecoration(labelText: t('coordinate.boxSouth'), border: const OutlineInputBorder()),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _boxNorth,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                        decoration: InputDecoration(labelText: t('coordinate.boxNorth'), border: const OutlineInputBorder()),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _boxWest,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                        decoration: InputDecoration(labelText: t('coordinate.boxWest'), border: const OutlineInputBorder()),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _boxEast,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                        decoration: InputDecoration(labelText: t('coordinate.boxEast'), border: const OutlineInputBorder()),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: _validateManualBox,
+                  icon: const Icon(Icons.crop_free),
+                  label: Text(t('coordinate.boxValidate')),
+                ),
+                if (_manualBoxError != null) ...[
+                  const SizedBox(height: 12),
+                  Text(_manualBoxError!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                ],
+                if (_manualBox != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    display.text(
+                      'coordinate.boxCenter',
+                      arguments: {
+                        'lat': _manualBox!.centerLatitude.toStringAsFixed(6),
+                        'lon': _manualBox!.centerLongitude.toStringAsFixed(6),
+                      },
+                    ),
+                  ),
+                  Text(
+                    display.text(
+                      'coordinate.boxSpan',
+                      arguments: {
+                        'lat': _manualBox!.latitudeSpan.toStringAsFixed(6),
+                        'lon': _manualBox!.longitudeSpan.toStringAsFixed(6),
+                      },
+                    ),
+                  ),
+                  if (_manualBox!.wrapsAntimeridian) ...[
+                    const SizedBox(height: 8),
+                    Text(t('coordinate.boxAntimeridian')),
+                  ],
+                  const SizedBox(height: 12),
+                  _ResultCard(
+                    title: 'South / West / North / East',
+                    value: _manualBox!.labeledText,
+                    copyTooltip: t('common.copy'),
+                    onCopy: () => _copy(_manualBox!.labeledText, 'South / West / North / East'),
+                  ),
+                  const SizedBox(height: 12),
+                  _ResultCard(
+                    title: 'BBox [west, south, east, north]',
+                    value: _manualBox!.bboxText,
+                    copyTooltip: t('common.copy'),
+                    onCopy: () => _copy(_manualBox!.bboxText, 'BBox'),
+                  ),
+                  const SizedBox(height: 12),
+                  _ResultCard(
+                    title: 'JSON',
+                    value: _manualBox!.jsonText,
+                    copyTooltip: t('common.copy'),
+                    onCopy: () => _copy(_manualBox!.jsonText, 'JSON'),
+                  ),
+                ],
+
+                Text(t('coordinate.disclaimer'), style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),

@@ -178,4 +178,44 @@ void main() {
     expect(find.textContaining('Span:'), findsWidgets);
     expect(find.text('BBox [west, south, east, north]'), findsWidgets);
   });
+
+
+  testWidgets('invalid point keeps manual box visible and usable', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(home: await wrapWithDisplayScope(const CoordinateToolPage())),
+    );
+    await tester.pumpAndSettle();
+
+    final latitude = find.widgetWithText(TextField, 'Latitude');
+    await tester.ensureVisible(latitude);
+    await tester.enterText(latitude, 'not-a-number');
+    final calculate = find.text('Calculate');
+    await tester.ensureVisible(calculate);
+    await tester.tap(calculate);
+    await tester.pumpAndSettle();
+
+    // Point-derived sections should disappear; manual box must remain.
+    expect(find.text('2. Tolerance'), findsNothing);
+
+    expect(find.text('1. Point'), findsOneWidget);
+    expect(find.text('6. Manual box'), findsOneWidget);
+    expect(find.text('Generate bounds'), findsOneWidget);
+    expect(find.text('Validate bounds'), findsOneWidget);
+
+    // Manual four-edge validation still works without a valid point.
+    final south = find.widgetWithText(TextField, 'South');
+    await tester.ensureVisible(south);
+    await tester.enterText(south, '35.67');
+    await tester.enterText(find.widgetWithText(TextField, 'North'), '35.69');
+    await tester.enterText(find.widgetWithText(TextField, 'West'), '170');
+    await tester.enterText(find.widgetWithText(TextField, 'East'), '-170');
+
+    final validate = find.text('Validate bounds');
+    await tester.ensureVisible(validate);
+    await tester.tap(validate);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('wraps_antimeridian: true'), findsWidgets);
+    expect(find.text('BBox [west, south, east, north]'), findsWidgets);
+  });
 }
