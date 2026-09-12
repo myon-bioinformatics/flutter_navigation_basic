@@ -1,13 +1,12 @@
 import 'dart:typed_data';
 
-import 'emoji_stamp.dart';
+import '../domain/emoji_stamp.dart';
 
-/// Read-only probe for widget tests (coords, undo depth, shared image refs).
+/// Test-only diagnostic snapshot (coords, undo depth, shared image refs).
 ///
-/// The production widget imports this class so it can invoke the optional
-/// [PhotoStudioPage.onTestProbe] callback, but the callback is a no-op when
-/// `null`, so there is no runtime cost in production builds. Callers should
-/// only supply an [onTestProbe] callback from test code.
+/// Lives under `testing/` (not `domain/`) so production feature APIs stay thin.
+/// [PhotoStudioPage.onTestProbe] is marked `@visibleForTesting` and is a no-op
+/// when null — supply it only from widget tests.
 class PhotoStudioTestProbe {
   const PhotoStudioTestProbe({
     required this.stamps,

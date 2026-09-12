@@ -37,3 +37,16 @@ the phrase catalog itself.
 Photo Studio export is **PNG only** (`photo-studio.png`, `image/png`). JPEG,
 JPG, and WebP are not supported; keep the Flutter/Dart/browser stack thin and
 avoid extra encoder packages or upload backends for alternate formats.
+
+Export is layered as **capture** (`captureStudioCanvas` → `ui.Image`) →
+**PNG encode** (`encodeStudioPng`) → **save** (`exportStudioPng` /
+`saveImageBytes`). `composeStudioPng` remains a capture+encode facade for
+callers that only need bytes.
+
+## Photo Studio geometry fixtures
+
+Dart `StudioGeometry` tests load
+`tool/python/fixtures/photo_studio_geometry_cases.json` as the primary
+assertions. The Python pytest module under
+`tool/python/tests/test_photo_studio_geometry.py` is an optional cross-check
+oracle against the same JSON — not a second source of truth for app CI.
