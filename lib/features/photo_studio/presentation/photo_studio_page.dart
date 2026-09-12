@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../../shared/clipboard/base64_image_bridge.dart';
 import '../../../shared/display/display_scope.dart';
 import '../domain/emoji_stamp.dart';
+import '../domain/photo_studio_test_probe.dart';
 import '../domain/normalized_rect.dart';
 import '../domain/studio_frame_style.dart';
 import '../domain/studio_geometry.dart';
