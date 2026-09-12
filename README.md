@@ -37,8 +37,8 @@ lib/
 │   ├── counter_playground/        # 旧 screen2 · PAD-lite ダメージ/回復 + hold-to-repeat
 │   ├── irony_generator/           # 旧 screen3
 │   ├── composition_generator/     # 旧 screen4 · メトロノーム等
-│   ├── coordinate_tool/           # 緯度経度 · Maps URL → DMS
-│   ├── bounding_box/
+│   ├── coordinate_tool/           # 緯度経度 · Maps URL → DMS · 手動 Box
+│   ├── photo_studio/              # 写真館 · 枠付きキャンバス
 │   ├── now_timeline/
 │   └── screen5/                   # URL Parameters
 ├── screens/
