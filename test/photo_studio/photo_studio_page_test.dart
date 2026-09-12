@@ -266,11 +266,11 @@ void main() {
         Offset(box.left + box.width * 0.5, box.top + box.height * 0.5);
     final gesture = await tester.startGesture(start);
     await tester.pump();
-    expect(probe!.undoDepth, 1);
+    expect(probe!.undoDepth, 0);
     for (var i = 1; i <= 8; i++) {
       await gesture.moveBy(Offset(box.width * 0.01, box.height * 0.005));
       await tester.pump();
-      expect(probe!.undoDepth, 1);
+      expect(probe!.undoDepth, 0);
     }
     await gesture.up();
     await tester.pump();
@@ -298,7 +298,7 @@ void main() {
 
     final gesture = await tester.startGesture(place);
     await tester.pump();
-    expect(probe!.undoDepth, 2);
+    expect(probe!.undoDepth, 1);
     await gesture.moveTo(Offset(place.dx + 80, place.dy + 40));
     await tester.pump();
     await gesture.up();
@@ -492,7 +492,7 @@ void main() {
       await tester.pump();
       expect(
         probe!.undoDepth,
-        2,
+        1,
         reason: 'pan updates must not add extra undo entries',
       );
     }
@@ -508,7 +508,7 @@ void main() {
     expect(probe!.undoDepth, 1);
   });
 
-  testWidgets('undo history caps at 20 and drops the oldest entry',
+  testWidgets('undo history full + no-op gesture keeps depth at 20',
       (tester) async {
     PhotoStudioTestProbe? probe;
     await _pumpPage(
@@ -524,6 +524,24 @@ void main() {
       await tester.pump();
     }
     expect(probe!.undoDepth, 20);
+    final beforeNoopShape = probe!.shapeName;
+
+    final slider = find.byType(Slider);
+    await tester.ensureVisible(slider);
+    final sliderBox = tester.getRect(slider);
+    final thumbX = sliderBox.left + sliderBox.width * 0.23;
+    final gesture =
+        await tester.startGesture(Offset(thumbX, sliderBox.center.dy));
+    await tester.pump();
+    await gesture.moveBy(const Offset(40, 0));
+    await tester.pump();
+    await gesture.moveBy(const Offset(-40, 0));
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+
+    expect(probe!.undoDepth, 20);
+    expect(probe!.shapeName, beforeNoopShape);
 
     // After capping, undoing 20 times empties history; the first rectangle
     // pre-state was dropped so we do not return all the way to the initial

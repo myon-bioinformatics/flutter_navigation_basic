@@ -70,6 +70,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
   Size _canvasSize = _fallbackCanvasSize;
   String? _status;
   final List<PhotoStudioSnapshot> _undoHistory = <PhotoStudioSnapshot>[];
+  PhotoStudioSnapshot? _pendingUndoSnapshot;
 
   PhotoStudioSnapshot _captureSnapshot() => PhotoStudioSnapshot(
         // Share the same Uint8List across snapshots; never deep-copy rasters.
@@ -126,19 +127,43 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     );
   }
 
-  void _pushUndo() {
-    _undoHistory.add(_captureSnapshot());
+  void _commitUndoSnapshot(PhotoStudioSnapshot snapshot) {
+    _undoHistory.add(snapshot);
     if (_undoHistory.length > _maxUndoHistory) {
       _undoHistory.removeAt(0);
     }
     _emitTestProbe();
   }
 
-  void _discardLastUndoIfUnchanged() {
-    if (_undoHistory.isEmpty) return;
-    if (!_matchesSnapshot(_undoHistory.last)) return;
-    _undoHistory.removeLast();
-    _emitTestProbe();
+  void _pushUndo() => _commitUndoSnapshot(_captureSnapshot());
+
+  void _beginUndoGesture() {
+    _pendingUndoSnapshot ??= _captureSnapshot();
+  }
+
+  void _endUndoGesture() {
+    final pending = _pendingUndoSnapshot;
+    _pendingUndoSnapshot = null;
+    if (pending == null) return;
+    if (_matchesSnapshot(pending)) {
+      _emitTestProbe();
+      return;
+    }
+    _commitUndoSnapshot(pending);
+  }
+
+  void _setWithUndo(VoidCallback apply) {
+    final before = _captureSnapshot();
+    apply();
+    if (_matchesSnapshot(before)) {
+      _emitTestProbe();
+      return;
+    }
+    _commitUndoSnapshot(before);
+  }
+
+  void _setStateWithUndo(VoidCallback apply) {
+    setState(() => _setWithUndo(apply));
   }
 
   void _undoOnce() {
@@ -247,20 +272,14 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
   }
 
   void _clearImage() {
-    _pushUndo();
-    setState(() {
+    _setStateWithUndo(() {
       _imageBytes = null;
       _status = DisplayScope.of(context).text('photoStudio.imageCleared');
     });
-    _discardLastUndoIfUnchanged();
-    _emitTestProbe();
   }
 
   void _resetRect() {
-    _pushUndo();
-    setState(() => _rect = NormalizedRect.initial);
-    _discardLastUndoIfUnchanged();
-    _emitTestProbe();
+    _setStateWithUndo(() => _rect = NormalizedRect.initial);
   }
 
   Future<void> _savePng() async {
@@ -428,8 +447,8 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                             onSelectedEmojiStampIdChanged:
                                 _onSelectedEmojiStampIdChanged,
                             pendingEmoji: _pendingEmoji,
-                            onEditStart: _pushUndo,
-                            onEditEnd: _discardLastUndoIfUnchanged,
+                            onEditStart: _beginUndoGesture,
+                            onEditEnd: _endUndoGesture,
                             onCanvasSizeChanged: _onCanvasSizeChanged,
                           ),
                           const SizedBox(height: 12),
@@ -539,9 +558,9 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                             max: 3.0,
                             divisions: 26,
                             label: _stampScale.toStringAsFixed(1),
-                            onChangeStart: (_) => _pushUndo(),
+                            onChangeStart: (_) => _beginUndoGesture(),
                             onChanged: _applyStampScale,
-                            onChangeEnd: (_) => _discardLastUndoIfUnchanged(),
+                            onChangeEnd: (_) => _endUndoGesture(),
                           ),
                           const SizedBox(height: 8),
                           Wrap(
