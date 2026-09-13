@@ -32,4 +32,3 @@ flutter:
     - assets/ui_showcase.json
     - assets/diagnostics/build_meta.json
     - assets/display/app_text.json
-    - assets/test_fixtures/photo_studio/

@@ -1,6 +1,6 @@
+import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 bool _isPng(Uint8List bytes) {
@@ -36,27 +36,20 @@ bool _isJpeg(Uint8List bytes) =>
   return null;
 }
 
-void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+Uint8List _loadFixture(String name) =>
+    File('test/fixtures/photo_studio/$name').readAsBytesSync();
 
-  test('vertical markers PNG fixture matches portrait geometry size', () async {
-    final bytes = (await rootBundle.load(
-      'assets/test_fixtures/photo_studio/test_1_vertical_markers.png',
-    ))
-        .buffer
-        .asUint8List();
+void main() {
+  test('vertical markers PNG fixture matches portrait geometry size', () {
+    final bytes = _loadFixture('test_1_vertical_markers.png');
     expect(_isPng(bytes), isTrue);
     final (w, h) = _pngSize(bytes);
     expect(w, 1080);
     expect(h, 1920);
   });
 
-  test('horizontal color-lines JPEG fixture matches landscape size', () async {
-    final bytes = (await rootBundle.load(
-      'assets/test_fixtures/photo_studio/test_2_horizontal_color_lines.jpg',
-    ))
-        .buffer
-        .asUint8List();
+  test('horizontal color-lines JPEG fixture matches landscape size', () {
+    final bytes = _loadFixture('test_2_horizontal_color_lines.jpg');
     expect(_isJpeg(bytes), isTrue);
     final size = _jpegSize(bytes);
     expect(size, isNotNull);
@@ -64,17 +57,12 @@ void main() {
     expect(size.$2, 1080);
   });
 
-  test('transparent shapes PNG fixture is square RGBA asset', () async {
-    final bytes = (await rootBundle.load(
-      'assets/test_fixtures/photo_studio/test_3_transparent_shapes.png',
-    ))
-        .buffer
-        .asUint8List();
+  test('transparent shapes PNG fixture is square RGBA asset', () {
+    final bytes = _loadFixture('test_3_transparent_shapes.png');
     expect(_isPng(bytes), isTrue);
     final (w, h) = _pngSize(bytes);
     expect(w, 1024);
     expect(h, 1024);
-    // Color type 6 (RGBA) is byte 25 of the IHDR chunk.
     expect(bytes[25], 6);
   });
 }

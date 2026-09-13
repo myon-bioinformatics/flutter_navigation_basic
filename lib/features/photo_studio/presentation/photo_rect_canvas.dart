@@ -7,7 +7,6 @@ import '../domain/emoji_stamp.dart';
 import '../domain/normalized_rect.dart';
 import '../domain/studio_frame.dart';
 import '../domain/studio_frame_style.dart';
-import '../domain/studio_canvas_mode.dart';
 import '../domain/studio_geometry.dart';
 export 'studio_image_loader.dart' show decodeRasterImageBytes;
 
@@ -40,7 +39,6 @@ class PhotoRectCanvas extends StatefulWidget {
     this.onEditStart,
     this.onEditEnd,
     this.onCanvasSizeChanged,
-    this.interactionMode = StudioCanvasMode.frame,
   });
 
   final List<StudioFrame> frames;
@@ -71,9 +69,6 @@ class PhotoRectCanvas extends StatefulWidget {
 
   /// Reports the laid-out canvas size so export can match on-screen aspect.
   final ValueChanged<Size>? onCanvasSizeChanged;
-
-  /// Explicit Frame / Stamp / Move / Resize mode from the parent toolbar.
-  final StudioCanvasMode interactionMode;
 
   @override
   State<PhotoRectCanvas> createState() => _PhotoRectCanvasState();
@@ -264,13 +259,8 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
   void _onPanStart(DragStartDetails details, Size size) {
     // Keep _tapDownLocal for pointer-move tracking; pointer-up uses
     // _pointerDragging to distinguish taps from drags.
-    final mode = widget.interactionMode;
-
     final stamp = _hitStamp(details.localPosition, size);
-    if (stamp != null &&
-        (mode == StudioCanvasMode.stamp ||
-            mode == StudioCanvasMode.move ||
-            mode == StudioCanvasMode.frame)) {
+    if (stamp != null) {
       _notifyEditStart();
       _draggingEmojiStampId = stamp.emojiStampId;
       _activeHandle = null;
@@ -283,9 +273,7 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
     }
 
     final pending = widget.pendingEmoji;
-    if (mode == StudioCanvasMode.stamp &&
-        pending != null &&
-        pending.isNotEmpty) {
+    if (pending != null && pending.isNotEmpty) {
       if (!_placedEmojiForPointer) {
         _placePendingEmoji(details.localPosition, size);
       }
@@ -300,65 +288,25 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
     // Prefer topmost frame body over a buried selected-frame handle.
     final hitFrame = _hitFrameBody(details.localPosition, size);
     if (hitFrame != null) {
+      _notifyEditStart();
       _selectFrame(hitFrame.studioFrameId);
-      if (mode == StudioCanvasMode.resize) {
-        final handle =
-            _hitTestHandles(details.localPosition, size, hitFrame.rect);
-        if (handle == null || handle == NormalizedRectHandle.move) {
-          // Select only; wait for an actual resize handle.
-          _activeHandle = null;
-          _editingStudioFrameId = null;
-          _lastLocal = details.localPosition;
-          return;
-        }
-        _notifyEditStart();
-        _createOrigin = null;
-        _creatingStudioFrameId = null;
-        _liveCreateFrame = null;
-        _editingStudioFrameId = hitFrame.studioFrameId;
-        _activeHandle = handle;
-        _lastLocal = details.localPosition;
-        return;
-      }
-      if (mode == StudioCanvasMode.move || mode == StudioCanvasMode.frame) {
-        _notifyEditStart();
-        final handle = mode == StudioCanvasMode.move
-            ? NormalizedRectHandle.move
-            : (_hitTestHandles(details.localPosition, size, hitFrame.rect) ??
-                NormalizedRectHandle.move);
-        if (mode == StudioCanvasMode.frame &&
-            handle != NormalizedRectHandle.move) {
-          // Frame mode still allows resize via handles on a hit body.
-        }
-        if (mode == StudioCanvasMode.move) {
-          // Force body-drag move; ignore resize handles.
-        }
-        _createOrigin = null;
-        _creatingStudioFrameId = null;
-        _liveCreateFrame = null;
-        _editingStudioFrameId = hitFrame.studioFrameId;
-        _activeHandle = mode == StudioCanvasMode.move
-            ? NormalizedRectHandle.move
-            : handle;
-        _lastLocal = details.localPosition;
-        return;
-      }
-      // Stamp mode: select frame only.
+      final handle =
+          _hitTestHandles(details.localPosition, size, hitFrame.rect) ??
+              NormalizedRectHandle.move;
+      _createOrigin = null;
+      _creatingStudioFrameId = null;
+      _liveCreateFrame = null;
+      _editingStudioFrameId = hitFrame.studioFrameId;
+      _activeHandle = handle;
       _lastLocal = details.localPosition;
       return;
     }
 
     // Handle hit outside any frame body (slop past edges) — selected only.
     final selected = _frameById(widget.selectedStudioFrameId);
-    if (selected != null &&
-        (mode == StudioCanvasMode.resize || mode == StudioCanvasMode.frame)) {
+    if (selected != null) {
       final handle = _hitTestHandles(details.localPosition, size, selected.rect);
       if (handle != null) {
-        if (mode == StudioCanvasMode.resize &&
-            handle == NormalizedRectHandle.move) {
-          _lastLocal = details.localPosition;
-          return;
-        }
         _notifyEditStart();
         _createOrigin = null;
         _creatingStudioFrameId = null;
@@ -371,7 +319,7 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
     }
 
     final draftShape = widget.draftShape;
-    if (mode == StudioCanvasMode.frame && draftShape != null) {
+    if (draftShape != null) {
       _notifyEditStart();
       final nx = (details.localPosition.dx / size.width).clamp(0.0, 1.0);
       final ny = (details.localPosition.dy / size.height).clamp(0.0, 1.0);

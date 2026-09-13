@@ -105,6 +105,15 @@ Future<void> _tapUndo(WidgetTester tester) async {
   await tester.pump();
 }
 
+Future<void> _tapRedo(WidgetTester tester) async {
+  final finder = find.byWidgetPredicate(
+    (w) => w is IconButton && w.tooltip == 'Redo',
+  );
+  await tester.ensureVisible(finder);
+  await tester.tap(finder);
+  await tester.pump();
+}
+
 Finder _emojiShortcut(String emoji) =>
     find.ancestor(
       of: find.text(emoji),
@@ -890,25 +899,33 @@ void main() {
     );
   });
 
-  testWidgets('empty state, tool modes, draft badge, and leave confirm match mockup',
+  testWidgets('390px AppBar keeps Photo Studio title without overflow',
+      (tester) async {
+    await _pumpPage(tester, surface: const Size(390, 844));
+    expect(tester.takeException(), isNull);
+    expect(find.text('Photo Studio'), findsWidgets);
+    expect(find.byIcon(Icons.undo), findsOneWidget);
+    expect(find.byIcon(Icons.redo), findsOneWidget);
+    expect(find.byIcon(Icons.language), findsOneWidget);
+    expect(find.text('Move'), findsNothing);
+    expect(find.text('Resize'), findsNothing);
+  });
+
+  testWidgets('no-photo framing stays editable; dirty leave confirm works',
       (tester) async {
     await _pumpPage(tester);
 
-    expect(find.text('Tap to import'), findsOneWidget);
     expect(find.text('Import image'), findsOneWidget);
-    expect(find.text('Frame'), findsWidgets);
-    expect(find.text('Stamp'), findsOneWidget);
-    expect(find.text('Move'), findsOneWidget);
-    expect(find.text('Resize'), findsOneWidget);
     expect(find.byType(ToolDoorSelector), findsOneWidget);
-    expect(find.text('Draft'), findsNothing);
+    expect(find.byIcon(Icons.circle), findsNothing);
 
     await _selectDraftTool(tester, 'Rectangle');
-    expect(find.text('Tap to import'), findsNothing);
     await _createFrame(tester, x0: 0.1, y0: 0.1, x1: 0.4, y1: 0.4);
-    expect(find.text('Draft'), findsOneWidget);
-    expect(find.text('Delete'), findsWidgets);
-    expect(find.text('Stroke'), findsOneWidget);
+    expect(
+      tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas)).frames,
+      isNotEmpty,
+    );
+    expect(find.byIcon(Icons.circle), findsOneWidget);
 
     final navigator = tester.state<NavigatorState>(find.byType(Navigator));
     navigator.maybePop();
@@ -919,21 +936,43 @@ void main() {
     expect(find.text('Discard'), findsOneWidget);
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
-    expect(find.text('Photo Studio'), findsOneWidget);
-    expect(find.text('Draft'), findsOneWidget);
+    expect(find.byIcon(Icons.circle), findsOneWidget);
   });
 
-  testWidgets('importing fixture clears empty overlay and reports photo loaded',
+  testWidgets('export clears dirty; further undo past baseline dirties again',
       (tester) async {
-    final fixture = (await rootBundle.load(
-      'assets/test_fixtures/photo_studio/test_3_transparent_shapes.png',
-    ))
-        .buffer
-        .asUint8List();
-
     await _pumpPage(
       tester,
-      page: PhotoStudioPage(imageBytesPicker: () async => fixture),
+      page: PhotoStudioPage(
+        imageBytesPicker: () async => _tinyPng,
+        imageSaver: ({
+          required bytes,
+          required fileName,
+          required mimeType,
+        }) async =>
+            true,
+      ),
+    );
+
+    await _selectDraftTool(tester, 'Rectangle');
+    await _createFrame(tester, x0: 0.1, y0: 0.1, x1: 0.4, y1: 0.4);
+    expect(find.byIcon(Icons.circle), findsOneWidget);
+
+    await _tapSavePng(tester);
+    expect(find.byIcon(Icons.circle), findsNothing);
+
+    await _tapUndo(tester);
+    expect(find.byIcon(Icons.circle), findsOneWidget);
+
+    await _tapRedo(tester);
+    expect(find.byIcon(Icons.circle), findsNothing);
+  });
+
+  testWidgets('importing tiny image reports photo loaded without blocking canvas',
+      (tester) async {
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(imageBytesPicker: () async => _tinyPng),
     );
 
     await tester.runAsync(() async {
@@ -944,8 +983,9 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('Tap to import'), findsNothing);
     expect(find.textContaining('Photo loaded'), findsOneWidget);
+    expect(find.byType(PhotoRectCanvas), findsOneWidget);
+    expect(find.byIcon(Icons.circle), findsOneWidget);
   });
 
   test('composeStudioPng encodes PNG for a narrow logical size', () async {

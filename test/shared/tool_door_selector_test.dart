@@ -46,4 +46,41 @@ void main() {
     await tester.pumpAndSettle();
     expect(navigated, [RouteNames.coordinateTool]);
   });
+
+  testWidgets('beforeNavigate can cancel door navigation', (tester) async {
+    final navigated = <String>[];
+    final tools = [
+      AppTool(
+        routeName: RouteNames.photoStudio,
+        labelKey: 'photoStudio.title',
+        navigate: () => navigated.add(RouteNames.photoStudio),
+      ),
+      AppTool(
+        routeName: RouteNames.coordinateTool,
+        labelKey: 'coordinate.title',
+        navigate: () => navigated.add(RouteNames.coordinateTool),
+      ),
+    ];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: await wrapWithDisplayScope(
+          Scaffold(
+            body: ToolDoorSelector(
+              currentRouteName: RouteNames.photoStudio,
+              tools: tools,
+              beforeNavigate: () async => false,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Latitude / Longitude').last);
+    await tester.pumpAndSettle();
+    expect(navigated, isEmpty);
+  });
 }

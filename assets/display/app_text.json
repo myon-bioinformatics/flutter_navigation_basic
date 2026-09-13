@@ -549,7 +549,9 @@
       "photoStudio.toolResize": "Resize",
       "photoStudio.toolDelete": "Delete",
       "photoStudio.toolStroke": "Stroke",
-      "photoStudio.saveSnack": "PNG export completed"
+      "photoStudio.saveSnack": "PNG export completed",
+      "photoStudio.languageMenu": "Language",
+      "photoStudio.replaceImage": "Replace image"
     },
     "jpn": {
       "common.copy": "コピー",
@@ -1100,7 +1102,9 @@
       "photoStudio.toolResize": "拡大縮小",
       "photoStudio.toolDelete": "削除",
       "photoStudio.toolStroke": "線",
-      "photoStudio.saveSnack": "PNG書き出しが完了しました"
+      "photoStudio.saveSnack": "PNG書き出しが完了しました",
+      "photoStudio.languageMenu": "言語",
+      "photoStudio.replaceImage": "画像を差し替え"
     },
     "fra": {
       "common.copy": "Copier",
@@ -1651,7 +1655,9 @@
       "photoStudio.toolResize": "Redimensionner",
       "photoStudio.toolDelete": "Supprimer",
       "photoStudio.toolStroke": "Trait",
-      "photoStudio.saveSnack": "Export PNG terminé"
+      "photoStudio.saveSnack": "Export PNG terminé",
+      "photoStudio.languageMenu": "Langue",
+      "photoStudio.replaceImage": "Remplacer l’image"
     },
     "spa": {
       "common.copy": "Copiar",
@@ -2184,7 +2190,7 @@
       "compositionStudio.seedApplied": "Semilla aplicada a Composition Studio.",
       "compositionStudio.songSeedSectionSubtitle": "Genera una semilla y aplícala a BPM, compás, tonalidad y acordes.",
       "photoStudio.redo": "Rehacer",
-      "photoStudio.redoDone": "Se rehecho el último cambio.",
+      "photoStudio.redoDone": "Se rehizo el último cambio.",
       "photoStudio.leaveTitle": "¿Descartar cambios?",
       "photoStudio.leaveBody": "Se perderán las ediciones sin guardar.",
       "photoStudio.leaveStay": "Cancelar",
@@ -2202,7 +2208,9 @@
       "photoStudio.toolResize": "Redimensionar",
       "photoStudio.toolDelete": "Eliminar",
       "photoStudio.toolStroke": "Trazo",
-      "photoStudio.saveSnack": "Exportación PNG completada"
+      "photoStudio.saveSnack": "Exportación PNG completada",
+      "photoStudio.languageMenu": "Idioma",
+      "photoStudio.replaceImage": "Reemplazar imagen"
     },
     "por": {
       "common.copy": "Copiar",
@@ -2753,7 +2761,9 @@
       "photoStudio.toolResize": "Redimensionar",
       "photoStudio.toolDelete": "Excluir",
       "photoStudio.toolStroke": "Traço",
-      "photoStudio.saveSnack": "Exportação PNG concluída"
+      "photoStudio.saveSnack": "Exportação PNG concluída",
+      "photoStudio.languageMenu": "Idioma",
+      "photoStudio.replaceImage": "Substituir imagem"
     },
     "ara": {
       "common.copy": "نسخ",
@@ -3304,7 +3314,9 @@
       "photoStudio.toolResize": "تغيير الحجم",
       "photoStudio.toolDelete": "حذف",
       "photoStudio.toolStroke": "حد",
-      "photoStudio.saveSnack": "اكتمل تصدير PNG"
+      "photoStudio.saveSnack": "اكتمل تصدير PNG",
+      "photoStudio.languageMenu": "اللغة",
+      "photoStudio.replaceImage": "استبدال الصورة"
     },
     "zho": {
       "common.copy": "复制",
@@ -3855,7 +3867,9 @@
       "photoStudio.toolResize": "缩放",
       "photoStudio.toolDelete": "删除",
       "photoStudio.toolStroke": "描边",
-      "photoStudio.saveSnack": "PNG 导出完成"
+      "photoStudio.saveSnack": "PNG 导出完成",
+      "photoStudio.languageMenu": "语言",
+      "photoStudio.replaceImage": "替换图片"
     },
     "rus": {
       "common.copy": "Копировать",
@@ -4406,7 +4420,9 @@
       "photoStudio.toolResize": "Масштаб",
       "photoStudio.toolDelete": "Удалить",
       "photoStudio.toolStroke": "Обводка",
-      "photoStudio.saveSnack": "Экспорт PNG завершён"
+      "photoStudio.saveSnack": "Экспорт PNG завершён",
+      "photoStudio.languageMenu": "Язык",
+      "photoStudio.replaceImage": "Заменить изображение"
     },
     "ind": {
       "common.copy": "Salin",
@@ -4957,7 +4973,9 @@
       "photoStudio.toolResize": "Ubah ukuran",
       "photoStudio.toolDelete": "Hapus",
       "photoStudio.toolStroke": "Garis",
-      "photoStudio.saveSnack": "Ekspor PNG selesai"
+      "photoStudio.saveSnack": "Ekspor PNG selesai",
+      "photoStudio.languageMenu": "Bahasa",
+      "photoStudio.replaceImage": "Ganti gambar"
     },
     "deu": {
       "common.copy": "Kopieren",
@@ -5508,7 +5526,9 @@
       "photoStudio.toolResize": "Skalieren",
       "photoStudio.toolDelete": "Löschen",
       "photoStudio.toolStroke": "Kontur",
-      "photoStudio.saveSnack": "PNG-Export abgeschlossen"
+      "photoStudio.saveSnack": "PNG-Export abgeschlossen",
+      "photoStudio.languageMenu": "Sprache",
+      "photoStudio.replaceImage": "Bild ersetzen"
     },
     "swa": {
       "common.copy": "Nakili",
@@ -6059,7 +6079,9 @@
       "photoStudio.toolResize": "Badilisha ukubwa",
       "photoStudio.toolDelete": "Futa",
       "photoStudio.toolStroke": "Mstari",
-      "photoStudio.saveSnack": "Usafirishaji wa PNG umekamilika"
+      "photoStudio.saveSnack": "Usafirishaji wa PNG umekamilika",
+      "photoStudio.languageMenu": "Lugha",
+      "photoStudio.replaceImage": "Badilisha picha"
     }
   }
 }

@@ -9,6 +9,7 @@ class ToolDoorSelector extends StatelessWidget {
     super.key,
     required this.currentRouteName,
     this.tools,
+    this.beforeNavigate,
   });
 
   /// Route of the screen hosting this selector (skipped on select).
@@ -16,6 +17,10 @@ class ToolDoorSelector extends StatelessWidget {
 
   /// Injectable for tests; defaults to [appTools].
   final List<AppTool>? tools;
+
+  /// Optional gate before leaving via the selector (e.g. dirty confirm).
+  /// Return `true` to navigate, `false` to stay.
+  final Future<bool> Function()? beforeNavigate;
 
   @override
   Widget build(BuildContext context) {
@@ -71,10 +76,12 @@ class ToolDoorSelector extends StatelessWidget {
                       ),
                     ),
                 ],
-                onChanged: (route) {
+                onChanged: (route) async {
                   if (route == null || route == currentRouteName) return;
                   final match = catalog.where((t) => t.routeName == route);
                   if (match.isEmpty) return;
+                  final gate = beforeNavigate;
+                  if (gate != null && !await gate()) return;
                   match.first.navigate();
                 },
               ),
