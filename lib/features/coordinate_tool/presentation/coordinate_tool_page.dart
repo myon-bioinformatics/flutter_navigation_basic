@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -119,6 +120,17 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
     final needsExpand = CoordinateValue.tryParseMapsUrl(raw) == null &&
         CoordinateValue.looksLikeMapsShortShare(raw);
 
+    // Web cannot validate redirect hops before the browser GETs them, so the
+    // default expander refuses short links. Injected expanders (tests / IO
+    // hosts) may still expand.
+    if (needsExpand && kIsWeb && widget.expandMapsShareUrl == null) {
+      setState(() {
+        _mapsUrlBusy = false;
+        _error = display.text('coordinate.mapsUrlExpandUnsupportedOnWeb');
+      });
+      return;
+    }
+
     setState(() {
       _mapsUrlBusy = true;
       if (needsExpand) {
@@ -148,6 +160,12 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
       setState(() {
         _mapsUrlBusy = false;
         _error = display.text('coordinate.mapsUrlExpandFailed');
+      });
+    } on UnsupportedError {
+      if (!mounted) return;
+      setState(() {
+        _mapsUrlBusy = false;
+        _error = display.text('coordinate.mapsUrlExpandUnsupportedOnWeb');
       });
     } catch (_) {
       if (!mounted) return;

@@ -1,5 +1,6 @@
 import 'package:flutter_application_1/features/coordinate_tool/domain/maps_url_expander_io.dart';
 import 'package:flutter_application_1/features/coordinate_tool/domain/maps_url_policy.dart';
+import 'package:flutter_application_1/features/coordinate_tool/domain/maps_url_web_expansion.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -170,4 +171,99 @@ void main() {
       );
     });
   });
+
+
+  group('Google host label-boundary matching', () {
+    test('allows real Google Maps hosts', () {
+      expect(
+        MapsUrlPolicy.isAllowedExpandedMapsUri(
+          Uri.parse('https://www.google.com/maps/@35.0,139.0,16z'),
+        ),
+        isTrue,
+      );
+      expect(
+        MapsUrlPolicy.isAllowedExpandedMapsUri(
+          Uri.parse('https://maps.google.com/?q=35.0,139.0'),
+        ),
+        isTrue,
+      );
+      expect(
+        MapsUrlPolicy.isAllowedExpandedMapsUri(
+          Uri.parse('https://www.google.co.jp/maps/@35.0,139.0,16z'),
+        ),
+        isTrue,
+      );
+      expect(
+        MapsUrlPolicy.isAllowedRedirectHopUri(
+          Uri.parse('https://maps.google.co.jp/maps'),
+        ),
+        isTrue,
+      );
+    });
+
+    test('rejects lookalike third-party Google hosts', () {
+      const attacks = <String>[
+        'https://maps.google.example.com/maps/@35.0,139.0,16z',
+        'https://maps.google.com.example.org/maps/@35.0,139.0,16z',
+        'https://www.google.example.com/maps/@35.0,139.0,16z',
+        'https://google.example.com/maps/@35.0,139.0,16z',
+        'https://www.google.com.evil.example/maps/@35.0,139.0,16z',
+      ];
+      for (final raw in attacks) {
+        final uri = Uri.parse(raw);
+        expect(
+          MapsUrlPolicy.isAllowedExpandedMapsUri(uri),
+          isFalse,
+          reason: raw,
+        );
+        expect(
+          MapsUrlPolicy.isAllowedRedirectHopUri(uri),
+          isFalse,
+          reason: raw,
+        );
+      }
+    });
+
+    test('IO expander never GETs a lookalike Google redirect hop', () async {
+      final requested = <Uri>[];
+      final start = Uri.parse('https://maps.app.goo.gl/phishDemo');
+      final decoy = Uri.parse('https://maps.google.example.com/maps');
+
+      await expectLater(
+        () => expandMapsShareUrl(
+          start,
+          fetch: (uri) async {
+            requested.add(uri);
+            if (uri == start) {
+              return MapsRedirectHop(statusCode: 302, location: decoy);
+            }
+            return const MapsRedirectHop(statusCode: 200);
+          },
+        ),
+        throwsA(isA<StateError>()),
+      );
+
+      expect(requested, [start]);
+      expect(requested, isNot(contains(decoy)));
+    });
+  });
+
+
+  group('Web short-link expansion', () {
+    test('refuses without starting any network work', () async {
+      await expectLater(
+        () => expandMapsShareUrlOnWeb(
+          Uri.parse('https://maps.app.goo.gl/abc'),
+        ),
+        throwsA(isA<UnsupportedError>()),
+      );
+      await expectLater(
+        () => expandMapsShareUrlOnWeb(
+          Uri.parse('https://example.com/not-allowed'),
+        ),
+        throwsA(isA<UnsupportedError>()),
+      );
+    });
+  });
 }
+

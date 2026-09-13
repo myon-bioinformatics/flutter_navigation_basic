@@ -522,7 +522,8 @@
       "coordinate.staticMapPreview": "Map preview image (OSM)",
       "coordinate.openStaticMapPreview": "Open map preview",
       "coordinate.staticMapPreviewUrl": "Map preview URL",
-      "coordinate.staticMapPreviewHint": "Optional key-free preview URL (OpenStreetMap). Opening the link shows a centered map image; copying into the app as pixels may be blocked by the browser."
+      "coordinate.staticMapPreviewHint": "Optional key-free preview URL (OpenStreetMap). Opening the link shows a centered map image; copying into the app as pixels may be blocked by the browser.",
+      "coordinate.mapsUrlExpandUnsupportedOnWeb": "Short map links cannot be auto-expanded on web. Open the link, copy the full Google/Apple Maps URL, and paste that instead."
     },
     "jpn": {
       "common.copy": "コピー",
@@ -1046,7 +1047,8 @@
       "coordinate.staticMapPreview": "地図プレビュー画像（OSM）",
       "coordinate.openStaticMapPreview": "地図プレビューを開く",
       "coordinate.staticMapPreviewUrl": "地図プレビューURL",
-      "coordinate.staticMapPreviewHint": "APIキー不要のプレビューURL（OpenStreetMap）です。リンクを開くと中心座標の地図画像を表示します。画像そのものの貼り付けはブラウザ制限で失敗することがあります。"
+      "coordinate.staticMapPreviewHint": "APIキー不要のプレビューURL（OpenStreetMap）です。リンクを開くと中心座標の地図画像を表示します。画像そのものの貼り付けはブラウザ制限で失敗することがあります。",
+      "coordinate.mapsUrlExpandUnsupportedOnWeb": "Webでは地図の短縮リンクを自動展開できません。リンクを開いて展開後の Google/Apple Maps URL をコピーし、貼り付けてください。"
     },
     "fra": {
       "common.copy": "Copier",
@@ -1570,7 +1572,8 @@
       "coordinate.staticMapPreview": "Map preview image (OSM)",
       "coordinate.openStaticMapPreview": "Open map preview",
       "coordinate.staticMapPreviewUrl": "Map preview URL",
-      "coordinate.staticMapPreviewHint": "Optional key-free OpenStreetMap preview URL centered on the coordinates."
+      "coordinate.staticMapPreviewHint": "Optional key-free OpenStreetMap preview URL centered on the coordinates.",
+      "coordinate.mapsUrlExpandUnsupportedOnWeb": "Les liens courts de carte ne peuvent pas être développés automatiquement sur le web. Ouvrez le lien, copiez l’URL Google/Apple Maps complète, puis collez-la."
     },
     "spa": {
       "common.copy": "Copiar",
@@ -2094,7 +2097,8 @@
       "coordinate.staticMapPreview": "Map preview image (OSM)",
       "coordinate.openStaticMapPreview": "Open map preview",
       "coordinate.staticMapPreviewUrl": "Map preview URL",
-      "coordinate.staticMapPreviewHint": "Optional key-free OpenStreetMap preview URL centered on the coordinates."
+      "coordinate.staticMapPreviewHint": "Optional key-free OpenStreetMap preview URL centered on the coordinates.",
+      "coordinate.mapsUrlExpandUnsupportedOnWeb": "En la web no se pueden expandir automáticamente los enlaces cortos de mapas. Abra el enlace, copie la URL completa de Google/Apple Maps y péguela."
     },
     "por": {
       "common.copy": "Copiar",
@@ -2618,7 +2622,8 @@
       "coordinate.staticMapPreview": "Map preview image (OSM)",
       "coordinate.openStaticMapPreview": "Open map preview",
       "coordinate.staticMapPreviewUrl": "Map preview URL",
-      "coordinate.staticMapPreviewHint": "Optional key-free OpenStreetMap preview URL centered on the coordinates."
+      "coordinate.staticMapPreviewHint": "Optional key-free OpenStreetMap preview URL centered on the coordinates.",
+      "coordinate.mapsUrlExpandUnsupportedOnWeb": "Na web, links curtos de mapa não podem ser expandidos automaticamente. Abra o link, copie a URL completa do Google/Apple Maps e cole."
     },
     "ara": {
       "common.copy": "نسخ",
@@ -3142,7 +3147,8 @@
       "coordinate.staticMapPreview": "Map preview image (OSM)",
       "coordinate.openStaticMapPreview": "Open map preview",
       "coordinate.staticMapPreviewUrl": "Map preview URL",
-      "coordinate.staticMapPreviewHint": "Optional key-free OpenStreetMap preview URL centered on the coordinates."
+      "coordinate.staticMapPreviewHint": "Optional key-free OpenStreetMap preview URL centered on the coordinates.",
+      "coordinate.mapsUrlExpandUnsupportedOnWeb": "لا يمكن توسيع روابط الخرائط المختصرة تلقائيًا على الويب. افتح الرابط وانسخ عنوان Google/Apple Maps الكامل ثم الصقه."
     },
     "zho": {
       "common.copy": "复制",
@@ -3666,7 +3672,8 @@
       "coordinate.staticMapPreview": "Map preview image (OSM)",
       "coordinate.openStaticMapPreview": "Open map preview",
       "coordinate.staticMapPreviewUrl": "Map preview URL",
-      "coordinate.staticMapPreviewHint": "Optional key-free OpenStreetMap preview URL centered on the coordinates."
+      "coordinate.staticMapPreviewHint": "Optional key-free OpenStreetMap preview URL centered on the coordinates.",
+      "coordinate.mapsUrlExpandUnsupportedOnWeb": "网页上无法自动展开地图短链接。请打开链接，复制完整的 Google/Apple Maps URL 后再粘贴。"
     },
     "rus": {
       "common.copy": "Копировать",
@@ -4190,7 +4197,8 @@
       "coordinate.staticMapPreview": "Map preview image (OSM)",
       "coordinate.openStaticMapPreview": "Open map preview",
       "coordinate.staticMapPreviewUrl": "Map preview URL",
-      "coordinate.staticMapPreviewHint": "Optional key-free OpenStreetMap preview URL centered on the coordinates."
+      "coordinate.staticMapPreviewHint": "Optional key-free OpenStreetMap preview URL centered on the coordinates.",
+      "coordinate.mapsUrlExpandUnsupportedOnWeb": "В веб-версии короткие ссылки карт нельзя раскрыть автоматически. Откройте ссылку, скопируйте полный URL Google/Apple Maps и вставьте его."
     },
     "ind": {
       "common.copy": "Salin",
@@ -4714,7 +4722,8 @@
       "coordinate.staticMapPreview": "Map preview image (OSM)",
       "coordinate.openStaticMapPreview": "Open map preview",
       "coordinate.staticMapPreviewUrl": "Map preview URL",
-      "coordinate.staticMapPreviewHint": "Optional key-free OpenStreetMap preview URL centered on the coordinates."
+      "coordinate.staticMapPreviewHint": "Optional key-free OpenStreetMap preview URL centered on the coordinates.",
+      "coordinate.mapsUrlExpandUnsupportedOnWeb": "Di web, tautan pendek peta tidak dapat diperluas otomatis. Buka tautan, salin URL Google/Apple Maps lengkap, lalu tempel."
     },
     "deu": {
       "common.copy": "Kopieren",
@@ -5238,7 +5247,8 @@
       "coordinate.staticMapPreview": "Map preview image (OSM)",
       "coordinate.openStaticMapPreview": "Open map preview",
       "coordinate.staticMapPreviewUrl": "Map preview URL",
-      "coordinate.staticMapPreviewHint": "Optional key-free OpenStreetMap preview URL centered on the coordinates."
+      "coordinate.staticMapPreviewHint": "Optional key-free OpenStreetMap preview URL centered on the coordinates.",
+      "coordinate.mapsUrlExpandUnsupportedOnWeb": "Karten-Kurzlinks können im Web nicht automatisch aufgelöst werden. Öffnen Sie den Link, kopieren Sie die vollständige Google-/Apple-Maps-URL und fügen Sie sie ein."
     },
     "swa": {
       "common.copy": "Nakili",
@@ -5762,7 +5772,8 @@
       "coordinate.staticMapPreview": "Map preview image (OSM)",
       "coordinate.openStaticMapPreview": "Open map preview",
       "coordinate.staticMapPreviewUrl": "Map preview URL",
-      "coordinate.staticMapPreviewHint": "Optional key-free OpenStreetMap preview URL centered on the coordinates."
+      "coordinate.staticMapPreviewHint": "Optional key-free OpenStreetMap preview URL centered on the coordinates.",
+      "coordinate.mapsUrlExpandUnsupportedOnWeb": "Kwenye wavuti, viungo vifupi vya ramani haviwezi kupanuliwa kiotomatiki. Fungua kiungo, nakili URL kamili ya Google/Apple Maps, kisha bandika."
     }
   }
 }

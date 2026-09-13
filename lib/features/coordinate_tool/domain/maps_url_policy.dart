@@ -44,9 +44,8 @@ class MapsUrlPolicy {
     final host = uri.host.toLowerCase();
     if (host == 'maps.apple.com') return true;
     if (_isGoogleMapsHost(host)) {
-      if (host == 'maps.google.com' || host.startsWith('maps.google.')) {
-        return true;
-      }
+      // maps.google.<registrable> may omit the /maps path prefix.
+      if (_isMapsGoogleHost(host)) return true;
       final path = uri.path.toLowerCase();
       return path == '/maps' || path.startsWith('/maps/');
     }
@@ -122,13 +121,79 @@ class MapsUrlPolicy {
     return normalized == 'http' || normalized == 'https';
   }
 
+  /// Registrable Google domains used by Maps (label-boundary match only).
+  ///
+  /// Do not replace this with an open `google.<labels>` regex — that accepts
+  /// attacker-controlled hosts such as `google.example.com`.
+  static const Set<String> _googleRegistrableDomains = {
+    'google.com',
+    'google.co.jp',
+    'google.co.uk',
+    'google.com.au',
+    'google.de',
+    'google.fr',
+    'google.es',
+    'google.it',
+    'google.nl',
+    'google.be',
+    'google.ca',
+    'google.com.br',
+    'google.co.in',
+    'google.com.mx',
+    'google.com.tw',
+    'google.com.hk',
+    'google.co.kr',
+    'google.com.sg',
+    'google.co.th',
+    'google.com.vn',
+    'google.co.id',
+    'google.com.ar',
+    'google.com.tr',
+    'google.pl',
+    'google.ru',
+    'google.com.ua',
+    'google.ch',
+    'google.at',
+    'google.se',
+    'google.no',
+    'google.dk',
+    'google.fi',
+    'google.ie',
+    'google.pt',
+    'google.gr',
+    'google.cz',
+    'google.hu',
+    'google.ro',
+    'google.com.ph',
+    'google.com.my',
+    'google.com.pk',
+    'google.com.ng',
+    'google.co.za',
+    'google.com.eg',
+    'google.co.il',
+    'google.ae',
+    'google.com.sa',
+    'google.cl',
+    'google.com.co',
+    'google.com.pe',
+  };
+
+  static bool _hostMatchesRegistrableDomain(String host, String domain) {
+    return host == domain || host.endsWith('.$domain');
+  }
+
   static bool _isGoogleMapsHost(String host) {
-    if (host == 'maps.google.com' || host.startsWith('maps.google.')) {
-      return true;
+    for (final domain in _googleRegistrableDomains) {
+      if (_hostMatchesRegistrableDomain(host, domain)) return true;
     }
-    final withoutWww =
-        host.startsWith('www.') ? host.substring(4) : host;
-    // google.com, google.co.jp, google.co.uk, ...
-    return RegExp(r'^google(\.[a-z]{2,}){1,3}$').hasMatch(withoutWww);
+    return false;
+  }
+
+  static bool _isMapsGoogleHost(String host) {
+    for (final domain in _googleRegistrableDomains) {
+      final mapsHost = 'maps.$domain';
+      if (_hostMatchesRegistrableDomain(host, mapsHost)) return true;
+    }
+    return false;
   }
 }

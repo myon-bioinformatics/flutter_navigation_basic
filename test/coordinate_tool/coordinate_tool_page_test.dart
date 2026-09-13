@@ -7,6 +7,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../support/display_test_harness.dart';
 
+Future<Uri> _unsupportedWebExpand(Uri url) {
+  throw UnsupportedError('web expansion disabled for test');
+}
+
 void main() {
   testWidgets('shows point, map links, tolerance, area maps, bounds, platform formats and XYZ', (tester) async {
     await tester.pumpWidget(
@@ -257,6 +261,37 @@ void main() {
       reason: 'busy must clear after page-level timeout',
     );
   });
+
+  testWidgets('shows web unsupported message when expander rejects short links',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: await wrapWithDisplayScope(
+          CoordinateToolPage(
+            expandMapsShareUrl: _unsupportedWebExpand,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final mapsUrl = find.widgetWithText(
+      TextField,
+      'Paste Google / Apple Maps URL',
+    );
+    await tester.enterText(mapsUrl, 'https://maps.app.goo.gl/webDemo');
+    await tester.tap(find.text('Use map link'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('cannot be auto-expanded on web'),
+      findsOneWidget,
+    );
+    // Default demo coordinates remain on screen; ensure convert did not
+    // replace them with a short-link expansion result.
+    expect(find.text('Could not expand that map short link.'), findsNothing);
+  });
+
 
   testWidgets('generates manual box from center and radius', (tester) async {
     await tester.pumpWidget(
