@@ -37,3 +37,14 @@ the phrase catalog itself.
 Photo Studio export is **PNG only** (`photo-studio.png`, `image/png`). JPEG,
 JPG, and WebP are not supported; keep the Flutter/Dart/browser stack thin and
 avoid extra encoder packages or upload backends for alternate formats.
+
+Export is layered as **capture** (`captureStudioCanvas` → `ui.Image`) →
+**PNG encode** (`encodeStudioPng`) → **save** (`exportStudioPng` /
+`saveImageBytes`). `composeStudioPng` remains a capture+encode facade for
+callers that only need bytes.
+
+## Photo Studio geometry
+
+Photo Studio geometry is owned by Dart (`StudioGeometry` + table-driven cases in
+`test/photo_studio/studio_geometry_test.dart`). There is no Python geometry
+oracle or shared JSON fixture under `tool/python/`.

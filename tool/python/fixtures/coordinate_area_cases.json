@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "description": "Shared golden vectors for coordinate tolerance / Maps area framing. Consumed by Dart tests and tool/python pytest.",
+  "description": "Shared golden vectors for coordinate tolerance / Maps area framing. Dart test/coordinate_tool/ owns formula assertions; tool/python may only check JSON structure.",
   "cases": [
     {
       "latitude": 35.681236,
