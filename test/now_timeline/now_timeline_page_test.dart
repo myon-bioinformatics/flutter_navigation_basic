@@ -34,8 +34,9 @@ void main() {
 
     expect(find.text('People, places, schedules and events on one shared timeline.'), findsOneWidget);
 
+    // Scope to DisplayLocalePicker — ToolDoorSelector also exposes a dropdown.
     await tester.tap(find.descendant(
-      of: find.byType(DropdownButtonHideUnderline),
+      of: find.byType(DisplayLocalePicker),
       matching: find.byType(DropdownButton<String>),
     ));
     await tester.pumpAndSettle();
