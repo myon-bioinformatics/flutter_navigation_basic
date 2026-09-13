@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'maps_url_policy.dart';
+
 class CoordinateValue {
   const CoordinateValue({required this.latitude, required this.longitude});
 
@@ -47,6 +49,10 @@ class CoordinateValue {
   /// Tries [tryParseMapsUrl] first. When that fails and [input] looks like a
   /// short share link, calls [expand] (if provided) then parses the result.
   /// Expand failures propagate to the caller.
+  ///
+  /// Defense in depth: even if [expand] returns an arbitrary URI (including
+  /// injected fakes), only [MapsUrlPolicy.isAllowedExpandedMapsUri] targets
+  /// are parsed for coordinates.
   static Future<CoordinateValue?> tryParseMapsUrlAsync(
     String input, {
     Future<Uri> Function(Uri url)? expand,
@@ -62,19 +68,15 @@ class CoordinateValue {
     }
 
     final uri = Uri.tryParse(raw.contains('://') ? raw : 'https://$raw');
-    if (uri == null ||
-        uri.host.isEmpty ||
-        !_isHttpOrHttpsScheme(uri.scheme)) {
+    if (uri == null || !MapsUrlPolicy.isAllowedShortShareUri(uri)) {
       return null;
     }
 
     final expanded = await expand(uri);
+    if (!MapsUrlPolicy.isAllowedExpandedMapsUri(expanded)) {
+      return null;
+    }
     return tryParseMapsUrl(expanded.toString());
-  }
-
-  static bool _isHttpOrHttpsScheme(String scheme) {
-    final normalized = scheme.toLowerCase();
-    return normalized == 'http' || normalized == 'https';
   }
 
   /// Whether [input] looks like a Maps short / share link that may need
@@ -85,23 +87,14 @@ class CoordinateValue {
     final uri = Uri.tryParse(
       trimmed.contains('://') ? trimmed : 'https://$trimmed',
     );
-    if (uri == null ||
-        uri.host.isEmpty ||
-        !_isHttpOrHttpsScheme(uri.scheme)) {
+    if (uri == null || !MapsUrlPolicy.isAllowedShortShareUri(uri)) {
       return false;
     }
-    final host = uri.host.toLowerCase();
-    if (host == 'maps.app.goo.gl' ||
-        host == 'goo.gl' ||
-        host == 'g.co' ||
-        host.endsWith('.goo.gl')) {
-      return true;
-    }
     // Apple Maps share forms without extractable coords.
-    if (host == 'maps.apple.com') {
+    if (uri.host.toLowerCase() == 'maps.apple.com') {
       return tryParseMapsUrl(trimmed) == null;
     }
-    return false;
+    return true;
   }
 
   static CoordinateValue parseMapsUrl(String input) {

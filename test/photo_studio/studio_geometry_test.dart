@@ -168,4 +168,50 @@ void main() {
     final ids = [for (final c in _cases) c.id];
     expect(ids.toSet().length, ids.length);
   });
+
+  group('shapeContainsNormalized', () {
+    const box = NormalizedRect(left: 0.2, top: 0.2, right: 0.8, bottom: 0.8);
+
+    test('circle misses transparent bounding-box corners', () {
+      expect(
+        StudioGeometry.shapeContainsNormalized(
+          box,
+          StudioFrameShape.circle,
+          0.21,
+          0.21,
+        ),
+        isFalse,
+      );
+      expect(
+        StudioGeometry.shapeContainsNormalized(
+          box,
+          StudioFrameShape.circle,
+          0.5,
+          0.5,
+        ),
+        isTrue,
+      );
+    });
+
+    test('triangle misses corners outside the apex-base fill', () {
+      expect(
+        StudioGeometry.shapeContainsNormalized(
+          box,
+          StudioFrameShape.triangle,
+          0.21,
+          0.21,
+        ),
+        isFalse,
+      );
+      expect(
+        StudioGeometry.shapeContainsNormalized(
+          box,
+          StudioFrameShape.triangle,
+          0.5,
+          0.5,
+        ),
+        isTrue,
+      );
+    });
+  });
 }

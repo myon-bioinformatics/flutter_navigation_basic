@@ -8,6 +8,7 @@ import '../domain/emoji_stamp.dart';
 import '../domain/normalized_rect.dart';
 import '../domain/studio_frame.dart';
 import '../domain/studio_frame_style.dart';
+import '../domain/studio_geometry.dart';
 
 int _nextStudioObjectId = 0;
 
@@ -112,19 +113,30 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
     return null;
   }
 
-  StudioFrame? _frameById(String? id) {
-    if (id == null) return null;
+  StudioFrame? _frameById(String? studioFrameId) {
+    if (studioFrameId == null) return null;
     for (final frame in widget.frames) {
-      if (frame.studioFrameId == id) return frame;
+      if (frame.studioFrameId == studioFrameId) return frame;
     }
     return null;
   }
 
-  /// Topmost frame under [local], or null.
+  /// Topmost frame under [local], or null (shape-aware, not bbox-only).
   StudioFrame? _hitFrameBody(Offset local, Size size) {
+    if (size.width <= 0 || size.height <= 0) return null;
+    final nx = local.dx / size.width;
+    final ny = local.dy / size.height;
+    final slop = 4 / math.min(size.width, size.height);
     for (final frame in widget.frames.reversed) {
-      final rect = frame.rect.toPixelRect(size);
-      if (rect.inflate(4).contains(local)) return frame;
+      if (StudioGeometry.shapeContainsNormalized(
+        frame.rect,
+        frame.shape,
+        nx,
+        ny,
+        slop: slop,
+      )) {
+        return frame;
+      }
     }
     return null;
   }
@@ -380,7 +392,7 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
       );
       _liveCreateFrame = live;
       // Parent setState from onPanStart may not have rebuilt yet when this runs
-      // in the same pointer-move, so always append/replace by id.
+      // in the same pointer-move, so always append/replace by studioFrameId.
       widget.onFramesChanged([
         for (final frame in widget.frames)
           if (frame.studioFrameId != creatingId) frame,
@@ -391,8 +403,8 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
 
     final handle = _activeHandle;
     final last = _lastLocal;
-    // Prefer gesture-local id so pan updates work before parent rebuilds
-    // after a topmost-frame selection change in onPanStart.
+    // Prefer gesture-local studioFrameId so pan updates work before parent
+    // rebuilds after a topmost-frame selection change in onPanStart.
     final editing = _frameById(_editingStudioFrameId) ??
         _frameById(widget.selectedStudioFrameId);
     if (handle == null || last == null || editing == null) return;

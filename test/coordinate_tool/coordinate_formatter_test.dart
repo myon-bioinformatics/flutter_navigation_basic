@@ -197,6 +197,23 @@ void main() {
       expect(value.longitude, closeTo(139.738761, 1e-9));
     });
 
+    test('async expand rejects non-Maps final URIs even with q= coords', () async {
+      Future<CoordinateValue?> parseExpanded(String expanded) {
+        return CoordinateValue.tryParseMapsUrlAsync(
+          'https://maps.app.goo.gl/demo',
+          expand: (_) async => Uri.parse(expanded),
+        );
+      }
+
+      expect(await parseExpanded('https://example.com/?q=35.0,139.0'), isNull);
+      expect(await parseExpanded('file:///tmp/demo?q=35.0,139.0'), isNull);
+      expect(await parseExpanded('http://127.0.0.1/?q=35.0,139.0'), isNull);
+      expect(
+        await parseExpanded('https://evil.example/?q=35.681236,139.767125'),
+        isNull,
+      );
+    });
+
     test('encoded commas still parse after aggressive decode', () async {
       final sync = CoordinateValue.tryParseMapsUrl(
         'https://www.google.com/maps/search/?api=1&query=35.681236%2C139.767125',
@@ -239,12 +256,36 @@ void main() {
       expect(value.longitude, closeTo(139.767125, 1e-9));
     });
 
-    test('looksLikeMapsShortShare detects goo.gl and bare Apple share', () {
+    test('looksLikeMapsShortShare detects scoped short hosts and Apple share', () {
       expect(
         CoordinateValue.looksLikeMapsShortShare(
           'https://maps.app.goo.gl/abc',
         ),
         isTrue,
+      );
+      expect(
+        CoordinateValue.looksLikeMapsShortShare(
+          'https://goo.gl/maps/abc',
+        ),
+        isTrue,
+      );
+      expect(
+        CoordinateValue.looksLikeMapsShortShare(
+          'https://goo.gl/not-maps',
+        ),
+        isFalse,
+      );
+      expect(
+        CoordinateValue.looksLikeMapsShortShare(
+          'https://g.co/maps/abc',
+        ),
+        isTrue,
+      );
+      expect(
+        CoordinateValue.looksLikeMapsShortShare(
+          'https://g.co/xyz',
+        ),
+        isFalse,
       );
       expect(
         CoordinateValue.looksLikeMapsShortShare(

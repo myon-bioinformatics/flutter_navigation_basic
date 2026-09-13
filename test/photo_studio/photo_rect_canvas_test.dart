@@ -181,8 +181,8 @@ void main() {
                 onFramesChanged: (next) {
                   setState(() => frames = next);
                 },
-                onSelectedStudioFrameIdChanged: (id) {
-                  setState(() => selectedId = id);
+                onSelectedStudioFrameIdChanged: (studioFrameId) {
+                  setState(() => selectedId = studioFrameId);
                 },
               );
             },
@@ -245,8 +245,8 @@ void main() {
                 onFramesChanged: (next) {
                   setState(() => frames = next);
                 },
-                onSelectedStudioFrameIdChanged: (id) {
-                  setState(() => selectedId = id);
+                onSelectedStudioFrameIdChanged: (studioFrameId) {
+                  setState(() => selectedId = studioFrameId);
                 },
               );
             },
@@ -319,8 +319,8 @@ void main() {
                 onFramesChanged: (next) {
                   setState(() => frames = next);
                 },
-                onSelectedStudioFrameIdChanged: (id) {
-                  setState(() => selectedId = id);
+                onSelectedStudioFrameIdChanged: (studioFrameId) {
+                  setState(() => selectedId = studioFrameId);
                 },
               );
             },
@@ -357,5 +357,72 @@ void main() {
     );
     expect(top.rect.left, greaterThan(0.15));
     expect(top.rect.top, greaterThan(0.15));
+  });
+
+
+  testWidgets('circle transparent corner defers to rectangle underneath',
+      (tester) async {
+    // Top circle bbox covers the corner; transparent corner should hit bottom rect.
+    var frames = <StudioFrame>[
+      const StudioFrame(
+        studioFrameId: 'bottom',
+        rect: NormalizedRect(left: 0.1, top: 0.1, right: 0.9, bottom: 0.9),
+        shape: StudioFrameShape.rectangle,
+        strokeArgb: StudioFrameColors.purple,
+      ),
+      const StudioFrame(
+        studioFrameId: 'topCircle',
+        rect: NormalizedRect(left: 0.2, top: 0.2, right: 0.8, bottom: 0.8),
+        shape: StudioFrameShape.circle,
+        strokeArgb: StudioFrameColors.red,
+      ),
+    ];
+    String? selectedId = 'topCircle';
+
+    await tester.binding.setSurfaceSize(const Size(400, 400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) {
+              return PhotoRectCanvas(
+                frames: frames,
+                selectedStudioFrameId: selectedId,
+                draftShape: null,
+                height: 300,
+                onFramesChanged: (next) {
+                  setState(() => frames = next);
+                },
+                onSelectedStudioFrameIdChanged: (studioFrameId) {
+                  setState(() => selectedId = studioFrameId);
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final box = tester.getRect(find.byType(PhotoRectCanvas));
+    // Near top-left corner of the circle bbox (outside the inscribed circle).
+    final start = Offset(
+      box.left + box.width * 0.22,
+      box.top + box.height * 0.22,
+    );
+    final end = Offset(start.dx + box.width * 0.1, start.dy + box.height * 0.1);
+    final gesture = await tester.startGesture(start);
+    await tester.pump();
+    await gesture.moveTo(end);
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+
+    expect(selectedId, 'bottom');
+    final bottom = frames.firstWhere((f) => f.studioFrameId == 'bottom');
+    expect(bottom.rect.left, greaterThan(0.1));
+    expect(bottom.rect.top, greaterThan(0.1));
   });
 }

@@ -61,10 +61,10 @@ class PhotoStudioState {
   final double stampScale;
 
   StudioFrame? get selectedFrame {
-    final id = selectedStudioFrameId;
-    if (id == null) return null;
+    final studioFrameId = selectedStudioFrameId;
+    if (studioFrameId == null) return null;
     for (final frame in frames) {
-      if (frame.studioFrameId == id) return frame;
+      if (frame.studioFrameId == studioFrameId) return frame;
     }
     return null;
   }

@@ -58,7 +58,8 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     '🍀',
   ];
 
-  static const _maxImageClipboardChars = 4 * 1024 * 1024;
+  static const _maxImageBytes = 4 * 1024 * 1024;
+  static const _maxImageClipboardChars = _maxImageBytes;
 
   /// Fallback until the first canvas layout reports its size.
   static const _fallbackCanvasSize = Size(760, 280);
@@ -118,6 +119,10 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
 
   Future<void> _setImage(Uint8List rawBytes) async {
     final display = DisplayScope.of(context);
+    if (rawBytes.lengthInBytes > _maxImageBytes) {
+      setState(() => _status = display.text('photoStudio.imageError'));
+      return;
+    }
     try {
       final validated = await decodeRasterImageBytes(rawBytes);
       if (!mounted) return;
@@ -187,8 +192,10 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       }
     }
 
-    final reader = widget.clipboardImageReader ?? readWebClipboardImageBytes;
-    final bytes = await reader();
+    final customReader = widget.clipboardImageReader;
+    final bytes = customReader != null
+        ? await customReader()
+        : await readWebClipboardImageBytes(maxBytes: _maxImageBytes);
     if (!mounted) return;
     if (bytes != null && bytes.isNotEmpty) {
       await _setImage(bytes);
@@ -201,6 +208,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     final bytes = content.data;
     if (bytes == null ||
         bytes.isEmpty ||
+        bytes.lengthInBytes > _maxImageBytes ||
         !content.mimeType.startsWith('image/')) {
       return;
     }
@@ -244,13 +252,13 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
   }
 
   void _deleteSelectedFrame() {
-    final id = _studio.selectedStudioFrameId;
-    if (id == null) return;
+    final studioFrameId = _studio.selectedStudioFrameId;
+    if (studioFrameId == null) return;
     _setStateWithUndo(
       (s) => s.copyWith(
         frames: [
           for (final frame in s.frames)
-            if (frame.studioFrameId != id) frame,
+            if (frame.studioFrameId != studioFrameId) frame,
         ],
         selectedStudioFrameId: null,
       ),

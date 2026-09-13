@@ -330,6 +330,26 @@ void main() {
     expect(find.text('Clipboard has no photo to paste.'), findsOneWidget);
   });
 
+  testWidgets('paste rejects oversized binary clipboard bytes', (tester) async {
+    final oversized = Uint8List(4 * 1024 * 1024 + 1);
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(
+        clipboardImageReader: () async => oversized,
+      ),
+    );
+
+    await tester.runAsync(() async {
+      await tester.ensureVisible(find.text('Paste photo'));
+      await tester.tap(find.text('Paste photo'));
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.textContaining('Photo loaded'), findsNothing);
+  });
+
   testWidgets('bounded undo restores draft tool then disables when empty',
       (tester) async {
     await _pumpPage(tester);

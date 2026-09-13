@@ -6,7 +6,10 @@ import 'dart:typed_data';
 ///
 /// Uses the async Clipboard API. Callers should still accept Base64 text and
 /// [ContentInsertionConfiguration] as fallbacks — browser permissions vary.
-Future<Uint8List?> readWebClipboardImageBytes() async {
+///
+/// When [maxBytes] is set, Blobs larger than that limit are skipped before
+/// allocating a FileReader buffer.
+Future<Uint8List?> readWebClipboardImageBytes({int? maxBytes}) async {
   try {
     final clipboard = html.window.navigator.clipboard;
     if (clipboard == null) return null;
@@ -21,21 +24,10 @@ Future<Uint8List?> readWebClipboardImageBytes() async {
         final type = types[t] as String;
         if (!type.startsWith('image/')) continue;
         final html.Blob blob = await item.getType(type) as html.Blob;
-        final reader = html.FileReader();
-        final completer = Completer<Uint8List?>();
-        reader.onError.listen((_) {
-          if (!completer.isCompleted) completer.complete(null);
-        });
-        reader.onLoad.listen((_) {
-          final result = reader.result;
-          if (result is ByteBuffer) {
-            completer.complete(result.asUint8List());
-          } else {
-            completer.complete(null);
-          }
-        });
-        reader.readAsArrayBuffer(blob);
-        final bytes = await completer.future;
+        if (maxBytes != null && blob.size > maxBytes) {
+          continue;
+        }
+        final bytes = await _readBlobAsBytes(blob);
         if (bytes != null && bytes.isNotEmpty) return bytes;
       }
     }
@@ -43,4 +35,46 @@ Future<Uint8List?> readWebClipboardImageBytes() async {
     return null;
   }
   return null;
+}
+
+Future<Uint8List?> _readBlobAsBytes(html.Blob blob) {
+  final reader = html.FileReader();
+  final completer = Completer<Uint8List?>();
+  Timer? timeout;
+  StreamSubscription<html.ProgressEvent>? loadSub;
+  StreamSubscription<html.ProgressEvent>? errorSub;
+
+  void cleanup() {
+    timeout?.cancel();
+    timeout = null;
+    loadSub?.cancel();
+    loadSub = null;
+    errorSub?.cancel();
+    errorSub = null;
+  }
+
+  void finish(Uint8List? value) {
+    cleanup();
+    try {
+      reader.abort();
+    } catch (_) {
+      // Already finished / not abortable.
+    }
+    if (!completer.isCompleted) {
+      completer.complete(value);
+    }
+  }
+
+  timeout = Timer(const Duration(seconds: 10), () => finish(null));
+  errorSub = reader.onError.listen((_) => finish(null));
+  loadSub = reader.onLoad.listen((_) {
+    final result = reader.result;
+    if (result is ByteBuffer) {
+      finish(result.asUint8List());
+    } else {
+      finish(null);
+    }
+  });
+  reader.readAsArrayBuffer(blob);
+  return completer.future;
 }
