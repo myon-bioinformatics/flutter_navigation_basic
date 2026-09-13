@@ -9,10 +9,18 @@ import '../../../shared/widgets/note_sequence_card.dart';
 import '../../../shared/widgets/tool_door_selector.dart';
 import '../domain/composition_generator_controller.dart';
 
-class CompositionGeneratorPage extends StatelessWidget {
+class CompositionGeneratorPage extends StatefulWidget {
   const CompositionGeneratorPage({super.key, required this.controller});
 
   final CompositionGeneratorController controller;
+
+  @override
+  State<CompositionGeneratorPage> createState() =>
+      _CompositionGeneratorPageState();
+}
+
+class _CompositionGeneratorPageState extends State<CompositionGeneratorPage> {
+  late String _theoryKey = widget.controller.tonicKey;
 
   @override
   Widget build(BuildContext context) {
@@ -28,11 +36,12 @@ class CompositionGeneratorPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 CompositionStudio(
-                  initialBpm: controller.bpm,
-                  initialKey: controller.tonicKey,
+                  initialBpm: widget.controller.bpm,
+                  initialKey: widget.controller.tonicKey,
+                  onKeyChanged: (key) => setState(() => _theoryKey = key),
                 ),
                 const SizedBox(height: 16),
-                ChordTheoryCard(initialKey: controller.tonicKey),
+                ChordTheoryCard(initialKey: _theoryKey),
                 const SizedBox(height: 16),
                 const NoteSequenceCard(),
                 const SizedBox(height: 24),

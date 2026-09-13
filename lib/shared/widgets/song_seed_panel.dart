@@ -78,13 +78,6 @@ class _SongSeedPanelState extends State<SongSeedPanel> {
     );
   }
 
-  void _saveCurrent() {
-    setState(_recordCurrent);
-    final display = DisplayScope.of(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(display.text('compositionLegacy.savedSnackbar'))),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -111,7 +104,7 @@ class _SongSeedPanelState extends State<SongSeedPanel> {
           const SizedBox(height: 16),
           Semantics(
             liveRegion: true,
-            label: 'Chord progression ${_seed.progression}',
+            label: display.text('compositionStudio.seedProgressionSemantics', arguments: {'progression': _seed.progression}),
             child: ExcludeSemantics(
               child: Text(
                 _seed.progression,
@@ -135,11 +128,6 @@ class _SongSeedPanelState extends State<SongSeedPanel> {
                 onPressed: _regenerateProgression,
                 icon: const Icon(Icons.shuffle),
                 label: Text(display.text('compositionLegacy.shuffleChords')),
-              ),
-              OutlinedButton.icon(
-                onPressed: _saveCurrent,
-                icon: const Icon(Icons.bookmark_add_outlined),
-                label: Text(display.text('compositionLegacy.saveCurrent')),
               ),
               IconButton.filledTonal(
                 tooltip: display.text('compositionLegacy.copyTooltip'),

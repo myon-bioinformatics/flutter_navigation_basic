@@ -66,6 +66,13 @@ class PhotoStudioHistory {
     _pending = null;
   }
 
+  /// Drops undo/redo stacks and any open gesture (e.g. after Discard).
+  void clear() {
+    _pending = null;
+    _undo.clear();
+    _redo.clear();
+  }
+
   void _pushUndo(PhotoStudioState state) {
     _undo.add(state);
     if (_undo.length > maxEntries) {

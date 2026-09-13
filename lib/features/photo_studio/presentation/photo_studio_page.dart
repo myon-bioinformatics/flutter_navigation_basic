@@ -88,8 +88,18 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
   bool get _canRedo => _history.canRedo;
   bool get _isDirty => !_studio.sameDocumentAs(_exportBaseline);
 
-  void _markCleanBaseline() {
-    _exportBaseline = _studio;
+  /// Bump the image-load generation so in-flight decodes cannot clobber state.
+  void _invalidatePendingImageLoad() {
+    _imageLoadGeneration++;
+    _decoding = false;
+  }
+
+  /// Restore the last exported document and drop undo/redo (true Discard).
+  void _discardUnsavedChanges() {
+    _invalidatePendingImageLoad();
+    _history.clear();
+    _studio = _exportBaseline;
+    _pendingEmoji = null;
   }
 
   @override
@@ -123,6 +133,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     final snap = _history.undo(_studio);
     if (snap == null) return;
     setState(() {
+      _invalidatePendingImageLoad();
       _studio = snap;
       _status = DisplayScope.of(context).text('photoStudio.undoDone');
     });
@@ -132,6 +143,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     final snap = _history.redo(_studio);
     if (snap == null) return;
     setState(() {
+      _invalidatePendingImageLoad();
       _studio = snap;
       _status = DisplayScope.of(context).text('photoStudio.redoDone');
     });
@@ -306,6 +318,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
 
   void _clearImage() {
     setState(() {
+      _invalidatePendingImageLoad();
       _mutateWithUndo((s) => s.copyWith(imageBytes: null));
       _status = DisplayScope.of(context).text('photoStudio.imageCleared');
     });
@@ -346,9 +359,11 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     final logicalSize = _canvasSize.width > 0 && _canvasSize.height > 0
         ? _canvasSize
         : _fallbackCanvasSize;
+    // Freeze the document being exported so later edits stay dirty.
+    final exportedState = _studio;
     final result = await exportStudioPng(
       document: StudioDocument.fromState(
-        _studio,
+        exportedState,
         logicalCanvasSize: logicalSize,
       ),
       saver: widget.imageSaver,
@@ -362,7 +377,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     setState(() {
       _status = display.text(key);
       if (result.outcome == StudioExportOutcome.saved) {
-        _markCleanBaseline();
+        _exportBaseline = exportedState;
       }
     });
   }
@@ -513,8 +528,11 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
         if (didPop) return;
         final leave = await _confirmDiscardIfDirty();
         if (!mounted || !leave) return;
-        setState(_markCleanBaseline);
-        Navigator.of(context).maybePop();
+        setState(_discardUnsavedChanges);
+        final nav = Navigator.of(context);
+        if (nav.canPop()) {
+          nav.pop();
+        }
       },
       child: CallbackShortcuts(
       bindings: {
@@ -847,7 +865,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                 ),
                               ),
                               FilledButton.tonalIcon(
-                                onPressed: _pasteImage,
+                                onPressed: _decoding ? null : _pasteImage,
                                 icon: const Icon(Icons.content_paste),
                                 label: Text(t('photoStudio.pasteImage')),
                               ),
@@ -859,7 +877,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                 label: Text(t('photoStudio.copyImage')),
                               ),
                               OutlinedButton.icon(
-                                onPressed: _studio.imageBytes == null
+                                onPressed: (!_decoding && _studio.imageBytes == null)
                                     ? null
                                     : _clearImage,
                                 icon: const Icon(Icons.hide_image_outlined),
@@ -895,7 +913,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                           Align(
                             alignment: Alignment.centerLeft,
                             child: FilledButton.icon(
-                              onPressed: _savePng,
+                              onPressed: _decoding ? null : _savePng,
                               icon: const Icon(Icons.download_outlined),
                               label: Text(t('photoStudio.saveFile')),
                             ),
@@ -934,7 +952,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                       beforeNavigate: () async {
                         final ok = await _confirmDiscardIfDirty();
                         if (ok && mounted && _isDirty) {
-                          setState(_markCleanBaseline);
+                          setState(_discardUnsavedChanges);
                         }
                         return ok;
                       },

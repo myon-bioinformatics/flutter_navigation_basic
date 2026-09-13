@@ -11,11 +11,13 @@ class CompositionStudio extends StatefulWidget {
     super.key,
     required this.initialBpm,
     required this.initialKey,
+    this.onKeyChanged,
     @visibleForTesting this.elapsedOverride,
   });
 
   final int initialBpm;
   final String initialKey;
+  final ValueChanged<String>? onKeyChanged;
 
   /// When set (tests only), musical position uses this elapsed instead of the
   /// wall-clock [Stopwatch], so FakeAsync pumps can drive subdivision changes.
@@ -23,10 +25,10 @@ class CompositionStudio extends StatefulWidget {
   final Duration Function()? elapsedOverride;
 
   @override
-  State<CompositionStudio> createState() => CompositionStudioState();
+  State<CompositionStudio> createState() => _CompositionStudioState();
 }
 
-class CompositionStudioState extends State<CompositionStudio>
+class _CompositionStudioState extends State<CompositionStudio>
     with SingleTickerProviderStateMixin {
   final Stopwatch _clock = Stopwatch();
   final Stopwatch _tapClock = Stopwatch();
@@ -152,6 +154,7 @@ class CompositionStudioState extends State<CompositionStudio>
         _clock.reset();
       }
     });
+    widget.onKeyChanged?.call(seed.tonicKey);
   }
 
   @override

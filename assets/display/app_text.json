@@ -551,7 +551,8 @@
       "photoStudio.toolStroke": "Stroke",
       "photoStudio.saveSnack": "PNG export completed",
       "photoStudio.languageMenu": "Language",
-      "photoStudio.replaceImage": "Replace image"
+      "photoStudio.replaceImage": "Replace image",
+      "compositionStudio.seedProgressionSemantics": "Chord progression {progression}"
     },
     "jpn": {
       "common.copy": "コピー",
@@ -1104,7 +1105,8 @@
       "photoStudio.toolStroke": "線",
       "photoStudio.saveSnack": "PNG書き出しが完了しました",
       "photoStudio.languageMenu": "言語",
-      "photoStudio.replaceImage": "画像を差し替え"
+      "photoStudio.replaceImage": "画像を差し替え",
+      "compositionStudio.seedProgressionSemantics": "コード進行 {progression}"
     },
     "fra": {
       "common.copy": "Copier",
@@ -1657,7 +1659,8 @@
       "photoStudio.toolStroke": "Trait",
       "photoStudio.saveSnack": "Export PNG terminé",
       "photoStudio.languageMenu": "Langue",
-      "photoStudio.replaceImage": "Remplacer l’image"
+      "photoStudio.replaceImage": "Remplacer l’image",
+      "compositionStudio.seedProgressionSemantics": "Progression d’accords {progression}"
     },
     "spa": {
       "common.copy": "Copiar",
@@ -2210,7 +2213,8 @@
       "photoStudio.toolStroke": "Trazo",
       "photoStudio.saveSnack": "Exportación PNG completada",
       "photoStudio.languageMenu": "Idioma",
-      "photoStudio.replaceImage": "Reemplazar imagen"
+      "photoStudio.replaceImage": "Reemplazar imagen",
+      "compositionStudio.seedProgressionSemantics": "Progresión de acordes {progression}"
     },
     "por": {
       "common.copy": "Copiar",
@@ -2763,7 +2767,8 @@
       "photoStudio.toolStroke": "Traço",
       "photoStudio.saveSnack": "Exportação PNG concluída",
       "photoStudio.languageMenu": "Idioma",
-      "photoStudio.replaceImage": "Substituir imagem"
+      "photoStudio.replaceImage": "Substituir imagem",
+      "compositionStudio.seedProgressionSemantics": "Progressão de acordes {progression}"
     },
     "ara": {
       "common.copy": "نسخ",
@@ -3316,7 +3321,8 @@
       "photoStudio.toolStroke": "حد",
       "photoStudio.saveSnack": "اكتمل تصدير PNG",
       "photoStudio.languageMenu": "اللغة",
-      "photoStudio.replaceImage": "استبدال الصورة"
+      "photoStudio.replaceImage": "استبدال الصورة",
+      "compositionStudio.seedProgressionSemantics": "تتابع الأكوردات {progression}"
     },
     "zho": {
       "common.copy": "复制",
@@ -3869,7 +3875,8 @@
       "photoStudio.toolStroke": "描边",
       "photoStudio.saveSnack": "PNG 导出完成",
       "photoStudio.languageMenu": "语言",
-      "photoStudio.replaceImage": "替换图片"
+      "photoStudio.replaceImage": "替换图片",
+      "compositionStudio.seedProgressionSemantics": "和弦进行 {progression}"
     },
     "rus": {
       "common.copy": "Копировать",
@@ -4422,7 +4429,8 @@
       "photoStudio.toolStroke": "Обводка",
       "photoStudio.saveSnack": "Экспорт PNG завершён",
       "photoStudio.languageMenu": "Язык",
-      "photoStudio.replaceImage": "Заменить изображение"
+      "photoStudio.replaceImage": "Заменить изображение",
+      "compositionStudio.seedProgressionSemantics": "Аккордовая последовательность {progression}"
     },
     "ind": {
       "common.copy": "Salin",
@@ -4975,7 +4983,8 @@
       "photoStudio.toolStroke": "Garis",
       "photoStudio.saveSnack": "Ekspor PNG selesai",
       "photoStudio.languageMenu": "Bahasa",
-      "photoStudio.replaceImage": "Ganti gambar"
+      "photoStudio.replaceImage": "Ganti gambar",
+      "compositionStudio.seedProgressionSemantics": "Progresi akor {progression}"
     },
     "deu": {
       "common.copy": "Kopieren",
@@ -5528,7 +5537,8 @@
       "photoStudio.toolStroke": "Kontur",
       "photoStudio.saveSnack": "PNG-Export abgeschlossen",
       "photoStudio.languageMenu": "Sprache",
-      "photoStudio.replaceImage": "Bild ersetzen"
+      "photoStudio.replaceImage": "Bild ersetzen",
+      "compositionStudio.seedProgressionSemantics": "Akkordfolge {progression}"
     },
     "swa": {
       "common.copy": "Nakili",
@@ -6081,7 +6091,8 @@
       "photoStudio.toolStroke": "Mstari",
       "photoStudio.saveSnack": "Usafirishaji wa PNG umekamilika",
       "photoStudio.languageMenu": "Lugha",
-      "photoStudio.replaceImage": "Badilisha picha"
+      "photoStudio.replaceImage": "Badilisha picha",
+      "compositionStudio.seedProgressionSemantics": "Mpangilio wa kodi {progression}"
     }
   }
 }

@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../core/navigation/app_tools.dart';
+import '../../core/navigation/route_names.dart';
 import '../display/display_scope.dart';
 
 /// Shared Door-to-Door tool selector for Tools screen footers.
+///
+/// Uses [Navigator.of] with named routes so both default (`main.dart` /
+/// [AppRoutes]) and production (`main_prod.dart` / [AppNavigation])
+/// entrypoints work without a global navigator key.
 class ToolDoorSelector extends StatelessWidget {
   const ToolDoorSelector({
     super.key,
@@ -21,6 +26,15 @@ class ToolDoorSelector extends StatelessWidget {
   /// Optional gate before leaving via the selector (e.g. dirty confirm).
   /// Return `true` to navigate, `false` to stay.
   final Future<bool> Function()? beforeNavigate;
+
+  void _navigateTo(BuildContext context, String routeName) {
+    final navigator = Navigator.of(context);
+    if (routeName == RouteNames.home) {
+      navigator.pushNamedAndRemoveUntil(routeName, (route) => false);
+      return;
+    }
+    navigator.pushNamed(routeName);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +96,8 @@ class ToolDoorSelector extends StatelessWidget {
                   if (match.isEmpty) return;
                   final gate = beforeNavigate;
                   if (gate != null && !await gate()) return;
-                  match.first.navigate();
+                  if (!context.mounted) return;
+                  _navigateTo(context, match.first.routeName);
                 },
               ),
             ],

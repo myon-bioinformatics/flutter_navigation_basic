@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -11,6 +12,7 @@ import 'package:flutter_application_1/features/photo_studio/domain/studio_frame_
 import 'package:flutter_application_1/features/photo_studio/presentation/compose_studio_image.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/photo_rect_canvas.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/photo_studio_page.dart';
+import 'package:flutter_application_1/core/navigation/route_names.dart';
 import 'package:flutter_application_1/shared/widgets/tool_door_selector.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -1010,5 +1012,158 @@ void main() {
     final (w, h) = _pngSize(bytes);
     expect(w, 800);
     expect(h, 560);
+  });
+
+  testWidgets('Discard restores export baseline on back', (tester) async {
+    await _pumpPage(tester);
+
+    await _selectDraftTool(tester, 'Rectangle');
+    await _createFrame(tester, x0: 0.1, y0: 0.1, x1: 0.4, y1: 0.4);
+    expect(find.byIcon(Icons.circle), findsOneWidget);
+    expect(
+      tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas)).frames,
+      isNotEmpty,
+    );
+
+    tester.state<NavigatorState>(find.byType(Navigator)).maybePop();
+    await tester.pump(); // dialog
+    expect(find.text('Discard changes?'), findsOneWidget);
+    await tester.tap(find.text('Discard'));
+    await tester.pump(); // close dialog + discard
+
+    expect(find.byType(PhotoStudioPage), findsOneWidget);
+    expect(find.byIcon(Icons.circle), findsNothing);
+    expect(
+      tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas)).frames,
+      isEmpty,
+    );
+  });
+
+  testWidgets('Door Discard navigates home after restoring baseline',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 2600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final studio = await wrapWithDisplayScope(const PhotoStudioPage());
+    await tester.pumpWidget(
+      MaterialApp(
+        initialRoute: RouteNames.photoStudio,
+        routes: {
+          RouteNames.home: (_) => const Scaffold(body: Text('home-dest')),
+          RouteNames.photoStudio: (_) => studio,
+        },
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    await _selectDraftTool(tester, 'Rectangle');
+    await _createFrame(tester, x0: 0.2, y0: 0.2, x1: 0.5, y1: 0.5);
+    expect(find.byIcon(Icons.circle), findsOneWidget);
+
+    await tester.ensureVisible(find.byType(ToolDoorSelector));
+    await tester.tap(find.byType(DropdownButtonFormField<String>).last);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.textContaining('Home').last);
+    await tester.pump();
+    expect(find.text('Discard changes?'), findsOneWidget);
+    await tester.tap(find.text('Discard'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('home-dest'), findsOneWidget);
+  });
+
+  testWidgets('export race keeps dirty when edits land during save',
+      (tester) async {
+    var saveStarted = false;
+    final gate = Completer<void>();
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(
+        imageSaver: ({
+          required bytes,
+          required fileName,
+          required mimeType,
+        }) async {
+          saveStarted = true;
+          await gate.future;
+          return true;
+        },
+      ),
+    );
+
+    await _selectDraftTool(tester, 'Rectangle');
+    await _createFrame(tester, x0: 0.1, y0: 0.1, x1: 0.35, y1: 0.35);
+    expect(find.byIcon(Icons.circle), findsOneWidget);
+
+    // exportStudioPng encodes on a real async timeline before invoking saver.
+    await tester.runAsync(() async {
+      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save PNG'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Save PNG'));
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    });
+    await tester.pump();
+    expect(saveStarted, isTrue);
+
+    await _selectDraftTool(tester, 'Circle');
+    await _createFrame(tester, x0: 0.55, y0: 0.55, x1: 0.85, y1: 0.85);
+    expect(find.byIcon(Icons.circle), findsOneWidget);
+
+    gate.complete();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byIcon(Icons.circle), findsOneWidget);
+  });
+
+  testWidgets('clear during delayed replace keeps pending decode from restoring',
+      (tester) async {
+    final gate = Completer<void>();
+    var decodeCalls = 0;
+    // Undecodable payload forces the native/browser adapter path where we can
+    // delay after _imageLoadGeneration has already been bumped.
+    final junk = Uint8List.fromList(const [0x00, 0x01, 0x02, 0x03]);
+
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(
+        imageBytesPicker: () async => junk,
+        imageDecodeAdapter: (bytes) async {
+          decodeCalls += 1;
+          if (decodeCalls == 1) return _tinyPng;
+          await gate.future;
+          return _tinyPng;
+        },
+      ),
+    );
+
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Import image'));
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+    expect(
+      tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas)).imageBytes,
+      isNotNull,
+    );
+
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Replace image'));
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    });
+    await tester.pump();
+
+    await tester.tap(find.text('Clear photo'));
+    await tester.pump();
+
+    gate.complete();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(decodeCalls, greaterThanOrEqualTo(2));
+    expect(
+      tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas)).imageBytes,
+      isNull,
+    );
   });
 }
