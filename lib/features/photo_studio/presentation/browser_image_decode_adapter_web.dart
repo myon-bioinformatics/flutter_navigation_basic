@@ -10,15 +10,17 @@ Future<Uint8List?> browserImageDecodeAdapter(Uint8List bytes) async {
   String? objectUrl;
   html.ImageElement? image;
   html.CanvasElement? canvas;
+  StreamSubscription<html.Event>? loadSub;
+  StreamSubscription<html.Event>? errorSub;
   try {
     final blob = html.Blob([bytes]);
     objectUrl = html.Url.createObjectUrlFromBlob(blob);
     image = html.ImageElement();
     final loaded = Completer<void>();
-    image.onLoad.listen((_) {
+    loadSub = image.onLoad.listen((_) {
       if (!loaded.isCompleted) loaded.complete();
     });
-    image.onError.listen((_) {
+    errorSub = image.onError.listen((_) {
       if (!loaded.isCompleted) {
         loaded.completeError(StateError('browser image decode failed'));
       }
@@ -40,6 +42,8 @@ Future<Uint8List?> browserImageDecodeAdapter(Uint8List bytes) async {
   } catch (_) {
     return null;
   } finally {
+    loadSub?.cancel();
+    errorSub?.cancel();
     image?.src = '';
     if (objectUrl != null) {
       html.Url.revokeObjectUrl(objectUrl);
