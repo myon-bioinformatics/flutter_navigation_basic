@@ -5,13 +5,23 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('MapsUrlPolicy', () {
-    test('blocks localhost / private / link-local hosts', () {
+        test('blocks localhost / private / link-local hosts', () {
       expect(MapsUrlPolicy.isBlockedNetworkHost('127.0.0.1'), isTrue);
       expect(MapsUrlPolicy.isBlockedNetworkHost('localhost'), isTrue);
+      expect(MapsUrlPolicy.isBlockedNetworkHost('localhost.'), isTrue);
+      expect(MapsUrlPolicy.isBlockedNetworkHost('foo.localhost.'), isTrue);
       expect(MapsUrlPolicy.isBlockedNetworkHost('192.168.1.10'), isTrue);
       expect(MapsUrlPolicy.isBlockedNetworkHost('10.0.0.2'), isTrue);
       expect(MapsUrlPolicy.isBlockedNetworkHost('169.254.1.1'), isTrue);
       expect(MapsUrlPolicy.isBlockedNetworkHost('::1'), isTrue);
+      expect(MapsUrlPolicy.isBlockedNetworkHost('[::1]'), isTrue);
+      expect(
+        MapsUrlPolicy.isBlockedNetworkHost('0:0:0:0:0:0:0:1'),
+        isTrue,
+      );
+      expect(MapsUrlPolicy.isBlockedNetworkHost('fe80::1'), isTrue);
+      expect(MapsUrlPolicy.isBlockedNetworkHost('febf::abcd'), isTrue);
+      expect(MapsUrlPolicy.isBlockedNetworkHost('fec0::1'), isFalse);
       expect(MapsUrlPolicy.isBlockedNetworkHost('www.google.com'), isFalse);
     });
 

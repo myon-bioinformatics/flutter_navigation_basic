@@ -71,7 +71,11 @@ class MapsUrlPolicy {
 
   /// Localhost, private, and link-local hosts that must never be fetched.
   static bool isBlockedNetworkHost(String host) {
-    final normalized = host.toLowerCase().trim();
+    var normalized = host.toLowerCase().trim();
+    // FQDN form may include a trailing dot (`localhost.`).
+    while (normalized.endsWith('.')) {
+      normalized = normalized.substring(0, normalized.length - 1);
+    }
     if (normalized.isEmpty) return true;
     if (normalized == 'localhost' ||
         normalized == '127.0.0.1' ||
@@ -104,9 +108,9 @@ class MapsUrlPolicy {
         ? normalized.substring(1, normalized.length - 1)
         : normalized;
     if (ipv6.contains(':')) {
-      final lower = ipv6.toLowerCase();
-      if (lower == '::1') return true;
-      if (lower.startsWith('fe80:')) return true;
+      final lower = ipv6.toLowerCase().split('%').first;
+      if (_isIpv6Loopback(lower)) return true;
+      if (_isIpv6LinkLocal(lower)) return true;
       if (lower.startsWith('fc') || lower.startsWith('fd')) return true;
       if (lower.startsWith('::ffff:')) {
         final mapped = lower.substring('::ffff:'.length);
@@ -114,6 +118,28 @@ class MapsUrlPolicy {
       }
     }
     return false;
+  }
+
+  static bool _isIpv6Loopback(String lower) {
+    if (lower == '::1') return true;
+    final parts = lower.split(':');
+    if (parts.length != 8) return false;
+    final values = <int>[];
+    for (final part in parts) {
+      final value = int.tryParse(part.isEmpty ? '0' : part, radix: 16);
+      if (value == null || value > 0xffff) return false;
+      values.add(value);
+    }
+    return values.take(7).every((value) => value == 0) && values[7] == 1;
+  }
+
+  /// IPv6 link-local is fe80::/10 (first hextet fe80–febf).
+  static bool _isIpv6LinkLocal(String lower) {
+    final first = lower.split(':').first;
+    if (first.isEmpty) return false;
+    final value = int.tryParse(first, radix: 16);
+    if (value == null) return false;
+    return value >= 0xfe80 && value <= 0xfebf;
   }
 
   static bool _isHttpOrHttpsScheme(String scheme) {
