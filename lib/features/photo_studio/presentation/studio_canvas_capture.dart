@@ -49,18 +49,20 @@ Future<ui.Image> captureStudioCanvas(StudioDocument document) async {
       canvas.drawImageRect(decoded, src, dst, Paint());
     }
 
-    final rect = document.rect;
-    final pixel = Rect.fromLTRB(
-      rect.left * size.width,
-      rect.top * size.height,
-      rect.right * size.width,
-      rect.bottom * size.height,
-    );
-    final stroke = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3 * pixelRatio
-      ..color = document.strokeColor;
-    _paintFrame(canvas, pixel, document.shape, stroke);
+    for (final frame in document.frames) {
+      final rect = frame.rect;
+      final pixel = Rect.fromLTRB(
+        rect.left * size.width,
+        rect.top * size.height,
+        rect.right * size.width,
+        rect.bottom * size.height,
+      );
+      final stroke = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3 * pixelRatio
+        ..color = Color(frame.strokeArgb);
+      _paintFrame(canvas, pixel, frame.shape, stroke);
+    }
 
     for (final stamp in document.stamps) {
       final fontSize =

@@ -153,7 +153,125 @@ void main() {
         throwsFormatException,
       );
     });
+
+    test('async expand resolves Tokyo Station from Google short-link target', () async {
+      const short = 'https://maps.app.goo.gl/tokyoStationDemo';
+      expect(CoordinateValue.tryParseMapsUrl(short), isNull);
+
+      final value = await CoordinateValue.tryParseMapsUrlAsync(
+        short,
+        expand: (uri) async {
+          expect(uri.host, 'maps.app.goo.gl');
+          return Uri.parse(
+            'https://www.google.com/maps/place/Tokyo+Station/'
+            '@35.680000,139.760000,17z/data=!3d35.681236!4d139.767125',
+          );
+        },
+      );
+      expect(value, isNotNull);
+      expect(value!.latitude, closeTo(35.681236, 1e-9));
+      expect(value.longitude, closeTo(139.767125, 1e-9));
+    });
+
+    test('async expand resolves Shinagawa Station from Apple ll= target', () async {
+      const short = 'https://maps.app.goo.gl/shinagawaDemo';
+      final value = await CoordinateValue.tryParseMapsUrlAsync(
+        short,
+        expand: (_) async => Uri.parse(
+          'https://maps.apple.com/?ll=35.628471,139.738761&q=Shinagawa',
+        ),
+      );
+      expect(value, isNotNull);
+      expect(value!.latitude, closeTo(35.628471, 1e-9));
+      expect(value.longitude, closeTo(139.738761, 1e-9));
+    });
+
+    test('async expand resolves Shinagawa via Google @coords target', () async {
+      final value = await CoordinateValue.tryParseMapsUrlAsync(
+        'https://goo.gl/maps/shinagawaDemo',
+        expand: (_) async => Uri.parse(
+          'https://www.google.com/maps/@35.628471,139.738761,17z',
+        ),
+      );
+      expect(value!.latitude, closeTo(35.628471, 1e-9));
+      expect(value.longitude, closeTo(139.738761, 1e-9));
+    });
+
+    test('encoded commas still parse after aggressive decode', () async {
+      final sync = CoordinateValue.tryParseMapsUrl(
+        'https://www.google.com/maps/search/?api=1&query=35.681236%2C139.767125',
+      );
+      expect(sync!.decimalDegrees, '35.681236, 139.767125');
+
+      final asyncValue = await CoordinateValue.tryParseMapsUrlAsync(
+        'https://www.google.com/maps/search/?api=1&query=35.681236%2C139.767125',
+      );
+      expect(asyncValue!.decimalDegrees, '35.681236, 139.767125');
+    });
+
+    test('short link without expander fails gracefully', () async {
+      const short = 'https://maps.app.goo.gl/noExpander';
+      expect(CoordinateValue.tryParseMapsUrl(short), isNull);
+      expect(
+        await CoordinateValue.tryParseMapsUrlAsync(short),
+        isNull,
+      );
+      expect(
+        await CoordinateValue.tryParseMapsUrlAsync(
+          short,
+          expand: (_) async => Uri.parse('https://maps.apple.com/?q=Tokyo'),
+        ),
+        isNull,
+      );
+    });
+
+    test('async parse skips network when sync already succeeds', () async {
+      var expandCalled = false;
+      final value = await CoordinateValue.tryParseMapsUrlAsync(
+        'https://www.google.com/maps/@35.681236,139.767125,16z',
+        expand: (_) async {
+          expandCalled = true;
+          return Uri.parse('https://example.com');
+        },
+      );
+      expect(expandCalled, isFalse);
+      expect(value!.latitude, closeTo(35.681236, 1e-9));
+      expect(value.longitude, closeTo(139.767125, 1e-9));
+    });
+
+    test('looksLikeMapsShortShare detects goo.gl and bare Apple share', () {
+      expect(
+        CoordinateValue.looksLikeMapsShortShare(
+          'https://maps.app.goo.gl/abc',
+        ),
+        isTrue,
+      );
+      expect(
+        CoordinateValue.looksLikeMapsShortShare(
+          'https://maps.apple.com/?q=Tokyo',
+        ),
+        isTrue,
+      );
+      expect(
+        CoordinateValue.looksLikeMapsShortShare(
+          'https://www.google.com/maps/@35.681236,139.767125,16z',
+        ),
+        isFalse,
+      );
+    });
   });
+
+
+    test('builds OSM static map preview URL centered on the point', () {
+      final value = CoordinateValue.parse(
+        latitude: '35.681236',
+        longitude: '139.767125',
+      );
+      final uri = value.openStreetMapStaticPreviewUri;
+      expect(uri.host, 'staticmap.openstreetmap.de');
+      expect(uri.queryParameters['center'], '35.681236,139.767125');
+      expect(uri.queryParameters['zoom'], '16');
+    });
 
   group('CoordinateToleranceArea', () {
     const center = CoordinateValue(latitude: 35.681236, longitude: 139.767125);

@@ -43,6 +43,19 @@ Export is layered as **capture** (`captureStudioCanvas` → `ui.Image`) →
 `saveImageBytes`). `composeStudioPng` remains a capture+encode facade for
 callers that only need bytes.
 
+## Maps short links
+
+Coordinate Tool expands Google/Apple short share links (redirect follow) before
+parsing lat/lng. Tokyo Station / Shinagawa Station cases are covered in Dart tests
+with an injectable expander.
+
+## Photo Studio frames & images
+
+Photo Studio defaults to **no frame**. Users can add any number of rectangle /
+circle / triangle frames (snipping-tool style). Stamps prefer custom text input
+(emoji / kaomoji). Paste accepts Base64 text and, where the platform allows,
+clipboard image bytes / content insertion — not Base64-only.
+
 ## Photo Studio geometry
 
 Photo Studio geometry is owned by Dart (`StudioGeometry` + table-driven cases in

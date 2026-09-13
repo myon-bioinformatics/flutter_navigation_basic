@@ -140,7 +140,15 @@ void main() {
 
   testWidgets('shows error for Maps URL without coordinates', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(home: await wrapWithDisplayScope(const CoordinateToolPage())),
+      MaterialApp(
+        home: await wrapWithDisplayScope(
+          CoordinateToolPage(
+            // Apple share without coords is treated as expandable; keep this
+            // test offline by returning the same URI.
+            expandMapsShareUrl: (uri) async => uri,
+          ),
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -156,6 +164,57 @@ void main() {
       find.text('Could not find latitude/longitude in that Maps URL.'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('expands short Maps link via injected expander', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: await wrapWithDisplayScope(
+          CoordinateToolPage(
+            expandMapsShareUrl: (_) async => Uri.parse(
+              'https://www.google.com/maps/place/Tokyo+Station/'
+              '@35.680000,139.760000,17z/data=!3d35.681236!4d139.767125',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final mapsUrl = find.widgetWithText(
+      TextField,
+      'Paste Google / Apple Maps URL',
+    );
+    await tester.enterText(mapsUrl, 'https://maps.app.goo.gl/tokyoDemo');
+    await tester.tap(find.text('Use map link'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('35.681236, 139.767125'), findsOneWidget);
+  });
+
+  testWidgets('shows expand failure when short-link expander throws', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: await wrapWithDisplayScope(
+          CoordinateToolPage(
+            expandMapsShareUrl: (_) async {
+              throw StateError('network');
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final mapsUrl = find.widgetWithText(
+      TextField,
+      'Paste Google / Apple Maps URL',
+    );
+    await tester.enterText(mapsUrl, 'https://maps.app.goo.gl/failDemo');
+    await tester.tap(find.text('Use map link'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Could not expand that map short link.'), findsOneWidget);
   });
 
   testWidgets('generates manual box from center and radius', (tester) async {

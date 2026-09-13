@@ -6,6 +6,7 @@ import 'package:flutter_application_1/features/photo_studio/domain/emoji_stamp.d
 import 'package:flutter_application_1/features/photo_studio/domain/normalized_rect.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/studio_document.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/studio_export_result.dart';
+import 'package:flutter_application_1/features/photo_studio/domain/studio_frame.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/studio_frame_style.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/compose_studio_image.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/export_studio_png.dart';
@@ -39,21 +40,30 @@ bool _isPng(Uint8List bytes) {
 
 StudioDocument _doc({
   Size logicalCanvasSize = const Size(400, 280),
-  NormalizedRect rect = NormalizedRect.initial,
-  StudioFrameShape shape = StudioFrameShape.rectangle,
-  Color strokeColor = const Color(0xFF7C4DFF),
+  List<StudioFrame> frames = const [],
   List<EmojiStamp> stamps = const [],
   Uint8List? imageBytes,
   double pixelRatio = 2,
 }) =>
     StudioDocument(
       imageBytes: imageBytes,
-      rect: rect,
-      shape: shape,
-      strokeColor: strokeColor,
+      frames: frames,
       stamps: stamps,
       logicalCanvasSize: logicalCanvasSize,
       pixelRatio: pixelRatio,
+    );
+
+StudioFrame _frame({
+  String id = 'frame-a',
+  NormalizedRect rect = NormalizedRect.initial,
+  StudioFrameShape shape = StudioFrameShape.rectangle,
+  int strokeArgb = 0xFF7C4DFF,
+}) =>
+    StudioFrame(
+      studioFrameId: id,
+      rect: rect,
+      shape: shape,
+      strokeArgb: strokeArgb,
     );
 
 void main() {
@@ -61,6 +71,7 @@ void main() {
       () async {
     final image = await captureStudioCanvas(
       _doc(
+        frames: [_frame()],
         stamps: const [
           EmojiStamp(emojiStampId: 'stamp-a', emoji: '⭐', x: 0.5, y: 0.5),
         ],
@@ -74,6 +85,30 @@ void main() {
     final (w, h) = _pngSize(bytes);
     expect(w, 800);
     expect(h, 560);
+  });
+
+  test('capture draws multiple frames', () async {
+    final image = await captureStudioCanvas(
+      _doc(
+        frames: [
+          _frame(id: 'a', shape: StudioFrameShape.rectangle),
+          _frame(
+            id: 'b',
+            shape: StudioFrameShape.circle,
+            rect: const NormalizedRect(
+              left: 0.05,
+              top: 0.05,
+              right: 0.35,
+              bottom: 0.35,
+            ),
+            strokeArgb: 0xFF00AA55,
+          ),
+        ],
+      ),
+    );
+    expect(image.width, 800);
+    expect(image.height, 560);
+    image.dispose();
   });
 
   test('encodeStudioPng returns PNG and takes ownership of the image', () async {
@@ -102,8 +137,9 @@ void main() {
     final result = await exportStudioPng(
       document: _doc(
         logicalCanvasSize: const Size(200, 100),
-        shape: StudioFrameShape.circle,
-        strokeColor: const Color(0xFF00AA55),
+        frames: [
+          _frame(shape: StudioFrameShape.circle, strokeArgb: 0xFF00AA55),
+        ],
       ),
       saver: ({
         required Uint8List bytes,
@@ -165,8 +201,9 @@ void main() {
     final bytes = await composeStudioPng(
       _doc(
         logicalCanvasSize: const Size(100, 50),
-        shape: StudioFrameShape.triangle,
-        strokeColor: const Color(0xFF333333),
+        frames: [
+          _frame(shape: StudioFrameShape.triangle, strokeArgb: 0xFF333333),
+        ],
         pixelRatio: 1,
       ),
     );
