@@ -160,7 +160,7 @@ void main() {
       expect(restored.stamps.single.x, 0.2);
     });
 
-test('shared imageBytes identical across history entries', () {
+    test('shared imageBytes identical across history entries', () {
       final history = PhotoStudioHistory();
       final bytes = Uint8List.fromList(List<int>.generate(64, (i) => i));
       final withImage = _state(imageBytes: bytes);
