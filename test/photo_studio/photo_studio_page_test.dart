@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/emoji_stamp.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/normalized_rect.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/studio_document.dart';
@@ -234,6 +235,99 @@ void main() {
     await _createFrame(tester, x0: 0.55, y0: 0.55, x1: 0.9, y1: 0.9);
     expect(find.textContaining('Circle 2'), findsOneWidget);
     expect(find.textContaining('Rectangle 1'), findsOneWidget);
+  });
+
+  testWidgets('color change applies only to selected frame; delete reduces count',
+      (tester) async {
+    await _pumpPage(tester);
+
+    await _selectDraftTool(tester, 'Rectangle');
+    await _createFrame(tester, x0: 0.05, y0: 0.05, x1: 0.35, y1: 0.35);
+    await _selectDraftTool(tester, 'Circle');
+    await _createFrame(tester, x0: 0.55, y0: 0.55, x1: 0.9, y1: 0.9);
+
+    await tester.ensureVisible(find.text('Rectangle 1'));
+    await tester.tap(find.text('Rectangle 1'));
+    await tester.pump();
+
+    var canvas = tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas));
+    expect(canvas.frames, hasLength(2));
+    final firstId = canvas.frames[0].studioFrameId;
+    final secondId = canvas.frames[1].studioFrameId;
+    expect(canvas.selectedStudioFrameId, firstId);
+
+    await tester.ensureVisible(find.text('Circle 2'));
+    await tester.tap(find.text('Circle 2'));
+    await tester.pump();
+
+    final redSwatch = find.byWidgetPredicate(
+      (widget) {
+        if (widget is! Container) return false;
+        final deco = widget.decoration;
+        return deco is BoxDecoration &&
+            deco.shape == BoxShape.circle &&
+            deco.color == const Color(StudioFrameColors.red);
+      },
+      description: 'red frame color swatch',
+    );
+    await tester.ensureVisible(redSwatch);
+    await tester.tap(redSwatch);
+    await tester.pump();
+
+    canvas = tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas));
+    expect(
+      canvas.frames.firstWhere((f) => f.studioFrameId == firstId).strokeArgb,
+      StudioFrameColors.purple,
+    );
+    expect(
+      canvas.frames.firstWhere((f) => f.studioFrameId == secondId).strokeArgb,
+      StudioFrameColors.red,
+    );
+
+    await tester.ensureVisible(find.text('Delete frame'));
+    await tester.tap(find.text('Delete frame'));
+    await tester.pump();
+
+    canvas = tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas));
+    expect(canvas.frames, hasLength(1));
+    expect(canvas.frames.single.studioFrameId, firstId);
+    expect(canvas.selectedStudioFrameId, isNull);
+    expect(find.textContaining('Circle 2'), findsNothing);
+    expect(find.textContaining('Rectangle 1'), findsOneWidget);
+  });
+
+  testWidgets('paste rejects oversized data:image clipboard text', (tester) async {
+    final oversized =
+        'data:image/png;base64,${'A' * ((4 * 1024 * 1024) + 64)}';
+    final messenger =
+        tester.binding.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.getData') {
+        return <String, dynamic>{'text': oversized};
+      }
+      return null;
+    });
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+    );
+
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(
+        clipboardImageReader: () async => null,
+      ),
+    );
+
+    await tester.runAsync(() async {
+      await tester.ensureVisible(find.text('Paste photo'));
+      await tester.tap(find.text('Paste photo'));
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.textContaining('Photo loaded'), findsNothing);
+    expect(find.text('Clipboard has no photo to paste.'), findsOneWidget);
   });
 
   testWidgets('bounded undo restores draft tool then disables when empty',

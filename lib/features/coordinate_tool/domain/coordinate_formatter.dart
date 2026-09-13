@@ -62,10 +62,19 @@ class CoordinateValue {
     }
 
     final uri = Uri.tryParse(raw.contains('://') ? raw : 'https://$raw');
-    if (uri == null || uri.host.isEmpty) return null;
+    if (uri == null ||
+        uri.host.isEmpty ||
+        !_isHttpOrHttpsScheme(uri.scheme)) {
+      return null;
+    }
 
     final expanded = await expand(uri);
     return tryParseMapsUrl(expanded.toString());
+  }
+
+  static bool _isHttpOrHttpsScheme(String scheme) {
+    final normalized = scheme.toLowerCase();
+    return normalized == 'http' || normalized == 'https';
   }
 
   /// Whether [input] looks like a Maps short / share link that may need
@@ -76,7 +85,11 @@ class CoordinateValue {
     final uri = Uri.tryParse(
       trimmed.contains('://') ? trimmed : 'https://$trimmed',
     );
-    if (uri == null || uri.host.isEmpty) return false;
+    if (uri == null ||
+        uri.host.isEmpty ||
+        !_isHttpOrHttpsScheme(uri.scheme)) {
+      return false;
+    }
     final host = uri.host.toLowerCase();
     if (host == 'maps.app.goo.gl' ||
         host == 'goo.gl' ||

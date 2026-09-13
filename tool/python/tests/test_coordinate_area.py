@@ -10,6 +10,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+import pytest
+
 FIXTURE_PATH = Path(__file__).resolve().parents[1] / "fixtures" / "coordinate_area_cases.json"
 
 REQUIRED_KEYS = {
@@ -52,6 +54,7 @@ def test_case_ids_unique_and_non_empty() -> None:
 
 def test_cases_have_required_keys_and_types() -> None:
     for case in _load_payload()["cases"]:
+        assert isinstance(case, dict)
         assert REQUIRED_KEYS.issubset(case.keys())
         assert isinstance(case["coordinateAreaCaseId"], str)
         assert isinstance(case["latitude"], (int, float))
@@ -62,3 +65,17 @@ def test_cases_have_required_keys_and_types() -> None:
         assert isinstance(case["expect_antimeridian"], bool)
         assert isinstance(case["expect_full_longitude"], bool)
         assert isinstance(case["expect_apple_spn"], bool)
+
+
+def test_cases_have_required_keys_rejects_non_dict(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Malformed cases must fail on isinstance, not AttributeError from .keys()."""
+
+    def _malformed_payload() -> dict[str, Any]:
+        return {
+            "schema_version": 1,
+            "cases": ["not-a-dict"],
+        }
+
+    monkeypatch.setattr(f"{__name__}._load_payload", _malformed_payload)
+    with pytest.raises(AssertionError):
+        test_cases_have_required_keys_and_types()

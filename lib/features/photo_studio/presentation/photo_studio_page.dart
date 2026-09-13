@@ -175,6 +175,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     if (text.isNotEmpty) {
       final imageCandidate =
           text.startsWith('data:image/') || _looksLikeRawBase64(text);
+      // Oversized data:image / base64 text must not bypass the size cap.
       if (imageCandidate && text.length <= _maxImageClipboardChars) {
         try {
           final payload = Base64ImageBridge.decodeText(text);
@@ -182,14 +183,6 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
           return;
         } catch (_) {
           // Fall through to binary clipboard / clear error.
-        }
-      } else if (text.startsWith('data:image/') || text.length > 80) {
-        try {
-          final payload = Base64ImageBridge.decodeText(text);
-          await _setImage(payload.bytes);
-          return;
-        } catch (_) {
-          // Fall through.
         }
       }
     }

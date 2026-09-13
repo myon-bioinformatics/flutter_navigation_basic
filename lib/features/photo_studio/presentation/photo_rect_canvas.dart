@@ -9,6 +9,11 @@ import '../domain/normalized_rect.dart';
 import '../domain/studio_frame.dart';
 import '../domain/studio_frame_style.dart';
 
+int _nextStudioObjectId = 0;
+
+/// Monotonic frame/stamp ids (safe under dart2js ms-precision clocks).
+String newStudioObjectId(String prefix) => '$prefix-${_nextStudioObjectId++}';
+
 /// Local image canvas with zero-or-more normalized frames.
 ///
 /// Frame / stamp state is owned by the parent. When [draftShape] is non-null,
@@ -75,6 +80,8 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
   String? _creatingStudioFrameId;
   StudioFrame? _liveCreateFrame;
   String? _draggingEmojiStampId;
+  /// Frame targeted by the active move/resize gesture (may lead parent selection).
+  String? _editingStudioFrameId;
   bool _editStartNotified = false;
   Size? _lastReportedSize;
 
@@ -189,7 +196,7 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
     _placedEmojiForPointer = true;
     final nx = (local.dx / size.width).clamp(0.0, 1.0);
     final ny = (local.dy / size.height).clamp(0.0, 1.0);
-    final emojiStampId = 'stamp-${DateTime.now().microsecondsSinceEpoch}';
+    final emojiStampId = newStudioObjectId('stamp');
     final next = <EmojiStamp>[
       ...widget.stamps,
       EmojiStamp(
@@ -266,20 +273,7 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
       return;
     }
 
-    final selected = _frameById(widget.selectedStudioFrameId);
-    if (selected != null) {
-      final handle = _hitTestHandles(details.localPosition, size, selected.rect);
-      if (handle != null) {
-        _notifyEditStart();
-        _createOrigin = null;
-        _creatingStudioFrameId = null;
-        _liveCreateFrame = null;
-        _activeHandle = handle;
-        _lastLocal = details.localPosition;
-        return;
-      }
-    }
-
+    // Prefer topmost frame body over a buried selected-frame handle.
     final hitFrame = _hitFrameBody(details.localPosition, size);
     if (hitFrame != null) {
       _notifyEditStart();
@@ -290,9 +284,26 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
       _createOrigin = null;
       _creatingStudioFrameId = null;
       _liveCreateFrame = null;
+      _editingStudioFrameId = hitFrame.studioFrameId;
       _activeHandle = handle;
       _lastLocal = details.localPosition;
       return;
+    }
+
+    // Handle hit outside any frame body (slop past edges) — selected only.
+    final selected = _frameById(widget.selectedStudioFrameId);
+    if (selected != null) {
+      final handle = _hitTestHandles(details.localPosition, size, selected.rect);
+      if (handle != null) {
+        _notifyEditStart();
+        _createOrigin = null;
+        _creatingStudioFrameId = null;
+        _liveCreateFrame = null;
+        _editingStudioFrameId = selected.studioFrameId;
+        _activeHandle = handle;
+        _lastLocal = details.localPosition;
+        return;
+      }
     }
 
     final draftShape = widget.draftShape;
@@ -302,7 +313,7 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
       final ny = (details.localPosition.dy / size.height).clamp(0.0, 1.0);
       _createOrigin = Offset(nx, ny);
       _activeHandle = null;
-      final studioFrameId = 'frame-${DateTime.now().microsecondsSinceEpoch}';
+      final studioFrameId = newStudioObjectId('frame');
       _creatingStudioFrameId = studioFrameId;
       final created = StudioFrame(
         studioFrameId: studioFrameId,
@@ -380,14 +391,17 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
 
     final handle = _activeHandle;
     final last = _lastLocal;
-    final selected = _frameById(widget.selectedStudioFrameId);
-    if (handle == null || last == null || selected == null) return;
+    // Prefer gesture-local id so pan updates work before parent rebuilds
+    // after a topmost-frame selection change in onPanStart.
+    final editing = _frameById(_editingStudioFrameId) ??
+        _frameById(widget.selectedStudioFrameId);
+    if (handle == null || last == null || editing == null) return;
     final dx = (details.localPosition.dx - last.dx) / size.width;
     final dy = (details.localPosition.dy - last.dy) / size.height;
     _lastLocal = details.localPosition;
     _replaceFrame(
-      selected.copyWith(
-        rect: selected.rect.resized(handle: handle, dx: dx, dy: dy),
+      editing.copyWith(
+        rect: editing.rect.resized(handle: handle, dx: dx, dy: dy),
       ),
     );
   }
@@ -407,6 +421,7 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
     _createOrigin = null;
     _creatingStudioFrameId = null;
     _liveCreateFrame = null;
+    _editingStudioFrameId = null;
     _activeHandle = null;
     _draggingEmojiStampId = null;
     _lastLocal = null;

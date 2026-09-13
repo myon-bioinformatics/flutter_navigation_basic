@@ -129,6 +129,42 @@ void main() {
     expect(h, 4);
   });
 
+  test('uint8ListFromByteData respects non-zero ByteData offset', () {
+    final pngRange = Uint8List.fromList(<int>[
+      0x89,
+      0x50,
+      0x4E,
+      0x47,
+      0x0D,
+      0x0A,
+      0x1A,
+      0x0A,
+      0x00,
+      0x00,
+      0x00,
+      0x0D,
+    ]);
+    final larger = Uint8List(pngRange.length + 16);
+    larger.setRange(0, 8, List<int>.filled(8, 0xAA));
+    larger.setRange(8, 8 + pngRange.length, pngRange);
+    larger.setRange(
+      8 + pngRange.length,
+      larger.length,
+      List<int>.filled(8, 0xBB),
+    );
+
+    final view = ByteData.sublistView(larger, 8, 8 + pngRange.length);
+    expect(view.offsetInBytes, 8);
+    expect(view.lengthInBytes, pngRange.length);
+
+    final sliced = uint8ListFromByteData(view);
+    expect(sliced, orderedEquals(pngRange));
+    expect(sliced.length, pngRange.length);
+    // Bare buffer.asUint8List() would include the 0xAA prefix.
+    expect(sliced[0], 0x89);
+    expect(sliced, isNot(orderedEquals(larger)));
+  });
+
   test('exportStudioPng returns StudioExportResult with PNG metadata', () async {
     String? savedName;
     String? savedMime;

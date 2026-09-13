@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -128,7 +130,7 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
       final value = await CoordinateValue.tryParseMapsUrlAsync(
         raw,
         expand: widget.expandMapsShareUrl ?? expandMapsShareUrl,
-      );
+      ).timeout(const Duration(seconds: 12));
       if (!mounted) return;
       if (value == null) {
         setState(() {
@@ -141,6 +143,12 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
       _longitude.text = value.longitude.toStringAsFixed(6);
       setState(() => _mapsUrlBusy = false);
       _convert();
+    } on TimeoutException {
+      if (!mounted) return;
+      setState(() {
+        _mapsUrlBusy = false;
+        _error = display.text('coordinate.mapsUrlExpandFailed');
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() {

@@ -273,4 +273,89 @@ void main() {
     expect(frames.single.rect, isNot(before));
     expect(frames.single.rect.left, greaterThan(before.left));
   });
+
+  test('newStudioObjectId allocates distinct ids rapidly', () {
+    final a = newStudioObjectId('frame');
+    final b = newStudioObjectId('frame');
+    final c = newStudioObjectId('stamp');
+    expect(a, isNot(b));
+    expect(b, isNot(c));
+    expect(a, startsWith('frame-'));
+    expect(c, startsWith('stamp-'));
+  });
+
+  testWidgets('overlapping frames prefer topmost body over buried handles',
+      (tester) async {
+    // Bottom frame selected; its top-left handle overlaps the top frame body.
+    var frames = <StudioFrame>[
+      const StudioFrame(
+        studioFrameId: 'bottom',
+        rect: NormalizedRect(left: 0.2, top: 0.2, right: 0.8, bottom: 0.8),
+        shape: StudioFrameShape.rectangle,
+        strokeArgb: StudioFrameColors.purple,
+      ),
+      const StudioFrame(
+        studioFrameId: 'top',
+        rect: NormalizedRect(left: 0.15, top: 0.15, right: 0.45, bottom: 0.45),
+        shape: StudioFrameShape.rectangle,
+        strokeArgb: StudioFrameColors.red,
+      ),
+    ];
+    String? selectedId = 'bottom';
+
+    await tester.binding.setSurfaceSize(const Size(400, 400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) {
+              return PhotoRectCanvas(
+                frames: frames,
+                selectedStudioFrameId: selectedId,
+                draftShape: null,
+                height: 300,
+                onFramesChanged: (next) {
+                  setState(() => frames = next);
+                },
+                onSelectedStudioFrameIdChanged: (id) {
+                  setState(() => selectedId = id);
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final box = tester.getRect(find.byType(PhotoRectCanvas));
+    // Point inside top frame body, near bottom frame's top-left corner handle.
+    final start = Offset(
+      box.left + box.width * 0.22,
+      box.top + box.height * 0.22,
+    );
+    final mid = Offset(start.dx + box.width * 0.06, start.dy + box.height * 0.06);
+    final end = Offset(start.dx + box.width * 0.12, start.dy + box.height * 0.12);
+    final gesture = await tester.startGesture(start);
+    await tester.pump();
+    await gesture.moveTo(mid);
+    await tester.pump(); // allow selectedStudioFrameId rebuild after panStart
+    await gesture.moveTo(end);
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+
+    expect(selectedId, 'top');
+    final top = frames.firstWhere((f) => f.studioFrameId == 'top');
+    final bottom = frames.firstWhere((f) => f.studioFrameId == 'bottom');
+    // Buried selected-frame handle must not steal the gesture.
+    expect(
+      bottom.rect,
+      const NormalizedRect(left: 0.2, top: 0.2, right: 0.8, bottom: 0.8),
+    );
+    expect(top.rect.left, greaterThan(0.15));
+    expect(top.rect.top, greaterThan(0.15));
+  });
 }

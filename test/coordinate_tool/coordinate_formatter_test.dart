@@ -258,6 +258,18 @@ void main() {
         ),
         isFalse,
       );
+      expect(
+        CoordinateValue.looksLikeMapsShortShare(
+          'ftp://maps.app.goo.gl/abc',
+        ),
+        isFalse,
+      );
+      expect(
+        CoordinateValue.looksLikeMapsShortShare(
+          'file://maps.app.goo.gl/abc',
+        ),
+        isFalse,
+      );
     });
   });
 

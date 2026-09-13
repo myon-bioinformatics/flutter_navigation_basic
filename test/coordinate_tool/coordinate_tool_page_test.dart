@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/coordinate_tool/domain/coordinate_formatter.dart';
 import 'package:flutter_application_1/features/coordinate_tool/presentation/coordinate_tool_page.dart';
@@ -215,6 +217,45 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Could not expand that map short link.'), findsOneWidget);
+  });
+
+  testWidgets('expand timeout clears busy and shows expand failure', (tester) async {
+    final never = Completer<Uri>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: await wrapWithDisplayScope(
+          CoordinateToolPage(
+            expandMapsShareUrl: (_) => never.future,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final mapsUrl = find.widgetWithText(
+      TextField,
+      'Paste Google / Apple Maps URL',
+    );
+    await tester.enterText(mapsUrl, 'https://maps.app.goo.gl/hangDemo');
+    await tester.tap(find.text('Use map link'));
+    await tester.pump();
+
+    final useLink = find.widgetWithText(OutlinedButton, 'Use map link');
+    expect(
+      tester.widget<OutlinedButton>(useLink).onPressed,
+      isNull,
+      reason: 'button stays disabled while expand is in flight',
+    );
+
+    await tester.pump(const Duration(seconds: 12));
+    await tester.pump();
+
+    expect(find.text('Could not expand that map short link.'), findsOneWidget);
+    expect(
+      tester.widget<OutlinedButton>(useLink).onPressed,
+      isNotNull,
+      reason: 'busy must clear after page-level timeout',
+    );
   });
 
   testWidgets('generates manual box from center and radius', (tester) async {
