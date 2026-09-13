@@ -63,8 +63,8 @@ Instruction ownership:
 - Avoid large refactors that are not required to complete the task.
 - Do not add dependencies unless the task cannot be completed with current packages.
   Exception: allowlisted pip deps may live only in `tool/python/requirements.txt`
-  for dev/test Python oracles (pytest / pydantic). Do not add root-level
-  `requirements.txt` files.
+  for dev/test Python tooling (pytest only; no pydantic). Do not add root-level
+  `requirements.txt` files. Formula oracles for app math live in Dart tests.
 - For scripts/tests that need no compile step, prefer each language's **standard
   library** (Dart toolkit, Python stdlib, optional Deno one-file scripts) over
   new environment-heavy toolchains.

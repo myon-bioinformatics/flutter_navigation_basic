@@ -6,8 +6,8 @@ import 'package:flutter_application_1/features/photo_studio/domain/studio_frame_
 import 'package:flutter_application_1/features/photo_studio/domain/studio_geometry.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Shared with `tool/python/tests/test_photo_studio_geometry.py`.
-/// Dart is the primary CI assertion; Python remains an optional cross-check.
+/// Shared golden vectors under `tool/python/fixtures/` (Dart is the source of
+/// truth; no Python geometry oracle recomputes these formulas).
 const _fixturePath =
     'tool/python/fixtures/photo_studio_geometry_cases.json';
 

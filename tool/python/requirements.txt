@@ -1,4 +1,4 @@
-# Dev/test Python dependencies for repository oracles and light calculation checks.
+# Dev/test Python dependencies for repository tooling and light structural checks.
 # Runtime Flutter code must not depend on these packages.
+# Formula assertions live in Dart tests; keep this allowlist minimal (pytest only).
 pytest==8.4.2
-pydantic==2.11.7

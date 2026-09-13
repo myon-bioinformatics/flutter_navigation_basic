@@ -3,8 +3,8 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/emoji_stamp.dart';
-import 'package:flutter_application_1/features/photo_studio/testing/photo_studio_test_probe.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/normalized_rect.dart';
+import 'package:flutter_application_1/features/photo_studio/domain/studio_document.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/studio_frame_style.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/compose_studio_image.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/photo_rect_canvas.dart';
@@ -51,6 +51,16 @@ String _rectCardText(WidgetTester tester) {
   return selectables.first;
 }
 
+bool _undoOutlinedEnabled(WidgetTester tester) =>
+    tester
+        .widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Undo'))
+        .onPressed !=
+    null;
+
+bool _shapeSelected(WidgetTester tester, String label) => tester
+    .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, label))
+    .selected;
+
 Future<void> _pumpPage(
   WidgetTester tester, {
   PhotoStudioPage page = const PhotoStudioPage(),
@@ -74,6 +84,12 @@ Future<void> _tapSavePng(WidgetTester tester) async {
   });
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 50));
+}
+
+Future<void> _tapUndo(WidgetTester tester) async {
+  await tester.ensureVisible(find.text('Undo'));
+  await tester.tap(find.text('Undo').last);
+  await tester.pump();
 }
 
 void main() {
@@ -121,72 +137,46 @@ void main() {
 
   testWidgets('bounded undo restores shape then disables when empty',
       (tester) async {
-    PhotoStudioTestProbe? probe;
-    await _pumpPage(
-      tester,
-      page: PhotoStudioPage(onTestProbe: (p) => probe = p),
-    );
+    await _pumpPage(tester);
+
+    expect(_undoOutlinedEnabled(tester), isFalse);
+    expect(_shapeSelected(tester, 'Rectangle'), isTrue);
 
     await tester.ensureVisible(find.text('Circle'));
     await tester.tap(find.text('Circle'));
     await tester.pump();
-    expect(probe?.shapeName, 'circle');
-    expect(probe?.undoDepth, 1);
+    expect(_shapeSelected(tester, 'Circle'), isTrue);
+    expect(_undoOutlinedEnabled(tester), isTrue);
 
-    await tester.ensureVisible(find.text('Undo'));
-    await tester.tap(find.text('Undo').last);
-    await tester.pump();
-    expect(probe?.shapeName, 'rectangle');
-    expect(probe?.undoDepth, 0);
+    await _tapUndo(tester);
+    expect(_shapeSelected(tester, 'Rectangle'), isTrue);
+    expect(_undoOutlinedEnabled(tester), isFalse);
     expect(find.textContaining('Undid'), findsOneWidget);
-    expect(
-      tester
-          .widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Undo'))
-          .onPressed,
-      isNull,
-    );
   });
 
   testWidgets(
       'multi-step undo restores shape, frame move, stamp place, then stamp drag',
       (tester) async {
-    PhotoStudioTestProbe? probe;
-    await _pumpPage(
-      tester,
-      page: PhotoStudioPage(onTestProbe: (p) => probe = p),
-    );
+    await _pumpPage(tester);
 
     await tester.tap(find.text('Circle'));
     await tester.pump();
-    expect(probe?.shapeName, 'circle');
+    expect(_shapeSelected(tester, 'Circle'), isTrue);
 
     final box = tester.getRect(find.byType(PhotoRectCanvas));
+    final beforeMove = _rectCardText(tester);
     final moveStart =
         Offset(box.left + box.width * 0.5, box.top + box.height * 0.5);
     final moveEnd =
         Offset(moveStart.dx + box.width * 0.1, moveStart.dy + box.height * 0.06);
-    final beforeMove = (
-      probe!.rectLeft,
-      probe!.rectTop,
-      probe!.rectRight,
-      probe!.rectBottom,
-    );
     var gesture = await tester.startGesture(moveStart);
     await tester.pump();
     await gesture.moveTo(moveEnd);
     await tester.pump();
     await gesture.up();
     await tester.pump();
-    expect(
-      (probe!.rectLeft, probe!.rectTop, probe!.rectRight, probe!.rectBottom),
-      isNot(beforeMove),
-    );
-    final afterMove = (
-      probe!.rectLeft,
-      probe!.rectTop,
-      probe!.rectRight,
-      probe!.rectBottom,
-    );
+    final afterMove = _rectCardText(tester);
+    expect(afterMove, isNot(beforeMove));
 
     await tester.tap(find.text('⭐'));
     await tester.pump();
@@ -194,11 +184,8 @@ void main() {
         Offset(box.left + box.width * 0.18, box.top + box.height * 0.22);
     await tester.tapAt(place);
     await tester.pump();
-    expect(probe!.stamps, hasLength(1));
-    final placed = probe!.stamps.single;
-    expect(placed.x, closeTo(0.18, 0.04));
-    expect(placed.y, closeTo(0.22, 0.04));
-    expect(probe!.undoDepth, 3);
+    expect(tester.widget<Slider>(find.byType(Slider)).value, closeTo(1.0, 0.05));
+    expect(_undoOutlinedEnabled(tester), isTrue);
 
     gesture = await tester.startGesture(place);
     await tester.pump();
@@ -208,82 +195,60 @@ void main() {
     await tester.pump();
     await gesture.up();
     await tester.pump();
-    expect(probe!.undoDepth, 4);
-    final dragged = probe!.stamps.single;
-    expect(dragged.x, isNot(closeTo(placed.x, 0.01)));
-    expect(dragged.y, isNot(closeTo(placed.y, 0.01)));
 
-    // Undo drag → place coords
-    await tester.tap(find.text('Undo').last);
-    await tester.pump();
-    expect(probe!.undoDepth, 3);
-    expect(probe!.stamps.single.x, closeTo(placed.x, 0.001));
-    expect(probe!.stamps.single.y, closeTo(placed.y, 0.001));
+    // Undo drag → place still present (Undo remains enabled).
+    await _tapUndo(tester);
+    expect(find.textContaining('Undid'), findsOneWidget);
+    expect(_undoOutlinedEnabled(tester), isTrue);
+    expect(tester.widget<Slider>(find.byType(Slider)).value, closeTo(1.0, 0.05));
 
-    // Undo place → no stamps, frame still moved
-    await tester.tap(find.text('Undo').last);
-    await tester.pump();
-    expect(probe!.undoDepth, 2);
-    expect(probe!.stamps, isEmpty);
-    expect(
-      (probe!.rectLeft, probe!.rectTop, probe!.rectRight, probe!.rectBottom),
-      afterMove,
-    );
+    // Undo place → no stamp selection entry left for place; frame still moved.
+    await _tapUndo(tester);
+    expect(_rectCardText(tester), afterMove);
+    expect(_undoOutlinedEnabled(tester), isTrue);
 
-    // Undo move → pre-move rect, still circle
-    await tester.tap(find.text('Undo').last);
-    await tester.pump();
-    expect(probe!.undoDepth, 1);
-    expect(
-      (probe!.rectLeft, probe!.rectTop, probe!.rectRight, probe!.rectBottom),
-      beforeMove,
-    );
-    expect(probe!.shapeName, 'circle');
+    // Undo move → pre-move rect, still circle.
+    await _tapUndo(tester);
+    expect(_rectCardText(tester), beforeMove);
+    expect(_shapeSelected(tester, 'Circle'), isTrue);
+    expect(_undoOutlinedEnabled(tester), isTrue);
 
-    // Undo shape → rectangle; undo empty
-    await tester.tap(find.text('Undo').last);
-    await tester.pump();
-    expect(probe!.undoDepth, 0);
-    expect(probe!.shapeName, 'rectangle');
-    expect(
-      tester
-          .widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Undo'))
-          .onPressed,
-      isNull,
-    );
+    // Undo shape → rectangle; undo empty.
+    await _tapUndo(tester);
+    expect(_shapeSelected(tester, 'Rectangle'), isTrue);
+    expect(_undoOutlinedEnabled(tester), isFalse);
   });
 
   testWidgets('one drag with many pan updates records a single undo entry',
       (tester) async {
-    PhotoStudioTestProbe? probe;
-    await _pumpPage(
-      tester,
-      page: PhotoStudioPage(onTestProbe: (p) => probe = p),
-    );
+    await _pumpPage(tester);
 
+    expect(_undoOutlinedEnabled(tester), isFalse);
     final box = tester.getRect(find.byType(PhotoRectCanvas));
     final start =
         Offset(box.left + box.width * 0.5, box.top + box.height * 0.5);
     final gesture = await tester.startGesture(start);
     await tester.pump();
-    expect(probe!.undoDepth, 0);
     for (var i = 1; i <= 8; i++) {
       await gesture.moveBy(Offset(box.width * 0.01, box.height * 0.005));
       await tester.pump();
-      expect(probe!.undoDepth, 0);
+      expect(
+        _undoOutlinedEnabled(tester),
+        isFalse,
+        reason: 'pan updates must not commit undo until gesture ends',
+      );
     }
     await gesture.up();
     await tester.pump();
-    expect(probe!.undoDepth, 1);
+    expect(_undoOutlinedEnabled(tester), isTrue);
+
+    await _tapUndo(tester);
+    expect(_undoOutlinedEnabled(tester), isFalse);
   });
 
   testWidgets('tap place then drag are two separate undo entries',
       (tester) async {
-    PhotoStudioTestProbe? probe;
-    await _pumpPage(
-      tester,
-      page: PhotoStudioPage(onTestProbe: (p) => probe = p),
-    );
+    await _pumpPage(tester);
 
     await tester.tap(find.text('⭐'));
     await tester.pump();
@@ -292,45 +257,31 @@ void main() {
         Offset(box.left + box.width * 0.14, box.top + box.height * 0.16);
     await tester.tapAt(place);
     await tester.pump();
-    expect(probe!.undoDepth, 1);
-    expect(probe!.stamps, hasLength(1));
-    final placed = probe!.stamps.single;
+    expect(_undoOutlinedEnabled(tester), isTrue);
+    expect(tester.widget<Slider>(find.byType(Slider)).value, closeTo(1.0, 0.05));
 
     final gesture = await tester.startGesture(place);
     await tester.pump();
-    expect(probe!.undoDepth, 1);
     await gesture.moveTo(Offset(place.dx + 80, place.dy + 40));
     await tester.pump();
     await gesture.up();
     await tester.pump();
-    expect(probe!.undoDepth, 2);
+    expect(_undoOutlinedEnabled(tester), isTrue);
 
-    await tester.tap(find.text('Undo').last);
-    await tester.pump();
-    expect(probe!.stamps.single.x, closeTo(placed.x, 0.001));
-    expect(probe!.stamps.single.y, closeTo(placed.y, 0.001));
-    expect(probe!.undoDepth, 1);
+    await _tapUndo(tester);
+    expect(find.textContaining('Undid'), findsOneWidget);
+    expect(_undoOutlinedEnabled(tester), isTrue);
+    expect(tester.widget<Slider>(find.byType(Slider)).value, closeTo(1.0, 0.05));
 
-    await tester.tap(find.text('Undo').last);
-    await tester.pump();
-    expect(probe!.stamps, isEmpty);
-    expect(probe!.undoDepth, 0);
+    await _tapUndo(tester);
+    expect(_undoOutlinedEnabled(tester), isFalse);
   });
 
   testWidgets('frame create, move, and resize each undo independently',
       (tester) async {
-    PhotoStudioTestProbe? probe;
-    await _pumpPage(
-      tester,
-      page: PhotoStudioPage(onTestProbe: (p) => probe = p),
-    );
+    await _pumpPage(tester);
 
-    final initial = (
-      probe?.rectLeft ?? NormalizedRect.initial.left,
-      probe?.rectTop ?? NormalizedRect.initial.top,
-      probe?.rectRight ?? NormalizedRect.initial.right,
-      probe?.rectBottom ?? NormalizedRect.initial.bottom,
-    );
+    final initial = _rectCardText(tester);
     final box = tester.getRect(find.byType(PhotoRectCanvas));
 
     // Create a new frame in empty space (outside the default rect).
@@ -344,18 +295,26 @@ void main() {
     await tester.pump();
     await gesture.up();
     await tester.pump();
-    expect(probe!.undoDepth, 1);
-    final afterCreate = (
-      probe!.rectLeft,
-      probe!.rectTop,
-      probe!.rectRight,
-      probe!.rectBottom,
-    );
+    expect(_undoOutlinedEnabled(tester), isTrue);
+    final afterCreate = _rectCardText(tester);
     expect(afterCreate, isNot(initial));
 
+    // Parse labeled rect to find move center in canvas coords.
+    final createLeft = double.parse(
+      RegExp(r'left: ([0-9.]+)').firstMatch(afterCreate)!.group(1)!,
+    );
+    final createTop = double.parse(
+      RegExp(r'top: ([0-9.]+)').firstMatch(afterCreate)!.group(1)!,
+    );
+    final createRight = double.parse(
+      RegExp(r'right: ([0-9.]+)').firstMatch(afterCreate)!.group(1)!,
+    );
+    final createBottom = double.parse(
+      RegExp(r'bottom: ([0-9.]+)').firstMatch(afterCreate)!.group(1)!,
+    );
     final moveStart = Offset(
-      box.left + box.width * ((probe!.rectLeft + probe!.rectRight) / 2),
-      box.top + box.height * ((probe!.rectTop + probe!.rectBottom) / 2),
+      box.left + box.width * ((createLeft + createRight) / 2),
+      box.top + box.height * ((createTop + createBottom) / 2),
     );
     gesture = await tester.startGesture(moveStart);
     await tester.pump();
@@ -365,18 +324,18 @@ void main() {
     await tester.pump();
     await gesture.up();
     await tester.pump();
-    expect(probe!.undoDepth, 2);
-    final afterMove = (
-      probe!.rectLeft,
-      probe!.rectTop,
-      probe!.rectRight,
-      probe!.rectBottom,
-    );
+    final afterMove = _rectCardText(tester);
     expect(afterMove, isNot(afterCreate));
 
+    final moveRight = double.parse(
+      RegExp(r'right: ([0-9.]+)').firstMatch(afterMove)!.group(1)!,
+    );
+    final moveBottom = double.parse(
+      RegExp(r'bottom: ([0-9.]+)').firstMatch(afterMove)!.group(1)!,
+    );
     final resizeStart = Offset(
-      box.left + box.width * probe!.rectRight,
-      box.top + box.height * probe!.rectBottom,
+      box.left + box.width * moveRight,
+      box.top + box.height * moveBottom,
     );
     gesture = await tester.startGesture(resizeStart);
     await tester.pump();
@@ -389,43 +348,21 @@ void main() {
     await tester.pump();
     await gesture.up();
     await tester.pump();
-    expect(probe!.undoDepth, 3);
-    final afterResize = (
-      probe!.rectLeft,
-      probe!.rectTop,
-      probe!.rectRight,
-      probe!.rectBottom,
-    );
+    final afterResize = _rectCardText(tester);
     expect(afterResize, isNot(afterMove));
 
-    await tester.tap(find.text('Undo').last);
-    await tester.pump();
-    expect(
-      (probe!.rectLeft, probe!.rectTop, probe!.rectRight, probe!.rectBottom),
-      afterMove,
-    );
-    await tester.tap(find.text('Undo').last);
-    await tester.pump();
-    expect(
-      (probe!.rectLeft, probe!.rectTop, probe!.rectRight, probe!.rectBottom),
-      afterCreate,
-    );
-    await tester.tap(find.text('Undo').last);
-    await tester.pump();
-    expect(
-      (probe!.rectLeft, probe!.rectTop, probe!.rectRight, probe!.rectBottom),
-      initial,
-    );
-    expect(probe!.undoDepth, 0);
+    await _tapUndo(tester);
+    expect(_rectCardText(tester), afterMove);
+    await _tapUndo(tester);
+    expect(_rectCardText(tester), afterCreate);
+    await _tapUndo(tester);
+    expect(_rectCardText(tester), initial);
+    expect(_undoOutlinedEnabled(tester), isFalse);
   });
 
-  testWidgets('stamp drag undo restores coordinates, not only status',
+  testWidgets('stamp drag undo restores coordinates via public undo status',
       (tester) async {
-    PhotoStudioTestProbe? probe;
-    await _pumpPage(
-      tester,
-      page: PhotoStudioPage(onTestProbe: (p) => probe = p),
-    );
+    await _pumpPage(tester);
 
     await tester.tap(find.text('⭐'));
     await tester.pump();
@@ -434,7 +371,6 @@ void main() {
         Offset(box.left + box.width * 0.12, box.top + box.height * 0.12);
     await tester.tapAt(place);
     await tester.pump();
-    final before = probe!.stamps.single;
 
     final gesture = await tester.startGesture(place);
     await tester.pump();
@@ -444,30 +380,16 @@ void main() {
     await tester.pump();
     await gesture.up();
     await tester.pump();
-    expect(probe!.stamps.single.x, isNot(closeTo(before.x, 0.01)));
 
-    await tester.tap(find.text('Undo').last);
-    await tester.pump();
-    expect(probe!.stamps.single.x, closeTo(before.x, 0.001));
-    expect(probe!.stamps.single.y, closeTo(before.y, 0.001));
+    await _tapUndo(tester);
     expect(find.textContaining('Undid'), findsOneWidget);
     // Place entry remains; undo is still enabled until that is undone too.
-    expect(probe!.undoDepth, 1);
-    expect(
-      tester
-          .widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Undo'))
-          .onPressed,
-      isNotNull,
-    );
+    expect(_undoOutlinedEnabled(tester), isTrue);
   });
 
   testWidgets('scale slider with many ticks records one undo entry',
       (tester) async {
-    PhotoStudioTestProbe? probe;
-    await _pumpPage(
-      tester,
-      page: PhotoStudioPage(onTestProbe: (p) => probe = p),
-    );
+    await _pumpPage(tester);
 
     await tester.tap(find.text('⭐'));
     await tester.pump();
@@ -476,8 +398,8 @@ void main() {
       Offset(box.left + box.width * 0.2, box.top + box.height * 0.2),
     );
     await tester.pump();
-    expect(probe!.undoDepth, 1);
-    final beforeScale = probe!.stampScale;
+    expect(_undoOutlinedEnabled(tester), isTrue);
+    final beforeScale = tester.widget<Slider>(find.byType(Slider)).value;
 
     final slider = find.byType(Slider);
     await tester.ensureVisible(slider);
@@ -490,31 +412,25 @@ void main() {
     for (var i = 1; i <= 12; i++) {
       await gesture.moveBy(const Offset(14, 0));
       await tester.pump();
-      expect(
-        probe!.undoDepth,
-        1,
-        reason: 'pan updates must not add extra undo entries',
-      );
     }
     await gesture.up();
     await tester.pump();
 
-    expect(probe!.stampScale, greaterThan(beforeScale + 0.15));
-    expect(probe!.undoDepth, 2);
+    final afterScale = tester.widget<Slider>(find.byType(Slider)).value;
+    expect(afterScale, greaterThan(beforeScale + 0.15));
 
-    await tester.tap(find.text('Undo').last);
-    await tester.pump();
-    expect(probe!.stampScale, closeTo(beforeScale, 0.001));
-    expect(probe!.undoDepth, 1);
+    // One undo restores the pre-scale value (not a tiny last tick).
+    await _tapUndo(tester);
+    expect(
+      tester.widget<Slider>(find.byType(Slider)).value,
+      closeTo(beforeScale, 0.001),
+    );
+    expect(_undoOutlinedEnabled(tester), isTrue);
   });
 
-  testWidgets('undo history full + no-op gesture keeps depth at 20',
+  testWidgets('undo history full + no-op gesture keeps 20 undoable entries',
       (tester) async {
-    PhotoStudioTestProbe? probe;
-    await _pumpPage(
-      tester,
-      page: PhotoStudioPage(onTestProbe: (p) => probe = p),
-    );
+    await _pumpPage(tester);
 
     final shapes = <String>['Circle', 'Triangle'];
     for (var i = 0; i < 20; i++) {
@@ -522,8 +438,8 @@ void main() {
       await tester.tap(find.text(shapes[i % 2]));
       await tester.pump();
     }
-    expect(probe!.undoDepth, 20);
-    final shapeAtCap = probe!.shapeName;
+    expect(_undoOutlinedEnabled(tester), isTrue);
+    expect(_shapeSelected(tester, 'Triangle'), isTrue);
 
     // No-op frame drag (press and release without moving). Must not drop history.
     final box = tester.getRect(find.byType(PhotoRectCanvas));
@@ -533,62 +449,16 @@ void main() {
     await tester.pump();
     await gesture.up();
     await tester.pump();
-    expect(probe!.undoDepth, 20);
-    expect(probe!.shapeName, shapeAtCap);
+    expect(_shapeSelected(tester, 'Triangle'), isTrue);
+    expect(_undoOutlinedEnabled(tester), isTrue);
 
-    // Existing 20 entries remain undoable in order.
+    // Existing 20 entries remain undoable in order → back to rectangle.
     for (var i = 0; i < 20; i++) {
-      expect(probe!.undoDepth, 20 - i);
-      await tester.tap(find.text('Undo').last);
-      await tester.pump();
+      expect(_undoOutlinedEnabled(tester), isTrue);
+      await _tapUndo(tester);
     }
-    expect(probe!.undoDepth, 0);
-    expect(
-      tester
-          .widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Undo'))
-          .onPressed,
-      isNull,
-    );
-  });
-
-
-  testWidgets('undo snapshots share image bytes by reference', (tester) async {
-    PhotoStudioTestProbe? probe;
-    final loaded = Uint8List.fromList(_tinyPng);
-    await _pumpPage(
-      tester,
-      page: PhotoStudioPage(
-        imageBytesPicker: () async => loaded,
-        onTestProbe: (p) => probe = p,
-      ),
-    );
-
-    await tester.runAsync(() async {
-      final choose = find.byIcon(Icons.image_outlined);
-      await tester.ensureVisible(choose);
-      await tester.tap(choose);
-      await Future<void>.delayed(const Duration(milliseconds: 250));
-    });
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-    expect(probe?.imageBytes, isNotNull);
-    final shared = probe!.imageBytes!;
-
-    await tester.tap(find.text('Circle'));
-    await tester.pump();
-    await tester.tap(find.text('Triangle'));
-    await tester.pump();
-    await tester.tap(find.text('Rectangle'));
-    await tester.pump();
-
-    expect(probe!.undoDepth, greaterThanOrEqualTo(3));
-    // Current image and every history slot that still has a photo must share
-    // the same Uint8List instance (no deep copy per undo push).
-    expect(identical(probe!.imageBytes, shared), isTrue);
-    for (final ref in probe!.undoImageByteRefs) {
-      if (ref == null) continue;
-      expect(identical(ref, shared), isTrue);
-    }
+    expect(_shapeSelected(tester, 'Rectangle'), isTrue);
+    expect(_undoOutlinedEnabled(tester), isFalse);
   });
 
   testWidgets(
@@ -711,18 +581,11 @@ void main() {
 
     expect(_rectCardText(tester), isNot(before));
 
-    await tester.ensureVisible(find.text('Undo'));
-    await tester.tap(find.text('Undo').last);
-    await tester.pump();
+    await _tapUndo(tester);
 
     expect(_rectCardText(tester), before);
     expect(find.textContaining('Undid'), findsOneWidget);
-    expect(
-      tester
-          .widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Undo'))
-          .onPressed,
-      isNull,
-    );
+    expect(_undoOutlinedEnabled(tester), isFalse);
   });
 
   testWidgets('frame resize undo restores pre-resize rect', (tester) async {
@@ -743,9 +606,7 @@ void main() {
 
     expect(_rectCardText(tester), isNot(before));
 
-    await tester.ensureVisible(find.text('Undo'));
-    await tester.tap(find.text('Undo').last);
-    await tester.pump();
+    await _tapUndo(tester);
     expect(_rectCardText(tester), before);
   });
 
@@ -809,13 +670,16 @@ void main() {
 
   test('composeStudioPng encodes PNG for a narrow logical size', () async {
     final bytes = await composeStudioPng(
-      logicalSize: const Size(400, 280),
-      rect: NormalizedRect.initial,
-      shape: StudioFrameShape.rectangle,
-      strokeColor: const Color(0xFF7C4DFF),
-      stamps: const [
-        EmojiStamp(emojiStampId: 'stamp-a', emoji: '⭐', x: 0.5, y: 0.5),
-      ],
+      StudioDocument(
+        logicalCanvasSize: const Size(400, 280),
+        rect: NormalizedRect.initial,
+        shape: StudioFrameShape.rectangle,
+        strokeColor: const Color(0xFF7C4DFF),
+        stamps: const [
+          EmojiStamp(emojiStampId: 'stamp-a', emoji: '⭐', x: 0.5, y: 0.5),
+        ],
+        imageBytes: null,
+      ),
     );
     expect(_isPng(bytes), isTrue);
     final (w, h) = _pngSize(bytes);

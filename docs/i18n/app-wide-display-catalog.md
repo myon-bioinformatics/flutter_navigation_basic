@@ -46,7 +46,5 @@ callers that only need bytes.
 ## Photo Studio geometry fixtures
 
 Dart `StudioGeometry` tests load
-`tool/python/fixtures/photo_studio_geometry_cases.json` as the primary
-assertions. The Python pytest module under
-`tool/python/tests/test_photo_studio_geometry.py` is an optional cross-check
-oracle against the same JSON — not a second source of truth for app CI.
+`tool/python/fixtures/photo_studio_geometry_cases.json` as the source of truth.
+There is no Python Photo Studio geometry pytest; production math stays in Dart.

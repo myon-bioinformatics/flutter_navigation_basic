@@ -9,8 +9,9 @@ This repository keeps repeatable diagnostics in Dart so local development, CI, a
   toolkit, and optional Deno one-file CLIs when that fits better than pip/npm.
 - Python stdlib / `python -m` remain preferred for simple OS/network/packaging/Actions tasks.
 - **Pip dependencies are allowlisted only at `tool/python/requirements.txt`** for
-  dev/test oracles (pytest, pydantic, etc.). Root-level or app-tree
-  `requirements.txt` files remain prohibited.
+  dev/test tooling (**pytest only**; no pydantic). Root-level or app-tree
+  `requirements.txt` files remain prohibited. App formula assertions stay in
+  Dart; Python may keep stdlib structural checks on shared JSON fixtures.
 - Runtime Flutter dependencies must never be added merely to support developer diagnostics.
 - Network probes and mocks are developer/test utilities; they are not shipped as application runtime features.
 - Generated diagnostics live under `build/` and are git-ignored.
@@ -21,7 +22,14 @@ See `tool/python/README.md` for pytest setup, `--actions-latest`, and stdlib one
 python3 tool/python/test.py --actions-latest --json
 dart run tool/dev.dart py --actions-latest
 python3 -m json.tool tool/python/fixtures/coordinate_area_cases.json | head
+python3 tool/python/build_artifact_report.py --root build/web --output build/diagnostics/web-build.json
+python3 tool/python/build_artifact_report.py --compare before.json after.json
 ```
+
+`build_artifact_report.py` is a stdlib-only, report-only size summary (counts,
+categories, largest files, gzip estimate, before/after delta). It does not
+replace `tool/build_meta.dart` / `tool/inspect.dart` and does not enforce
+budgets or require dual CI builds.
 
 
 ## Recommended one-command entrypoint

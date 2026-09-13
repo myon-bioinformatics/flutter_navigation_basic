@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 /// A stamp-like emoji overlay in normalized canvas space.
 class EmojiStamp {
   const EmojiStamp({
@@ -47,34 +45,4 @@ class EmojiStamp {
 
   @override
   int get hashCode => Object.hash(emojiStampId, emoji, x, y, scale);
-}
-
-/// Bounded undo snapshot of studio mutable state.
-///
-/// [imageBytes] is shared by reference across snapshots that use the same
-/// loaded image; undo pushes must not deep-copy the raster payload.
-class PhotoStudioSnapshot {
-  const PhotoStudioSnapshot({
-    required this.imageBytes,
-    required this.rectLeft,
-    required this.rectTop,
-    required this.rectRight,
-    required this.rectBottom,
-    required this.shapeName,
-    required this.strokeArgb,
-    required this.stamps,
-    required this.selectedEmojiStampId,
-    required this.stampScale,
-  });
-
-  final Uint8List? imageBytes;
-  final double rectLeft;
-  final double rectTop;
-  final double rectRight;
-  final double rectBottom;
-  final String shapeName;
-  final int strokeArgb;
-  final List<EmojiStamp> stamps;
-  final String? selectedEmojiStampId;
-  final double stampScale;
 }

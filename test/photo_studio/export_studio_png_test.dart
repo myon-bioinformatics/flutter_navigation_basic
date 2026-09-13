@@ -4,6 +4,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/emoji_stamp.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/normalized_rect.dart';
+import 'package:flutter_application_1/features/photo_studio/domain/studio_document.dart';
+import 'package:flutter_application_1/features/photo_studio/domain/studio_export_result.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/studio_frame_style.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/compose_studio_image.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/export_studio_png.dart';
@@ -35,17 +37,34 @@ bool _isPng(Uint8List bytes) {
   return (data.getUint32(16), data.getUint32(20));
 }
 
+StudioDocument _doc({
+  Size logicalCanvasSize = const Size(400, 280),
+  NormalizedRect rect = NormalizedRect.initial,
+  StudioFrameShape shape = StudioFrameShape.rectangle,
+  Color strokeColor = const Color(0xFF7C4DFF),
+  List<EmojiStamp> stamps = const [],
+  Uint8List? imageBytes,
+  double pixelRatio = 2,
+}) =>
+    StudioDocument(
+      imageBytes: imageBytes,
+      rect: rect,
+      shape: shape,
+      strokeColor: strokeColor,
+      stamps: stamps,
+      logicalCanvasSize: logicalCanvasSize,
+      pixelRatio: pixelRatio,
+    );
+
 void main() {
   test('capture → encode layers produce PNG at logicalSize × pixelRatio',
       () async {
     final image = await captureStudioCanvas(
-      logicalSize: const Size(400, 280),
-      rect: NormalizedRect.initial,
-      shape: StudioFrameShape.rectangle,
-      strokeColor: const Color(0xFF7C4DFF),
-      stamps: const [
-        EmojiStamp(emojiStampId: 'stamp-a', emoji: '⭐', x: 0.5, y: 0.5),
-      ],
+      _doc(
+        stamps: const [
+          EmojiStamp(emojiStampId: 'stamp-a', emoji: '⭐', x: 0.5, y: 0.5),
+        ],
+      ),
     );
     expect(image.width, 800);
     expect(image.height, 560);
@@ -75,18 +94,17 @@ void main() {
     expect(h, 4);
   });
 
-  test('exportStudioPng uses fixed PNG name/mime via injectable saver',
-      () async {
+  test('exportStudioPng returns StudioExportResult with PNG metadata', () async {
     String? savedName;
     String? savedMime;
     Uint8List? savedBytes;
 
-    final ok = await exportStudioPng(
-      logicalSize: const Size(200, 100),
-      rect: NormalizedRect.initial,
-      shape: StudioFrameShape.circle,
-      strokeColor: const Color(0xFF00AA55),
-      stamps: const [],
+    final result = await exportStudioPng(
+      document: _doc(
+        logicalCanvasSize: const Size(200, 100),
+        shape: StudioFrameShape.circle,
+        strokeColor: const Color(0xFF00AA55),
+      ),
       saver: ({
         required Uint8List bytes,
         required String fileName,
@@ -99,24 +117,58 @@ void main() {
       },
     );
 
-    expect(ok, isTrue);
+    expect(result.outcome, StudioExportOutcome.saved);
+    expect(result.width, 400);
+    expect(result.height, 200);
+    expect(result.bytesLength, greaterThan(0));
+    expect(result.elapsedMilliseconds, greaterThanOrEqualTo(0));
     expect(savedName, kStudioExportFileName);
     expect(savedMime, kStudioExportMimeType);
     expect(savedBytes, isNotNull);
     expect(_isPng(savedBytes!), isTrue);
-    final (w, h) = _pngSize(savedBytes!);
-    expect(w, 400);
-    expect(h, 200);
+  });
+
+  test('exportStudioPng maps saver false to unavailable', () async {
+    final result = await exportStudioPng(
+      document: _doc(logicalCanvasSize: const Size(50, 50), pixelRatio: 1),
+      saver: ({
+        required Uint8List bytes,
+        required String fileName,
+        required String mimeType,
+      }) async =>
+          false,
+    );
+    expect(result.outcome, StudioExportOutcome.unavailable);
+    expect(result.width, 50);
+    expect(result.height, 50);
+    expect(result.bytesLength, greaterThan(0));
+  });
+
+  test('exportStudioPng maps saver exception to failed', () async {
+    final result = await exportStudioPng(
+      document: _doc(logicalCanvasSize: const Size(50, 50), pixelRatio: 1),
+      saver: ({
+        required Uint8List bytes,
+        required String fileName,
+        required String mimeType,
+      }) async {
+        throw StateError('save failed');
+      },
+    );
+    expect(result.outcome, StudioExportOutcome.failed);
+    expect(result.width, 0);
+    expect(result.height, 0);
+    expect(result.bytesLength, 0);
   });
 
   test('composeStudioPng remains a capture+encode facade', () async {
     final bytes = await composeStudioPng(
-      logicalSize: const Size(100, 50),
-      rect: NormalizedRect.initial,
-      shape: StudioFrameShape.triangle,
-      strokeColor: const Color(0xFF333333),
-      stamps: const [],
-      pixelRatio: 1,
+      _doc(
+        logicalCanvasSize: const Size(100, 50),
+        shape: StudioFrameShape.triangle,
+        strokeColor: const Color(0xFF333333),
+        pixelRatio: 1,
+      ),
     );
     expect(_isPng(bytes), isTrue);
     final (w, h) = _pngSize(bytes);

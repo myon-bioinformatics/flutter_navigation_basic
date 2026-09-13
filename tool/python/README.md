@@ -12,7 +12,7 @@ a compile step. Avoid new environment dependencies unless allowlisted.
 | --- | --- | --- |
 | **Dart / Flutter** | App runtime, widget/UI tests, repo toolkit (`tool/*.dart`) | App source of truth |
 | **Python stdlib** | Actions status (`actions_latest.py`), JSON/zip/http one-liners, timezone oracle (`tool/time/`) | No pip required |
-| **Python + allowlisted pip** | Structured oracles (`pytest`, `pydantic`) under `tool/python/requirements.txt` only | Not for app runtime |
+| **Python + allowlisted pip** | Pytest runner under `tool/python/requirements.txt` only (pytest; no pydantic) | Not for app runtime; Dart owns formula assertions |
 | **Deno** (optional) | TS one-file fetch/CLI scripts with zero `node_modules` | OK when JS/TS + std fetch fits better than Python |
 
 Root-level / app-tree `requirements.txt` remains prohibited.
@@ -101,13 +101,27 @@ python3 -m zipfile -c build/diagnostics/bundle.zip build/diagnostics/python-orac
 python3 -m http.server 8000 --directory build/web
 ```
 
+## Build artifact report (stdlib)
+
+Report-only size summary for a built tree (for example `build/web`). Distinct
+from `tool/build_meta.dart` / `tool/inspect.dart`. No hard budgets; dual CI
+builds are not required.
+
+```bash
+python3 tool/python/build_artifact_report.py --root build/web --output build/diagnostics/web-build.json
+python3 tool/python/build_artifact_report.py --compare before.json after.json
+```
+
 ## Current coverage
 
 - `fixtures/coordinate_area_cases.json`: shared golden vectors for zoom / span policy
+  (Dart `test/coordinate_tool/` is the formula source of truth)
 - `fixtures/photo_studio_geometry_cases.json`: shared Photo Studio geometry vectors
-  (Dart `studio_geometry_test.dart` is primary; pytest is an optional cross-check)
-- `tests/test_coordinate_area.py`: latitude-aware Maps framing oracles
-- `tests/test_photo_studio_geometry.py`: optional Python cross-check of studio geometry
+  loaded by Dart `studio_geometry_test.dart` (no Python geometry recomputation)
+- `tests/test_coordinate_area.py`: stdlib structural checks on the shared JSON
+  (unique ids, required keys/types; no midpoint/zoom math)
+- `build_artifact_report.py` / `tests/test_build_artifact_report.py`: web artifact
+  size report + before/after compare
 - `tests/test_actions_latest.py`: optional CI-green assertion (`--oracle-mode=actions`)
 - `tests/test_outcomes.py` / `outcomes.py`: multi-status tallies including xfail/known
 - `tests/test_known_xfail_example.py`: documents `xfail(reason="known: …")` for receipts

@@ -1,10 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
-
-import '../domain/emoji_stamp.dart';
-import '../domain/normalized_rect.dart';
-import '../domain/studio_frame_style.dart';
+import '../domain/studio_document.dart';
 import 'studio_canvas_capture.dart';
 import 'studio_png_encode.dart';
 
@@ -20,23 +16,7 @@ const String kStudioExportMimeType = 'image/png';
 /// - capture: [captureStudioCanvas]
 /// - encode: [encodeStudioPng]
 /// - save: [saveImageBytes] / [exportStudioPng]
-Future<Uint8List> composeStudioPng({
-  required Size logicalSize,
-  required NormalizedRect rect,
-  required StudioFrameShape shape,
-  required Color strokeColor,
-  required List<EmojiStamp> stamps,
-  Uint8List? imageBytes,
-  double pixelRatio = 2,
-}) async {
-  final image = await captureStudioCanvas(
-    logicalSize: logicalSize,
-    rect: rect,
-    shape: shape,
-    strokeColor: strokeColor,
-    stamps: stamps,
-    imageBytes: imageBytes,
-    pixelRatio: pixelRatio,
-  );
+Future<Uint8List> composeStudioPng(StudioDocument document) async {
+  final image = await captureStudioCanvas(document);
   return encodeStudioPng(image);
 }

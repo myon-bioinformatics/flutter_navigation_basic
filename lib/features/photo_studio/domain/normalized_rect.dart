@@ -170,6 +170,18 @@ class NormalizedRect {
   String get csvText =>
       '${left.toStringAsFixed(4)}, ${top.toStringAsFixed(4)}, '
       '${right.toStringAsFixed(4)}, ${bottom.toStringAsFixed(4)}';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is NormalizedRect &&
+          left == other.left &&
+          top == other.top &&
+          right == other.right &&
+          bottom == other.bottom;
+
+  @override
+  int get hashCode => Object.hash(left, top, right, bottom);
 }
 
 enum NormalizedRectHandle {
