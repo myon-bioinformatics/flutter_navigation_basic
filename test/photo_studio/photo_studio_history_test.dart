@@ -109,7 +109,58 @@ void main() {
       expect(history.depth, 20);
     });
 
-    test('shared imageBytes identical across history entries', () {
+    
+    test('mutating source stamp list does not change stored state/history', () {
+      final history = PhotoStudioHistory();
+      final mutable = <EmojiStamp>[
+        const EmojiStamp(
+          emojiStampId: 'a',
+          emoji: '⭐',
+          x: 0.2,
+          y: 0.3,
+        ),
+      ];
+      final before = _state(stamps: mutable);
+      final after = before.copyWith(
+        stamps: [
+          const EmojiStamp(
+            emojiStampId: 'a',
+            emoji: '⭐',
+            x: 0.8,
+            y: 0.7,
+          ),
+        ],
+      );
+
+      expect(history.recordChange(before, after), isTrue);
+      mutable.clear();
+      mutable.add(
+        const EmojiStamp(
+          emojiStampId: 'mutated',
+          emoji: '🔥',
+          x: 0.1,
+          y: 0.1,
+        ),
+      );
+
+      expect(before.stamps, hasLength(1));
+      expect(before.stamps.single.emojiStampId, 'a');
+      expect(() => before.stamps.add(
+            const EmojiStamp(
+              emojiStampId: 'x',
+              emoji: 'x',
+              x: 0,
+              y: 0,
+            ),
+          ), throwsUnsupportedError);
+
+      final restored = history.undo();
+      expect(restored!.stamps, hasLength(1));
+      expect(restored.stamps.single.emojiStampId, 'a');
+      expect(restored.stamps.single.x, 0.2);
+    });
+
+test('shared imageBytes identical across history entries', () {
       final history = PhotoStudioHistory();
       final bytes = Uint8List.fromList(List<int>.generate(64, (i) => i));
       final withImage = _state(imageBytes: bytes);

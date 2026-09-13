@@ -116,8 +116,8 @@ python3 tool/python/build_artifact_report.py --compare before.json after.json
 
 - `fixtures/coordinate_area_cases.json`: shared golden vectors for zoom / span policy
   (Dart `test/coordinate_tool/` is the formula source of truth)
-- `fixtures/photo_studio_geometry_cases.json`: shared Photo Studio geometry vectors
-  loaded by Dart `studio_geometry_test.dart` (no Python geometry recomputation)
+- Photo Studio geometry: Dart-only (`test/photo_studio/studio_geometry_test.dart`);
+  no Python fixture or oracle
 - `tests/test_coordinate_area.py`: stdlib structural checks on the shared JSON
   (unique ids, required keys/types; no midpoint/zoom math)
 - `build_artifact_report.py` / `tests/test_build_artifact_report.py`: web artifact

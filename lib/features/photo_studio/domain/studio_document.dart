@@ -1,6 +1,5 @@
+import 'dart:typed_data';
 import 'dart:ui' show Color, Size;
-
-import 'package:flutter/foundation.dart';
 
 import 'emoji_stamp.dart';
 import 'normalized_rect.dart';
@@ -8,17 +7,18 @@ import 'photo_studio_state.dart';
 import 'studio_frame_style.dart';
 
 /// Immutable render/export input for Photo Studio PNG capture.
-@immutable
+///
+/// Uses `dart:ui` for [Color]/[Size] only — not a Flutter widget dependency.
 class StudioDocument {
-  const StudioDocument({
+  StudioDocument({
     required this.imageBytes,
     required this.rect,
     required this.shape,
     required this.strokeColor,
-    required this.stamps,
+    required List<EmojiStamp> stamps,
     required this.logicalCanvasSize,
     this.pixelRatio = 2,
-  });
+  }) : stamps = List<EmojiStamp>.unmodifiable(stamps);
 
   factory StudioDocument.fromState(
     PhotoStudioState state, {

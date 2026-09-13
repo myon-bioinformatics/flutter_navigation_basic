@@ -43,8 +43,8 @@ Export is layered as **capture** (`captureStudioCanvas` → `ui.Image`) →
 `saveImageBytes`). `composeStudioPng` remains a capture+encode facade for
 callers that only need bytes.
 
-## Photo Studio geometry fixtures
+## Photo Studio geometry
 
-Dart `StudioGeometry` tests load
-`tool/python/fixtures/photo_studio_geometry_cases.json` as the source of truth.
-There is no Python Photo Studio geometry pytest; production math stays in Dart.
+Photo Studio geometry is owned by Dart (`StudioGeometry` + table-driven cases in
+`test/photo_studio/studio_geometry_test.dart`). There is no Python geometry
+oracle or shared JSON fixture under `tool/python/`.

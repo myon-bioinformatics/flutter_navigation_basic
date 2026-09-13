@@ -5,8 +5,8 @@ import 'studio_frame_style.dart';
 
 /// Geometry helpers for photo-studio frames.
 ///
-/// Midpoints and triangle/circle derived points mirror the Python oracle under
-/// `tool/python` so Dart UI and pytest stay aligned.
+/// Midpoints and triangle/circle derived points are asserted by Dart unit tests
+/// (`test/photo_studio/studio_geometry_test.dart`).
 class StudioGeometry {
   const StudioGeometry._();
 

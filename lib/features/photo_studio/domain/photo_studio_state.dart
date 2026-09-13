@@ -1,29 +1,34 @@
-import 'package:flutter/foundation.dart';
+import 'dart:collection';
+import 'dart:typed_data';
 
 import 'emoji_stamp.dart';
 import 'normalized_rect.dart';
 import 'studio_frame_style.dart';
 
 /// Immutable editable state for Photo Studio (history / undo unit).
-@immutable
+///
+/// Pure Dart — no Flutter imports. [imageBytes] is shared by reference across
+/// history entries; [stamps] is always stored as an unmodifiable list.
 class PhotoStudioState {
-  const PhotoStudioState({
+  PhotoStudioState({
     required this.imageBytes,
     required this.rect,
     required this.shape,
     required this.strokeArgb,
-    required this.stamps,
+    required List<EmojiStamp> stamps,
     required this.selectedEmojiStampId,
     required this.stampScale,
-  });
+  }) : stamps = UnmodifiableListView<EmojiStamp>(
+          List<EmojiStamp>.from(stamps, growable: false),
+        );
 
   /// Default studio state before any user edits.
-  factory PhotoStudioState.initial() => const PhotoStudioState(
+  factory PhotoStudioState.initial() => PhotoStudioState(
         imageBytes: null,
         rect: NormalizedRect.initial,
         shape: StudioFrameShape.rectangle,
         strokeArgb: StudioFrameColors.purple,
-        stamps: <EmojiStamp>[],
+        stamps: const <EmojiStamp>[],
         selectedEmojiStampId: null,
         stampScale: 1,
       );
@@ -34,6 +39,8 @@ class PhotoStudioState {
   final NormalizedRect rect;
   final StudioFrameShape shape;
   final int strokeArgb;
+
+  /// Unmodifiable stamp list (copy-on-write at the constructor boundary).
   final List<EmojiStamp> stamps;
   final String? selectedEmojiStampId;
   final double stampScale;
@@ -69,7 +76,7 @@ class PhotoStudioState {
           rect == other.rect &&
           shape == other.shape &&
           strokeArgb == other.strokeArgb &&
-          listEquals(stamps, other.stamps) &&
+          _listEquals(stamps, other.stamps) &&
           selectedEmojiStampId == other.selectedEmojiStampId &&
           stampScale == other.stampScale;
 
@@ -83,4 +90,13 @@ class PhotoStudioState {
         selectedEmojiStampId,
         stampScale,
       );
+}
+
+bool _listEquals<T>(List<T> a, List<T> b) {
+  if (identical(a, b)) return true;
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
 }
