@@ -13,10 +13,14 @@ import '../domain/studio_export_result.dart';
 import '../domain/studio_frame.dart';
 import '../domain/studio_frame_style.dart';
 import '../domain/studio_geometry.dart';
+import '../../../core/navigation/route_names.dart';
+import '../../../shared/widgets/tool_door_selector.dart';
+import 'browser_image_decode_adapter.dart';
 import 'export_studio_png.dart';
 import 'photo_rect_canvas.dart';
 import 'pick_local_image_bytes.dart';
 import 'read_web_clipboard_image_bytes.dart';
+import 'studio_image_loader.dart';
 
 typedef StudioImageSaver = Future<bool> Function({
   required Uint8List bytes,
@@ -30,6 +34,7 @@ class PhotoStudioPage extends StatefulWidget {
     this.imageBytesPicker,
     this.imageSaver,
     this.clipboardImageReader,
+    this.imageDecodeAdapter,
   });
 
   /// Optional override for tests / non-web hosts.
@@ -40,6 +45,9 @@ class PhotoStudioPage extends StatefulWidget {
 
   /// Optional override for reading binary clipboard images (tests / web).
   final Future<Uint8List?> Function()? clipboardImageReader;
+
+  /// Optional decode adapter (tests inject fakes; web defaults to browser bridge).
+  final StudioImageDecodeAdapter? imageDecodeAdapter;
 
   @override
   State<PhotoStudioPage> createState() => _PhotoStudioPageState();
@@ -70,8 +78,10 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
   String? _pendingEmoji;
   Size _canvasSize = _fallbackCanvasSize;
   String? _status;
+  bool _dirty = false;
 
   bool get _canUndo => _history.canUndo;
+  bool get _canRedo => _history.canRedo;
 
   @override
   void dispose() {
@@ -85,14 +95,16 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
 
   void _endUndoGesture() {
     if (_history.endGesture(_studio)) {
-      setState(() {});
+      setState(() => _dirty = true);
     }
   }
 
   void _mutateWithUndo(PhotoStudioState Function(PhotoStudioState) transform) {
     final before = _studio;
     final after = transform(before);
-    _history.recordChange(before, after);
+    if (_history.recordChange(before, after)) {
+      _dirty = true;
+    }
     _studio = after;
   }
 
@@ -101,12 +113,46 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
   }
 
   void _undoOnce() {
-    final snap = _history.undo();
+    final snap = _history.undo(_studio);
     if (snap == null) return;
     setState(() {
       _studio = snap;
+      _dirty = true;
       _status = DisplayScope.of(context).text('photoStudio.undoDone');
     });
+  }
+
+  void _redoOnce() {
+    final snap = _history.redo(_studio);
+    if (snap == null) return;
+    setState(() {
+      _studio = snap;
+      _dirty = true;
+      _status = DisplayScope.of(context).text('photoStudio.redoDone');
+    });
+  }
+
+  Future<bool> _confirmDiscardIfDirty() async {
+    if (!_dirty) return true;
+    final display = DisplayScope.of(context);
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(display.text('photoStudio.leaveTitle')),
+        content: Text(display.text('photoStudio.leaveBody')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(display.text('photoStudio.leaveStay')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(display.text('photoStudio.leaveDiscard')),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
   }
 
   Future<void> _copy(String text) async {
@@ -124,14 +170,24 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       return;
     }
     try {
-      final validated = await decodeRasterImageBytes(rawBytes);
+      final adapter = widget.imageDecodeAdapter ??
+          (kIsWeb ? browserImageDecodeAdapter : null);
+      final validated = await loadStudioImageBytes(
+        rawBytes,
+        nativeDecodeAdapter: adapter,
+      );
       if (!mounted) return;
       if (validated == null) {
-        setState(() => _status = display.text('photoStudio.imageError'));
+        setState(() => _status = display.text('photoStudio.imageUnsupported'));
         return;
       }
       final compact = await Base64ImageBridge.downscaleToPng(validated);
       if (!mounted) return;
+      // Require a non-empty PNG payload before treating load as success.
+      if (compact.bytes.isEmpty) {
+        setState(() => _status = display.text('photoStudio.imageError'));
+        return;
+      }
       setState(() {
         _mutateWithUndo(
           (s) => s.copyWith(imageBytes: compact.bytes),
@@ -283,7 +339,12 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       StudioExportOutcome.unavailable => 'photoStudio.saveUnavailable',
       StudioExportOutcome.failed => 'photoStudio.saveError',
     };
-    setState(() => _status = display.text(key));
+    setState(() {
+      _status = display.text(key);
+      if (result.outcome == StudioExportOutcome.saved) {
+        _dirty = false;
+      }
+    });
   }
 
   void _onFramesChanged(List<StudioFrame> frames) {
@@ -426,10 +487,23 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     final rectText =
         selected?.rect.labeledText ?? t('photoStudio.noFrameSelected');
 
-    return CallbackShortcuts(
+    return PopScope(
+      canPop: !_dirty,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final leave = await _confirmDiscardIfDirty();
+        if (!mounted || !leave) return;
+        setState(() => _dirty = false);
+        Navigator.of(context).maybePop();
+      },
+      child: CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.keyZ, control: true): _undoOnce,
         const SingleActivator(LogicalKeyboardKey.keyZ, meta: true): _undoOnce,
+        const SingleActivator(LogicalKeyboardKey.keyZ, control: true, shift: true):
+            _redoOnce,
+        const SingleActivator(LogicalKeyboardKey.keyZ, meta: true, shift: true):
+            _redoOnce,
       },
       child: Focus(
         autofocus: true,
@@ -437,11 +511,18 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
           appBar: AppBar(
             title: Text(t('photoStudio.title')),
             actions: [
+              const SizedBox(width: 8),
               IconButton(
                 tooltip: t('photoStudio.undo'),
                 onPressed: _canUndo ? _undoOnce : null,
                 icon: const Icon(Icons.undo),
               ),
+              IconButton(
+                tooltip: t('photoStudio.redo'),
+                onPressed: _canRedo ? _redoOnce : null,
+                icon: const Icon(Icons.redo),
+              ),
+              const SizedBox(width: 8),
               const DisplayLocalePicker(compact: true),
             ],
           ),
@@ -721,11 +802,6 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                 icon: const Icon(Icons.delete_outline),
                                 label: Text(t('photoStudio.deleteFrame')),
                               ),
-                              OutlinedButton.icon(
-                                onPressed: _canUndo ? _undoOnce : null,
-                                icon: const Icon(Icons.undo),
-                                label: Text(t('photoStudio.undo')),
-                              ),
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -775,12 +851,15 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 24),
+                    ToolDoorSelector(currentRouteName: RouteNames.photoStudio),
                   ],
                 ),
               ),
             ),
           ),
         ),
+      ),
       ),
     );
   }

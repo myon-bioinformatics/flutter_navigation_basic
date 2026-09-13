@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../domain/counter_playground_controller.dart';
-import '../../../core/navigation/app_navigation.dart';
 import '../../../shared/display/display_scope.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
-import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/hold_repeating_button.dart';
 import 'counter_orb_burst.dart';
+import '../../../core/navigation/route_names.dart';
+import '../../../shared/widgets/tool_door_selector.dart';
 
 class CounterPlaygroundPage extends StatefulWidget {
   const CounterPlaygroundPage({super.key, required this.controller});
@@ -86,24 +86,8 @@ class _CounterPlaygroundPageState extends State<CounterPlaygroundPage> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    CustomButton(
-                      label: display.text('home.title'),
-                      onPressed: AppNavigation.toHome,
-                    ),
-                    CustomButton(
-                      label: display.text('nav.ironyGenerator'),
-                      onPressed: AppNavigation.toIronyGenerator,
-                    ),
-                    CustomButton(
-                      label: display.text('nav.compositionGenerator'),
-                      onPressed: AppNavigation.toCompositionGenerator,
-                    ),
-                  ],
+                const ToolDoorSelector(
+                  currentRouteName: RouteNames.counterPlayground,
                 ),
               ],
             ),

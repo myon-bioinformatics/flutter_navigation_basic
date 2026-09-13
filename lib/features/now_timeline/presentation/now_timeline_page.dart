@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/navigation/route_names.dart';
 import '../../../shared/display/display_scope.dart';
+import '../../../shared/widgets/tool_door_selector.dart';
 import '../domain/now_timeline_models.dart';
 
 class NowTimelinePage extends StatefulWidget {
@@ -108,6 +110,10 @@ class _NowTimelinePageState extends State<NowTimelinePage> {
                         nowUtc: _nowUtc,
                         text: t,
                         onDelete: _delete,
+                      ),
+                      const SizedBox(height: 24),
+                      const ToolDoorSelector(
+                        currentRouteName: RouteNames.nowTimeline,
                       ),
                     ],
                   ),

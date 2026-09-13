@@ -59,11 +59,19 @@ String _rectCardText(WidgetTester tester) {
   return text!;
 }
 
-bool _undoOutlinedEnabled(WidgetTester tester) =>
-    tester
-        .widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Undo'))
-        .onPressed !=
-    null;
+bool _undoEnabled(WidgetTester tester) {
+  final finder = find.byWidgetPredicate(
+    (w) => w is IconButton && (w as IconButton).tooltip == 'Undo',
+  );
+  return tester.widget<IconButton>(finder).onPressed != null;
+}
+
+bool _redoEnabled(WidgetTester tester) {
+  final finder = find.byWidgetPredicate(
+    (w) => w is IconButton && (w as IconButton).tooltip == 'Redo',
+  );
+  return tester.widget<IconButton>(finder).onPressed != null;
+}
 
 bool _shapeSelected(WidgetTester tester, String label) => tester
     .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, label))
@@ -95,8 +103,20 @@ Future<void> _tapSavePng(WidgetTester tester) async {
 }
 
 Future<void> _tapUndo(WidgetTester tester) async {
-  await tester.ensureVisible(find.text('Undo'));
-  await tester.tap(find.text('Undo').last);
+  final finder = find.byWidgetPredicate(
+    (w) => w is IconButton && (w as IconButton).tooltip == 'Undo',
+  );
+  await tester.ensureVisible(finder);
+  await tester.tap(finder);
+  await tester.pump();
+}
+
+Future<void> _tapRedo(WidgetTester tester) async {
+  final finder = find.byWidgetPredicate(
+    (w) => w is IconButton && (w as IconButton).tooltip == 'Redo',
+  );
+  await tester.ensureVisible(finder);
+  await tester.tap(finder);
   await tester.pump();
 }
 
@@ -220,7 +240,7 @@ void main() {
     );
     await tester.pump();
     expect(tester.widget<Slider>(find.byType(Slider)).value, closeTo(1.0, 0.05));
-    expect(_undoOutlinedEnabled(tester), isTrue);
+    expect(_undoEnabled(tester), isTrue);
   });
 
   testWidgets('creates two frames with draft tools', (tester) async {
@@ -354,16 +374,16 @@ void main() {
       (tester) async {
     await _pumpPage(tester);
 
-    expect(_undoOutlinedEnabled(tester), isFalse);
+    expect(_undoEnabled(tester), isFalse);
     expect(_shapeSelected(tester, 'None'), isTrue);
 
     await _selectDraftTool(tester, 'Circle');
     expect(_shapeSelected(tester, 'Circle'), isTrue);
-    expect(_undoOutlinedEnabled(tester), isTrue);
+    expect(_undoEnabled(tester), isTrue);
 
     await _tapUndo(tester);
     expect(_shapeSelected(tester, 'None'), isTrue);
-    expect(_undoOutlinedEnabled(tester), isFalse);
+    expect(_undoEnabled(tester), isFalse);
     expect(find.textContaining('Undid'), findsOneWidget);
   });
 
@@ -398,7 +418,7 @@ void main() {
     await tester.tapAt(place);
     await tester.pump();
     expect(tester.widget<Slider>(find.byType(Slider)).value, closeTo(1.0, 0.05));
-    expect(_undoOutlinedEnabled(tester), isTrue);
+    expect(_undoEnabled(tester), isTrue);
 
     gesture = await tester.startGesture(place);
     await tester.pump();
@@ -411,27 +431,27 @@ void main() {
 
     await _tapUndo(tester);
     expect(find.textContaining('Undid'), findsOneWidget);
-    expect(_undoOutlinedEnabled(tester), isTrue);
+    expect(_undoEnabled(tester), isTrue);
     expect(tester.widget<Slider>(find.byType(Slider)).value, closeTo(1.0, 0.05));
 
     await _tapUndo(tester);
     expect(_rectCardText(tester), afterMove);
-    expect(_undoOutlinedEnabled(tester), isTrue);
+    expect(_undoEnabled(tester), isTrue);
 
     await _tapUndo(tester);
     expect(_rectCardText(tester), beforeMove);
     expect(_shapeSelected(tester, 'Circle'), isTrue);
-    expect(_undoOutlinedEnabled(tester), isTrue);
+    expect(_undoEnabled(tester), isTrue);
 
     // Undo create → no frame selected text; tool still circle.
     await _tapUndo(tester);
     expect(_rectCardTextOrNull(tester), isNull);
     expect(_shapeSelected(tester, 'Circle'), isTrue);
-    expect(_undoOutlinedEnabled(tester), isTrue);
+    expect(_undoEnabled(tester), isTrue);
 
     await _tapUndo(tester);
     expect(_shapeSelected(tester, 'None'), isTrue);
-    expect(_undoOutlinedEnabled(tester), isFalse);
+    expect(_undoEnabled(tester), isFalse);
   });
 
   testWidgets('one drag with many pan updates records a single undo entry',
@@ -441,7 +461,7 @@ void main() {
     await _createFrame(tester, x0: 0.2, y0: 0.2, x1: 0.8, y1: 0.8);
 
     // Clear undo from create+tool so we isolate the move gesture.
-    while (_undoOutlinedEnabled(tester)) {
+    while (_undoEnabled(tester)) {
       await _tapUndo(tester);
     }
     // Re-create frame after undoing everything including draft tool.
@@ -449,7 +469,7 @@ void main() {
     await _createFrame(tester, x0: 0.2, y0: 0.2, x1: 0.8, y1: 0.8);
     // Undo only the create, keep draft tool? Actually we want one move undo.
     // Simpler: just check that pan updates during one move don't commit early.
-    final beforeDepthEnabled = _undoOutlinedEnabled(tester);
+    final beforeDepthEnabled = _undoEnabled(tester);
     expect(beforeDepthEnabled, isTrue);
 
     final box = tester.getRect(find.byType(PhotoRectCanvas));
@@ -463,7 +483,7 @@ void main() {
     }
     await gesture.up();
     await tester.pump();
-    expect(_undoOutlinedEnabled(tester), isTrue);
+    expect(_undoEnabled(tester), isTrue);
 
     final afterMove = _rectCardText(tester);
     await _tapUndo(tester);
@@ -481,7 +501,7 @@ void main() {
         Offset(box.left + box.width * 0.14, box.top + box.height * 0.16);
     await tester.tapAt(place);
     await tester.pump();
-    expect(_undoOutlinedEnabled(tester), isTrue);
+    expect(_undoEnabled(tester), isTrue);
     expect(tester.widget<Slider>(find.byType(Slider)).value, closeTo(1.0, 0.05));
 
     final gesture = await tester.startGesture(place);
@@ -490,15 +510,15 @@ void main() {
     await tester.pump();
     await gesture.up();
     await tester.pump();
-    expect(_undoOutlinedEnabled(tester), isTrue);
+    expect(_undoEnabled(tester), isTrue);
 
     await _tapUndo(tester);
     expect(find.textContaining('Undid'), findsOneWidget);
-    expect(_undoOutlinedEnabled(tester), isTrue);
+    expect(_undoEnabled(tester), isTrue);
     expect(tester.widget<Slider>(find.byType(Slider)).value, closeTo(1.0, 0.05));
 
     await _tapUndo(tester);
-    expect(_undoOutlinedEnabled(tester), isFalse);
+    expect(_undoEnabled(tester), isFalse);
   });
 
   testWidgets('frame create, move, and resize each undo independently',
@@ -519,7 +539,7 @@ void main() {
     await tester.pump();
     await gesture.up();
     await tester.pump();
-    expect(_undoOutlinedEnabled(tester), isTrue);
+    expect(_undoEnabled(tester), isTrue);
     final afterCreate = _rectCardText(tester);
 
     final createLeft = double.parse(
@@ -604,7 +624,7 @@ void main() {
 
     await _tapUndo(tester);
     expect(find.textContaining('Undid'), findsOneWidget);
-    expect(_undoOutlinedEnabled(tester), isTrue);
+    expect(_undoEnabled(tester), isTrue);
   });
 
   testWidgets('scale slider with many ticks records one undo entry',
@@ -618,7 +638,7 @@ void main() {
       Offset(box.left + box.width * 0.2, box.top + box.height * 0.2),
     );
     await tester.pump();
-    expect(_undoOutlinedEnabled(tester), isTrue);
+    expect(_undoEnabled(tester), isTrue);
     final beforeScale = tester.widget<Slider>(find.byType(Slider)).value;
 
     final slider = find.byType(Slider);
@@ -643,7 +663,7 @@ void main() {
       tester.widget<Slider>(find.byType(Slider)).value,
       closeTo(beforeScale, 0.001),
     );
-    expect(_undoOutlinedEnabled(tester), isTrue);
+    expect(_undoEnabled(tester), isTrue);
   });
 
   testWidgets('undo history full + no-op gesture keeps 20 undoable entries',
@@ -656,7 +676,7 @@ void main() {
       await tester.tap(find.text(shapes[i % 2]).first);
       await tester.pump();
     }
-    expect(_undoOutlinedEnabled(tester), isTrue);
+    expect(_undoEnabled(tester), isTrue);
     expect(_shapeSelected(tester, 'Triangle'), isTrue);
 
     // No-op press/release without moving. With a create tool armed this may
@@ -669,15 +689,15 @@ void main() {
     await tester.pump();
     await gesture.up();
     await tester.pump();
-    expect(_undoOutlinedEnabled(tester), isTrue);
+    expect(_undoEnabled(tester), isTrue);
 
     var undos = 0;
-    while (_undoOutlinedEnabled(tester) && undos < 30) {
+    while (_undoEnabled(tester) && undos < 30) {
       await _tapUndo(tester);
       undos++;
     }
     expect(_shapeSelected(tester, 'None'), isTrue);
-    expect(_undoOutlinedEnabled(tester), isFalse);
+    expect(_undoEnabled(tester), isFalse);
     expect(undos, greaterThanOrEqualTo(20));
   });
 

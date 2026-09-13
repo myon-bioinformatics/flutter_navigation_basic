@@ -1,6 +1,6 @@
 import 'photo_studio_state.dart';
 
-/// Bounded undo stack for [PhotoStudioState].
+/// Bounded undo/redo stacks for [PhotoStudioState].
 ///
 /// Pure Dart (no Flutter imports). Stores states as-is so [Uint8List]
 /// image payloads stay shared by reference across history entries.
@@ -9,12 +9,15 @@ class PhotoStudioHistory {
 
   final int maxEntries;
 
-  final List<PhotoStudioState> _entries = <PhotoStudioState>[];
+  final List<PhotoStudioState> _undo = <PhotoStudioState>[];
+  final List<PhotoStudioState> _redo = <PhotoStudioState>[];
   PhotoStudioState? _pending;
 
-  int get depth => _entries.length;
+  int get depth => _undo.length;
 
-  bool get canUndo => _entries.isNotEmpty;
+  bool get canUndo => _undo.isNotEmpty;
+
+  bool get canRedo => _redo.isNotEmpty;
 
   /// Starts a gesture transaction if one is not already open.
   void beginGesture(PhotoStudioState current) {
@@ -29,32 +32,45 @@ class PhotoStudioHistory {
     _pending = null;
     if (pending == null) return false;
     if (pending == current) return false;
-    _push(pending);
+    _pushUndo(pending);
     return true;
   }
 
   /// Records [before] when it differs from [after]. Returns whether committed.
   bool recordChange(PhotoStudioState before, PhotoStudioState after) {
     if (before == after) return false;
-    _push(before);
+    _pushUndo(before);
     return true;
   }
 
-  /// Pops the latest entry, clears any pending gesture, or returns null.
-  PhotoStudioState? undo() {
+  /// Pops undo, pushes [current] onto redo, or returns null.
+  PhotoStudioState? undo(PhotoStudioState current) {
     _pending = null;
-    if (_entries.isEmpty) return null;
-    return _entries.removeLast();
+    if (_undo.isEmpty) return null;
+    _redo.add(current);
+    return _undo.removeLast();
+  }
+
+  /// Pops redo, pushes [current] onto undo, or returns null.
+  PhotoStudioState? redo(PhotoStudioState current) {
+    _pending = null;
+    if (_redo.isEmpty) return null;
+    _undo.add(current);
+    if (_undo.length > maxEntries) {
+      _undo.removeAt(0);
+    }
+    return _redo.removeLast();
   }
 
   void clearPending() {
     _pending = null;
   }
 
-  void _push(PhotoStudioState state) {
-    _entries.add(state);
-    if (_entries.length > maxEntries) {
-      _entries.removeAt(0);
+  void _pushUndo(PhotoStudioState state) {
+    _undo.add(state);
+    if (_undo.length > maxEntries) {
+      _undo.removeAt(0);
     }
+    _redo.clear();
   }
 }

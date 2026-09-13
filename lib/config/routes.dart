@@ -59,7 +59,7 @@ class AppRoutes {
     map[counterPlayground] = (_) => const CounterPlaygroundScreen();
     map[ironyGenerator] = (_) => const IronyGeneratorScreen();
     map[compositionGenerator] = (_) => const CompositionStudioScreen();
-    map[compositionSeedGenerator] = (_) => const CompositionGeneratorScreen();
+    map[compositionSeedGenerator] = (_) => const CompositionStudioScreen();
     map[clipboardWorkbench] = (_) => const ClipboardWorkbenchScreen();
     map[uiShowcase] = (_) => const UiShowcaseScreen();
     map[externalApi] = (_) => const ApiIntegrationScreen();

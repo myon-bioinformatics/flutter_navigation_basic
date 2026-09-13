@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/navigation/app_navigation.dart';
+import '../../../core/navigation/route_names.dart';
 import '../../../shared/display/display_scope.dart';
 import '../../../shared/widgets/chord_theory_card.dart';
 import '../../../shared/widgets/composition_studio.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
-import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/note_sequence_card.dart';
+import '../../../shared/widgets/tool_door_selector.dart';
 import '../domain/composition_generator_controller.dart';
 
 class CompositionGeneratorPage extends StatelessWidget {
@@ -35,21 +35,9 @@ class CompositionGeneratorPage extends StatelessWidget {
                 ChordTheoryCard(initialKey: controller.tonicKey),
                 const SizedBox(height: 16),
                 const NoteSequenceCard(),
-                const SizedBox(height: 20),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    CustomButton(label: display.text('home.title'), onPressed: AppNavigation.toHome),
-                    CustomButton(
-                      label: display.text('nav.counterPlayground'),
-                      onPressed: AppNavigation.toCounterPlayground,
-                    ),
-                    CustomButton(
-                      label: display.text('nav.ironyGenerator'),
-                      onPressed: AppNavigation.toIronyGenerator,
-                    ),
-                  ],
+                const SizedBox(height: 24),
+                const ToolDoorSelector(
+                  currentRouteName: RouteNames.compositionGenerator,
                 ),
               ],
             ),

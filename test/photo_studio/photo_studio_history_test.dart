@@ -74,9 +74,10 @@ void main() {
       expect(history.depth, 1);
       expect(history.canUndo, isTrue);
 
-      final undone = history.undo();
+      final undone = history.undo(after);
       expect(undone, before);
       expect(history.depth, 0);
+      expect(history.canRedo, isTrue);
     });
 
     test('gesture no-op is discarded', () {
@@ -100,19 +101,23 @@ void main() {
       final history = PhotoStudioHistory();
       final base = PhotoStudioState.initial();
 
+      var current = base;
       for (var i = 0; i < 25; i++) {
         final before = base.copyWith(stampScale: 1.0 + i * 0.01);
         final after = base.copyWith(stampScale: 1.0 + (i + 1) * 0.01);
         expect(history.recordChange(before, after), isTrue);
+        current = after;
       }
 
       expect(history.depth, 20);
-      final first = history.undo();
+      final first = history.undo(current);
       expect(first!.stampScale, closeTo(1.24, 1e-9));
 
       PhotoStudioState? oldest;
+      var cursor = first;
       while (history.canUndo) {
-        oldest = history.undo();
+        oldest = history.undo(cursor);
+        cursor = oldest!;
       }
       expect(oldest!.stampScale, closeTo(1.05, 1e-9));
       expect(history.depth, 0);
@@ -185,7 +190,7 @@ void main() {
               ),
           throwsUnsupportedError);
 
-      final restored = history.undo();
+      final restored = history.undo(after);
       expect(restored!.stamps, hasLength(1));
       expect(restored.stamps.single.emojiStampId, 'a');
       expect(restored.stamps.single.x, 0.2);
@@ -206,19 +211,15 @@ void main() {
       final history = PhotoStudioHistory();
       final bytes = Uint8List.fromList(List<int>.generate(64, (i) => i));
       final withImage = _state(imageBytes: bytes);
+      final blue = withImage.copyWith(draftStrokeArgb: StudioFrameColors.blue);
+      final green = withImage.copyWith(draftStrokeArgb: StudioFrameColors.green);
 
-      history.recordChange(
-        withImage,
-        withImage.copyWith(draftStrokeArgb: StudioFrameColors.blue),
-      );
-      history.recordChange(
-        withImage.copyWith(draftStrokeArgb: StudioFrameColors.blue),
-        withImage.copyWith(draftStrokeArgb: StudioFrameColors.green),
-      );
+      history.recordChange(withImage, blue);
+      history.recordChange(blue, green);
 
-      final second = history.undo();
-      final first = history.undo();
-      expect(identical(second!.imageBytes, bytes), isTrue);
+      final second = history.undo(green);
+      final first = history.undo(second!);
+      expect(identical(second.imageBytes, bytes), isTrue);
       expect(identical(first!.imageBytes, bytes), isTrue);
       expect(identical(first.imageBytes, second.imageBytes), isTrue);
     });
@@ -233,9 +234,35 @@ void main() {
       expect(history.recordChange(b, c), isTrue);
       expect(history.depth, 2);
 
-      expect(history.undo()!.draftShape, StudioFrameShape.circle);
-      expect(history.undo()!.draftShape, isNull);
-      expect(history.undo(), isNull);
+      expect(history.undo(c)!.draftShape, StudioFrameShape.circle);
+      expect(history.undo(b)!.draftShape, isNull);
+      expect(history.undo(a), isNull);
+    });
+
+    test('redo restores undone state and new edit clears redo', () {
+      final history = PhotoStudioHistory();
+      final a = _state(draftShape: null);
+      final b = _state(draftShape: StudioFrameShape.circle);
+      final c = _state(draftShape: StudioFrameShape.triangle);
+
+      history.recordChange(a, b);
+      history.recordChange(b, c);
+
+      final undone = history.undo(c);
+      expect(undone, b);
+      expect(history.canRedo, isTrue);
+
+      final redone = history.redo(b);
+      expect(redone, c);
+      expect(history.canRedo, isFalse);
+
+      final undoneAgain = history.undo(c);
+      expect(undoneAgain, b);
+      // New edit after undo clears redo stack.
+      final d = _state(draftShape: StudioFrameShape.rectangle);
+      expect(history.recordChange(b, d), isTrue);
+      expect(history.canRedo, isFalse);
+      expect(history.redo(d), isNull);
     });
   });
 }

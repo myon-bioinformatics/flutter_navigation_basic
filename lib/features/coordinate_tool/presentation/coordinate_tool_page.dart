@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/navigation/route_names.dart';
 import '../../../shared/display/display_scope.dart';
+import '../../../shared/widgets/tool_door_selector.dart';
 import '../../../shared/platform/open_external_url.dart';
 import '../domain/bounding_box.dart';
 import '../domain/coordinate_formatter.dart';
@@ -668,6 +670,10 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                 ],
 
                 Text(t('coordinate.disclaimer'), style: Theme.of(context).textTheme.bodySmall),
+                const SizedBox(height: 24),
+                const ToolDoorSelector(
+                  currentRouteName: RouteNames.coordinateTool,
+                ),
               ],
             ),
           ),

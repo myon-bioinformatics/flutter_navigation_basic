@@ -61,10 +61,6 @@ class _CompositionStudioScreenState extends State<CompositionStudioScreen> {
                   spacing: 12,
                   runSpacing: 12,
                   children: [
-                    NavButton(
-                      label: display.text('compositionStudio.songSeedGenerator'),
-                      routeName: AppRoutes.compositionSeedGenerator,
-                    ),
                     NavButton(label: display.text('home.title'), routeName: AppRoutes.home),
                     NavButton(label: display.text('nav.counterPlayground'), routeName: AppRoutes.counterPlayground),
                     NavButton(label: display.text('nav.ironyGenerator'), routeName: AppRoutes.ironyGenerator),
