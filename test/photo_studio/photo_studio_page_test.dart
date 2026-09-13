@@ -11,6 +11,7 @@ import 'package:flutter_application_1/features/photo_studio/domain/studio_frame_
 import 'package:flutter_application_1/features/photo_studio/presentation/compose_studio_image.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/photo_rect_canvas.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/photo_studio_page.dart';
+import 'package:flutter_application_1/shared/widgets/tool_door_selector.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/display_test_harness.dart';
@@ -887,6 +888,64 @@ void main() {
       isTrue,
       reason: 'tapping near the first stamp should change selection/scale',
     );
+  });
+
+  testWidgets('empty state, tool modes, draft badge, and leave confirm match mockup',
+      (tester) async {
+    await _pumpPage(tester);
+
+    expect(find.text('Tap to import'), findsOneWidget);
+    expect(find.text('Import image'), findsOneWidget);
+    expect(find.text('Frame'), findsWidgets);
+    expect(find.text('Stamp'), findsOneWidget);
+    expect(find.text('Move'), findsOneWidget);
+    expect(find.text('Resize'), findsOneWidget);
+    expect(find.byType(ToolDoorSelector), findsOneWidget);
+    expect(find.text('Draft'), findsNothing);
+
+    await _selectDraftTool(tester, 'Rectangle');
+    expect(find.text('Tap to import'), findsNothing);
+    await _createFrame(tester, x0: 0.1, y0: 0.1, x1: 0.4, y1: 0.4);
+    expect(find.text('Draft'), findsOneWidget);
+    expect(find.text('Delete'), findsWidgets);
+    expect(find.text('Stroke'), findsOneWidget);
+
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+    navigator.maybePop();
+    await tester.pumpAndSettle();
+    expect(find.text('Discard changes?'), findsOneWidget);
+    expect(find.text('Unsaved edits will be lost.'), findsOneWidget);
+    expect(find.text('Cancel'), findsOneWidget);
+    expect(find.text('Discard'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.text('Photo Studio'), findsOneWidget);
+    expect(find.text('Draft'), findsOneWidget);
+  });
+
+  testWidgets('importing fixture clears empty overlay and reports photo loaded',
+      (tester) async {
+    final fixture = (await rootBundle.load(
+      'assets/test_fixtures/photo_studio/test_3_transparent_shapes.png',
+    ))
+        .buffer
+        .asUint8List();
+
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(imageBytesPicker: () async => fixture),
+    );
+
+    await tester.runAsync(() async {
+      await tester.ensureVisible(find.text('Import image'));
+      await tester.tap(find.text('Import image'));
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Tap to import'), findsNothing);
+    expect(find.textContaining('Photo loaded'), findsOneWidget);
   });
 
   test('composeStudioPng encodes PNG for a narrow logical size', () async {
