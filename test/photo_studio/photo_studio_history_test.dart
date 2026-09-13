@@ -4,35 +4,69 @@ import 'package:flutter_application_1/features/photo_studio/domain/emoji_stamp.d
 import 'package:flutter_application_1/features/photo_studio/domain/normalized_rect.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/photo_studio_history.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/photo_studio_state.dart';
+import 'package:flutter_application_1/features/photo_studio/domain/studio_frame.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/studio_frame_style.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 PhotoStudioState _state({
   Uint8List? imageBytes,
-  NormalizedRect rect = NormalizedRect.initial,
-  StudioFrameShape shape = StudioFrameShape.rectangle,
-  int strokeArgb = StudioFrameColors.purple,
+  List<StudioFrame> frames = const [],
+  String? selectedStudioFrameId,
+  int draftStrokeArgb = StudioFrameColors.purple,
+  StudioFrameShape? draftShape,
   List<EmojiStamp> stamps = const [],
   String? selectedEmojiStampId,
   double stampScale = 1,
 }) =>
     PhotoStudioState(
       imageBytes: imageBytes,
-      rect: rect,
-      shape: shape,
-      strokeArgb: strokeArgb,
+      frames: frames,
+      selectedStudioFrameId: selectedStudioFrameId,
+      draftStrokeArgb: draftStrokeArgb,
+      draftShape: draftShape,
       stamps: stamps,
       selectedEmojiStampId: selectedEmojiStampId,
       stampScale: stampScale,
     );
 
+StudioFrame _frame({
+  String id = 'frame-a',
+  NormalizedRect rect = NormalizedRect.initial,
+  StudioFrameShape shape = StudioFrameShape.rectangle,
+  int strokeArgb = StudioFrameColors.purple,
+}) =>
+    StudioFrame(
+      studioFrameId: id,
+      rect: rect,
+      shape: shape,
+      strokeArgb: strokeArgb,
+    );
+
 void main() {
   group('PhotoStudioHistory', () {
+    test('initial state has empty frames and null draft tool', () {
+      final initial = PhotoStudioState.initial();
+      expect(initial.frames, isEmpty);
+      expect(initial.draftShape, isNull);
+      expect(initial.draftStrokeArgb, StudioFrameColors.purple);
+      expect(initial.selectedStudioFrameId, isNull);
+    });
+
     test('gesture commit stores before-state and undo restores it', () {
       final history = PhotoStudioHistory();
-      final before = _state(rect: NormalizedRect.initial);
+      final before = _state(frames: [_frame()]);
       final after = _state(
-        rect: const NormalizedRect(left: 0.1, top: 0.1, right: 0.9, bottom: 0.9),
+        frames: [
+          _frame(
+            rect: const NormalizedRect(
+              left: 0.1,
+              top: 0.1,
+              right: 0.9,
+              bottom: 0.9,
+            ),
+          ),
+        ],
+        selectedStudioFrameId: 'frame-a',
       );
 
       history.beginGesture(before);
@@ -47,7 +81,7 @@ void main() {
 
     test('gesture no-op is discarded', () {
       final history = PhotoStudioHistory();
-      final state = _state(strokeArgb: StudioFrameColors.red);
+      final state = _state(draftStrokeArgb: StudioFrameColors.red);
 
       history.beginGesture(state);
       expect(history.endGesture(state), isFalse);
@@ -73,13 +107,9 @@ void main() {
       }
 
       expect(history.depth, 20);
-      // Oldest five dropped; first remaining is i=5 (stampScale 1.05).
       final first = history.undo();
-      // After 5 undos of the newest... actually undo pops last.
-      // Last recorded before was i=24 with stampScale 1.24.
       expect(first!.stampScale, closeTo(1.24, 1e-9));
 
-      // Drain until oldest remaining (i=5 → stampScale 1.05).
       PhotoStudioState? oldest;
       while (history.canUndo) {
         oldest = history.undo();
@@ -109,7 +139,6 @@ void main() {
       expect(history.depth, 20);
     });
 
-    
     test('mutating source stamp list does not change stored state/history', () {
       final history = PhotoStudioHistory();
       final mutable = <EmojiStamp>[
@@ -145,19 +174,32 @@ void main() {
 
       expect(before.stamps, hasLength(1));
       expect(before.stamps.single.emojiStampId, 'a');
-      expect(() => before.stamps.add(
-            const EmojiStamp(
-              emojiStampId: 'x',
-              emoji: 'x',
-              x: 0,
-              y: 0,
-            ),
-          ), throwsUnsupportedError);
+      expect(
+          () => before.stamps.add(
+                const EmojiStamp(
+                  emojiStampId: 'x',
+                  emoji: 'x',
+                  x: 0,
+                  y: 0,
+                ),
+              ),
+          throwsUnsupportedError);
 
       final restored = history.undo();
       expect(restored!.stamps, hasLength(1));
       expect(restored.stamps.single.emojiStampId, 'a');
       expect(restored.stamps.single.x, 0.2);
+    });
+
+    test('mutating source frame list does not change stored state', () {
+      final mutable = <StudioFrame>[_frame()];
+      final state = _state(frames: mutable);
+      mutable.clear();
+      expect(state.frames, hasLength(1));
+      expect(
+        () => state.frames.add(_frame(id: 'x')),
+        throwsUnsupportedError,
+      );
     });
 
     test('shared imageBytes identical across history entries', () {
@@ -167,11 +209,11 @@ void main() {
 
       history.recordChange(
         withImage,
-        withImage.copyWith(strokeArgb: StudioFrameColors.blue),
+        withImage.copyWith(draftStrokeArgb: StudioFrameColors.blue),
       );
       history.recordChange(
-        withImage.copyWith(strokeArgb: StudioFrameColors.blue),
-        withImage.copyWith(strokeArgb: StudioFrameColors.green),
+        withImage.copyWith(draftStrokeArgb: StudioFrameColors.blue),
+        withImage.copyWith(draftStrokeArgb: StudioFrameColors.green),
       );
 
       final second = history.undo();
@@ -181,18 +223,18 @@ void main() {
       expect(identical(first.imageBytes, second.imageBytes), isTrue);
     });
 
-    test('multi undo restores in reverse commit order', () {
+    test('multi undo restores draft shape in reverse commit order', () {
       final history = PhotoStudioHistory();
-      final a = _state(shape: StudioFrameShape.rectangle);
-      final b = _state(shape: StudioFrameShape.circle);
-      final c = _state(shape: StudioFrameShape.triangle);
+      final a = _state(draftShape: null);
+      final b = _state(draftShape: StudioFrameShape.circle);
+      final c = _state(draftShape: StudioFrameShape.triangle);
 
       expect(history.recordChange(a, b), isTrue);
       expect(history.recordChange(b, c), isTrue);
       expect(history.depth, 2);
 
-      expect(history.undo()!.shape, StudioFrameShape.circle);
-      expect(history.undo()!.shape, StudioFrameShape.rectangle);
+      expect(history.undo()!.draftShape, StudioFrameShape.circle);
+      expect(history.undo()!.draftShape, isNull);
       expect(history.undo(), isNull);
     });
   });

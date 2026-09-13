@@ -1,9 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/coordinate_tool/domain/coordinate_formatter.dart';
 import 'package:flutter_application_1/features/coordinate_tool/presentation/coordinate_tool_page.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/display_test_harness.dart';
+
+Future<Uri> _unsupportedWebExpand(Uri url) {
+  throw UnsupportedError('web expansion disabled for test');
+}
 
 void main() {
   testWidgets('shows point, map links, tolerance, area maps, bounds, platform formats and XYZ', (tester) async {
@@ -140,7 +146,15 @@ void main() {
 
   testWidgets('shows error for Maps URL without coordinates', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(home: await wrapWithDisplayScope(const CoordinateToolPage())),
+      MaterialApp(
+        home: await wrapWithDisplayScope(
+          CoordinateToolPage(
+            // Apple share without coords is treated as expandable; keep this
+            // test offline by returning the same URI.
+            expandMapsShareUrl: (uri) async => uri,
+          ),
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -157,6 +171,127 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('expands short Maps link via injected expander', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: await wrapWithDisplayScope(
+          CoordinateToolPage(
+            expandMapsShareUrl: (_) async => Uri.parse(
+              'https://www.google.com/maps/place/Tokyo+Station/'
+              '@35.680000,139.760000,17z/data=!3d35.681236!4d139.767125',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final mapsUrl = find.widgetWithText(
+      TextField,
+      'Paste Google / Apple Maps URL',
+    );
+    await tester.enterText(mapsUrl, 'https://maps.app.goo.gl/tokyoDemo');
+    await tester.tap(find.text('Use map link'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('35.681236, 139.767125'), findsOneWidget);
+  });
+
+  testWidgets('shows expand failure when short-link expander throws', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: await wrapWithDisplayScope(
+          CoordinateToolPage(
+            expandMapsShareUrl: (_) async {
+              throw StateError('network');
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final mapsUrl = find.widgetWithText(
+      TextField,
+      'Paste Google / Apple Maps URL',
+    );
+    await tester.enterText(mapsUrl, 'https://maps.app.goo.gl/failDemo');
+    await tester.tap(find.text('Use map link'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Could not expand that map short link.'), findsOneWidget);
+  });
+
+  testWidgets('expand timeout clears busy and shows expand failure', (tester) async {
+    final never = Completer<Uri>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: await wrapWithDisplayScope(
+          CoordinateToolPage(
+            expandMapsShareUrl: (_) => never.future,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final mapsUrl = find.widgetWithText(
+      TextField,
+      'Paste Google / Apple Maps URL',
+    );
+    await tester.enterText(mapsUrl, 'https://maps.app.goo.gl/hangDemo');
+    await tester.tap(find.text('Use map link'));
+    await tester.pump();
+
+    final useLink = find.widgetWithText(OutlinedButton, 'Use map link');
+    expect(
+      tester.widget<OutlinedButton>(useLink).onPressed,
+      isNull,
+      reason: 'button stays disabled while expand is in flight',
+    );
+
+    await tester.pump(const Duration(seconds: 12));
+    await tester.pump();
+
+    expect(find.text('Could not expand that map short link.'), findsOneWidget);
+    expect(
+      tester.widget<OutlinedButton>(useLink).onPressed,
+      isNotNull,
+      reason: 'busy must clear after page-level timeout',
+    );
+  });
+
+  testWidgets('shows web unsupported message when expander rejects short links',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: await wrapWithDisplayScope(
+          CoordinateToolPage(
+            expandMapsShareUrl: _unsupportedWebExpand,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final mapsUrl = find.widgetWithText(
+      TextField,
+      'Paste Google / Apple Maps URL',
+    );
+    await tester.enterText(mapsUrl, 'https://maps.app.goo.gl/webDemo');
+    await tester.tap(find.text('Use map link'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('cannot be auto-expanded on web'),
+      findsOneWidget,
+    );
+    // Default demo coordinates remain on screen; ensure convert did not
+    // replace them with a short-link expansion result.
+    expect(find.text('Could not expand that map short link.'), findsNothing);
+  });
+
 
   testWidgets('generates manual box from center and radius', (tester) async {
     await tester.pumpWidget(

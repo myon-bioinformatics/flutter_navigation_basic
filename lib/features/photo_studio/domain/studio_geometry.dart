@@ -63,6 +63,103 @@ class StudioGeometry {
     ];
   }
 
+  /// Whether normalized point ([x], [y]) lies inside [shape] for [rect].
+  ///
+  /// [slop] expands the hit area slightly (stroke grab). Transparent corners
+  /// of circles/triangles are not treated as hits.
+  static bool shapeContainsNormalized(
+    NormalizedRect rect,
+    StudioFrameShape shape,
+    double x,
+    double y, {
+    double slop = 0,
+  }) {
+    switch (shape) {
+      case StudioFrameShape.rectangle:
+        return x >= rect.left - slop &&
+            x <= rect.right + slop &&
+            y >= rect.top - slop &&
+            y <= rect.bottom + slop;
+      case StudioFrameShape.circle:
+        final c = circleFromBounds(rect);
+        final dx = x - c.cx;
+        final dy = y - c.cy;
+        final r = c.radius + slop;
+        return dx * dx + dy * dy <= r * r;
+      case StudioFrameShape.triangle:
+        final v = triangleVertices(rect);
+        if (_pointInTriangle(
+          x,
+          y,
+          v[0].x,
+          v[0].y,
+          v[1].x,
+          v[1].y,
+          v[2].x,
+          v[2].y,
+        )) {
+          return true;
+        }
+        if (slop <= 0) return false;
+        return _distanceToSegment(x, y, v[0].x, v[0].y, v[1].x, v[1].y) <=
+                slop ||
+            _distanceToSegment(x, y, v[1].x, v[1].y, v[2].x, v[2].y) <=
+                slop ||
+            _distanceToSegment(x, y, v[2].x, v[2].y, v[0].x, v[0].y) <= slop;
+    }
+  }
+
+  static bool _pointInTriangle(
+    double px,
+    double py,
+    double ax,
+    double ay,
+    double bx,
+    double by,
+    double cx,
+    double cy,
+  ) {
+    final v0x = cx - ax;
+    final v0y = cy - ay;
+    final v1x = bx - ax;
+    final v1y = by - ay;
+    final v2x = px - ax;
+    final v2y = py - ay;
+    final dot00 = v0x * v0x + v0y * v0y;
+    final dot01 = v0x * v1x + v0y * v1y;
+    final dot02 = v0x * v2x + v0y * v2y;
+    final dot11 = v1x * v1x + v1y * v1y;
+    final dot12 = v1x * v2x + v1y * v2y;
+    final denom = dot00 * dot11 - dot01 * dot01;
+    if (denom.abs() < 1e-12) return false;
+    final u = (dot11 * dot02 - dot01 * dot12) / denom;
+    final v = (dot00 * dot12 - dot01 * dot02) / denom;
+    return u >= 0 && v >= 0 && (u + v) <= 1;
+  }
+
+  static double _distanceToSegment(
+    double px,
+    double py,
+    double ax,
+    double ay,
+    double bx,
+    double by,
+  ) {
+    final abx = bx - ax;
+    final aby = by - ay;
+    final len2 = abx * abx + aby * aby;
+    if (len2 < 1e-12) {
+      final dx = px - ax;
+      final dy = py - ay;
+      return math.sqrt(dx * dx + dy * dy);
+    }
+    var t = ((px - ax) * abx + (py - ay) * aby) / len2;
+    t = t.clamp(0.0, 1.0);
+    final dx = px - (ax + t * abx);
+    final dy = py - (ay + t * aby);
+    return math.sqrt(dx * dx + dy * dy);
+  }
+
   /// Segment intersection in normalized plane, or null if parallel / miss.
   static ({double x, double y})? segmentIntersection({
     required double ax,

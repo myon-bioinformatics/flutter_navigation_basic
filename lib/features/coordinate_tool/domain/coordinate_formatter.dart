@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'maps_url_policy.dart';
+
 class CoordinateValue {
   const CoordinateValue({required this.latitude, required this.longitude});
 
@@ -35,17 +37,110 @@ class CoordinateValue {
     final raw = input.trim();
     if (raw.isEmpty) return null;
 
-    // Builders encode commas as %2C in query values; decode so regexes match.
-    // Invalid escapes throw ArgumentError (not FormatException) on some SDKs.
-    String text;
-    try {
-      text = Uri.decodeFull(raw.replaceAll('+', ' '));
-    } on FormatException {
-      text = raw;
-    } on ArgumentError {
-      text = raw;
+    for (final text in _mapsUrlDecodeCandidates(raw)) {
+      final value = _tryParseMapsUrlText(text);
+      if (value != null) return value;
+    }
+    return null;
+  }
+
+  /// Async Maps URL parse with optional short-link redirect expansion.
+  ///
+  /// Tries [tryParseMapsUrl] first. When that fails and [input] looks like a
+  /// short share link, calls [expand] (if provided) then parses the result.
+  /// Expand failures propagate to the caller.
+  ///
+  /// Defense in depth: even if [expand] returns an arbitrary URI (including
+  /// injected fakes), only [MapsUrlPolicy.isAllowedExpandedMapsUri] targets
+  /// are parsed for coordinates.
+  static Future<CoordinateValue?> tryParseMapsUrlAsync(
+    String input, {
+    Future<Uri> Function(Uri url)? expand,
+  }) async {
+    final raw = input.trim();
+    if (raw.isEmpty) return null;
+
+    final sync = tryParseMapsUrl(raw);
+    if (sync != null) return sync;
+
+    if (expand == null || !looksLikeMapsShortShare(raw)) {
+      return null;
     }
 
+    final uri = Uri.tryParse(raw.contains('://') ? raw : 'https://$raw');
+    if (uri == null || !MapsUrlPolicy.isAllowedShortShareUri(uri)) {
+      return null;
+    }
+
+    final expanded = await expand(uri);
+    if (!MapsUrlPolicy.isAllowedExpandedMapsUri(expanded)) {
+      return null;
+    }
+    return tryParseMapsUrl(expanded.toString());
+  }
+
+  /// Whether [input] looks like a Maps short / share link that may need
+  /// redirect expansion before coordinates are visible.
+  static bool looksLikeMapsShortShare(String input) {
+    final trimmed = input.trim();
+    if (trimmed.isEmpty) return false;
+    final uri = Uri.tryParse(
+      trimmed.contains('://') ? trimmed : 'https://$trimmed',
+    );
+    if (uri == null || !MapsUrlPolicy.isAllowedShortShareUri(uri)) {
+      return false;
+    }
+    // Apple Maps share forms without extractable coords.
+    if (uri.host.toLowerCase() == 'maps.apple.com') {
+      return tryParseMapsUrl(trimmed) == null;
+    }
+    return true;
+  }
+
+  static CoordinateValue parseMapsUrl(String input) {
+    final value = tryParseMapsUrl(input);
+    if (value == null) {
+      throw const FormatException(
+        'Could not find latitude/longitude in that Maps URL.',
+      );
+    }
+    return value;
+  }
+
+  /// Decode candidates: raw (with `+` → space), single decodeFull, then
+  /// aggressive repeated [Uri.decodeComponent] passes.
+  static Iterable<String> _mapsUrlDecodeCandidates(String raw) sync* {
+    final plusNormalized = raw.replaceAll('+', ' ');
+    yield plusNormalized;
+
+    try {
+      yield Uri.decodeFull(plusNormalized);
+    } on FormatException {
+      // Keep going with other strategies.
+    } on ArgumentError {
+      // Keep going with other strategies.
+    }
+
+    yield _decodePercentAggressively(plusNormalized);
+  }
+
+  static String _decodePercentAggressively(String input) {
+    var text = input;
+    for (var i = 0; i < 8; i++) {
+      try {
+        final next = Uri.decodeComponent(text);
+        if (next == text) break;
+        text = next;
+      } on FormatException {
+        break;
+      } on ArgumentError {
+        break;
+      }
+    }
+    return text;
+  }
+
+  static CoordinateValue? _tryParseMapsUrlText(String text) {
     // Priority (first match wins):
     // 1) explicit `ll=` / `query=` / `q=` (tool builders + share params)
     // 2) `!3dLAT!4dLNG` place pin (prefer over `@`, which is often viewport center)
@@ -77,16 +172,6 @@ class CoordinateValue {
       }
     }
     return null;
-  }
-
-  static CoordinateValue parseMapsUrl(String input) {
-    final value = tryParseMapsUrl(input);
-    if (value == null) {
-      throw const FormatException(
-        'Could not find latitude/longitude in that Maps URL.',
-      );
-    }
-    return value;
   }
 
   String get decimalDegrees =>
@@ -121,6 +206,26 @@ class CoordinateValue {
           'q': 'Coordinates',
         },
       );
+
+  /// Key-free OSM static map preview centered on this point (open/copy URL).
+  ///
+  /// Best-effort optional helper — not a Google Static Maps API integration.
+  /// Embedding/fetch may be blocked by CORS depending on host.
+  Uri get openStreetMapStaticPreviewUri {
+    final center =
+        '${latitude.toStringAsFixed(6)},${longitude.toStringAsFixed(6)}';
+    return Uri.https(
+      'staticmap.openstreetmap.de',
+      '/staticmap.php',
+      <String, String>{
+        'center': center,
+        'zoom': '16',
+        'size': '600x400',
+        'maptype': 'mapnik',
+        'markers': '$center,lightblue1',
+      },
+    );
+  }
 
   static String toDms(double value, {required bool isLatitude}) {
     final absolute = value.abs();

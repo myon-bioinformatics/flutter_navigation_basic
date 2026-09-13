@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -5,9 +8,16 @@ import '../../../shared/display/display_scope.dart';
 import '../../../shared/platform/open_external_url.dart';
 import '../domain/bounding_box.dart';
 import '../domain/coordinate_formatter.dart';
+import '../domain/maps_url_expander.dart';
 
 class CoordinateToolPage extends StatefulWidget {
-  const CoordinateToolPage({super.key});
+  const CoordinateToolPage({
+    super.key,
+    this.expandMapsShareUrl,
+  });
+
+  /// Optional short-link expander override (tests / custom networking).
+  final Future<Uri> Function(Uri url)? expandMapsShareUrl;
 
   @override
   State<CoordinateToolPage> createState() => _CoordinateToolPageState();
@@ -33,6 +43,7 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
   CoordinateToleranceArea? _area;
   XyzTile? _tile;
   String? _error;
+  bool _mapsUrlBusy = false;
 
   @override
   void initState() {
@@ -102,18 +113,67 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
     });
   }
 
-  void _applyMapsUrl() {
+  Future<void> _applyMapsUrl() async {
+    if (_mapsUrlBusy) return;
     final display = DisplayScope.of(context);
-    final value = CoordinateValue.tryParseMapsUrl(_mapsUrl.text);
-    if (value == null) {
+    final raw = _mapsUrl.text;
+    final needsExpand = CoordinateValue.tryParseMapsUrl(raw) == null &&
+        CoordinateValue.looksLikeMapsShortShare(raw);
+
+    // Web cannot validate redirect hops before the browser GETs them, so the
+    // default expander refuses short links. Injected expanders (tests / IO
+    // hosts) may still expand.
+    if (needsExpand && kIsWeb && widget.expandMapsShareUrl == null) {
       setState(() {
-        _error = display.text('coordinate.mapsUrlInvalid');
+        _mapsUrlBusy = false;
+        _error = display.text('coordinate.mapsUrlExpandUnsupportedOnWeb');
       });
       return;
     }
-    _latitude.text = value.latitude.toStringAsFixed(6);
-    _longitude.text = value.longitude.toStringAsFixed(6);
-    _convert();
+
+    setState(() {
+      _mapsUrlBusy = true;
+      if (needsExpand) {
+        _error = display.text('coordinate.mapsUrlExpanding');
+      }
+    });
+
+    try {
+      final value = await CoordinateValue.tryParseMapsUrlAsync(
+        raw,
+        expand: widget.expandMapsShareUrl ?? expandMapsShareUrl,
+      ).timeout(const Duration(seconds: 12));
+      if (!mounted) return;
+      if (value == null) {
+        setState(() {
+          _mapsUrlBusy = false;
+          _error = display.text('coordinate.mapsUrlInvalid');
+        });
+        return;
+      }
+      _latitude.text = value.latitude.toStringAsFixed(6);
+      _longitude.text = value.longitude.toStringAsFixed(6);
+      setState(() => _mapsUrlBusy = false);
+      _convert();
+    } on TimeoutException {
+      if (!mounted) return;
+      setState(() {
+        _mapsUrlBusy = false;
+        _error = display.text('coordinate.mapsUrlExpandFailed');
+      });
+    } on UnsupportedError {
+      if (!mounted) return;
+      setState(() {
+        _mapsUrlBusy = false;
+        _error = display.text('coordinate.mapsUrlExpandUnsupportedOnWeb');
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _mapsUrlBusy = false;
+        _error = display.text('coordinate.mapsUrlExpandFailed');
+      });
+    }
   }
 
   Future<void> _copy(String value, String label) async {
@@ -246,7 +306,7 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
-                  onPressed: _applyMapsUrl,
+                  onPressed: _mapsUrlBusy ? null : _applyMapsUrl,
                   icon: const Icon(Icons.content_paste_go_outlined),
                   label: Text(t('coordinate.mapsUrlApply')),
                 ),
@@ -309,6 +369,28 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                     onCopy: () => _copy(
                       value.appleMapsUri.toString(),
                       t('coordinate.appleMapsUrl'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _MapLinkCard(
+                    title: t('coordinate.staticMapPreview'),
+                    uri: value.openStreetMapStaticPreviewUri,
+                    openLabel: t('coordinate.openStaticMapPreview'),
+                    copyTooltip: t('common.copy'),
+                    onOpen: () => _openMap(
+                      value.openStreetMapStaticPreviewUri,
+                      t('coordinate.staticMapPreview'),
+                    ),
+                    onCopy: () => _copy(
+                      value.openStreetMapStaticPreviewUri.toString(),
+                      t('coordinate.staticMapPreviewUrl'),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      t('coordinate.staticMapPreviewHint'),
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
                   const SizedBox(height: 28),

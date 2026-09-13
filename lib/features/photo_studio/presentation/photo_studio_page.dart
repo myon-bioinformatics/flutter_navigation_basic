@@ -10,11 +10,13 @@ import '../domain/photo_studio_history.dart';
 import '../domain/photo_studio_state.dart';
 import '../domain/studio_document.dart';
 import '../domain/studio_export_result.dart';
+import '../domain/studio_frame.dart';
 import '../domain/studio_frame_style.dart';
 import '../domain/studio_geometry.dart';
 import 'export_studio_png.dart';
 import 'photo_rect_canvas.dart';
 import 'pick_local_image_bytes.dart';
+import 'read_web_clipboard_image_bytes.dart';
 
 typedef StudioImageSaver = Future<bool> Function({
   required Uint8List bytes,
@@ -27,6 +29,7 @@ class PhotoStudioPage extends StatefulWidget {
     super.key,
     this.imageBytesPicker,
     this.imageSaver,
+    this.clipboardImageReader,
   });
 
   /// Optional override for tests / non-web hosts.
@@ -35,12 +38,16 @@ class PhotoStudioPage extends StatefulWidget {
   /// Optional override for save/download (tests inject a fake saver).
   final StudioImageSaver? imageSaver;
 
+  /// Optional override for reading binary clipboard images (tests / web).
+  final Future<Uint8List?> Function()? clipboardImageReader;
+
   @override
   State<PhotoStudioPage> createState() => _PhotoStudioPageState();
 }
 
 class _PhotoStudioPageState extends State<PhotoStudioPage> {
-  static const _emojiPalette = <String>[
+  /// Tiny optional shortcuts — not a hard stamp library.
+  static const _emojiShortcuts = <String>[
     '⭐',
     '❤️',
     '😊',
@@ -51,24 +58,32 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     '🍀',
   ];
 
+  static const _maxImageBytes = 4 * 1024 * 1024;
+  static const _maxImageClipboardChars = _maxImageBytes;
+
   /// Fallback until the first canvas layout reports its size.
   static const _fallbackCanvasSize = Size(760, 280);
 
   PhotoStudioState _studio = PhotoStudioState.initial();
   final PhotoStudioHistory _history = PhotoStudioHistory();
+  final TextEditingController _stampController = TextEditingController();
   String? _pendingEmoji;
   Size _canvasSize = _fallbackCanvasSize;
   String? _status;
 
   bool get _canUndo => _history.canUndo;
 
+  @override
+  void dispose() {
+    _stampController.dispose();
+    super.dispose();
+  }
+
   void _beginUndoGesture() {
     _history.beginGesture(_studio);
   }
 
   void _endUndoGesture() {
-    // Rebuild Undo controls; gesture commits often follow the last mutating
-    // setState, when history was still empty and buttons were disabled.
     if (_history.endGesture(_studio)) {
       setState(() {});
     }
@@ -104,6 +119,10 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
 
   Future<void> _setImage(Uint8List rawBytes) async {
     final display = DisplayScope.of(context);
+    if (rawBytes.lengthInBytes > _maxImageBytes) {
+      setState(() => _status = display.text('photoStudio.imageError'));
+      return;
+    }
     try {
       final validated = await decodeRasterImageBytes(rawBytes);
       if (!mounted) return;
@@ -144,25 +163,59 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     await _setImage(bytes);
   }
 
-  Future<void> _pasteBase64() async {
+  bool _looksLikeRawBase64(String value) {
+    if (value.length < 80 ||
+        value.length > _maxImageClipboardChars ||
+        value.length % 4 != 0) {
+      return false;
+    }
+    return RegExp(r'^[A-Za-z0-9+/=\r\n]+$').hasMatch(value);
+  }
+
+  Future<void> _pasteImage() async {
     final display = DisplayScope.of(context);
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     if (!mounted) return;
     final text = data?.text?.trim() ?? '';
-    if (text.isEmpty) {
-      setState(() => _status = display.text('photoStudio.noBase64Image'));
+    if (text.isNotEmpty) {
+      final imageCandidate =
+          text.startsWith('data:image/') || _looksLikeRawBase64(text);
+      // Oversized data:image / base64 text must not bypass the size cap.
+      if (imageCandidate && text.length <= _maxImageClipboardChars) {
+        try {
+          final payload = Base64ImageBridge.decodeText(text);
+          await _setImage(payload.bytes);
+          return;
+        } catch (_) {
+          // Fall through to binary clipboard / clear error.
+        }
+      }
+    }
+
+    final customReader = widget.clipboardImageReader;
+    final bytes = customReader != null
+        ? await customReader()
+        : await readWebClipboardImageBytes(maxBytes: _maxImageBytes);
+    if (!mounted) return;
+    if (bytes != null && bytes.isNotEmpty) {
+      await _setImage(bytes);
       return;
     }
-    try {
-      final payload = Base64ImageBridge.decodeText(text);
-      await _setImage(payload.bytes);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _status = display.text('photoStudio.imageError'));
-    }
+    setState(() => _status = display.text('photoStudio.noClipboardImage'));
   }
 
-  Future<void> _copyImageBase64() async {
+  void _handleInsertedContent(KeyboardInsertedContent content) {
+    final bytes = content.data;
+    if (bytes == null ||
+        bytes.isEmpty ||
+        bytes.lengthInBytes > _maxImageBytes ||
+        !content.mimeType.startsWith('image/')) {
+      return;
+    }
+    _setImage(bytes);
+  }
+
+  Future<void> _copyImage() async {
     final display = DisplayScope.of(context);
     final bytes = _studio.imageBytes;
     if (bytes == null) {
@@ -182,8 +235,34 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     });
   }
 
-  void _resetRect() {
-    _setStateWithUndo((s) => s.copyWith(rect: NormalizedRect.initial));
+  void _resetSelectedFrame() {
+    final selected = _studio.selectedFrame;
+    if (selected == null) return;
+    _setStateWithUndo(
+      (s) => s.copyWith(
+        frames: [
+          for (final frame in s.frames)
+            if (frame.studioFrameId == selected.studioFrameId)
+              frame.copyWith(rect: NormalizedRect.initial)
+            else
+              frame,
+        ],
+      ),
+    );
+  }
+
+  void _deleteSelectedFrame() {
+    final studioFrameId = _studio.selectedStudioFrameId;
+    if (studioFrameId == null) return;
+    _setStateWithUndo(
+      (s) => s.copyWith(
+        frames: [
+          for (final frame in s.frames)
+            if (frame.studioFrameId != studioFrameId) frame,
+        ],
+        selectedStudioFrameId: null,
+      ),
+    );
   }
 
   Future<void> _savePng() async {
@@ -207,8 +286,22 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     setState(() => _status = display.text(key));
   }
 
-  void _onRectChanged(NormalizedRect rect) {
-    setState(() => _studio = _studio.copyWith(rect: rect));
+  void _onFramesChanged(List<StudioFrame> frames) {
+    setState(() {
+      var next = _studio.copyWith(frames: frames);
+      final selectedId = next.selectedStudioFrameId;
+      if (selectedId != null &&
+          !frames.any((f) => f.studioFrameId == selectedId)) {
+        next = next.copyWith(selectedStudioFrameId: null);
+      }
+      _studio = next;
+    });
+  }
+
+  void _onSelectedStudioFrameIdChanged(String? studioFrameId) {
+    setState(() {
+      _studio = _studio.copyWith(selectedStudioFrameId: studioFrameId);
+    });
   }
 
   void _onStampsChanged(List<EmojiStamp> stamps) {
@@ -218,7 +311,6 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       if (_pendingEmoji != null) {
         _pendingEmoji = null;
       }
-      // A newly placed stamp should become selected with its own scale (1.0).
       final added = stamps
           .where((s) => !previousIds.contains(s.emojiStampId))
           .toList();
@@ -275,9 +367,51 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     });
   }
 
+  void _armCustomStamp() {
+    final text = _stampController.text.trim();
+    if (text.isEmpty) return;
+    setState(() {
+      _pendingEmoji = _pendingEmoji == text ? null : text;
+    });
+  }
+
+  void _applyStrokeColor(int argb) {
+    if (_studio.draftStrokeArgb == argb &&
+        (_studio.selectedFrame == null ||
+            _studio.selectedFrame!.strokeArgb == argb)) {
+      return;
+    }
+    _setStateWithUndo((s) {
+      final selectedId = s.selectedStudioFrameId;
+      return s.copyWith(
+        draftStrokeArgb: argb,
+        frames: selectedId == null
+            ? null
+            : [
+                for (final frame in s.frames)
+                  if (frame.studioFrameId == selectedId)
+                    frame.copyWith(strokeArgb: argb)
+                  else
+                    frame,
+              ],
+      );
+    });
+  }
+
+  void _setDraftShape(StudioFrameShape? shape) {
+    if (_studio.draftShape == shape) return;
+    _setStateWithUndo((s) => s.copyWith(draftShape: shape));
+  }
+
   void _onCanvasSizeChanged(Size size) {
     if (size == _canvasSize) return;
     setState(() => _canvasSize = size);
+  }
+
+  String _frameChipLabel(StudioFrame frame, int index) {
+    final shapeKey = 'photoStudio.shape.${frame.shape.name}';
+    final shape = DisplayScope.of(context).text(shapeKey);
+    return '$shape ${index + 1}';
   }
 
   @override
@@ -285,7 +419,12 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     final display = DisplayScope.of(context);
     String t(String key, {Map<String, Object?> arguments = const {}}) =>
         display.text(key, arguments: arguments);
-    final geometry = StudioGeometry.describe(_studio.rect, _studio.shape);
+    final selected = _studio.selectedFrame;
+    final geometry = selected == null
+        ? t('photoStudio.noFrameSelected')
+        : StudioGeometry.describe(selected.rect, selected.shape);
+    final rectText =
+        selected?.rect.labeledText ?? t('photoStudio.noFrameSelected');
 
     return CallbackShortcuts(
       bindings: {
@@ -335,11 +474,15 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                           ),
                           const SizedBox(height: 12),
                           PhotoRectCanvas(
-                            rect: _studio.rect,
+                            frames: _studio.frames,
+                            onFramesChanged: _onFramesChanged,
+                            selectedStudioFrameId:
+                                _studio.selectedStudioFrameId,
+                            onSelectedStudioFrameIdChanged:
+                                _onSelectedStudioFrameIdChanged,
+                            draftShape: _studio.draftShape,
+                            draftStrokeArgb: _studio.draftStrokeArgb,
                             imageBytes: _studio.imageBytes,
-                            onRectChanged: _onRectChanged,
-                            shape: _studio.shape,
-                            strokeColor: Color(_studio.strokeArgb),
                             stamps: _studio.stamps,
                             onStampsChanged: _onStampsChanged,
                             selectedEmojiStampId: _studio.selectedEmojiStampId,
@@ -352,27 +495,56 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            t('photoStudio.frameShape'),
+                            t('photoStudio.frameTool'),
                             style: Theme.of(context).textTheme.titleSmall,
                           ),
                           const SizedBox(height: 8),
                           Wrap(
                             spacing: 8,
+                            runSpacing: 8,
                             children: [
+                              ChoiceChip(
+                                label: Text(t('photoStudio.shape.none')),
+                                selected: _studio.draftShape == null,
+                                onSelected: (_) => _setDraftShape(null),
+                              ),
                               for (final shape in StudioFrameShape.values)
                                 ChoiceChip(
-                                  label:
-                                      Text(t('photoStudio.shape.${shape.name}')),
-                                  selected: _studio.shape == shape,
-                                  onSelected: (_) {
-                                    if (_studio.shape == shape) return;
-                                    _setStateWithUndo(
-                                      (s) => s.copyWith(shape: shape),
-                                    );
-                                  },
+                                  label: Text(
+                                    t('photoStudio.shape.${shape.name}'),
+                                  ),
+                                  selected: _studio.draftShape == shape,
+                                  onSelected: (_) => _setDraftShape(shape),
                                 ),
                             ],
                           ),
+                          if (_studio.frames.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              t('photoStudio.frames'),
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                for (var i = 0; i < _studio.frames.length; i++)
+                                  ChoiceChip(
+                                    label: Text(
+                                      _frameChipLabel(_studio.frames[i], i),
+                                    ),
+                                    selected: _studio.selectedStudioFrameId ==
+                                        _studio.frames[i].studioFrameId,
+                                    onSelected: (_) {
+                                      _onSelectedStudioFrameIdChanged(
+                                        _studio.frames[i].studioFrameId,
+                                      );
+                                    },
+                                  ),
+                              ],
+                            ),
+                          ],
                           const SizedBox(height: 12),
                           Text(
                             t('photoStudio.frameColor'),
@@ -385,12 +557,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                             children: [
                               for (final argb in StudioFrameColors.presets)
                                 GestureDetector(
-                                  onTap: () {
-                                    if (_studio.strokeArgb == argb) return;
-                                    _setStateWithUndo(
-                                      (s) => s.copyWith(strokeArgb: argb),
-                                    );
-                                  },
+                                  onTap: () => _applyStrokeColor(argb),
                                   child: Container(
                                     width: 28,
                                     height: 28,
@@ -398,14 +565,14 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                       color: Color(argb),
                                       shape: BoxShape.circle,
                                       border: Border.all(
-                                        color: _studio.strokeArgb == argb
+                                        color: _studio.draftStrokeArgb == argb
                                             ? Theme.of(context)
                                                 .colorScheme
                                                 .onSurface
                                             : Theme.of(context)
                                                 .colorScheme
                                                 .outlineVariant,
-                                        width: _studio.strokeArgb == argb
+                                        width: _studio.draftStrokeArgb == argb
                                             ? 2.5
                                             : 1,
                                       ),
@@ -420,11 +587,54 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                             style: Theme.of(context).textTheme.titleSmall,
                           ),
                           const SizedBox(height: 8),
+                          TextField(
+                            controller: _stampController,
+                            contentInsertionConfiguration:
+                                ContentInsertionConfiguration(
+                              onContentInserted: _handleInsertedContent,
+                              allowedMimeTypes: const [
+                                'image/png',
+                                'image/jpeg',
+                                'image/webp',
+                              ],
+                            ),
+                            decoration: InputDecoration(
+                              border: const OutlineInputBorder(),
+                              labelText: t('photoStudio.customStamp'),
+                              hintText: t('photoStudio.customStampHint'),
+                            ),
+                            onSubmitted: (_) => _armCustomStamp(),
+                          ),
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: FilledButton.tonalIcon(
+                              onPressed: _armCustomStamp,
+                              icon: const Icon(Icons.gesture),
+                              label: Text(t('photoStudio.armStamp')),
+                            ),
+                          ),
+                          if (_pendingEmoji != null) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              t(
+                                'photoStudio.stampArmed',
+                                arguments: {'stamp': _pendingEmoji!},
+                              ),
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                          const SizedBox(height: 8),
+                          Text(
+                            t('photoStudio.stampShortcuts'),
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: 6),
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
                             children: [
-                              for (final emoji in _emojiPalette)
+                              for (final emoji in _emojiShortcuts)
                                 ActionChip(
                                   label: Text(
                                     emoji,
@@ -432,8 +642,12 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                   ),
                                   onPressed: () {
                                     setState(() {
-                                      _pendingEmoji =
-                                          _pendingEmoji == emoji ? null : emoji;
+                                      if (_pendingEmoji == emoji) {
+                                        _pendingEmoji = null;
+                                      } else {
+                                        _pendingEmoji = emoji;
+                                        _stampController.text = emoji;
+                                      }
                                     });
                                   },
                                   backgroundColor: _pendingEmoji == emoji
@@ -475,14 +689,14 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                 label: Text(t('photoStudio.pickImage')),
                               ),
                               FilledButton.tonalIcon(
-                                onPressed: _pasteBase64,
+                                onPressed: _pasteImage,
                                 icon: const Icon(Icons.content_paste),
-                                label: Text(t('photoStudio.pasteBase64Image')),
+                                label: Text(t('photoStudio.pasteImage')),
                               ),
                               FilledButton.tonalIcon(
                                 onPressed: _studio.imageBytes == null
                                     ? null
-                                    : _copyImageBase64,
+                                    : _copyImage,
                                 icon: const Icon(Icons.copy_all_outlined),
                                 label: Text(t('photoStudio.copyImage')),
                               ),
@@ -494,9 +708,18 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                 label: Text(t('photoStudio.clearImage')),
                               ),
                               OutlinedButton.icon(
-                                onPressed: _resetRect,
+                                onPressed: selected == null
+                                    ? null
+                                    : _resetSelectedFrame,
                                 icon: const Icon(Icons.crop_square_outlined),
                                 label: Text(t('photoStudio.resetRect')),
+                              ),
+                              OutlinedButton.icon(
+                                onPressed: selected == null
+                                    ? null
+                                    : _deleteSelectedFrame,
+                                icon: const Icon(Icons.delete_outline),
+                                label: Text(t('photoStudio.deleteFrame')),
                               ),
                               OutlinedButton.icon(
                                 onPressed: _canUndo ? _undoOnce : null,
@@ -534,16 +757,20 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                           const SizedBox(height: 12),
                           _CopyCard(
                             title: t('photoStudio.rectLabel'),
-                            value: _studio.rect.labeledText,
+                            value: rectText,
                             copyTooltip: t('common.copy'),
-                            onCopy: () => _copy(_studio.rect.csvText),
+                            onCopy: selected == null
+                                ? null
+                                : () => _copy(selected.rect.csvText),
                           ),
                           const SizedBox(height: 8),
                           _CopyCard(
                             title: t('photoStudio.geometryLabel'),
                             value: geometry,
                             copyTooltip: t('common.copy'),
-                            onCopy: () => _copy(geometry),
+                            onCopy: selected == null
+                                ? null
+                                : () => _copy(geometry),
                           ),
                         ],
                       ),
@@ -590,7 +817,7 @@ class _CopyCard extends StatelessWidget {
   final String title;
   final String value;
   final String copyTooltip;
-  final VoidCallback onCopy;
+  final VoidCallback? onCopy;
 
   @override
   Widget build(BuildContext context) => Card(
