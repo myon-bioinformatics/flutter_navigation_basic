@@ -34,7 +34,10 @@ void main() {
 
     expect(find.text('People, places, schedules and events on one shared timeline.'), findsOneWidget);
 
-    await tester.tap(find.byType(DropdownButton<String>));
+    await tester.tap(find.descendant(
+      of: find.byType(DropdownButtonHideUnderline),
+      matching: find.byType(DropdownButton<String>),
+    ));
     await tester.pumpAndSettle();
     await tester.tap(find.text('JPN').last);
     await tester.pumpAndSettle();

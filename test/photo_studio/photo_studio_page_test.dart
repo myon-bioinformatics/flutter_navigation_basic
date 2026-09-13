@@ -61,14 +61,7 @@ String _rectCardText(WidgetTester tester) {
 
 bool _undoEnabled(WidgetTester tester) {
   final finder = find.byWidgetPredicate(
-    (w) => w is IconButton && (w as IconButton).tooltip == 'Undo',
-  );
-  return tester.widget<IconButton>(finder).onPressed != null;
-}
-
-bool _redoEnabled(WidgetTester tester) {
-  final finder = find.byWidgetPredicate(
-    (w) => w is IconButton && (w as IconButton).tooltip == 'Redo',
+    (w) => w is IconButton && w.tooltip == 'Undo',
   );
   return tester.widget<IconButton>(finder).onPressed != null;
 }
@@ -104,16 +97,7 @@ Future<void> _tapSavePng(WidgetTester tester) async {
 
 Future<void> _tapUndo(WidgetTester tester) async {
   final finder = find.byWidgetPredicate(
-    (w) => w is IconButton && (w as IconButton).tooltip == 'Undo',
-  );
-  await tester.ensureVisible(finder);
-  await tester.tap(finder);
-  await tester.pump();
-}
-
-Future<void> _tapRedo(WidgetTester tester) async {
-  final finder = find.byWidgetPredicate(
-    (w) => w is IconButton && (w as IconButton).tooltip == 'Redo',
+    (w) => w is IconButton && w.tooltip == 'Undo',
   );
   await tester.ensureVisible(finder);
   await tester.tap(finder);
