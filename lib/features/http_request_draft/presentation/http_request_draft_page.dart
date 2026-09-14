@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../core/navigation/route_names.dart';
 import '../../../core/utils/ascii_fullwidth.dart';
 import '../../../shared/display/display_scope.dart';
+import '../../../shared/http/curl_safe_subset.dart';
 import '../../../shared/http/request_draft.dart';
 import '../../../shared/http/request_draft_codec.dart';
 import '../../../shared/http/request_field.dart';
@@ -24,6 +25,7 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
 
   late final TextEditingController _url;
   late final TextEditingController _rawBody;
+  late final TextEditingController _curlImport;
   RequestDraft _draft = RequestDraft.empty().copyWith(
     query: [RequestField(id: _nextId())],
     headers: [RequestField(id: _nextId())],
@@ -33,12 +35,15 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
   final _queryControllers = <String, _FieldControllers>{};
   final _headerControllers = <String, _FieldControllers>{};
   final _formControllers = <String, _FieldControllers>{};
+  List<RequestDraftIssue> _importErrors = const [];
+  List<RequestDraftIssue> _importWarnings = const [];
 
   @override
   void initState() {
     super.initState();
     _url = TextEditingController(text: _draft.url);
     _rawBody = TextEditingController(text: _draft.rawBody);
+    _curlImport = TextEditingController();
     _syncFieldControllers();
   }
 
@@ -46,6 +51,7 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
   void dispose() {
     _url.dispose();
     _rawBody.dispose();
+    _curlImport.dispose();
     for (final c in _queryControllers.values) {
       c.dispose();
     }
@@ -88,16 +94,22 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
     sync(_draft.formFields, _formControllers);
   }
 
-  void _setDraft(RequestDraft draft) {
+  void _setDraft(RequestDraft draft, {bool syncTopLevelControllers = false}) {
     setState(() {
       _draft = draft;
       _syncFieldControllers();
+      if (syncTopLevelControllers) {
+        _url.text = draft.url;
+        _rawBody.text = draft.rawBody;
+      }
     });
   }
 
   void _clearDraft() {
     _url.clear();
     _rawBody.clear();
+    _importErrors = const [];
+    _importWarnings = const [];
     _setDraft(
       RequestDraft.empty().copyWith(
         query: [RequestField(id: _nextId())],
@@ -105,6 +117,19 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
         formFields: [RequestField(id: _nextId())],
       ),
     );
+  }
+
+  void _importCurl() {
+    final result = CurlSafeSubset.tryParse(
+      _curlImport.text,
+      newId: _nextId,
+    );
+    setState(() {
+      _importErrors = result.errors;
+      _importWarnings = result.warnings;
+    });
+    if (result.draft == null) return;
+    _setDraft(result.draft!, syncTopLevelControllers: true);
   }
 
   Future<void> _copy(String text, String label) async {
@@ -124,8 +149,7 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
   Widget build(BuildContext context) {
     final display = DisplayScope.of(context);
     final issues = RequestDraftValidator.validate(_draft);
-    final redactedCurl =
-        RequestDraftCodec.toCurl(_draft, redactSecrets: true);
+    final redactedCurl = CurlSafeSubset.export(_draft, redactSecrets: true);
     final uri = RequestDraftCodec.buildUri(_draft, redactSecrets: true);
     final headers =
         RequestDraftCodec.buildHeaders(_draft, redactSecrets: true);
@@ -148,6 +172,57 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
             display.text('httpDraft.subtitle'),
             style: Theme.of(context).textTheme.bodyMedium,
           ),
+          const SizedBox(height: 16),
+          _sectionTitle(display.text('httpDraft.curlImport')),
+          TextField(
+            controller: _curlImport,
+            minLines: 3,
+            maxLines: 8,
+            inputFormatters: asciiFullwidthInputFormatters,
+            style: const TextStyle(
+              fontFamily: 'monospace',
+              letterSpacing: 0,
+              fontSize: 12,
+            ),
+            decoration: InputDecoration(
+              labelText: display.text('httpDraft.curlImportHint'),
+              border: const OutlineInputBorder(),
+              alignLabelWithHint: true,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FilledButton.icon(
+              onPressed: _importCurl,
+              icon: const Icon(Icons.upload_file_outlined),
+              label: Text(display.text('httpDraft.importCurl')),
+            ),
+          ),
+          if (_importErrors.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            for (final issue in _importErrors)
+              Text(
+                '• ${display.text(issue.code, arguments: {
+                      if (issue.argument != null) 'name': issue.argument!,
+                      if (issue.argument != null) 'flag': issue.argument!,
+                    })}',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+          ],
+          if (_importWarnings.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            for (final issue in _importWarnings)
+              Text(
+                '• ${display.text(issue.code, arguments: {
+                      if (issue.argument != null) 'name': issue.argument!,
+                      if (issue.argument != null) 'flag': issue.argument!,
+                    })}',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+          ],
           const SizedBox(height: 16),
           Row(
             children: [
