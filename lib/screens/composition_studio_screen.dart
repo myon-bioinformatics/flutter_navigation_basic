@@ -5,7 +5,9 @@ import '../features/composition_generator/presentation/composition_generator_pag
 
 /// Thin public wrapper; implementation lives in features/.
 ///
-/// Owns a single [CompositionGeneratorController] for the screen lifetime.
+/// Creates one [CompositionGeneratorController] for the screen lifetime and
+/// hands it to [CompositionGeneratorPage]. The controller is a plain object
+/// (no dispose); the wrapper keeps the single instance stable across rebuilds.
 class CompositionStudioScreen extends StatefulWidget {
   const CompositionStudioScreen({super.key});
 

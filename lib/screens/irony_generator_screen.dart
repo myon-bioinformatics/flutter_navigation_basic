@@ -5,8 +5,8 @@ import '../features/irony_generator/presentation/irony_generator_page.dart';
 
 /// Thin public wrapper; implementation lives in features/.
 ///
-/// Owns a single [IronyGeneratorController] for the screen lifetime.
-/// Disposal is handled by [IronyGeneratorPage].
+/// Creates one [IronyGeneratorController] for the screen lifetime and
+/// transfers ownership to [IronyGeneratorPage] (the page disposes it).
 class IronyGeneratorScreen extends StatefulWidget {
   const IronyGeneratorScreen({super.key});
 

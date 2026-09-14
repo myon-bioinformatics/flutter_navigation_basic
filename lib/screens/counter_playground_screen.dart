@@ -5,8 +5,8 @@ import '../features/counter_playground/presentation/counter_playground_page.dart
 
 /// Thin public wrapper; implementation lives in features/.
 ///
-/// Owns a single [CounterPlaygroundController] for the screen lifetime.
-/// Disposal is handled by [CounterPlaygroundPage].
+/// Creates one [CounterPlaygroundController] for the screen lifetime and
+/// transfers ownership to [CounterPlaygroundPage] (the page disposes it).
 class CounterPlaygroundScreen extends StatefulWidget {
   const CounterPlaygroundScreen({super.key});
 
