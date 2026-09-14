@@ -41,8 +41,13 @@ class AppRoutes {
 
     // Catalogue / demo routes that are public-entrypoint only.
     for (var i = 1; i <= 198; i++) {
-      final name = screenRoute(i);
-      map.putIfAbsent(name, () => (_) => GenericScreen(screenId: i));
+      // Capture per-iteration so each builder closes over a fixed screen id.
+      final screenId = i;
+      final name = screenRoute(screenId);
+      map.putIfAbsent(
+        name,
+        () => (_) => GenericScreen(screenId: screenId),
+      );
     }
 
     map.addAll(AppRouteRegistry.catalogueRoutes);
