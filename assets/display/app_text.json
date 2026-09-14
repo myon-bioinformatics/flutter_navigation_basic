@@ -552,7 +552,11 @@
       "photoStudio.saveSnack": "PNG export completed",
       "photoStudio.languageMenu": "Language",
       "photoStudio.replaceImage": "Replace image",
-      "compositionStudio.seedProgressionSemantics": "Chord progression {progression}"
+      "compositionStudio.seedProgressionSemantics": "Chord progression {progression}",
+      "homeOverview.version": "Version",
+      "homeOverview.versionWithBuild": "{version} · build {build}",
+      "homeOverview.commit": "Commit",
+      "homeOverview.commitWithRef": "Commit · {ref}"
     },
     "jpn": {
       "common.copy": "コピー",
@@ -1106,7 +1110,11 @@
       "photoStudio.saveSnack": "PNG書き出しが完了しました",
       "photoStudio.languageMenu": "言語",
       "photoStudio.replaceImage": "画像を差し替え",
-      "compositionStudio.seedProgressionSemantics": "コード進行 {progression}"
+      "compositionStudio.seedProgressionSemantics": "コード進行 {progression}",
+      "homeOverview.version": "バージョン",
+      "homeOverview.versionWithBuild": "{version} · build {build}",
+      "homeOverview.commit": "コミット",
+      "homeOverview.commitWithRef": "コミット · {ref}"
     },
     "fra": {
       "common.copy": "Copier",
@@ -1660,7 +1668,11 @@
       "photoStudio.saveSnack": "Export PNG terminé",
       "photoStudio.languageMenu": "Langue",
       "photoStudio.replaceImage": "Remplacer l’image",
-      "compositionStudio.seedProgressionSemantics": "Progression d’accords {progression}"
+      "compositionStudio.seedProgressionSemantics": "Progression d’accords {progression}",
+      "homeOverview.version": "Version",
+      "homeOverview.versionWithBuild": "{version} · build {build}",
+      "homeOverview.commit": "Commit",
+      "homeOverview.commitWithRef": "Commit · {ref}"
     },
     "spa": {
       "common.copy": "Copiar",
@@ -2214,7 +2226,11 @@
       "photoStudio.saveSnack": "Exportación PNG completada",
       "photoStudio.languageMenu": "Idioma",
       "photoStudio.replaceImage": "Reemplazar imagen",
-      "compositionStudio.seedProgressionSemantics": "Progresión de acordes {progression}"
+      "compositionStudio.seedProgressionSemantics": "Progresión de acordes {progression}",
+      "homeOverview.version": "Versión",
+      "homeOverview.versionWithBuild": "{version} · build {build}",
+      "homeOverview.commit": "Commit",
+      "homeOverview.commitWithRef": "Commit · {ref}"
     },
     "por": {
       "common.copy": "Copiar",
@@ -2768,7 +2784,11 @@
       "photoStudio.saveSnack": "Exportação PNG concluída",
       "photoStudio.languageMenu": "Idioma",
       "photoStudio.replaceImage": "Substituir imagem",
-      "compositionStudio.seedProgressionSemantics": "Progressão de acordes {progression}"
+      "compositionStudio.seedProgressionSemantics": "Progressão de acordes {progression}",
+      "homeOverview.version": "Versão",
+      "homeOverview.versionWithBuild": "{version} · build {build}",
+      "homeOverview.commit": "Commit",
+      "homeOverview.commitWithRef": "Commit · {ref}"
     },
     "ara": {
       "common.copy": "نسخ",
@@ -3322,7 +3342,11 @@
       "photoStudio.saveSnack": "اكتمل تصدير PNG",
       "photoStudio.languageMenu": "اللغة",
       "photoStudio.replaceImage": "استبدال الصورة",
-      "compositionStudio.seedProgressionSemantics": "تتابع الأكوردات {progression}"
+      "compositionStudio.seedProgressionSemantics": "تتابع الأكوردات {progression}",
+      "homeOverview.version": "الإصدار",
+      "homeOverview.versionWithBuild": "{version} · build {build}",
+      "homeOverview.commit": "الالتزام",
+      "homeOverview.commitWithRef": "الالتزام · {ref}"
     },
     "zho": {
       "common.copy": "复制",
@@ -3876,7 +3900,11 @@
       "photoStudio.saveSnack": "PNG 导出完成",
       "photoStudio.languageMenu": "语言",
       "photoStudio.replaceImage": "替换图片",
-      "compositionStudio.seedProgressionSemantics": "和弦进行 {progression}"
+      "compositionStudio.seedProgressionSemantics": "和弦进行 {progression}",
+      "homeOverview.version": "版本",
+      "homeOverview.versionWithBuild": "{version} · build {build}",
+      "homeOverview.commit": "提交",
+      "homeOverview.commitWithRef": "提交 · {ref}"
     },
     "rus": {
       "common.copy": "Копировать",
@@ -4430,7 +4458,11 @@
       "photoStudio.saveSnack": "Экспорт PNG завершён",
       "photoStudio.languageMenu": "Язык",
       "photoStudio.replaceImage": "Заменить изображение",
-      "compositionStudio.seedProgressionSemantics": "Аккордовая последовательность {progression}"
+      "compositionStudio.seedProgressionSemantics": "Аккордовая последовательность {progression}",
+      "homeOverview.version": "Версия",
+      "homeOverview.versionWithBuild": "{version} · build {build}",
+      "homeOverview.commit": "Коммит",
+      "homeOverview.commitWithRef": "Коммит · {ref}"
     },
     "ind": {
       "common.copy": "Salin",
@@ -4984,7 +5016,11 @@
       "photoStudio.saveSnack": "Ekspor PNG selesai",
       "photoStudio.languageMenu": "Bahasa",
       "photoStudio.replaceImage": "Ganti gambar",
-      "compositionStudio.seedProgressionSemantics": "Progresi akor {progression}"
+      "compositionStudio.seedProgressionSemantics": "Progresi akor {progression}",
+      "homeOverview.version": "Versi",
+      "homeOverview.versionWithBuild": "{version} · build {build}",
+      "homeOverview.commit": "Commit",
+      "homeOverview.commitWithRef": "Commit · {ref}"
     },
     "deu": {
       "common.copy": "Kopieren",
@@ -5538,7 +5574,11 @@
       "photoStudio.saveSnack": "PNG-Export abgeschlossen",
       "photoStudio.languageMenu": "Sprache",
       "photoStudio.replaceImage": "Bild ersetzen",
-      "compositionStudio.seedProgressionSemantics": "Akkordfolge {progression}"
+      "compositionStudio.seedProgressionSemantics": "Akkordfolge {progression}",
+      "homeOverview.version": "Version",
+      "homeOverview.versionWithBuild": "{version} · build {build}",
+      "homeOverview.commit": "Commit",
+      "homeOverview.commitWithRef": "Commit · {ref}"
     },
     "swa": {
       "common.copy": "Nakili",
@@ -6092,7 +6132,11 @@
       "photoStudio.saveSnack": "Usafirishaji wa PNG umekamilika",
       "photoStudio.languageMenu": "Lugha",
       "photoStudio.replaceImage": "Badilisha picha",
-      "compositionStudio.seedProgressionSemantics": "Mpangilio wa kodi {progression}"
+      "compositionStudio.seedProgressionSemantics": "Mpangilio wa kodi {progression}",
+      "homeOverview.version": "Toleo",
+      "homeOverview.versionWithBuild": "{version} · build {build}",
+      "homeOverview.commit": "Commit",
+      "homeOverview.commitWithRef": "Commit · {ref}"
     }
   }
 }

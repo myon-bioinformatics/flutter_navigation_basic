@@ -61,7 +61,7 @@ void main() {
       // stable stand-in for "revision missing".
       final metadata = BuildMetadata.fromJson(const {
         'app': {
-          'version': '0.0.1',
+          'version': '0.1.0',
           'buildNumber': 1,
           'stage': 'pre-beta',
         },
@@ -80,14 +80,17 @@ void main() {
       expect(metadata.revision.sha, isNull);
       expect(metadata.revision.dirty, isFalse);
       expect(metadata.revision.displaySha, 'unknown');
-      expect(metadata.version, '0.0.1');
+      expect(metadata.version, '0.1.0');
       expect(metadata.buildNumber, 1);
+      expect(metadata.displayVersion, 'v0.1.0');
+      expect(metadata.displayBuild, 'build 1');
+      expect(metadata.displayVersionWithBuild, 'v0.1.0+1');
     });
 
     test('parses repository.revision when present', () {
       final metadata = BuildMetadata.fromJson(const {
         'app': {
-          'version': '0.0.1',
+          'version': '0.1.0',
           'buildNumber': 1,
           'stage': 'pre-beta',
         },
@@ -121,11 +124,22 @@ void main() {
   });
 
   group('BuildMetadata.load', () {
-    test('loads the checked-in diagnostics asset without throwing', () async {
+    test('loads the tracked deterministic fallback asset', () async {
       final metadata = await BuildMetadata.load();
 
-      expect(metadata.version, isNotEmpty);
-      expect(metadata.displayVersion, startsWith('v'));
+      expect(metadata.version, '0.1.0');
+      expect(metadata.buildNumber, 1);
+      expect(metadata.displayVersion, 'v0.1.0');
+      expect(metadata.displayVersion, isNot(contains('+')));
+      expect(metadata.displayBuild, 'build 1');
+      expect(metadata.displayVersionWithBuild, 'v0.1.0+1');
+      // Checked-in file must stay a neutral placeholder (no live SHA/sizes).
+      expect(metadata.revision.sha, isNull);
+      expect(metadata.revision.displaySha, 'unknown');
+      expect(metadata.revision.dirty, isFalse);
+      expect(metadata.sourceBytes, isNull);
+      expect(metadata.screens, isEmpty);
+      expect(metadata.routeSources, isEmpty);
     });
   });
 }

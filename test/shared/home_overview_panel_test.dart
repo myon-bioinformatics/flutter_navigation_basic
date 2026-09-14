@@ -109,18 +109,19 @@ void main() {
       ),
     );
 
-    // Before the injected future resolves, the metric shows the loading
-    // state and the loader has been invoked exactly once (on initState).
-    expect(find.textContaining('loading…'), findsOneWidget);
+    // Before the injected future resolves, Version + Commit metrics both
+    // show loading, and the parent loads metadata exactly once.
+    expect(find.textContaining('loading…'), findsNWidgets(2));
     expect(loadCount, 1);
 
     completer.complete(_fakeMetadata());
     await tester.pumpAndSettle();
 
-    // Once the initial metadata future resolves, the metric settles on the
-    // "unknown" display sha (the fake metadata has no revision data).
+    // Once the initial metadata future resolves, Version settles on
+    // "vunknown · build 0" and Commit on the display sha "unknown".
     expect(find.textContaining('loading…'), findsNothing);
-    expect(find.textContaining('unknown'), findsOneWidget);
+    expect(find.textContaining('vunknown'), findsOneWidget);
+    expect(find.textContaining('unknown'), findsWidgets);
     expect(loadCount, 1);
 
     // Mirrors HomeScreen's Refresh action, which calls setState on an
@@ -130,10 +131,10 @@ void main() {
 
     // With the future cached, the rebuild must not reset the FutureBuilder
     // to a waiting state, so "loading…" should never reappear even for a
-    // single frame, the previously resolved value stays put, and the
+    // single frame, the previously resolved values stay put, and the
     // loader must not be invoked again.
     expect(find.textContaining('loading…'), findsNothing);
-    expect(find.textContaining('unknown'), findsOneWidget);
+    expect(find.textContaining('vunknown'), findsOneWidget);
     expect(loadCount, 1);
   });
 }

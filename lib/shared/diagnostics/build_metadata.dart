@@ -29,7 +29,14 @@ class BuildMetadata {
   final Map<String, ScreenWeightMetadata> screens;
   final Map<String, RouteSourceWeightMetadata> routeSources;
 
-  String get displayVersion => 'v$version+$buildNumber';
+  /// Product release only (`v0.1.0`). Build counter and Git SHA stay separate.
+  String get displayVersion => 'v$version';
+
+  /// Monotonic build counter from `pubspec` (`+N`), not a commit identity.
+  String get displayBuild => 'build $buildNumber';
+
+  /// Flutter-style combined label when a single version token is required.
+  String get displayVersionWithBuild => 'v$version+$buildNumber';
 
   factory BuildMetadata.fromJson(Map<String, dynamic> json) {
     final app = json['app'] as Map<String, dynamic>? ?? const {};
@@ -61,6 +68,10 @@ class BuildMetadata {
   }
 
   static Future<BuildMetadata> load() async {
+    // Reads the tracked fallback asset in local/default builds. CI Pages and
+    // release paths rewrite assets/diagnostics/build_meta.json with
+    // `dart run tool/dev.dart meta` before packaging, so deployed UIs show
+    // the real commit — never rely on the checked-in placeholder as truth.
     final raw = await rootBundle.loadString('assets/diagnostics/build_meta.json');
     final json = jsonDecode(raw) as Map<String, dynamic>;
     return BuildMetadata.fromJson(json);

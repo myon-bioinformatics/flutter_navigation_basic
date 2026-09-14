@@ -73,7 +73,7 @@ class HomeOverviewPanel extends StatelessWidget {
                     label: display.text('homeOverview.metricStage'),
                     value: display.text('homeOverview.metricStageValue'),
                   ),
-                  _RevisionMetric(loader: metadataLoader),
+                  _BuildMetrics(loader: metadataLoader),
                 ],
               ),
             ],
@@ -123,19 +123,18 @@ class _Metric extends StatelessWidget {
   }
 }
 
-class _RevisionMetric extends StatefulWidget {
-  const _RevisionMetric({required this.loader});
+class _BuildMetrics extends StatefulWidget {
+  const _BuildMetrics({required this.loader});
 
   final Future<BuildMetadata> Function() loader;
 
   @override
-  State<_RevisionMetric> createState() => _RevisionMetricState();
+  State<_BuildMetrics> createState() => _BuildMetricsState();
 }
 
-class _RevisionMetricState extends State<_RevisionMetric> {
-  // Loaded once per widget lifetime so parent rebuilds (e.g. the Home
-  // screen's Refresh action calling setState) reuse the same Future
-  // instead of re-reading the asset and flashing back to "loading…".
+class _BuildMetricsState extends State<_BuildMetrics> {
+  // One Future for Version + Commit so the asset is read/parsed once per
+  // panel lifetime. Parent rebuilds (Home refresh) reuse the same Future.
   late final Future<BuildMetadata> _metadata;
 
   @override
@@ -151,47 +150,89 @@ class _RevisionMetricState extends State<_RevisionMetric> {
       future: _metadata,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return _Metric(
-            label: display.text('homeOverview.revision'),
-            value: display.text('homeOverview.loading'),
+          return Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _Metric(
+                label: display.text('homeOverview.version'),
+                value: display.text('homeOverview.loading'),
+              ),
+              _Metric(
+                label: display.text('homeOverview.commit'),
+                value: display.text('homeOverview.loading'),
+              ),
+            ],
           );
         }
-        final revision = snapshot.data!.revision;
+
+        final metadata = snapshot.data!;
+        final revision = metadata.revision;
         final details = <String>[
-          if (revision.sha != null) display.text('homeOverview.shaLabel', arguments: {'sha': revision.sha}),
-          if (revision.ref != null) display.text('homeOverview.refLabel', arguments: {'ref': revision.ref}),
+          if (revision.sha != null)
+            display.text('homeOverview.shaLabel', arguments: {'sha': revision.sha}),
+          if (revision.ref != null)
+            display.text('homeOverview.refLabel', arguments: {'ref': revision.ref}),
           if (revision.committedAt != null)
-            display.text('homeOverview.committedLabel', arguments: {'date': revision.committedAt}),
+            display.text(
+              'homeOverview.committedLabel',
+              arguments: {'date': revision.committedAt},
+            ),
           if (revision.subject != null) revision.subject!,
           if (revision.commitUrl != null) revision.commitUrl!,
           if (revision.dirty) display.text('homeOverview.dirtyWorkingTree'),
         ].join('\n');
         final commitUrl = revision.commitUrl;
-        final metric = _Metric(
+        final versionMetric = _Metric(
+          label: display.text('homeOverview.version'),
+          value: display.text(
+            'homeOverview.versionWithBuild',
+            arguments: {
+              'version': metadata.displayVersion,
+              'build': '${metadata.buildNumber}',
+            },
+          ),
+        );
+        final commitMetric = _Metric(
           label: revision.ref == null || revision.ref!.isEmpty
-              ? display.text('homeOverview.revision')
-              : display.text('homeOverview.revisionWithRef', arguments: {'ref': revision.ref}),
+              ? display.text('homeOverview.commit')
+              : display.text(
+                  'homeOverview.commitWithRef',
+                  arguments: {'ref': revision.ref},
+                ),
           value: revision.displaySha,
         );
-        return Tooltip(
-          message: details.isEmpty
-              ? display.text('homeOverview.gitRevisionUnavailable')
-              : commitUrl == null
-                  ? details
-                  : '$details\n${display.text('homeOverview.tapToCopyCommitUrl')}',
-          child: commitUrl == null
-              ? metric
-              : InkWell(
-                  borderRadius: BorderRadius.circular(14),
-                  onTap: () async {
-                    await Clipboard.setData(ClipboardData(text: commitUrl));
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(display.text('homeOverview.commitUrlCopied'))),
-                    );
-                  },
-                  child: metric,
-                ),
+
+        return Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            versionMetric,
+            Tooltip(
+              message: details.isEmpty
+                  ? display.text('homeOverview.gitRevisionUnavailable')
+                  : commitUrl == null
+                      ? details
+                      : '$details\n${display.text('homeOverview.tapToCopyCommitUrl')}',
+              child: commitUrl == null
+                  ? commitMetric
+                  : InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () async {
+                        await Clipboard.setData(ClipboardData(text: commitUrl));
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              display.text('homeOverview.commitUrlCopied'),
+                            ),
+                          ),
+                        );
+                      },
+                      child: commitMetric,
+                    ),
+            ),
+          ],
         );
       },
     );

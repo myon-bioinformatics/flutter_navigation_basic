@@ -1,6 +1,6 @@
 {
   "app": {
-    "version": "0.0.1",
+    "version": "0.1.0",
     "buildNumber": 1,
     "stage": "pre-beta"
   },
@@ -9,11 +9,21 @@
     "mode": "release",
     "artifactBytes": null,
     "analysisJsonBytes": null,
-    "note": "Run dart run tool/dev.dart meta, optionally with --artifact/--analysis, to refresh this snapshot."
+    "note": "Tracked deterministic fallback only (no live SHA/sizes). Pages/release always regenerate via `dart run tool/dev.dart meta` after checkout; do not treat this file as the deployed commit identity."
   },
   "repository": {
     "sourceBytes": null,
-    "assetBytes": null
+    "assetBytes": null,
+    "revision": {
+      "sha": null,
+      "shortSha": null,
+      "ref": null,
+      "committedAt": null,
+      "subject": null,
+      "commitUrl": null,
+      "dirty": false
+    }
   },
-  "screens": {}
+  "screens": {},
+  "routeSources": {}
 }
