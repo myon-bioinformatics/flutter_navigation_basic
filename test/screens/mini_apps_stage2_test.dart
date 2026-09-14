@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/screens/composition_generator_screen.dart';
 import 'package:flutter_application_1/screens/counter_playground_screen.dart';
 import 'package:flutter_application_1/screens/irony_generator_screen.dart';
+import 'package:flutter_application_1/shared/widgets/tool_door_selector.dart';
 
 import '../support/display_test_harness.dart';
 
@@ -23,21 +24,12 @@ void main() {
     expect(find.text('0'), findsWidgets);
   });
 
-  testWidgets('irony favorites can be managed from the favorites card',
+  testWidgets('irony generator keeps Door while drag card is present',
       (tester) async {
     await tester.pumpWidget(await _app(const IronyGeneratorScreen()));
-
-    await tester.tap(find.text('Favorite'));
-    await tester.pump();
-    expect(find.text('Favorites · 1'), findsOneWidget);
-
-    final removeButton = find.byTooltip('Remove favorite');
-    await tester.ensureVisible(removeButton);
-    await tester.tap(removeButton);
-    await tester.pump();
-
-    expect(find.text('Favorites · 0'), findsOneWidget);
-    expect(find.text('Favorite an irony to keep it handy here.'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.drag_indicator), findsOneWidget);
+    expect(find.byType(ToolDoorSelector), findsOneWidget);
   });
 
   testWidgets('composition exposes standard Flutter customization controls',

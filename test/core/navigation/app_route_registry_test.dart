@@ -11,52 +11,43 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/display_test_harness.dart';
 
-void _ignoreLayoutOverflowErrors(WidgetTester tester) {
-  final previous = FlutterError.onError;
-  FlutterError.onError = (details) {
-    if (details.exceptionAsString().contains('A RenderFlex overflowed')) {
-      return;
-    }
-    previous?.call(details);
-  };
-  addTearDown(() {
-    FlutterError.onError = previous;
-  });
-}
-
 Future<void> _pumpNamedRoute(
   WidgetTester tester, {
   required Map<String, WidgetBuilder> routes,
   required String initialRoute,
+  Size surface = const Size(390, 2400),
 }) async {
-  _ignoreLayoutOverflowErrors(tester);
-
-  // Photo Studio / Composition need a tall surface so Door is on-stage.
-  const surface = Size(1100, 2400);
   await tester.binding.setSurfaceSize(surface);
   addTearDown(() => tester.binding.setSurfaceSize(null));
 
   await tester.pumpWidget(
     await wrapWithDisplayScope(
-      MaterialApp(
-        initialRoute: initialRoute,
-        routes: routes,
+      MediaQuery(
+        data: MediaQueryData(size: surface),
+        child: MaterialApp(
+          initialRoute: initialRoute,
+          routes: routes,
+        ),
       ),
     ),
   );
   await tester.pumpAndSettle();
+  expect(tester.takeException(), isNull);
 }
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('AppNavigation and AppRoutes share the same canonical route keys', () {
+  test('AppNavigation and AppRoutes share canonical + catalogue route keys', () {
     final canonical = AppRouteRegistry.canonicalRoutes.keys.toSet();
+    final catalogue = AppRouteRegistry.catalogueRoutes.keys.toSet();
     final prod = AppNavigation.routes.keys.toSet();
     final public = AppRoutes.routes.keys.toSet();
 
-    expect(prod, equals(canonical));
+    expect(prod.containsAll(canonical), isTrue);
+    expect(prod.containsAll(catalogue), isTrue);
     expect(public.containsAll(canonical), isTrue);
+    expect(public.containsAll(catalogue), isTrue);
   });
 
   test('legacy deep-link aliases stay in the shared registry', () {
@@ -147,6 +138,34 @@ void main() {
         );
         expect(find.byType(ToolDoorSelector), findsOneWidget);
       });
+    }
+  });
+
+  group('narrow phone surfaces without RenderFlex overflow', () {
+    const surfaces = <Size>[
+      Size(390, 2400),
+      Size(320, 2400),
+    ];
+
+    for (final surface in surfaces) {
+      for (final route in [
+        RouteNames.home,
+        RouteNames.coordinateTool,
+        RouteNames.compositionGenerator,
+        RouteNames.ironyGenerator,
+        RouteNames.counterPlayground,
+      ]) {
+        testWidgets(
+            'public $route at ${surface.width.toInt()}px has no overflow',
+            (tester) async {
+          await _pumpNamedRoute(
+            tester,
+            routes: AppRoutes.routes,
+            initialRoute: route,
+            surface: surface,
+          );
+        });
+      }
     }
   });
 

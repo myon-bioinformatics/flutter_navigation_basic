@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/navigation/app_route_registry.dart';
 import '../core/navigation/route_names.dart';
 import '../screens/generic_screen.dart';
-import '../screens/hub_screen.dart';
-import '../screens/mcp_integration_screen.dart';
 import '../screens/mock_api_screen.dart';
-import '../screens/ui_showcase_screen.dart';
 
 /// Public (`main.dart`) route table.
 ///
@@ -48,10 +45,7 @@ class AppRoutes {
       map.putIfAbsent(name, () => (_) => GenericScreen(screenId: i));
     }
 
-    map[hub] = (_) => const HubScreen();
-    map[uiShowcase] = (_) => const UiShowcaseScreen();
-    map[externalApi] = (_) => const ApiIntegrationScreen();
-    map[externalMcp] = (_) => const McpIntegrationScreen();
+    map.addAll(AppRouteRegistry.catalogueRoutes);
     map[mockApi] = (_) => const ApiIntegrationScreen();
 
     return map;

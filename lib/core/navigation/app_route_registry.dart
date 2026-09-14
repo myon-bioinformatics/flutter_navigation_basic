@@ -16,6 +16,10 @@ import '../../features/photo_studio/presentation/photo_studio_page.dart';
 import '../../features/screen5/domain/screen5_controller.dart';
 import '../../features/screen5/presentation/screen5_page.dart';
 import 'route_names.dart';
+import '../../screens/mock_api_screen.dart';
+import '../../screens/hub_screen.dart';
+import '../../screens/mcp_integration_screen.dart';
+import '../../screens/ui_showcase_screen.dart';
 
 /// Single source of route name → page builder metadata for both entrypoints.
 ///
@@ -26,6 +30,15 @@ class AppRouteRegistry {
   AppRouteRegistry._();
 
   /// Canonical tool routes (Door catalogue) plus legacy deep-link aliases.
+
+  /// Public catalogue / integration routes shared by both entrypoints.
+  static Map<String, WidgetBuilder> get catalogueRoutes => {
+        '/hub': (_) => const HubScreen(),
+        '/examples/ui-showcase': (_) => const UiShowcaseScreen(),
+        '/examples/external-integration/api': (_) => const ApiIntegrationScreen(),
+        '/examples/external-integration/mcp': (_) => const McpIntegrationScreen(),
+      };
+
   static Map<String, WidgetBuilder> get canonicalRoutes => {
         RouteNames.home: (_) => HomeScreen(controller: HomeController()),
         RouteNames.clipboardShelf: (_) => const ClipboardShelfPage(),

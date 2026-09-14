@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../domain/home_controller.dart';
+import '../../../config/routes.dart';
 import '../../../core/navigation/route_names.dart';
 import '../../../shared/diagnostics/build_diagnostics_card.dart';
 import '../../../shared/display/display_scope.dart';
@@ -95,6 +96,34 @@ class _HomeScreenState extends State<HomeScreen> {
                       icon: Icons.content_paste_go_outlined,
                       onTap: () => Navigator.of(context)
                           .pushNamed(RouteNames.clipboardWorkbench),
+                    ),
+                                        HomeOverviewAction(
+                      label: display.text('home.action.hub.label'),
+                      subtitle: display.text('home.action.hub.subtitle'),
+                      icon: Icons.map_outlined,
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(AppRoutes.hub),
+                    ),
+                    HomeOverviewAction(
+                      label: display.text('home.action.uiShowcase.label'),
+                      subtitle: display.text('home.action.uiShowcase.subtitle'),
+                      icon: Icons.dashboard_customize_outlined,
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(AppRoutes.uiShowcase),
+                    ),
+                    HomeOverviewAction(
+                      label: display.text('home.action.apiIntegration.label'),
+                      subtitle: display.text('home.action.apiIntegration.subtitle'),
+                      icon: Icons.http_outlined,
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(AppRoutes.externalApi),
+                    ),
+                    HomeOverviewAction(
+                      label: display.text('home.action.mcpIntegration.label'),
+                      subtitle: display.text('home.action.mcpIntegration.subtitle'),
+                      icon: Icons.hub_outlined,
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(AppRoutes.externalMcp),
                     ),
                     HomeOverviewAction(
                       label:

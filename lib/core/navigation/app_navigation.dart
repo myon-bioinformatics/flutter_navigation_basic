@@ -20,8 +20,10 @@ class AppNavigation {
   }
 
   /// Same canonical builders as [AppRoutes] / public `main.dart`.
-  static Map<String, WidgetBuilder> get routes =>
-      Map<String, WidgetBuilder>.of(AppRouteRegistry.canonicalRoutes);
+  static Map<String, WidgetBuilder> get routes => {
+        ...AppRouteRegistry.canonicalRoutes,
+        ...AppRouteRegistry.catalogueRoutes,
+      };
 
   static void toHome() => _navigator.pushNamedAndRemoveUntil(
         RouteNames.home,

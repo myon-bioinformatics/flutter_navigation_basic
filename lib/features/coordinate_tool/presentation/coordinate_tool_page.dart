@@ -399,10 +399,19 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                   _SectionTitle(title: t('coordinate.tolerance'), icon: Icons.radar_outlined),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<CoordinateTolerancePreset>(
+                    isExpanded: true,
                     initialValue: _preset,
                     decoration: InputDecoration(labelText: t('coordinate.areaPreset'), border: const OutlineInputBorder()),
                     items: CoordinateTolerancePreset.values
-                        .map((preset) => DropdownMenuItem(value: preset, child: Text(_presetLabel(display, preset))))
+                        .map(
+                          (preset) => DropdownMenuItem(
+                            value: preset,
+                            child: Text(
+                              _presetLabel(display, preset),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        )
                         .toList(),
                     onChanged: (preset) {
                       if (preset == null) return;
@@ -514,6 +523,7 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                   _SectionTitle(title: t('coordinate.xyzTile'), icon: Icons.grid_4x4_outlined),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<int>(
+                    isExpanded: true,
                     initialValue: _zoom,
                     decoration: InputDecoration(labelText: t('coordinate.zoom'), border: const OutlineInputBorder()),
                     items: [12, 13, 14, 15, 16, 17, 18, 19]
@@ -694,7 +704,13 @@ class _SectionTitle extends StatelessWidget {
         children: [
           Icon(icon),
           const SizedBox(width: 8),
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
+          Expanded(
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.titleLarge,
+              softWrap: true,
+            ),
+          ),
         ],
       );
 }
@@ -728,8 +744,11 @@ class _MapLinkCard extends StatelessWidget {
             const SizedBox(height: 4),
             SelectableText(uri.toString()),
             const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 IconButton(
                   tooltip: copyTooltip,

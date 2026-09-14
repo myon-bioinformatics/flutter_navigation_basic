@@ -102,6 +102,7 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
                 SizedBox(
                   width: 150,
                   child: DropdownButtonFormField<String>(
+                    isExpanded: true,
                     value: _key,
                     decoration: InputDecoration(
                       labelText: display.text('compositionLegacy.key'),
@@ -221,9 +222,10 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
               runSpacing: 12,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                SizedBox(
-                  width: 180,
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 140, maxWidth: 220),
                   child: DropdownButtonFormField<int>(
+                    isExpanded: true,
                     value: _builderDegree,
                     decoration: InputDecoration(
                       labelText: display.text('chordTheory.degreeRootLabel'),
@@ -245,9 +247,10 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
                     },
                   ),
                 ),
-                SizedBox(
-                  width: 180,
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 140, maxWidth: 220),
                   child: DropdownButtonFormField<String>(
+                    isExpanded: true,
                     value: _modifier,
                     decoration: InputDecoration(
                       labelText: display.text('chordTheory.qualityExtensionLabel'),

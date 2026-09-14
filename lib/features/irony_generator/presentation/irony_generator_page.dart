@@ -1,14 +1,12 @@
-import 'dart:math';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
-import '../../../core/navigation/route_names.dart';
-import '../../../data/ironies.dart';
 import '../../../shared/display/display_scope.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
-import '../../../shared/widgets/tool_door_selector.dart';
 import '../domain/irony_generator_controller.dart';
+import '../../../core/navigation/route_names.dart';
+import '../../../shared/widgets/tool_door_selector.dart';
 
 class IronyGeneratorPage extends StatefulWidget {
   const IronyGeneratorPage({super.key, required this.controller});
@@ -19,315 +17,317 @@ class IronyGeneratorPage extends StatefulWidget {
   State<IronyGeneratorPage> createState() => _IronyGeneratorPageState();
 }
 
-class _IronyGeneratorPageState extends State<IronyGeneratorPage> {
-  final Random _random = Random();
-  final List<IronyEntry> _history = [];
-  final Set<String> _favorites = {};
-  String _tone = 'All';
-  late IronyEntry _current;
+class _IronyGeneratorPageState extends State<IronyGeneratorPage>
+    with SingleTickerProviderStateMixin {
+  final GlobalKey _arenaKey = GlobalKey();
+  final GlobalKey _cardKey = GlobalKey();
+  final GlobalKey _handleKey = GlobalKey();
+  Offset _offset = Offset.zero;
+  bool _isDragging = false;
+
+  late final AnimationController _spawnController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 850),
+  )..forward();
 
   @override
   void initState() {
     super.initState();
-    _current = Ironies.entries[_random.nextInt(Ironies.entries.length)];
-    _history.add(_current);
+    widget.controller.addListener(_onIronyChanged);
   }
 
-  List<IronyEntry> get _pool => _tone == 'All'
-      ? Ironies.entries
-      : Ironies.entries.where((entry) => entry.tone == _tone).toList();
-
-  List<IronyEntry> get _favoriteEntries => Ironies.entries
-      .where((entry) => _favorites.contains(entry.text))
-      .toList(growable: false);
-
-  IronyEntry _pickNext(List<IronyEntry> pool) {
-    IronyEntry next = pool[_random.nextInt(pool.length)];
-    if (pool.length > 1) {
-      while (next.text == _current.text) {
-        next = pool[_random.nextInt(pool.length)];
-      }
+  @override
+  void didUpdateWidget(covariant IronyGeneratorPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onIronyChanged);
+      widget.controller.addListener(_onIronyChanged);
     }
-    return next;
   }
 
-  void _record(IronyEntry entry) {
-    _history.removeWhere((item) => item.text == entry.text);
-    _history.insert(0, entry);
-    if (_history.length > 8) _history.removeLast();
+  void _onIronyChanged() {
+    if (mounted) setState(() {});
   }
 
-  void _generate() {
-    final pool = _pool;
-    if (pool.isEmpty) return;
-    final next = _pickNext(pool);
-    setState(() {
-      _current = next;
-      _record(next);
-    });
+  void _moveCard(DragUpdateDetails details) {
+    setState(() => _offset += details.delta);
   }
 
-  void _selectTone(String tone) {
-    if (_tone == tone) return;
-    final pool = tone == 'All'
-        ? Ironies.entries
-        : Ironies.entries.where((entry) => entry.tone == tone).toList();
-    if (pool.isEmpty) return;
-    final next = _pickNext(pool);
-    setState(() {
-      _tone = tone;
-      _current = next;
-      _record(next);
-    });
+  /// Paint-accurate bounds in arena coordinates (includes AnimatedScale).
+  Rect? _paintBoundsInArena(GlobalKey key) {
+    final arenaBox = _arenaKey.currentContext?.findRenderObject();
+    final box = key.currentContext?.findRenderObject();
+    if (arenaBox is! RenderBox || box is! RenderBox || !box.hasSize) {
+      return null;
+    }
+    return MatrixUtils.transformRect(
+      box.getTransformTo(arenaBox),
+      Offset.zero & box.size,
+    );
   }
 
-  void _selectEntry(IronyEntry entry) {
-    setState(() {
-      _current = entry;
-      _record(entry);
-    });
+  static const double _handleSafePadding = 8;
+
+  bool _rectFullyInside(Rect inner, Rect outer) {
+    return inner.left >= outer.left &&
+        inner.top >= outer.top &&
+        inner.right <= outer.right &&
+        inner.bottom <= outer.bottom;
   }
 
-  void _toggleFavorite() {
-    setState(() {
-      if (!_favorites.add(_current.text)) {
-        _favorites.remove(_current.text);
-      }
-    });
+  Rect _clampRectInside(Rect rect, Rect viewport, {double padding = 8}) {
+    final inset = viewport.deflate(padding);
+    var dx = 0.0;
+    var dy = 0.0;
+
+    if (rect.width >= inset.width) {
+      dx = inset.center.dx - rect.center.dx;
+    } else {
+      if (rect.left < inset.left) dx = inset.left - rect.left;
+      if (rect.right > inset.right) dx = inset.right - rect.right;
+    }
+
+    if (rect.height >= inset.height) {
+      dy = inset.center.dy - rect.center.dy;
+    } else {
+      if (rect.top < inset.top) dy = inset.top - rect.top;
+      if (rect.bottom > inset.bottom) dy = inset.bottom - rect.bottom;
+    }
+
+    return rect.shift(Offset(dx, dy));
   }
 
-  void _removeFavorite(String text) {
-    setState(() => _favorites.remove(text));
-  }
+  void _finishDrag(Size arenaSize) {
+    final viewport = Offset.zero & arenaSize;
+    final cardBounds = _paintBoundsInArena(_cardKey);
+    final handleBounds = _paintBoundsInArena(_handleKey);
 
-  void _removeHistory(IronyEntry entry) {
-    // Keep the currently displayed irony in recent history; only older
-    // rows are removable from the list.
-    if (entry.text == _current.text) return;
-    setState(() {
-      _history.removeWhere((item) => item.text == entry.text);
-      if (!_history.any((item) => item.text == _current.text)) {
-        _history.insert(0, _current);
-      }
-    });
+    if (cardBounds == null) {
+      setState(() => _isDragging = false);
+      return;
+    }
+
+    final fullyOutside = !cardBounds.overlaps(viewport);
+    if (fullyOutside) {
+      setState(() {
+        _offset = Offset.zero;
+        _isDragging = false;
+      });
+      widget.controller.generateNext();
+      _spawnController.forward(from: 0);
+      return;
+    }
+
+    // Require the whole handle (plus safe padding) to sit inside the arena.
+    // A 1px overlap is not enough to keep dragging reliably.
+    final handleUnreachable = handleBounds == null ||
+        !_rectFullyInside(
+          handleBounds,
+          viewport.deflate(_handleSafePadding),
+        );
+    if (handleUnreachable && handleBounds != null) {
+      final clamped = _clampRectInside(
+        handleBounds,
+        viewport,
+        padding: _handleSafePadding,
+      );
+      final delta = clamped.center - handleBounds.center;
+      setState(() {
+        _offset += delta;
+        _isDragging = false;
+      });
+      return;
+    }
+
+    setState(() => _isDragging = false);
   }
 
   @override
   void dispose() {
+    widget.controller.removeListener(_onIronyChanged);
     widget.controller.dispose();
+    _spawnController.dispose();
     super.dispose();
-  }
-
-  void _clearHistory() {
-    setState(() {
-      _history
-        ..clear()
-        ..add(_current);
-    });
-  }
-
-  Future<void> _copy() async {
-    await Clipboard.setData(ClipboardData(text: _current.text));
-    if (!mounted) return;
-    final display = DisplayScope.of(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(display.text('ironyLegacy.copiedSnackbar'))),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final display = DisplayScope.of(context);
-    final isFavorite = _favorites.contains(_current.text);
-    final favoriteEntries = _favoriteEntries;
+    final theme = Theme.of(context);
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+
     return Scaffold(
       appBar: CustomAppBar(title: display.text('nav.ironyGenerator')),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 72),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 640),
-            child: Column(
-              children: [
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    ChoiceChip(
-                      label: Text(display.text('ironyLegacy.all')),
-                      selected: _tone == 'All',
-                      onSelected: (_) => _selectTone('All'),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final arenaSize = constraints.biggest;
+          return KeyedSubtree(
+            key: const ValueKey('irony-drag-arena'),
+            child: Stack(
+            key: _arenaKey,
+            clipBehavior: Clip.hardEdge,
+            children: [
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: AnimatedBuilder(
+                    animation: _spawnController,
+                    builder: (context, child) => CustomPaint(
+                      painter: reduceMotion
+                          ? null
+                          : _EvolutionBurstPainter(
+                              progress: _spawnController.value,
+                              primary: theme.colorScheme.primary,
+                              secondary: theme.colorScheme.tertiary,
+                            ),
                     ),
-                    ...Ironies.tones.map(
-                      (tone) => ChoiceChip(
-                        label: Text(tone),
-                        selected: _tone == tone,
-                        onSelected: (_) => _selectTone(tone),
+                  ),
+                ),
+              ),
+              Center(
+                child: Transform.translate(
+                  offset: _offset,
+                  child: KeyedSubtree(
+                    key: const ValueKey('irony-message-card'),
+                    child: AnimatedScale(
+                      duration: reduceMotion
+                          ? Duration.zero
+                          : const Duration(milliseconds: 140),
+                      scale: _isDragging ? 1.035 : 1,
+                      child: Card(
+                        key: _cardKey,
+                        elevation: _isDragging ? 12 : 4,
+                        clipBehavior: Clip.antiAlias,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 520),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onPanStart: (_) =>
+                                      setState(() => _isDragging = true),
+                                  onPanUpdate: _moveCard,
+                                  onPanEnd: (_) => _finishDrag(arenaSize),
+                                  onPanCancel: () =>
+                                      setState(() => _isDragging = false),
+                                  child: Semantics(
+                                    key: _handleKey,
+                                    label: display
+                                        .text('ironyGenerator.dragHandle'),
+                                    child: const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 32,
+                                        vertical: 8,
+                                      ),
+                                      child: Icon(Icons.drag_indicator),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Semantics(
+                                  liveRegion: true,
+                                  child: AnimatedSwitcher(
+                                    duration: reduceMotion
+                                        ? Duration.zero
+                                        : const Duration(milliseconds: 420),
+                                    transitionBuilder: (child, animation) =>
+                                        FadeTransition(
+                                      opacity: animation,
+                                      child: ScaleTransition(
+                                        scale: Tween<double>(
+                                          begin: 0.82,
+                                          end: 1,
+                                        ).animate(
+                                          CurvedAnimation(
+                                            parent: animation,
+                                            curve: Curves.easeOutBack,
+                                          ),
+                                        ),
+                                        child: child,
+                                      ),
+                                    ),
+                                    child: SelectableText(
+                                      widget.controller.irony,
+                                      key: ValueKey(widget.controller.irony),
+                                      style: theme.textTheme.headlineMedium,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      children: [
-                        Chip(label: Text(_current.tone)),
-                        const SizedBox(height: 16),
-                        Semantics(
-                          liveRegion: true,
-                          label: 'Generated irony: ${_current.text}',
-                          child: ExcludeSemantics(
-                            child: Text(
-                              _current.text,
-                              style: theme.textTheme.headlineSmall,
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Wrap(
-                          alignment: WrapAlignment.center,
-                          spacing: 12,
-                          runSpacing: 12,
-                          children: [
-                            FilledButton.icon(
-                              onPressed: _generate,
-                              icon: const Icon(Icons.casino_outlined),
-                              label: Text(display.text('ironyLegacy.generateAgain')),
-                            ),
-                            OutlinedButton.icon(
-                              onPressed: _toggleFavorite,
-                              icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border),
-                              label: Text(display.text(
-                                isFavorite ? 'ironyLegacy.favorited' : 'ironyLegacy.favorite',
-                              )),
-                            ),
-                            IconButton.filledTonal(
-                              tooltip: display.text('ironyLegacy.copyTooltip'),
-                              onPressed: _copy,
-                              icon: const Icon(Icons.copy),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                display.text('ironyLegacy.recentGenerations'),
-                                style: theme.textTheme.titleMedium,
-                              ),
-                            ),
-                            TextButton.icon(
-                              onPressed: _history.length > 1 ? _clearHistory : null,
-                              icon: const Icon(Icons.clear_all),
-                              label: Text(display.text('ironyLegacy.clear')),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        ..._history.take(5).map(
-                          (entry) {
-                            final isCurrent = entry.text == _current.text;
-                            final isFavorite = _favorites.contains(entry.text);
-                            final Widget? trailing;
-                            if (!isCurrent || isFavorite) {
-                              trailing = Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (isFavorite)
-                                    const Padding(
-                                      padding: EdgeInsets.only(right: 4),
-                                      child: Icon(Icons.favorite, size: 18),
-                                    ),
-                                  if (!isCurrent)
-                                    IconButton(
-                                      tooltip: display.text(
-                                        'ironyLegacy.removeRecentTooltip',
-                                      ),
-                                      onPressed: () => _removeHistory(entry),
-                                      icon: const Icon(Icons.close),
-                                    ),
-                                ],
-                              );
-                            } else {
-                              trailing = null;
-                            }
-                            return ListTile(
-                              dense: true,
-                              contentPadding: EdgeInsets.zero,
-                              leading: Text(entry.tone),
-                              title: Text(
-                                entry.text,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              trailing: trailing,
-                              onTap: () => _selectEntry(entry),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          display.text('ironyLegacy.favoritesCount', arguments: {'n': favoriteEntries.length}),
-                          style: theme.textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        if (favoriteEntries.isEmpty)
-                          Text(display.text('ironyLegacy.favoritesEmpty'))
-                        else
-                          ...favoriteEntries.map(
-                            (entry) => ListTile(
-                              dense: true,
-                              contentPadding: EdgeInsets.zero,
-                              leading: const Icon(Icons.favorite),
-                              title: Text(entry.text, maxLines: 2, overflow: TextOverflow.ellipsis),
-                              subtitle: Text(entry.tone),
-                              trailing: IconButton(
-                                tooltip: display.text('ironyLegacy.removeFavoriteTooltip'),
-                                onPressed: () => _removeFavorite(entry.text),
-                                icon: const Icon(Icons.close),
-                              ),
-                              onTap: () => _selectEntry(entry),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
+              ),
+              Positioned(
+                left: 16,
+                right: 16,
+                bottom: 20,
+                child:
                 const ToolDoorSelector(
                   currentRouteName: RouteNames.ironyGenerator,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ),
+          );
+        },
       ),
     );
   }
+}
+
+class _EvolutionBurstPainter extends CustomPainter {
+  const _EvolutionBurstPainter({
+    required this.progress,
+    required this.primary,
+    required this.secondary,
+  });
+
+  final double progress;
+  final Color primary;
+  final Color secondary;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final eased = Curves.easeOutCubic.transform(progress);
+    final fade = (1 - progress).clamp(0.0, 1.0);
+    final center = size.center(Offset.zero);
+    final shortestSide = math.min(size.width, size.height);
+
+    final ringPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3 - (2 * progress)
+      ..color = primary.withValues(alpha: 0.55 * fade);
+    canvas.drawCircle(center, shortestSide * (0.06 + 0.42 * eased), ringPaint);
+
+    for (var index = 0; index < 16; index += 1) {
+      final angle = (math.pi * 2 * index / 16) + progress * 0.7;
+      final innerRadius = shortestSide * (0.05 + 0.10 * eased);
+      final outerRadius = shortestSide * (0.14 + 0.38 * eased);
+      final direction = Offset(math.cos(angle), math.sin(angle));
+      final rayPaint = Paint()
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = index.isEven ? 3 : 1.5
+        ..color = (index.isEven ? primary : secondary)
+            .withValues(alpha: 0.42 * fade);
+      canvas.drawLine(
+        center + direction * innerRadius,
+        center + direction * outerRadius,
+        rayPaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _EvolutionBurstPainter oldDelegate) =>
+      oldDelegate.progress != progress ||
+      oldDelegate.primary != primary ||
+      oldDelegate.secondary != secondary;
 }
