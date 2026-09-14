@@ -83,6 +83,8 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
   /// Last successfully exported document; dirty iff document content differs.
   PhotoStudioState _exportBaseline = PhotoStudioState.initial();
   int _imageLoadGeneration = 0;
+  /// Lets Back pop once after Discard before the dirty rebuild settles.
+  bool _allowPopAfterDiscard = false;
 
   bool get _canUndo => _history.canUndo;
   bool get _canRedo => _history.canRedo;
@@ -104,6 +106,8 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
 
   @override
   void dispose() {
+    // Drop any in-flight decode continuation when leaving the route.
+    _invalidatePendingImageLoad();
     _stampController.dispose();
     super.dispose();
   }
@@ -523,16 +527,24 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
         selected?.rect.labeledText ?? t('photoStudio.noFrameSelected');
 
     return PopScope(
-      canPop: !_isDirty,
+      canPop: !_isDirty || _allowPopAfterDiscard,
       onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) return;
+        if (didPop) {
+          _allowPopAfterDiscard = false;
+          return;
+        }
         final leave = await _confirmDiscardIfDirty();
         if (!mounted || !leave) return;
-        setState(_discardUnsavedChanges);
-        final nav = Navigator.of(context);
-        if (nav.canPop()) {
-          nav.pop();
-        }
+        // Same setState as restore so the next frame's canPop is true before
+        // we pop — avoids re-entering the dialog on the pre-rebuild canPop.
+        setState(() {
+          _discardUnsavedChanges();
+          _allowPopAfterDiscard = true;
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          Navigator.of(context).maybePop();
+        });
       },
       child: CallbackShortcuts(
       bindings: {

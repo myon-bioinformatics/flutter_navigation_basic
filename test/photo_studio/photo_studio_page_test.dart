@@ -13,6 +13,7 @@ import 'package:flutter_application_1/features/photo_studio/presentation/compose
 import 'package:flutter_application_1/features/photo_studio/presentation/photo_rect_canvas.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/photo_studio_page.dart';
 import 'package:flutter_application_1/core/navigation/route_names.dart';
+import 'package:flutter_application_1/shared/display/display_scope.dart';
 import 'package:flutter_application_1/shared/widgets/tool_door_selector.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -96,6 +97,72 @@ Future<void> _tapSavePng(WidgetTester tester) async {
   });
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 50));
+}
+
+Finder _leaveDialog() => find.byType(AlertDialog);
+
+Finder _leaveStayButton() => find.descendant(
+      of: _leaveDialog(),
+      matching: find.widgetWithText(TextButton, 'Cancel'),
+    );
+
+Finder _leaveDiscardButton() => find.descendant(
+      of: _leaveDialog(),
+      matching: find.widgetWithText(FilledButton, 'Discard'),
+    );
+
+/// Landing → Photo Studio (2-level stack) for Back / PopScope tests.
+Future<void> _pumpPhotoOnLandingStack(
+  WidgetTester tester, {
+  PhotoStudioPage page = const PhotoStudioPage(),
+  Size surface = const Size(900, 2600),
+}) async {
+  await tester.binding.setSurfaceSize(surface);
+  addTearDown(() => tester.binding.setSurfaceSize(null));
+  final controller = await loadTestDisplayController();
+  await tester.pumpWidget(
+    DisplayScope(
+      controller: controller,
+      child: MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(builder: (_) => page),
+                  );
+                },
+                child: const Text('landing'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.pump();
+  await tester.tap(find.text('landing'));
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 50));
+  expect(find.byType(PhotoStudioPage), findsOneWidget);
+}
+
+Future<void> _pumpDialogOpen(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+}
+
+Future<void> _openDoorAndChoose(
+  WidgetTester tester,
+  String labelSubstring,
+) async {
+  await tester.ensureVisible(find.byType(ToolDoorSelector));
+  await tester.tap(find.byType(DropdownButtonFormField<String>).last);
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 50));
+  await tester.tap(find.textContaining(labelSubstring).last);
+  await _pumpDialogOpen(tester);
 }
 
 Future<void> _tapUndo(WidgetTester tester) async {
@@ -931,13 +998,16 @@ void main() {
 
     final navigator = tester.state<NavigatorState>(find.byType(Navigator));
     navigator.maybePop();
-    await tester.pumpAndSettle();
+    await _pumpDialogOpen(tester);
+    expect(_leaveDialog(), findsOneWidget);
+    // Smoke: catalog English copy for the leave dialog.
     expect(find.text('Discard changes?'), findsOneWidget);
     expect(find.text('Unsaved edits will be lost.'), findsOneWidget);
-    expect(find.text('Cancel'), findsOneWidget);
-    expect(find.text('Discard'), findsOneWidget);
-    await tester.tap(find.text('Cancel'));
-    await tester.pumpAndSettle();
+    expect(_leaveStayButton(), findsOneWidget);
+    expect(_leaveDiscardButton(), findsOneWidget);
+    await tester.tap(_leaveStayButton());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
     expect(find.byIcon(Icons.circle), findsOneWidget);
   });
 
@@ -1014,43 +1084,70 @@ void main() {
     expect(h, 560);
   });
 
-  testWidgets('Discard restores export baseline on back', (tester) async {
-    await _pumpPage(tester);
+  testWidgets('Cancel keeps document history baseline and route', (tester) async {
+    await _pumpPhotoOnLandingStack(tester);
 
     await _selectDraftTool(tester, 'Rectangle');
     await _createFrame(tester, x0: 0.1, y0: 0.1, x1: 0.4, y1: 0.4);
     expect(find.byIcon(Icons.circle), findsOneWidget);
-    expect(
-      tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas)).frames,
-      isNotEmpty,
-    );
+    expect(_undoEnabled(tester), isTrue);
+    final framesBefore =
+        tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas)).frames;
 
     tester.state<NavigatorState>(find.byType(Navigator)).maybePop();
-    await tester.pump(); // dialog
-    expect(find.text('Discard changes?'), findsOneWidget);
-    await tester.tap(find.text('Discard'));
-    await tester.pump(); // close dialog + discard
+    await _pumpDialogOpen(tester);
+    expect(_leaveDialog(), findsOneWidget);
+    await tester.tap(_leaveStayButton());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
 
+    expect(find.text('landing'), findsNothing);
     expect(find.byType(PhotoStudioPage), findsOneWidget);
-    expect(find.byIcon(Icons.circle), findsNothing);
+    expect(find.byIcon(Icons.circle), findsOneWidget);
+    expect(_undoEnabled(tester), isTrue);
     expect(
       tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas)).frames,
-      isEmpty,
+      framesBefore,
     );
   });
 
-  testWidgets('Door Discard navigates home after restoring baseline',
+  testWidgets('Back Discard restores baseline and returns to landing',
+      (tester) async {
+    await _pumpPhotoOnLandingStack(tester);
+
+    await _selectDraftTool(tester, 'Rectangle');
+    await _createFrame(tester, x0: 0.1, y0: 0.1, x1: 0.4, y1: 0.4);
+    expect(find.byIcon(Icons.circle), findsOneWidget);
+
+    tester.state<NavigatorState>(find.byType(Navigator)).maybePop();
+    await _pumpDialogOpen(tester);
+    expect(_leaveDialog(), findsOneWidget);
+    await tester.tap(_leaveDiscardButton());
+    await tester.pump(); // close dialog + setState discard
+    await tester.pump(); // post-frame maybePop
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('landing'), findsOneWidget);
+    expect(find.byType(PhotoStudioPage), findsNothing);
+  });
+
+  testWidgets('Door Discard to other keeps clean Photo under stack',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(900, 2600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    final studio = await wrapWithDisplayScope(const PhotoStudioPage());
+    final controller = await loadTestDisplayController();
     await tester.pumpWidget(
-      MaterialApp(
-        initialRoute: RouteNames.photoStudio,
-        routes: {
-          RouteNames.home: (_) => const Scaffold(body: Text('home-dest')),
-          RouteNames.photoStudio: (_) => studio,
-        },
+      DisplayScope(
+        controller: controller,
+        child: MaterialApp(
+          initialRoute: RouteNames.photoStudio,
+          routes: {
+            RouteNames.home: (_) => const Scaffold(body: Text('home-dest')),
+            RouteNames.photoStudio: (_) => const PhotoStudioPage(),
+            RouteNames.clipboardShelf: (_) =>
+                const Scaffold(body: Text('shelf-dest')),
+          },
+        ),
       ),
     );
     await tester.pump();
@@ -1060,23 +1157,64 @@ void main() {
     await _createFrame(tester, x0: 0.2, y0: 0.2, x1: 0.5, y1: 0.5);
     expect(find.byIcon(Icons.circle), findsOneWidget);
 
-    await tester.ensureVisible(find.byType(ToolDoorSelector));
-    await tester.tap(find.byType(DropdownButtonFormField<String>).last);
+    await _openDoorAndChoose(tester, 'Clipboard Shelf');
+    expect(_leaveDialog(), findsOneWidget);
+    await tester.tap(_leaveDiscardButton());
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
-    await tester.tap(find.textContaining('Home').last);
-    await tester.pump();
-    expect(find.text('Discard changes?'), findsOneWidget);
-    await tester.tap(find.text('Discard'));
+    expect(find.text('shelf-dest'), findsOneWidget);
+
+    tester.state<NavigatorState>(find.byType(Navigator)).pop();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.byType(PhotoStudioPage), findsOneWidget);
+    expect(find.byIcon(Icons.circle), findsNothing);
+    expect(
+      tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas)).frames,
+      isEmpty,
+    );
+  });
+
+  testWidgets('Door Discard to Home removes Photo from stack', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 2600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final controller = await loadTestDisplayController();
+    await tester.pumpWidget(
+      DisplayScope(
+        controller: controller,
+        child: MaterialApp(
+          initialRoute: RouteNames.photoStudio,
+          routes: {
+            RouteNames.home: (_) => const Scaffold(body: Text('home-dest')),
+            RouteNames.photoStudio: (_) => const PhotoStudioPage(),
+          },
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    await _selectDraftTool(tester, 'Rectangle');
+    await _createFrame(tester, x0: 0.2, y0: 0.2, x1: 0.5, y1: 0.5);
+    expect(find.byIcon(Icons.circle), findsOneWidget);
+
+    await _openDoorAndChoose(tester, 'Home');
+    expect(_leaveDialog(), findsOneWidget);
+    await tester.tap(_leaveDiscardButton());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
     expect(find.text('home-dest'), findsOneWidget);
+    expect(find.byType(PhotoStudioPage), findsNothing);
+    expect(tester.state<NavigatorState>(find.byType(Navigator)).canPop(), isFalse);
   });
 
   testWidgets('export race keeps dirty when edits land during save',
       (tester) async {
-    var saveStarted = false;
-    final gate = Completer<void>();
+    final saverEntered = Completer<void>();
+    final saverRelease = Completer<bool>();
+    final saverReturned = Completer<void>();
     await _pumpPage(
       tester,
       page: PhotoStudioPage(
@@ -1085,9 +1223,12 @@ void main() {
           required fileName,
           required mimeType,
         }) async {
-          saveStarted = true;
-          await gate.future;
-          return true;
+          if (!saverEntered.isCompleted) saverEntered.complete();
+          try {
+            return await saverRelease.future;
+          } finally {
+            if (!saverReturned.isCompleted) saverReturned.complete();
+          }
         },
       ),
     );
@@ -1096,42 +1237,47 @@ void main() {
     await _createFrame(tester, x0: 0.1, y0: 0.1, x1: 0.35, y1: 0.35);
     expect(find.byIcon(Icons.circle), findsOneWidget);
 
-    // exportStudioPng encodes on a real async timeline before invoking saver.
-    await tester.runAsync(() async {
-      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save PNG'));
-      await tester.tap(find.widgetWithText(FilledButton, 'Save PNG'));
-      await Future<void>.delayed(const Duration(milliseconds: 200));
-    });
+    final saveButton = find.widgetWithText(FilledButton, 'Save PNG');
+    await tester.ensureVisible(saveButton);
+    await tester.tap(saveButton);
     await tester.pump();
-    expect(saveStarted, isTrue);
+
+    await tester.runAsync(
+      () => saverEntered.future.timeout(const Duration(seconds: 5)),
+    );
+    expect(saverEntered.isCompleted, isTrue);
 
     await _selectDraftTool(tester, 'Circle');
     await _createFrame(tester, x0: 0.55, y0: 0.55, x1: 0.85, y1: 0.85);
     expect(find.byIcon(Icons.circle), findsOneWidget);
 
-    gate.complete();
+    saverRelease.complete(true);
+    await tester.runAsync(
+      () => saverReturned.future.timeout(const Duration(seconds: 5)),
+    );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 50));
     expect(find.byIcon(Icons.circle), findsOneWidget);
   });
 
   testWidgets('clear during delayed replace keeps pending decode from restoring',
       (tester) async {
-    final gate = Completer<void>();
-    var decodeCalls = 0;
-    // Undecodable payload forces the native/browser adapter path where we can
-    // delay after _imageLoadGeneration has already been bumped.
-    final junk = Uint8List.fromList(const [0x00, 0x01, 0x02, 0x03]);
+    final adapterEntered = Completer<void>();
+    final adapterGate = Completer<Uint8List>();
+    var picks = 0;
 
     await _pumpPage(
       tester,
       page: PhotoStudioPage(
-        imageBytesPicker: () async => junk,
+        imageBytesPicker: () async {
+          picks += 1;
+          if (picks == 1) return _tinyPng;
+          // Undecodable payload forces the injected adapter path.
+          return Uint8List.fromList(const [0x00, 0x01, 0x02, 0x03]);
+        },
         imageDecodeAdapter: (bytes) async {
-          decodeCalls += 1;
-          if (decodeCalls == 1) return _tinyPng;
-          await gate.future;
-          return _tinyPng;
+          if (!adapterEntered.isCompleted) adapterEntered.complete();
+          return adapterGate.future;
         },
       ),
     );
@@ -1147,20 +1293,79 @@ void main() {
       isNotNull,
     );
 
-    await tester.runAsync(() async {
-      await tester.tap(find.text('Replace image'));
-      await Future<void>.delayed(const Duration(milliseconds: 20));
-    });
+    await tester.tap(find.text('Replace image'));
     await tester.pump();
+    await tester.runAsync(
+      () => adapterEntered.future.timeout(const Duration(seconds: 5)),
+    );
 
     await tester.tap(find.text('Clear photo'));
     await tester.pump();
+    expect(
+      tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas)).imageBytes,
+      isNull,
+    );
 
-    gate.complete();
+    adapterGate.complete(_tinyPng);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(decodeCalls, greaterThanOrEqualTo(2));
+    expect(picks, 2);
+    expect(
+      tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas)).imageBytes,
+      isNull,
+    );
+  });
+
+  testWidgets('undo during delayed replace keeps pending decode from restoring',
+      (tester) async {
+    final adapterEntered = Completer<void>();
+    final adapterGate = Completer<Uint8List>();
+    var picks = 0;
+
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(
+        imageBytesPicker: () async {
+          picks += 1;
+          if (picks == 1) return _tinyPng;
+          return Uint8List.fromList(const [0x00, 0x01, 0x02, 0x03]);
+        },
+        imageDecodeAdapter: (bytes) async {
+          if (!adapterEntered.isCompleted) adapterEntered.complete();
+          return adapterGate.future;
+        },
+      ),
+    );
+
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Import image'));
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+    expect(
+      tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas)).imageBytes,
+      isNotNull,
+    );
+    expect(_undoEnabled(tester), isTrue);
+
+    await tester.tap(find.text('Replace image'));
+    await tester.pump();
+    await tester.runAsync(
+      () => adapterEntered.future.timeout(const Duration(seconds: 5)),
+    );
+
+    await _tapUndo(tester);
+    expect(
+      tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas)).imageBytes,
+      isNull,
+    );
+
+    adapterGate.complete(_tinyPng);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
     expect(
       tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas)).imageBytes,
       isNull,
