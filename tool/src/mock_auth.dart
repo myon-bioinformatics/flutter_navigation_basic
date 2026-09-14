@@ -53,15 +53,21 @@ class MockAuthHandler {
   final DateTime Function() _clock;
 
   /// Returns a result when [path] is an `/auth/...` scenario; otherwise null.
+  ///
+  /// [requestTarget] is the HTTP request-target (path + optional `?query`)
+  /// used to bind Digest `uri=` / HA2. When omitted, it is derived from
+  /// [path] and [query].
   MockAuthResult? handle({
     required String method,
     required String path,
     required Map<String, String> headers,
     required Map<String, String> query,
+    String? requestTarget,
   }) {
     final normalized = path.endsWith('/') && path.length > 1
         ? path.substring(0, path.length - 1)
         : path;
+    final target = requestTarget ?? requestTargetFrom(path, query);
 
     switch (normalized) {
       case '/auth/bearer':
@@ -71,7 +77,7 @@ class MockAuthHandler {
       case '/auth/basic':
         return _basic(headers);
       case '/auth/digest':
-        return _digest(method, path, headers);
+        return _digest(method, target, headers);
       case '/auth/hmac':
         return _hmac(method, normalized, headers);
       case '/auth/rate-limited':
@@ -226,7 +232,7 @@ class MockAuthHandler {
 
   MockAuthResult _digest(
     String method,
-    String path,
+    String requestTarget,
     Map<String, String> headers,
   ) {
     final challenge = 'Digest realm="${MockAuthDemo.digestRealm}", '
@@ -254,6 +260,8 @@ class MockAuthHandler {
     final qop = params['qop'];
     final nc = params['nc'];
     final cnonce = params['cnonce'];
+    final algorithm = params['algorithm'];
+    final opaque = params['opaque'];
     if (username == null ||
         realm == null ||
         nonce == null ||
@@ -261,14 +269,6 @@ class MockAuthHandler {
         response == null) {
       return _unauthorized(
         reason: 'malformed_authorization',
-        wwwAuthenticate: challenge,
-      );
-    }
-    if (username != MockAuthDemo.basicUser ||
-        realm != MockAuthDemo.digestRealm ||
-        nonce != MockAuthDemo.digestNonce) {
-      return _unauthorized(
-        reason: 'invalid_credentials',
         wwwAuthenticate: challenge,
       );
     }
@@ -282,11 +282,32 @@ class MockAuthHandler {
       );
     }
 
-    // The claimed uri must match the actual request-target; HA2 is computed
-    // from the verified path rather than whatever the client asserted.
-    if (uri != path) {
+    // Claimed uri must match the actual request-target; HA2 uses the verified
+    // value (path + optional query), not a client-asserted URI.
+    if (uri != requestTarget) {
       return _unauthorized(
         reason: 'uri_mismatch',
+        wwwAuthenticate: challenge,
+      );
+    }
+    if (algorithm != null && algorithm.toUpperCase() != 'MD5') {
+      return _unauthorized(
+        reason: 'unsupported_algorithm',
+        wwwAuthenticate: challenge,
+      );
+    }
+    // Opaque is advertised in the challenge; require an exact echo.
+    if (opaque != MockAuthDemo.digestOpaque) {
+      return _unauthorized(
+        reason: 'invalid_opaque',
+        wwwAuthenticate: challenge,
+      );
+    }
+    if (username != MockAuthDemo.basicUser ||
+        realm != MockAuthDemo.digestRealm ||
+        nonce != MockAuthDemo.digestNonce) {
+      return _unauthorized(
+        reason: 'invalid_credentials',
         wwwAuthenticate: challenge,
       );
     }
@@ -294,7 +315,7 @@ class MockAuthHandler {
     final ha1 = _md5Hex(
       '$username:$realm:${MockAuthDemo.basicPassword}',
     );
-    final ha2 = _md5Hex('$method:$path');
+    final ha2 = _md5Hex('$method:$requestTarget');
     final expected = _md5Hex('$ha1:$nonce:$nc:$cnonce:$qop:$ha2');
     if (response.toLowerCase() != expected) {
       return _unauthorized(
@@ -421,6 +442,18 @@ class MockAuthHandler {
     final payload = '${method.toUpperCase()}\n$path\n$timestamp\n$nonce';
     final digest = Hmac(sha256, utf8.encode(secret)).convert(utf8.encode(payload));
     return digest.toString();
+  }
+
+  /// Builds an HTTP request-target (`path` or `path?query`) for Digest binding.
+  static String requestTargetFrom(String path, Map<String, String> query) {
+    if (query.isEmpty) return path;
+    final encoded = query.entries
+        .map(
+          (e) =>
+              '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}',
+        )
+        .join('&');
+    return '$path?$encoded';
   }
 
   /// Computes the `response` field for a Digest `qop=auth` request.

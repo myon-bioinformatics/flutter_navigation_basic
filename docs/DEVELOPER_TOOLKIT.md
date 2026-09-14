@@ -118,7 +118,10 @@ fixtures. Endpoints:
     (`demo-wrong-aud-token` → 403)
   - `GET /auth/api-key` — `X-API-Key` header or `api_key` query (`demo-api-key`)
   - `GET /auth/basic` — HTTP Basic (`demo` / `s3cret`)
-  - `GET /auth/digest` — Digest challenge/response (same demo user/password)
+  - `GET /auth/digest` — Digest challenge/response (same demo user/password);
+    requires `qop=auth` + `nc` + `cnonce`, binds `uri=` to the real
+    request-target (path + query), requires challenge `opaque`, and accepts
+    only `algorithm=MD5`
   - `GET /auth/hmac` — HMAC-SHA256 over `METHOD\npath\ntimestamp\nnonce`
     with `X-Key-Id` / `X-Timestamp` / `X-Nonce` / `X-Signature`
     (`demo-key` / `demo-hmac-secret`); rejects skew and nonce replay

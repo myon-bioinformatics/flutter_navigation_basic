@@ -46,11 +46,15 @@ Future<void> _handle(HttpRequest request, MockAuthHandler auth) async {
       entry.key: entry.value,
   };
 
+  final requestTarget = request.uri.hasQuery
+      ? '${request.uri.path}?${request.uri.query}'
+      : request.uri.path;
   final authResult = auth.handle(
     method: request.method,
     path: request.uri.path,
     headers: headerMap,
     query: queryMap,
+    requestTarget: requestTarget,
   );
   if (authResult != null) {
     response.statusCode = authResult.statusCode;
