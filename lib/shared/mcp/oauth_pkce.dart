@@ -46,6 +46,21 @@ class OAuthAuthorizationServerMetadata {
       return value.whereType<String>().toList(growable: false);
     }
 
+    // Remote discovery must not invent capabilities the server omitted.
+    // - Absent code_challenge_methods_supported → [] (supportsPkceS256 false)
+    // - Absent token_endpoint_auth_methods_supported → RFC 8414 default
+    //   `client_secret_basic` (not `none`)
+    final codeChallengeMethods = json.containsKey(
+      'code_challenge_methods_supported',
+    )
+        ? list('code_challenge_methods_supported')
+        : const <String>[];
+    final tokenAuthMethods = json.containsKey(
+      'token_endpoint_auth_methods_supported',
+    )
+        ? list('token_endpoint_auth_methods_supported')
+        : const ['client_secret_basic'];
+
     return OAuthAuthorizationServerMetadata(
       issuer: req('issuer'),
       authorizationEndpoint: req('authorization_endpoint'),
@@ -58,14 +73,8 @@ class OAuthAuthorizationServerMetadata {
       grantTypesSupported: list('grant_types_supported').isEmpty
           ? const ['authorization_code']
           : list('grant_types_supported'),
-      codeChallengeMethodsSupported:
-          list('code_challenge_methods_supported').isEmpty
-              ? const ['S256']
-              : list('code_challenge_methods_supported'),
-      tokenEndpointAuthMethodsSupported:
-          list('token_endpoint_auth_methods_supported').isEmpty
-              ? const ['none']
-              : list('token_endpoint_auth_methods_supported'),
+      codeChallengeMethodsSupported: codeChallengeMethods,
+      tokenEndpointAuthMethodsSupported: tokenAuthMethods,
     );
   }
 
@@ -224,11 +233,27 @@ BearerAudienceClaim inspectBearerAudience(
     }
     final aud = payload['aud'];
     final exp = payload['exp'];
-    final audience = aud is String
-        ? aud
-        : aud is List && aud.isNotEmpty
-            ? aud.first.toString()
-            : null;
+    final audiences = <String>[];
+    if (aud is String) {
+      audiences.add(aud);
+    } else if (aud is List) {
+      if (aud.isEmpty) {
+        return const BearerAudienceClaim(
+          status: BearerAudienceStatus.malformed,
+        );
+      }
+      for (final item in aud) {
+        if (item is! String || item.isEmpty) {
+          return const BearerAudienceClaim(
+            status: BearerAudienceStatus.malformed,
+          );
+        }
+        audiences.add(item);
+      }
+    } else if (aud != null) {
+      return const BearerAudienceClaim(status: BearerAudienceStatus.malformed);
+    }
+    final audience = audiences.isEmpty ? null : audiences.first;
     DateTime? expiresAt;
     if (exp is int) {
       expiresAt = DateTime.fromMillisecondsSinceEpoch(exp * 1000, isUtc: true);
@@ -244,7 +269,7 @@ BearerAudienceClaim inspectBearerAudience(
         expiresAt: expiresAt,
       );
     }
-    if (audience != expectedAudience) {
+    if (!audiences.contains(expectedAudience)) {
       return BearerAudienceClaim(
         status: BearerAudienceStatus.wrongAudience,
         audience: audience,
@@ -253,7 +278,7 @@ BearerAudienceClaim inspectBearerAudience(
     }
     return BearerAudienceClaim(
       status: BearerAudienceStatus.ok,
-      audience: audience,
+      audience: expectedAudience,
       expiresAt: expiresAt,
     );
   } on Object {

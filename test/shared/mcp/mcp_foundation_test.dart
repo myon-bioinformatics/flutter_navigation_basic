@@ -4,6 +4,8 @@ import 'dart:math';
 import 'package:flutter_application_1/shared/mcp/mcp.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../tool/src/mock_mcp.dart';
+
 void main() {
   group('JsonRpcRequest', () {
     test('parses valid request and rejects bad version', () {
@@ -56,10 +58,34 @@ void main() {
       });
       expect(prm.authorizationServers, hasLength(1));
     });
+
+    test('remote discovery does not invent PKCE or token-auth claims', () {
+      final omitted = OAuthAuthorizationServerMetadata.fromJson({
+        'issuer': 'https://auth.example.test/',
+        'authorization_endpoint': 'https://auth.example.test/authorize',
+        'token_endpoint': 'https://auth.example.test/token',
+      });
+      expect(omitted.codeChallengeMethodsSupported, isEmpty);
+      expect(omitted.supportsPkceS256, isFalse);
+      expect(
+        omitted.tokenEndpointAuthMethodsSupported,
+        ['client_secret_basic'],
+      );
+
+      final emptyPkce = OAuthAuthorizationServerMetadata.fromJson({
+        'issuer': 'https://auth.example.test/',
+        'authorization_endpoint': 'https://auth.example.test/authorize',
+        'token_endpoint': 'https://auth.example.test/token',
+        'code_challenge_methods_supported': <String>[],
+        'token_endpoint_auth_methods_supported': <String>['none'],
+      });
+      expect(emptyPkce.supportsPkceS256, isFalse);
+      expect(emptyPkce.tokenEndpointAuthMethodsSupported, ['none']);
+    });
   });
 
   group('Bearer audience inspect', () {
-    String demoJwt({required String aud, required int exp}) {
+    String demoJwt({required Object aud, required int exp}) {
       String b64(Map<String, Object?> map) =>
           base64Url.encode(utf8.encode(jsonEncode(map))).replaceAll('=', '');
       return '${b64({'alg': 'none', 'typ': 'JWT'})}.'
@@ -99,6 +125,43 @@ void main() {
           clock: () => now,
         ).status,
         BearerAudienceStatus.ok,
+      );
+    });
+
+    test('audience arrays: match any entry; reject malformed members', () {
+      final now = DateTime.utc(2026, 9, 14, 12);
+      expect(
+        inspectBearerAudience(
+          'Bearer ${demoJwt(aud: [
+                'https://a.test',
+                'https://mcp.example.test',
+              ], exp: 9999999999)}',
+          expectedAudience: 'https://mcp.example.test',
+          clock: () => now,
+        ).status,
+        BearerAudienceStatus.ok,
+      );
+      expect(
+        inspectBearerAudience(
+          'Bearer ${demoJwt(aud: [
+                'https://a.test',
+                'https://b.test',
+              ], exp: 9999999999)}',
+          expectedAudience: 'https://mcp.example.test',
+          clock: () => now,
+        ).status,
+        BearerAudienceStatus.wrongAudience,
+      );
+      expect(
+        inspectBearerAudience(
+          'Bearer ${demoJwt(aud: [
+                'https://a.test',
+                42,
+              ], exp: 9999999999)}',
+          expectedAudience: 'https://mcp.example.test',
+          clock: () => now,
+        ).status,
+        BearerAudienceStatus.malformed,
       );
     });
   });
@@ -152,7 +215,26 @@ void main() {
       expect((content.first as Map)['text'], 'hi');
     });
 
-    test('rejects tools/list without session and unsupported protocol', () {
+    test('negotiate unsupported client version by returning pinned success', () {
+      final negotiated = handler.handleRpc(
+        request: const JsonRpcRequest(
+          id: 1,
+          method: 'initialize',
+          params: {
+            'protocolVersion': '1999-01-01',
+            'clientInfo': {'name': 'x', 'version': '0'},
+          },
+        ),
+      );
+      expect(negotiated.response.isError, isFalse);
+      expect(negotiated.sessionId, 'sess-1');
+      expect(
+        (negotiated.response.result as Map)['protocolVersion'],
+        McpProtocol.specificationVersion,
+      );
+    });
+
+    test('rejects tools/list and initialized without session', () {
       final noSession = handler.handleRpc(
         request: const JsonRpcRequest(id: 1, method: 'tools/list'),
       );
@@ -162,17 +244,16 @@ void main() {
         JsonRpcErrorCode.sessionRequired,
       );
 
-      final badVersion = handler.handleRpc(
+      final initialized = handler.handleRpc(
         request: const JsonRpcRequest(
-          id: 2,
-          method: 'initialize',
-          params: {
-            'protocolVersion': '1999-01-01',
-            'clientInfo': {'name': 'x', 'version': '0'},
-          },
+          method: 'notifications/initialized',
         ),
       );
-      expect(badVersion.response.isError, isTrue);
+      expect(initialized.response.isError, isTrue);
+      expect(
+        initialized.response.error!.code,
+        JsonRpcErrorCode.sessionRequired,
+      );
     });
 
     test('resources and prompts require session', () {
@@ -200,6 +281,119 @@ void main() {
         sessionId: 'sess-1',
       );
       expect(prompts.response.isError, isFalse);
+    });
+
+    test('default session ids are high-entropy and non-repeating', () {
+      final ids = List<String>.generate(
+        20,
+        (_) => generateMcpSessionId(),
+      );
+      expect(ids.toSet(), hasLength(20));
+      for (final id in ids) {
+        expect(id, isNot(contains('=')));
+        expect(id.length, greaterThanOrEqualTo(20));
+        expect(RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(id), isTrue);
+      }
+    });
+  });
+
+  group('MockMcpRoutes HTTP session / Origin contract', () {
+    late MockMcpRoutes routes;
+
+    setUp(() {
+      routes = MockMcpRoutes(
+        handler: McpFoundationHandler(sessionIdFactory: () => 'sess-http'),
+      );
+    });
+
+    Map<String, Object?> initBody() => {
+          'jsonrpc': '2.0',
+          'id': 1,
+          'method': 'initialize',
+          'params': {
+            'protocolVersion': McpProtocol.specificationVersion,
+            'clientInfo': {'name': 't', 'version': '0'},
+          },
+        };
+
+    test('initialized without session → 400; unknown session → 404', () {
+      final missing = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: const {},
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'method': 'notifications/initialized',
+        }),
+      )!;
+      expect(missing.statusCode, 400);
+      expect((missing.body as Map)['error'], 'session_required');
+
+      final unknown = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: {McpProtocol.sessionIdHeader: 'nope'},
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 2,
+          'method': 'tools/list',
+        }),
+      )!;
+      expect(unknown.statusCode, 404);
+      expect((unknown.body as Map)['error'], 'session_not_found');
+    });
+
+    test('allowed / rejected / absent Origin', () {
+      final init = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: const {},
+        rawBody: jsonEncode(initBody()),
+      )!;
+      expect(init.statusCode, 200);
+      final session = init.headers[McpProtocol.sessionIdHeader]!;
+
+      final allowed = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: {
+          McpProtocol.sessionIdHeader: session,
+          'origin': 'http://127.0.0.1:8787',
+        },
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 2,
+          'method': 'tools/list',
+        }),
+      )!;
+      expect(allowed.statusCode, 200);
+
+      final rejected = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: {
+          McpProtocol.sessionIdHeader: session,
+          'origin': 'https://evil.example',
+        },
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 3,
+          'method': 'tools/list',
+        }),
+      )!;
+      expect(rejected.statusCode, 403);
+      expect((rejected.body as Map)['error'], 'origin_forbidden');
+
+      final absent = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: {McpProtocol.sessionIdHeader: session},
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'method': 'notifications/initialized',
+        }),
+      )!;
+      expect(absent.statusCode, 202);
     });
   });
 

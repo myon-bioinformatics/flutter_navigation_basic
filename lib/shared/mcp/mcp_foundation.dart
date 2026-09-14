@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:math';
+
 import 'json_rpc.dart';
 import 'mcp_protocol.dart';
 
@@ -34,6 +37,13 @@ Map<String, String> mcpStreamableHeaders({
   };
 }
 
+/// Generates a high-entropy, URL-safe session id (base64url, no padding).
+String generateMcpSessionId({Random? random, int byteLength = 18}) {
+  final rng = random ?? Random.secure();
+  final bytes = List<int>.generate(byteLength, (_) => rng.nextInt(256));
+  return base64Url.encode(bytes).replaceAll('=', '');
+}
+
 /// Demo MCP method dispatcher used by unit tests and the local mock server.
 ///
 /// This is a foundation stub — not a full MCP host. It covers initialize,
@@ -42,7 +52,7 @@ class McpFoundationHandler {
   McpFoundationHandler({
     String Function()? sessionIdFactory,
     this.requiredAudience,
-  }) : _sessionIdFactory = sessionIdFactory ?? _defaultSessionId;
+  }) : _sessionIdFactory = sessionIdFactory ?? generateMcpSessionId;
 
   final String Function() _sessionIdFactory;
   final String? requiredAudience;
@@ -77,13 +87,16 @@ class McpFoundationHandler {
       case 'initialize':
         return _initialize(request);
       case 'notifications/initialized':
-        return (
-          response: JsonRpcResponse.result(id: request.id, result: null),
-          sessionId: sessionId,
-        );
+        // Stateful Streamable HTTP: initialized also requires the issued session.
+        return _requireSession(request, sessionId, (_) {
+          return JsonRpcResponse.result(id: request.id, result: null);
+        });
       case 'ping':
         return _requireSession(request, sessionId, (_) {
-          return JsonRpcResponse.result(id: request.id, result: <String, Object?>{});
+          return JsonRpcResponse.result(
+            id: request.id,
+            result: <String, Object?>{},
+          );
         });
       case 'tools/list':
         return _requireSession(request, sessionId, (_) {
@@ -244,29 +257,13 @@ class McpFoundationHandler {
     final params = _asMap(request.params) ?? const {};
     final clientInfo = _asMap(params['clientInfo']) ??
         const <String, Object?>{'name': 'unknown', 'version': '0'};
-    final requested = params['protocolVersion'] as String? ??
-        McpProtocol.specificationVersion;
-    // Negotiate: only the pinned version is accepted by this foundation stub.
-    if (requested != McpProtocol.specificationVersion) {
-      return (
-        response: JsonRpcResponse.failure(
-          id: request.id,
-          error: JsonRpcError(
-            code: JsonRpcErrorCode.invalidParams,
-            message: 'unsupported protocol version',
-            data: {
-              'requested': requested,
-              'supported': [McpProtocol.specificationVersion],
-            },
-          ),
-        ),
-        sessionId: null,
-      );
-    }
+    // MCP lifecycle: when the requested version is unsupported, respond with a
+    // successful InitializeResult using a version the server supports (here:
+    // the pinned revision). The client decides whether to disconnect.
     final id = _sessionIdFactory();
     _sessions[id] = McpSession(
       id: id,
-      protocolVersion: requested,
+      protocolVersion: McpProtocol.specificationVersion,
       clientInfo: clientInfo,
     );
     return (
@@ -327,9 +324,6 @@ class McpFoundationHandler {
     if (value is Map) return Map<String, Object?>.from(value);
     return null;
   }
-
-  static String _defaultSessionId() =>
-      'mcp-${DateTime.now().toUtc().microsecondsSinceEpoch}';
 }
 
 enum BearerGateStatus { ok, unauthorized, forbidden }
