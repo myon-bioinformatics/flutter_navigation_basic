@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../domain/home_controller.dart';
-import '../../../core/navigation/app_navigation.dart';
+import '../../../core/navigation/route_names.dart';
 import '../../../shared/diagnostics/build_diagnostics_card.dart';
 import '../../../shared/display/display_scope.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
@@ -55,15 +55,80 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: display.text('homeOverview.title'),
                   subtitle: display.text('homeOverview.subtitle'),
                   actions: [
-                    HomeOverviewAction(label: display.text('home.action.clipboardShelfProd.label'), subtitle: display.text('home.action.clipboardShelfProd.subtitle'), icon: Icons.inventory_2_outlined, onTap: AppNavigation.toClipboardShelf),
-                    HomeOverviewAction(label: display.text('nowTimeline.title'), subtitle: display.text('home.action.nowTimeline.subtitle'), icon: Icons.public_outlined, onTap: AppNavigation.toNowTimeline),
-                    HomeOverviewAction(label: display.text('coordinate.title'), subtitle: display.text('home.action.coordinateTool.subtitle'), icon: Icons.my_location_outlined, onTap: AppNavigation.toCoordinateTool),
-                    HomeOverviewAction(label: display.text('photoStudio.title'), subtitle: display.text('home.action.photoStudio.subtitle'), icon: Icons.photo_outlined, onTap: AppNavigation.toPhotoStudio),
-                    HomeOverviewAction(label: display.text('home.action.clipboardWorkbenchProd.label'), subtitle: display.text('home.action.clipboardWorkbenchProd.subtitle'), icon: Icons.content_paste_go_outlined, onTap: AppNavigation.toClipboardWorkbench),
-                    HomeOverviewAction(label: display.text('home.action.counterPlaygroundProd.label'), subtitle: display.text('home.action.counterPlaygroundProd.subtitle'), icon: Icons.exposure_plus_1_outlined, onTap: AppNavigation.toCounterPlayground),
-                    HomeOverviewAction(label: display.text('home.action.ironyGeneratorProd.label'), subtitle: display.text('home.action.ironyGeneratorProd.subtitle'), icon: Icons.auto_awesome_outlined, onTap: AppNavigation.toIronyGenerator),
-                    HomeOverviewAction(label: display.text('home.action.compositionStudio.label'), subtitle: display.text('home.action.compositionStudio.subtitle'), icon: Icons.music_note_outlined, onTap: AppNavigation.toCompositionGenerator),
-                    HomeOverviewAction(label: display.text('home.action.urlParameters.label'), subtitle: display.text('home.action.urlParameters.subtitle'), icon: Icons.link_outlined, onTap: AppNavigation.toScreen5),
+                    // Navigator.pushNamed works for both main.dart (no global
+                    // key) and main_prod.dart (navigatorKey attached).
+                    HomeOverviewAction(
+                      label: display.text('home.action.clipboardShelfProd.label'),
+                      subtitle:
+                          display.text('home.action.clipboardShelfProd.subtitle'),
+                      icon: Icons.inventory_2_outlined,
+                      onTap: () => Navigator.of(context)
+                          .pushNamed(RouteNames.clipboardShelf),
+                    ),
+                    HomeOverviewAction(
+                      label: display.text('nowTimeline.title'),
+                      subtitle: display.text('home.action.nowTimeline.subtitle'),
+                      icon: Icons.public_outlined,
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(RouteNames.nowTimeline),
+                    ),
+                    HomeOverviewAction(
+                      label: display.text('coordinate.title'),
+                      subtitle:
+                          display.text('home.action.coordinateTool.subtitle'),
+                      icon: Icons.my_location_outlined,
+                      onTap: () => Navigator.of(context)
+                          .pushNamed(RouteNames.coordinateTool),
+                    ),
+                    HomeOverviewAction(
+                      label: display.text('photoStudio.title'),
+                      subtitle: display.text('home.action.photoStudio.subtitle'),
+                      icon: Icons.photo_outlined,
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(RouteNames.photoStudio),
+                    ),
+                    HomeOverviewAction(
+                      label: display
+                          .text('home.action.clipboardWorkbenchProd.label'),
+                      subtitle: display
+                          .text('home.action.clipboardWorkbenchProd.subtitle'),
+                      icon: Icons.content_paste_go_outlined,
+                      onTap: () => Navigator.of(context)
+                          .pushNamed(RouteNames.clipboardWorkbench),
+                    ),
+                    HomeOverviewAction(
+                      label:
+                          display.text('home.action.counterPlaygroundProd.label'),
+                      subtitle: display
+                          .text('home.action.counterPlaygroundProd.subtitle'),
+                      icon: Icons.exposure_plus_1_outlined,
+                      onTap: () => Navigator.of(context)
+                          .pushNamed(RouteNames.counterPlayground),
+                    ),
+                    HomeOverviewAction(
+                      label: display.text('home.action.ironyGeneratorProd.label'),
+                      subtitle: display
+                          .text('home.action.ironyGeneratorProd.subtitle'),
+                      icon: Icons.auto_awesome_outlined,
+                      onTap: () => Navigator.of(context)
+                          .pushNamed(RouteNames.ironyGenerator),
+                    ),
+                    HomeOverviewAction(
+                      label: display.text('home.action.compositionStudio.label'),
+                      subtitle:
+                          display.text('home.action.compositionStudio.subtitle'),
+                      icon: Icons.music_note_outlined,
+                      onTap: () => Navigator.of(context)
+                          .pushNamed(RouteNames.compositionGenerator),
+                    ),
+                    HomeOverviewAction(
+                      label: display.text('home.action.urlParameters.label'),
+                      subtitle:
+                          display.text('home.action.urlParameters.subtitle'),
+                      icon: Icons.link_outlined,
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(RouteNames.screen5),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),

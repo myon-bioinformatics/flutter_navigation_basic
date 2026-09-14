@@ -1,40 +1,36 @@
 import 'package:flutter/material.dart';
-import '../screens/home_screen.dart';
-import '../screens/hub_screen.dart';
-import '../screens/counter_playground_screen.dart';
-import '../screens/irony_generator_screen.dart';
-import '../screens/composition_studio_screen.dart';
-import '../screens/clipboard_shelf_screen.dart';
-import '../screens/clipboard_workbench_screen.dart';
-import '../screens/now_timeline_screen.dart';
-import '../screens/coordinate_tool_screen.dart';
-import '../screens/photo_studio_screen.dart';
-import '../screens/mock_api_screen.dart';
-import '../screens/mcp_integration_screen.dart';
+
+import '../core/navigation/app_route_registry.dart';
+import '../core/navigation/route_names.dart';
 import '../screens/generic_screen.dart';
+import '../screens/hub_screen.dart';
+import '../screens/mcp_integration_screen.dart';
+import '../screens/mock_api_screen.dart';
 import '../screens/ui_showcase_screen.dart';
 
+/// Public (`main.dart`) route table.
+///
+/// Tool routes come from [AppRouteRegistry] so GitHub Pages shows the same
+/// Door-enabled feature pages as `main_prod.dart` / [AppNavigation].
 class AppRoutes {
-  static const String home = '/';
+  static const String home = RouteNames.home;
   static const String hub = '/hub';
 
-  static const String clipboardShelf = '/core/clipboard-shelf';
-  static const String nowTimeline = '/tools/time/now-timeline';
-  static const String coordinateTool = '/tools/location/coordinates';
-  static const String photoStudio = '/tools/media/photo-studio';
-  // Compatibility alias for older bookmarks.
-  static const String boundingBox = '/tools/location/bounding-box';
-  static const String counterPlayground = '/examples/counter-playground';
-  static const String ironyGenerator = '/examples/irony-generator';
-  static const String compositionGenerator = '/examples/composition-generator';
-  static const String compositionSeedGenerator = '/examples/composition-generator/seed';
-  static const String clipboardWorkbench = '/examples/clipboard-workbench';
+  static const String clipboardShelf = RouteNames.clipboardShelf;
+  static const String nowTimeline = RouteNames.nowTimeline;
+  static const String coordinateTool = RouteNames.coordinateTool;
+  static const String photoStudio = RouteNames.photoStudio;
+  static const String boundingBox = RouteNames.boundingBox;
+  static const String counterPlayground = RouteNames.counterPlayground;
+  static const String ironyGenerator = RouteNames.ironyGenerator;
+  static const String compositionGenerator = RouteNames.compositionGenerator;
+  static const String compositionSeedGenerator =
+      RouteNames.compositionSeedGenerator;
+  static const String clipboardWorkbench = RouteNames.clipboardWorkbench;
   static const String uiShowcase = '/examples/ui-showcase';
 
   static const String externalApi = '/examples/external-integration/api';
   static const String externalMcp = '/examples/external-integration/mcp';
-
-  // Compatibility route retained for existing links/bookmarks.
   static const String mockApi = '/examples/mock-api';
 
   static String screenRoute(int id) => '/screen$id';
@@ -42,24 +38,17 @@ class AppRoutes {
   static final Map<String, WidgetBuilder> routes = _buildRoutes();
 
   static Map<String, WidgetBuilder> _buildRoutes() {
-    final map = <String, WidgetBuilder>{};
+    final map = <String, WidgetBuilder>{
+      ...AppRouteRegistry.canonicalRoutes,
+    };
 
+    // Catalogue / demo routes that are public-entrypoint only.
     for (var i = 1; i <= 198; i++) {
-      map[screenRoute(i)] = (_) => GenericScreen(screenId: i);
+      final name = screenRoute(i);
+      map.putIfAbsent(name, () => (_) => GenericScreen(screenId: i));
     }
 
-    map[home] = (_) => const HomeScreen();
     map[hub] = (_) => const HubScreen();
-    map[clipboardShelf] = (_) => const ClipboardShelfScreen();
-    map[nowTimeline] = (_) => const NowTimelineScreen();
-    map[coordinateTool] = (_) => const CoordinateToolScreen();
-    map[photoStudio] = (_) => const PhotoStudioScreen();
-    map[boundingBox] = (_) => const PhotoStudioScreen();
-    map[counterPlayground] = (_) => const CounterPlaygroundScreen();
-    map[ironyGenerator] = (_) => const IronyGeneratorScreen();
-    map[compositionGenerator] = (_) => const CompositionStudioScreen();
-    map[compositionSeedGenerator] = (_) => const CompositionStudioScreen();
-    map[clipboardWorkbench] = (_) => const ClipboardWorkbenchScreen();
     map[uiShowcase] = (_) => const UiShowcaseScreen();
     map[externalApi] = (_) => const ApiIntegrationScreen();
     map[externalMcp] = (_) => const McpIntegrationScreen();
