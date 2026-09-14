@@ -5,6 +5,7 @@ import '../../features/clipboard_workbench/presentation/clipboard_workbench_page
 import '../../features/coordinate_tool/presentation/coordinate_tool_page.dart';
 import '../../features/home/domain/home_controller.dart';
 import '../../features/home/presentation/home_screen.dart';
+import '../../features/http_request_draft/presentation/http_request_draft_page.dart';
 import '../../features/now_timeline/presentation/now_timeline_page.dart';
 import '../../features/photo_studio/presentation/photo_studio_page.dart';
 import '../../features/screen5/domain/screen5_controller.dart';
@@ -51,6 +52,7 @@ class AppRouteRegistry {
         RouteNames.compositionSeedGenerator: (_) =>
             const CompositionStudioScreen(),
         RouteNames.clipboardWorkbench: (_) => const ClipboardWorkbenchPage(),
+        RouteNames.httpRequestDraft: (_) => const HttpRequestDraftPage(),
         RouteNames.screen5: (_) => Screen5Page(controller: Screen5Controller()),
       };
 }

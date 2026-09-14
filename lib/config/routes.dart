@@ -24,6 +24,7 @@ class AppRoutes {
   static const String compositionSeedGenerator =
       RouteNames.compositionSeedGenerator;
   static const String clipboardWorkbench = RouteNames.clipboardWorkbench;
+  static const String httpRequestDraft = RouteNames.httpRequestDraft;
   static const String uiShowcase = '/examples/ui-showcase';
 
   static const String externalApi = '/examples/external-integration/api';

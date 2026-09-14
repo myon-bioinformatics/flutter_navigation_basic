@@ -98,6 +98,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           .pushNamed(RouteNames.clipboardWorkbench),
                     ),
                     HomeOverviewAction(
+                      label: display.text('httpDraft.title'),
+                      subtitle:
+                          display.text('home.action.httpRequestDraft.subtitle'),
+                      icon: Icons.http_outlined,
+                      onTap: () => Navigator.of(context)
+                          .pushNamed(RouteNames.httpRequestDraft),
+                    ),
+                    HomeOverviewAction(
                       label: display.text('home.action.hub.label'),
                       subtitle: display.text('home.action.hub.subtitle'),
                       icon: Icons.map_outlined,
