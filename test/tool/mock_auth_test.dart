@@ -184,7 +184,6 @@ void main() {
         password: MockAuthDemo.basicPassword,
         realm: MockAuthDemo.digestRealm,
         nonce: MockAuthDemo.digestNonce,
-        qop: 'auth',
         nc: nc,
         cnonce: cnonce,
       );
@@ -203,6 +202,128 @@ void main() {
       )!;
       expect(ok.statusCode, 200);
       expect(ok.body['scheme'], 'digest');
+    });
+
+    test('mismatched claimed uri → 401', () {
+      const nc = '00000001';
+      const cnonce = 'demo-cnonce';
+      // Compute a valid digest for '/other/path' but send request to /auth/digest
+      final response = MockAuthHandler.digestResponse(
+        method: 'GET',
+        uri: '/other/path',
+        username: MockAuthDemo.basicUser,
+        password: MockAuthDemo.basicPassword,
+        realm: MockAuthDemo.digestRealm,
+        nonce: MockAuthDemo.digestNonce,
+        nc: nc,
+        cnonce: cnonce,
+      );
+      final header = 'Digest username="${MockAuthDemo.basicUser}", '
+          'realm="${MockAuthDemo.digestRealm}", '
+          'nonce="${MockAuthDemo.digestNonce}", '
+          'uri="/other/path", '
+          'qop=auth, nc=$nc, cnonce="$cnonce", '
+          'response="$response", '
+          'opaque="${MockAuthDemo.digestOpaque}"';
+      final result = auth.handle(
+        method: 'GET',
+        path: '/auth/digest',
+        headers: {'authorization': header},
+        query: const {},
+      )!;
+      expect(result.statusCode, 401);
+      expect(result.body['reason'], 'uri_mismatch');
+    });
+
+    test('missing qop → 401', () {
+      const nc = '00000001';
+      const cnonce = 'demo-cnonce';
+      final response = MockAuthHandler.digestResponse(
+        method: 'GET',
+        uri: '/auth/digest',
+        username: MockAuthDemo.basicUser,
+        password: MockAuthDemo.basicPassword,
+        realm: MockAuthDemo.digestRealm,
+        nonce: MockAuthDemo.digestNonce,
+        nc: nc,
+        cnonce: cnonce,
+      );
+      // Omit qop from the Authorization header
+      final header = 'Digest username="${MockAuthDemo.basicUser}", '
+          'realm="${MockAuthDemo.digestRealm}", '
+          'nonce="${MockAuthDemo.digestNonce}", '
+          'uri="/auth/digest", '
+          'nc=$nc, cnonce="$cnonce", '
+          'response="$response", '
+          'opaque="${MockAuthDemo.digestOpaque}"';
+      final result = auth.handle(
+        method: 'GET',
+        path: '/auth/digest',
+        headers: {'authorization': header},
+        query: const {},
+      )!;
+      expect(result.statusCode, 401);
+      expect(result.body['reason'], 'missing_qop_params');
+    });
+
+    test('missing nc → 401', () {
+      const cnonce = 'demo-cnonce';
+      final response = MockAuthHandler.digestResponse(
+        method: 'GET',
+        uri: '/auth/digest',
+        username: MockAuthDemo.basicUser,
+        password: MockAuthDemo.basicPassword,
+        realm: MockAuthDemo.digestRealm,
+        nonce: MockAuthDemo.digestNonce,
+        nc: '00000001',
+        cnonce: cnonce,
+      );
+      // Omit nc
+      final header = 'Digest username="${MockAuthDemo.basicUser}", '
+          'realm="${MockAuthDemo.digestRealm}", '
+          'nonce="${MockAuthDemo.digestNonce}", '
+          'uri="/auth/digest", '
+          'qop=auth, cnonce="$cnonce", '
+          'response="$response", '
+          'opaque="${MockAuthDemo.digestOpaque}"';
+      final result = auth.handle(
+        method: 'GET',
+        path: '/auth/digest',
+        headers: {'authorization': header},
+        query: const {},
+      )!;
+      expect(result.statusCode, 401);
+      expect(result.body['reason'], 'missing_qop_params');
+    });
+
+    test('missing cnonce → 401', () {
+      const nc = '00000001';
+      final response = MockAuthHandler.digestResponse(
+        method: 'GET',
+        uri: '/auth/digest',
+        username: MockAuthDemo.basicUser,
+        password: MockAuthDemo.basicPassword,
+        realm: MockAuthDemo.digestRealm,
+        nonce: MockAuthDemo.digestNonce,
+        nc: nc,
+        cnonce: 'demo-cnonce',
+      );
+      // Omit cnonce
+      final header = 'Digest username="${MockAuthDemo.basicUser}", '
+          'realm="${MockAuthDemo.digestRealm}", '
+          'nonce="${MockAuthDemo.digestNonce}", '
+          'uri="/auth/digest", '
+          'qop=auth, nc=$nc, '
+          'response="$response", '
+          'opaque="${MockAuthDemo.digestOpaque}"';
+      final result = auth.handle(
+        method: 'GET',
+        path: '/auth/digest',
+        headers: {'authorization': header},
+        query: const {},
+      )!;
+      expect(result.statusCode, 401);
+      expect(result.body['reason'], 'missing_qop_params');
     });
   });
 

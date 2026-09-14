@@ -273,13 +273,29 @@ class MockAuthHandler {
       );
     }
 
+    // Require qop=auth with non-empty nc and cnonce — the challenge advertises
+    // qop="auth" so the legacy no-qop path is not accepted.
+    if (qop != 'auth' || nc == null || nc.isEmpty || cnonce == null || cnonce.isEmpty) {
+      return _unauthorized(
+        reason: 'missing_qop_params',
+        wwwAuthenticate: challenge,
+      );
+    }
+
+    // The claimed uri must match the actual request-target; HA2 is computed
+    // from the verified path rather than whatever the client asserted.
+    if (uri != path) {
+      return _unauthorized(
+        reason: 'uri_mismatch',
+        wwwAuthenticate: challenge,
+      );
+    }
+
     final ha1 = _md5Hex(
       '$username:$realm:${MockAuthDemo.basicPassword}',
     );
-    final ha2 = _md5Hex('$method:$uri');
-    final expected = (qop == 'auth' && nc != null && cnonce != null)
-        ? _md5Hex('$ha1:$nonce:$nc:$cnonce:$qop:$ha2')
-        : _md5Hex('$ha1:$nonce:$ha2');
+    final ha2 = _md5Hex('$method:$path');
+    final expected = _md5Hex('$ha1:$nonce:$nc:$cnonce:$qop:$ha2');
     if (response.toLowerCase() != expected) {
       return _unauthorized(
         reason: 'invalid_credentials',
@@ -407,6 +423,10 @@ class MockAuthHandler {
     return digest.toString();
   }
 
+  /// Computes the `response` field for a Digest `qop=auth` request.
+  ///
+  /// Both [nc] and [cnonce] are required because the endpoint no longer
+  /// accepts the legacy no-qop path.
   static String digestResponse({
     required String method,
     required String uri,
@@ -414,16 +434,13 @@ class MockAuthHandler {
     required String password,
     required String realm,
     required String nonce,
-    String? qop,
-    String? nc,
-    String? cnonce,
+    required String nc,
+    required String cnonce,
+    String qop = 'auth',
   }) {
     final ha1 = _md5Hex('$username:$realm:$password');
     final ha2 = _md5Hex('$method:$uri');
-    if (qop == 'auth' && nc != null && cnonce != null) {
-      return _md5Hex('$ha1:$nonce:$nc:$cnonce:$qop:$ha2');
-    }
-    return _md5Hex('$ha1:$nonce:$ha2');
+    return _md5Hex('$ha1:$nonce:$nc:$cnonce:$qop:$ha2');
   }
 
   static MockAuthResult _unauthorized({
