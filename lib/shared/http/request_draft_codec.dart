@@ -64,24 +64,41 @@ class RequestDraftCodec {
     'x-auth-token',
   };
 
-  /// True when a header/query/form field name looks secret-bearing.
+  /// True when a header/query/form/fragment field name looks secret-bearing.
   static bool isSensitiveFieldName(String name) {
     final n = normalizeAsciiFullwidth(name).trim().toLowerCase();
     if (n.isEmpty) return false;
     if (sensitiveHeaderNames.contains(n)) return true;
-    if (n == 'key' || n == 'token' || n == 'secret' || n == 'password') {
-      return true;
-    }
+    if (_sensitiveExactNames.contains(n)) return true;
     return n.contains('api-key') ||
         n.contains('api_key') ||
         n.contains('token') ||
         n.contains('secret') ||
         n.contains('password') ||
+        n.contains('signature') ||
+        n.contains('credential') ||
         n.endsWith('_key') ||
         n.endsWith('-key') ||
         n.contains('access_key') ||
-        n.contains('access-key');
+        n.contains('access-key') ||
+        n.contains('sharedaccesssignature');
   }
+
+  static const _sensitiveExactNames = {
+    'key',
+    'token',
+    'secret',
+    'password',
+    'sig',
+    'signature',
+    'access_token',
+    'refresh_token',
+    'id_token',
+    'x-amz-signature',
+    'x-amz-credential',
+    'x-amz-security-token',
+    'sas',
+  };
 
   static bool isSensitiveHeaderName(String name) => isSensitiveFieldName(name);
 
@@ -90,7 +107,8 @@ class RequestDraftCodec {
   /// Builds the request URI while preserving query order and duplicate keys.
   ///
   /// When [redactSecrets] is true, sensitive query names (explicit flag or
-  /// known secret-ish names) and URL `userInfo` are replaced with `***`.
+  /// known secret-ish names), URL `userInfo`, and fragment secrets are
+  /// replaced with `***`.
   static Uri? buildUri(
     RequestDraft draft, {
     bool redactSecrets = false,
@@ -126,7 +144,30 @@ class RequestDraftCodec {
     if (redactSecrets && result.userInfo.isNotEmpty) {
       result = result.replace(userInfo: '***');
     }
+    if (redactSecrets && result.hasFragment) {
+      result = result.replace(fragment: _redactFragment(result.fragment));
+    }
     return result;
+  }
+
+  /// Redacts OAuth/signed fragment payloads. Opaque fragments (no `=`) become
+  /// `***` entirely; `key=value` fragments redact secret-ish keys in place.
+  static String _redactFragment(String fragment) {
+    if (fragment.isEmpty) return fragment;
+    if (!fragment.contains('=')) return '***';
+
+    return fragment.split('&').map((part) {
+      final eq = part.indexOf('=');
+      if (eq <= 0) {
+        return isSensitiveFieldName(part) ? '***' : part;
+      }
+      final name = part.substring(0, eq);
+      final value = part.substring(eq + 1);
+      if (isSensitiveFieldName(Uri.decodeQueryComponent(name))) {
+        return '$name=***';
+      }
+      return '$name=$value';
+    }).join('&');
   }
 
   static Map<String, String> buildHeaders(

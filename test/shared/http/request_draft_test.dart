@@ -104,6 +104,43 @@ void main() {
       expect(curl, isNot(contains('user:pass')));
     });
 
+    test('redacts OAuth fragment access_token in URI and curl', () {
+      const secret = 'abcdef123';
+      final draft = RequestDraft(
+        url:
+            'https://example.com/callback#access_token=$secret&token_type=bearer&state=ok',
+      );
+      final uri = RequestDraftCodec.buildUri(draft, redactSecrets: true)!;
+      expect(uri.fragment, contains('access_token=***'));
+      expect(uri.fragment, contains('token_type=***')); // name contains "token"
+      expect(uri.fragment, contains('state=ok'));
+      expect(uri.fragment, isNot(contains(secret)));
+
+      final curl = RequestDraftCodec.toCurl(draft);
+      expect(curl, isNot(contains(secret)));
+      expect(curl, contains('access_token=***'));
+    });
+
+    test('redacts opaque fragments and signed-URL style query names', () {
+      final opaque = RequestDraft(
+        url: 'https://example.com/app#opaque-secret-blob',
+      );
+      expect(
+        RequestDraftCodec.buildUri(opaque, redactSecrets: true)!.fragment,
+        '***',
+      );
+
+      final signed = RequestDraft(
+        url:
+            'https://example.com/object?X-Amz-Signature=sig123&X-Amz-Credential=cred&ok=1',
+      );
+      final uri = RequestDraftCodec.buildUri(signed, redactSecrets: true)!;
+      expect(uri.query, contains('X-Amz-Signature=%2A%2A%2A'));
+      expect(uri.query, contains('X-Amz-Credential=%2A%2A%2A'));
+      expect(uri.query, contains('ok=1'));
+      expect(uri.query, isNot(contains('sig123')));
+    });
+
     test('form-urlencoded encodes fields', () {
       final draft = RequestDraft(
         url: 'https://example.com',
