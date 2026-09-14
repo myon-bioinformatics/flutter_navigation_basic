@@ -21,17 +21,43 @@ class McpOriginPolicy {
     if (origin == null || origin.isEmpty) return true;
     return allowedOrigins.contains(origin);
   }
+
+  /// Builds an allowlist for a loopback mock listening on [port].
+  factory McpOriginPolicy.forPort(int port) {
+    return McpOriginPolicy(
+      allowedOrigins: {
+        'http://127.0.0.1:$port',
+        'http://localhost:$port',
+      },
+    );
+  }
 }
 
 /// Demo OAuth discovery + MCP Streamable HTTP JSON-RPC routes for the mock server.
 class MockMcpRoutes {
   MockMcpRoutes({
     McpFoundationHandler? handler,
-    this.resource = 'http://127.0.0.1/mcp',
-    this.issuer = 'http://127.0.0.1',
-    this.expectedAudience = 'http://127.0.0.1/mcp',
+    this.resource = 'http://127.0.0.1:8787/mcp',
+    this.issuer = 'http://127.0.0.1:8787',
+    this.expectedAudience = 'http://127.0.0.1:8787/mcp',
     this.originPolicy = const McpOriginPolicy(),
   }) : handler = handler ?? McpFoundationHandler();
+
+  /// Builds discovery URLs / audience / Origin policy from the effective listen
+  /// [port] so `--port` cannot drift from published metadata.
+  factory MockMcpRoutes.forPort(
+    int port, {
+    McpFoundationHandler? handler,
+  }) {
+    final base = 'http://127.0.0.1:$port';
+    return MockMcpRoutes(
+      handler: handler,
+      resource: '$base/mcp',
+      issuer: base,
+      expectedAudience: '$base/mcp',
+      originPolicy: McpOriginPolicy.forPort(port),
+    );
+  }
 
   final McpFoundationHandler handler;
   final String resource;
@@ -57,6 +83,8 @@ class MockMcpRoutes {
         authorizationEndpoint: '$issuer/oauth/authorize',
         tokenEndpoint: '$issuer/oauth/token',
         scopesSupported: const ['mcp'],
+        responseTypesSupported: const ['code'],
+        grantTypesSupported: const ['authorization_code'],
         codeChallengeMethodsSupported: const ['S256'],
         tokenEndpointAuthMethodsSupported: const ['none', 'client_secret_basic'],
       );
@@ -195,20 +223,49 @@ class MockMcpRoutes {
       McpProtocol.protocolVersionHeader: McpProtocol.specificationVersion,
     };
 
-    if (request.isNotification &&
-        request.method == 'notifications/initialized') {
+    final code = outcome.response.error?.code;
+    if (code == JsonRpcErrorCode.unauthorized) {
+      return (
+        statusCode: 401,
+        headers: outHeaders,
+        body: {
+          'error': 'unauthorized',
+          'message': outcome.response.error?.message,
+          'reason': outcome.response.error?.data,
+        },
+      );
+    }
+    if (code == JsonRpcErrorCode.forbidden) {
+      return (
+        statusCode: 403,
+        headers: outHeaders,
+        body: {
+          'error': 'forbidden',
+          'message': outcome.response.error?.message,
+          'reason': outcome.response.error?.data,
+        },
+      );
+    }
+
+    // Accepted notifications: HTTP 202 with empty body (no JSON-RPC response).
+    // Rejected notifications: HTTP error — do not pretend success.
+    if (request.isNotification) {
+      if (outcome.response.isError) {
+        return (
+          statusCode: 400,
+          headers: outHeaders,
+          body: {
+            'error': 'notification_rejected',
+            'message': outcome.response.error?.message,
+            'code': outcome.response.error?.code,
+          },
+        );
+      }
       return (statusCode: 202, headers: outHeaders, body: null);
     }
 
-    final code = outcome.response.error?.code;
-    final status = switch (code) {
-      JsonRpcErrorCode.unauthorized => 401,
-      JsonRpcErrorCode.forbidden => 403,
-      _ => 200,
-    };
-
     return (
-      statusCode: status,
+      statusCode: 200,
       headers: outHeaders,
       body: outcome.response.toJson(),
     );

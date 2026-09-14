@@ -40,39 +40,57 @@ class OAuthAuthorizationServerMetadata {
       return value;
     }
 
-    List<String> list(String key) {
+    /// Parses an optional string array. Absent → null. Present non-list or
+    /// non-string members → FormatException.
+    List<String>? optionalStringList(String key) {
+      if (!json.containsKey(key)) return null;
       final value = json[key];
-      if (value is! List) return const [];
-      return value.whereType<String>().toList(growable: false);
+      if (value is! List) {
+        throw FormatException('invalid OAuth metadata field: $key');
+      }
+      final out = <String>[];
+      for (final item in value) {
+        if (item is! String) {
+          throw FormatException('invalid OAuth metadata field: $key');
+        }
+        out.add(item);
+      }
+      return out;
     }
+
+    List<String> listOrEmpty(String key) =>
+        optionalStringList(key) ?? const <String>[];
 
     // Remote discovery must not invent capabilities the server omitted.
     // - Absent code_challenge_methods_supported → [] (supportsPkceS256 false)
     // - Absent token_endpoint_auth_methods_supported → RFC 8414 default
     //   `client_secret_basic` (not `none`)
-    final codeChallengeMethods = json.containsKey(
-      'code_challenge_methods_supported',
-    )
-        ? list('code_challenge_methods_supported')
-        : const <String>[];
-    final tokenAuthMethods = json.containsKey(
-      'token_endpoint_auth_methods_supported',
-    )
-        ? list('token_endpoint_auth_methods_supported')
-        : const ['client_secret_basic'];
+    // - response_types_supported is REQUIRED (RFC 8414 §2)
+    // - Absent grant_types_supported → RFC 8414 default
+    //   `authorization_code` + `implicit`
+    final codeChallengeMethods =
+        optionalStringList('code_challenge_methods_supported') ??
+            const <String>[];
+    final tokenAuthMethods =
+        optionalStringList('token_endpoint_auth_methods_supported') ??
+            const ['client_secret_basic'];
+    final responseTypes = optionalStringList('response_types_supported');
+    if (responseTypes == null || responseTypes.isEmpty) {
+      throw const FormatException(
+        'missing OAuth metadata field: response_types_supported',
+      );
+    }
+    final grantTypes = optionalStringList('grant_types_supported') ??
+        const ['authorization_code', 'implicit'];
 
     return OAuthAuthorizationServerMetadata(
       issuer: req('issuer'),
       authorizationEndpoint: req('authorization_endpoint'),
       tokenEndpoint: req('token_endpoint'),
       registrationEndpoint: json['registration_endpoint'] as String?,
-      scopesSupported: list('scopes_supported'),
-      responseTypesSupported: list('response_types_supported').isEmpty
-          ? const ['code']
-          : list('response_types_supported'),
-      grantTypesSupported: list('grant_types_supported').isEmpty
-          ? const ['authorization_code']
-          : list('grant_types_supported'),
+      scopesSupported: listOrEmpty('scopes_supported'),
+      responseTypesSupported: responseTypes,
+      grantTypesSupported: grantTypes,
       codeChallengeMethodsSupported: codeChallengeMethods,
       tokenEndpointAuthMethodsSupported: tokenAuthMethods,
     );

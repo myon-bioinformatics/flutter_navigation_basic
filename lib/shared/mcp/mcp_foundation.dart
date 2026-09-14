@@ -254,12 +254,39 @@ class McpFoundationHandler {
   ({JsonRpcResponse response, String? sessionId}) _initialize(
     JsonRpcRequest request,
   ) {
-    final params = _asMap(request.params) ?? const {};
-    final clientInfo = _asMap(params['clientInfo']) ??
-        const <String, Object?>{'name': 'unknown', 'version': '0'};
-    // MCP lifecycle: when the requested version is unsupported, respond with a
-    // successful InitializeResult using a version the server supports (here:
-    // the pinned revision). The client decides whether to disconnect.
+    final params = _asMap(request.params);
+    if (params == null) {
+      return _invalidInitialize(
+        request,
+        'initialize params must be an object',
+      );
+    }
+
+    // Required InitializeRequest fields (MCP lifecycle). Wrong/missing types
+    // are invalidParams and must not allocate a session. An unsupported
+    // *string* protocolVersion still negotiates successfully to the pin.
+    final protocolVersion = params['protocolVersion'];
+    if (protocolVersion is! String || protocolVersion.isEmpty) {
+      return _invalidInitialize(
+        request,
+        'protocolVersion must be a non-empty string',
+      );
+    }
+    final capabilities = _asMap(params['capabilities']);
+    if (capabilities == null) {
+      return _invalidInitialize(
+        request,
+        'capabilities must be an object',
+      );
+    }
+    final clientInfo = _asMap(params['clientInfo']);
+    if (clientInfo == null) {
+      return _invalidInitialize(
+        request,
+        'clientInfo must be an object',
+      );
+    }
+
     final id = _sessionIdFactory();
     _sessions[id] = McpSession(
       id: id,
@@ -283,6 +310,22 @@ class McpFoundationHandler {
         },
       ),
       sessionId: id,
+    );
+  }
+
+  ({JsonRpcResponse response, String? sessionId}) _invalidInitialize(
+    JsonRpcRequest request,
+    String message,
+  ) {
+    return (
+      response: JsonRpcResponse.failure(
+        id: request.id,
+        error: JsonRpcError(
+          code: JsonRpcErrorCode.invalidParams,
+          message: message,
+        ),
+      ),
+      sessionId: null,
     );
   }
 

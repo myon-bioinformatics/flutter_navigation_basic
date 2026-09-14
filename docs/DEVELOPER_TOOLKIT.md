@@ -136,10 +136,17 @@ fixtures. Endpoints:
   - Present `Origin` must match the local allowlist
     (`http://127.0.0.1:8787` / `http://localhost:8787`); disallowed → HTTP
     403. Absent Origin remains OK for CLI/curl.
-  - Unsupported client `protocolVersion` still yields a successful
+  - Unsupported *string* `protocolVersion` still yields a successful
     InitializeResult with the pinned `2025-03-26` (client may disconnect).
+    Missing/non-string `protocolVersion`, `capabilities`, or `clientInfo`
+    → `invalidParams` (no session).
+  - Present Bearer on `/mcp` (including `notifications/initialized`) is
+    audience-checked; expired/malformed → 401, wrong audience → 403.
+  - Discovery `issuer` / `resource` / audience follow the effective
+    `--port` (default `8787`), not port 80.
   - `GET /.well-known/oauth-authorization-server` — AS metadata fixture
-    (+ PKCE S256). Remote discovery parsing does not invent omitted claims.
+    (+ PKCE S256). Remote discovery parsing does not invent omitted claims;
+    `response_types_supported` is required.
   - `GET /.well-known/oauth-protected-resource` — protected resource metadata
   - `GET /mcp/support-matrix` — capability flags (Flutter Web in-app OAuth
     is **not** guaranteed)
@@ -152,7 +159,7 @@ curl -s -H 'Authorization: Bearer demo-bearer-token' \
   http://127.0.0.1:8787/auth/bearer
 SESSION=$(curl -s -D - -o /tmp/mcp-init.json -X POST http://127.0.0.1:8787/mcp \
   -H 'content-type: application/json' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","clientInfo":{"name":"demo","version":"0"}}}' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"demo","version":"0"}}}' \
   | awk -F': ' 'tolower($1)=="mcp-session-id"{gsub(/\r/,"",$2); print $2; exit}')
 curl -s -X POST http://127.0.0.1:8787/mcp \
   -H 'content-type: application/json' \

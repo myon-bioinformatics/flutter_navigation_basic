@@ -7,7 +7,7 @@ import 'src/mock_mcp.dart';
 Future<void> main(List<String> args) async {
   final port = _readPort(args) ?? 8787;
   final auth = MockAuthHandler();
-  final mcp = MockMcpRoutes();
+  final mcp = MockMcpRoutes.forPort(port);
   final server = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
   stdout.writeln('Mock HTTP server listening on http://127.0.0.1:$port');
   stdout.writeln(

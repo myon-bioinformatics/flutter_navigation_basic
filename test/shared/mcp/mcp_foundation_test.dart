@@ -46,6 +46,7 @@ void main() {
         'issuer': 'https://auth.example.test/',
         'authorization_endpoint': 'https://auth.example.test/authorize',
         'token_endpoint': 'https://auth.example.test/token',
+        'response_types_supported': ['code'],
         'code_challenge_methods_supported': ['S256'],
         'scopes_supported': ['mcp'],
       });
@@ -64,6 +65,7 @@ void main() {
         'issuer': 'https://auth.example.test/',
         'authorization_endpoint': 'https://auth.example.test/authorize',
         'token_endpoint': 'https://auth.example.test/token',
+        'response_types_supported': ['code'],
       });
       expect(omitted.codeChallengeMethodsSupported, isEmpty);
       expect(omitted.supportsPkceS256, isFalse);
@@ -71,16 +73,59 @@ void main() {
         omitted.tokenEndpointAuthMethodsSupported,
         ['client_secret_basic'],
       );
+      expect(
+        omitted.grantTypesSupported,
+        ['authorization_code', 'implicit'],
+      );
 
       final emptyPkce = OAuthAuthorizationServerMetadata.fromJson({
         'issuer': 'https://auth.example.test/',
         'authorization_endpoint': 'https://auth.example.test/authorize',
         'token_endpoint': 'https://auth.example.test/token',
+        'response_types_supported': ['code'],
         'code_challenge_methods_supported': <String>[],
         'token_endpoint_auth_methods_supported': <String>['none'],
       });
       expect(emptyPkce.supportsPkceS256, isFalse);
       expect(emptyPkce.tokenEndpointAuthMethodsSupported, ['none']);
+    });
+
+    test('requires response_types_supported; rejects wrong-type arrays', () {
+      expect(
+        () => OAuthAuthorizationServerMetadata.fromJson({
+          'issuer': 'https://auth.example.test/',
+          'authorization_endpoint': 'https://auth.example.test/authorize',
+          'token_endpoint': 'https://auth.example.test/token',
+        }),
+        throwsFormatException,
+      );
+      expect(
+        () => OAuthAuthorizationServerMetadata.fromJson({
+          'issuer': 'https://auth.example.test/',
+          'authorization_endpoint': 'https://auth.example.test/authorize',
+          'token_endpoint': 'https://auth.example.test/token',
+          'response_types_supported': <String>[],
+        }),
+        throwsFormatException,
+      );
+      expect(
+        () => OAuthAuthorizationServerMetadata.fromJson({
+          'issuer': 'https://auth.example.test/',
+          'authorization_endpoint': 'https://auth.example.test/authorize',
+          'token_endpoint': 'https://auth.example.test/token',
+          'response_types_supported': 'code',
+        }),
+        throwsFormatException,
+      );
+      expect(
+        () => OAuthAuthorizationServerMetadata.fromJson({
+          'issuer': 'https://auth.example.test/',
+          'authorization_endpoint': 'https://auth.example.test/authorize',
+          'token_endpoint': 'https://auth.example.test/token',
+          'response_types_supported': ['code', 1],
+        }),
+        throwsFormatException,
+      );
     });
   });
 
@@ -222,6 +267,7 @@ void main() {
           method: 'initialize',
           params: {
             'protocolVersion': '1999-01-01',
+            'capabilities': <String, Object?>{},
             'clientInfo': {'name': 'x', 'version': '0'},
           },
         ),
@@ -232,6 +278,50 @@ void main() {
         (negotiated.response.result as Map)['protocolVersion'],
         McpProtocol.specificationVersion,
       );
+    });
+
+    test('rejects missing/malformed initialize required fields', () {
+      for (final params in <Map<String, Object?>>[
+        {
+          'capabilities': <String, Object?>{},
+          'clientInfo': {'name': 'x', 'version': '0'},
+        },
+        {
+          'protocolVersion': 20250326,
+          'capabilities': <String, Object?>{},
+          'clientInfo': {'name': 'x', 'version': '0'},
+        },
+        {
+          'protocolVersion': McpProtocol.specificationVersion,
+          'clientInfo': {'name': 'x', 'version': '0'},
+        },
+        {
+          'protocolVersion': McpProtocol.specificationVersion,
+          'capabilities': 'nope',
+          'clientInfo': {'name': 'x', 'version': '0'},
+        },
+        {
+          'protocolVersion': McpProtocol.specificationVersion,
+          'capabilities': <String, Object?>{},
+        },
+        {
+          'protocolVersion': McpProtocol.specificationVersion,
+          'capabilities': <String, Object?>{},
+          'clientInfo': 'nope',
+        },
+      ]) {
+        final bad = handler.handleRpc(
+          request: JsonRpcRequest(
+            id: 1,
+            method: 'initialize',
+            params: params,
+          ),
+        );
+        expect(bad.response.isError, isTrue);
+        expect(bad.response.error!.code, JsonRpcErrorCode.invalidParams);
+        expect(bad.sessionId, isNull);
+        expect(handler.session('sess-1'), isNull);
+      }
     });
 
     test('rejects tools/list and initialized without session', () {
@@ -263,6 +353,7 @@ void main() {
           method: 'initialize',
           params: {
             'protocolVersion': McpProtocol.specificationVersion,
+            'capabilities': <String, Object?>{},
             'clientInfo': {'name': 't', 'version': '0'},
           },
         ),
@@ -312,6 +403,7 @@ void main() {
           'method': 'initialize',
           'params': {
             'protocolVersion': McpProtocol.specificationVersion,
+            'capabilities': <String, Object?>{},
             'clientInfo': {'name': 't', 'version': '0'},
           },
         };
@@ -394,6 +486,118 @@ void main() {
         }),
       )!;
       expect(absent.statusCode, 202);
+    });
+  });
+
+  group('MockMcpRoutes auth + discovery port', () {
+    test('initialized with invalid/expired/wrong-audience Bearer → 401/403', () {
+      final routes = MockMcpRoutes(
+        handler: McpFoundationHandler(sessionIdFactory: () => 'sess-auth'),
+        expectedAudience: 'http://127.0.0.1:8787/mcp',
+      );
+      final init = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: const {},
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 1,
+          'method': 'initialize',
+          'params': {
+            'protocolVersion': McpProtocol.specificationVersion,
+            'capabilities': <String, Object?>{},
+            'clientInfo': {'name': 't', 'version': '0'},
+          },
+        }),
+      )!;
+      expect(init.statusCode, 200);
+      final session = init.headers[McpProtocol.sessionIdHeader]!;
+
+      final expired = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: {
+          McpProtocol.sessionIdHeader: session,
+          'authorization':
+              'Bearer ${demoBearerToken(audience: 'http://127.0.0.1:8787/mcp', expiresAt: DateTime.utc(2020))}',
+        },
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'method': 'notifications/initialized',
+        }),
+      )!;
+      expect(expired.statusCode, 401);
+
+      final wrongAud = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: {
+          McpProtocol.sessionIdHeader: session,
+          'authorization':
+              'Bearer ${demoBearerToken(audience: 'http://evil.example/mcp', expiresAt: DateTime.utc(2099))}',
+        },
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'method': 'notifications/initialized',
+        }),
+      )!;
+      expect(wrongAud.statusCode, 403);
+
+      final malformed = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: {
+          McpProtocol.sessionIdHeader: session,
+          'authorization': 'Bearer not-a-jwt',
+        },
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'method': 'notifications/initialized',
+        }),
+      )!;
+      expect(malformed.statusCode, 401);
+    });
+
+    test('forPort discovery URLs follow non-default listen port', () {
+      final routes = MockMcpRoutes.forPort(9999);
+      expect(routes.issuer, 'http://127.0.0.1:9999');
+      expect(routes.resource, 'http://127.0.0.1:9999/mcp');
+      expect(routes.expectedAudience, 'http://127.0.0.1:9999/mcp');
+      expect(
+        routes.originPolicy.allows('http://127.0.0.1:9999'),
+        isTrue,
+      );
+      expect(
+        routes.originPolicy.allows('http://127.0.0.1:8787'),
+        isFalse,
+      );
+
+      final asDoc = routes.handle(
+        method: 'GET',
+        path: '/.well-known/oauth-authorization-server',
+        headers: const {},
+        rawBody: null,
+      )!;
+      expect(asDoc.statusCode, 200);
+      final asBody = asDoc.body as Map;
+      expect(asBody['issuer'], 'http://127.0.0.1:9999');
+      expect(
+        asBody['authorization_endpoint'],
+        'http://127.0.0.1:9999/oauth/authorize',
+      );
+      expect(asBody['token_endpoint'], 'http://127.0.0.1:9999/oauth/token');
+
+      final prm = routes.handle(
+        method: 'GET',
+        path: '/.well-known/oauth-protected-resource',
+        headers: const {},
+        rawBody: null,
+      )!;
+      expect((prm.body as Map)['resource'], 'http://127.0.0.1:9999/mcp');
+      expect(
+        (prm.body as Map)['authorization_servers'],
+        ['http://127.0.0.1:9999'],
+      );
     });
   });
 
