@@ -79,7 +79,10 @@ class MockAuthHandler {
       case '/auth/digest':
         return _digest(method, target, headers);
       case '/auth/hmac':
-        return _hmac(method, normalized, headers);
+        // Bind HMAC to the actual request path (including a trailing slash
+        // when present). Routing still uses [normalized]; the signed path
+        // must match what the client sent.
+        return _hmac(method, path, headers);
       case '/auth/rate-limited':
         return const MockAuthResult(
           statusCode: 429,

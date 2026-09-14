@@ -2,20 +2,23 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'src/mock_auth.dart';
+import 'src/mock_mcp.dart';
 
 Future<void> main(List<String> args) async {
   final port = _readPort(args) ?? 8787;
   final auth = MockAuthHandler();
+  final mcp = MockMcpRoutes.forPort(port);
   final server = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
   stdout.writeln('Mock HTTP server listening on http://127.0.0.1:$port');
   stdout.writeln(
     'Endpoints: /health, /status/<code>, /delay/<ms>, /echo, '
-    '/auth/bearer|api-key|basic|digest|hmac|rate-limited',
+    '/auth/bearer|api-key|basic|digest|hmac|rate-limited, '
+    '/mcp, /.well-known/oauth-*, /mcp/support-matrix',
   );
 
   await for (final request in server) {
     try {
-      await _handle(request, auth);
+      await _handle(request, auth, mcp);
     } on Object catch (error) {
       request.response
         ..statusCode = HttpStatus.internalServerError
@@ -32,7 +35,11 @@ int? _readPort(List<String> args) {
   return int.tryParse(args[index + 1]);
 }
 
-Future<void> _handle(HttpRequest request, MockAuthHandler auth) async {
+Future<void> _handle(
+  HttpRequest request,
+  MockAuthHandler auth,
+  MockMcpRoutes mcp,
+) async {
   final response = request.response;
   response.headers.contentType = ContentType.json;
   final segments = request.uri.pathSegments;
@@ -60,6 +67,23 @@ Future<void> _handle(HttpRequest request, MockAuthHandler auth) async {
     response.statusCode = authResult.statusCode;
     authResult.headers.forEach(response.headers.set);
     response.write(jsonEncode(authResult.body));
+    await response.close();
+    return;
+  }
+
+  final body = await utf8.decoder.bind(request).join();
+  final mcpResult = mcp.handle(
+    method: request.method,
+    path: request.uri.path,
+    headers: headerMap,
+    rawBody: body.isEmpty ? null : body,
+  );
+  if (mcpResult != null) {
+    response.statusCode = mcpResult.statusCode;
+    mcpResult.headers.forEach(response.headers.set);
+    if (mcpResult.body != null) {
+      response.write(jsonEncode(mcpResult.body));
+    }
     await response.close();
     return;
   }
@@ -97,7 +121,6 @@ Future<void> _handle(HttpRequest request, MockAuthHandler auth) async {
   }
 
   if (request.uri.path == '/echo') {
-    final body = await utf8.decoder.bind(request).join();
     final headers = <String, List<String>>{};
     request.headers.forEach((name, values) => headers[name] = values);
     response.write(jsonEncode({
