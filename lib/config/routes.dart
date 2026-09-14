@@ -3,7 +3,6 @@ import '../screens/home_screen.dart';
 import '../screens/hub_screen.dart';
 import '../screens/counter_playground_screen.dart';
 import '../screens/irony_generator_screen.dart';
-import '../screens/composition_generator_screen.dart';
 import '../screens/composition_studio_screen.dart';
 import '../screens/clipboard_shelf_screen.dart';
 import '../screens/clipboard_workbench_screen.dart';
@@ -59,7 +58,7 @@ class AppRoutes {
     map[counterPlayground] = (_) => const CounterPlaygroundScreen();
     map[ironyGenerator] = (_) => const IronyGeneratorScreen();
     map[compositionGenerator] = (_) => const CompositionStudioScreen();
-    map[compositionSeedGenerator] = (_) => const CompositionGeneratorScreen();
+    map[compositionSeedGenerator] = (_) => const CompositionStudioScreen();
     map[clipboardWorkbench] = (_) => const ClipboardWorkbenchScreen();
     map[uiShowcase] = (_) => const UiShowcaseScreen();
     map[externalApi] = (_) => const ApiIntegrationScreen();

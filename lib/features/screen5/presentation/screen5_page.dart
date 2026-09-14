@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../domain/screen5_controller.dart';
-import '../../../core/navigation/app_navigation.dart';
 import '../../../shared/display/display_scope.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
-import '../../../shared/widgets/custom_button.dart';
 import '../../../core/utils/url_params.dart';
+import '../../../core/navigation/route_names.dart';
+import '../../../shared/widgets/tool_door_selector.dart';
 
 class Screen5Page extends StatelessWidget {
   const Screen5Page({super.key, required this.controller});
@@ -28,17 +28,9 @@ class Screen5Page extends StatelessWidget {
               },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CustomButton(
-                  label: display.text('urlParameters.goHome'),
-                  onPressed: AppNavigation.toHome,
-                ),
-              ],
-            ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(12, 8, 12, 16),
+            child: ToolDoorSelector(currentRouteName: RouteNames.screen5),
           ),
         ],
       ),

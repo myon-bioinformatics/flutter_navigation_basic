@@ -19,6 +19,7 @@ class CompositionStudioScreen extends StatefulWidget {
 
 class _CompositionStudioScreenState extends State<CompositionStudioScreen> {
   late final String _initialKey;
+  late String _theoryKey;
   late final int _initialBpm;
 
   @override
@@ -28,6 +29,7 @@ class _CompositionStudioScreenState extends State<CompositionStudioScreen> {
     _initialKey = Composer.diatonicScaleList[
       random.nextInt(Composer.diatonicScaleList.length)
     ];
+    _theoryKey = _initialKey;
     _initialBpm = 90 + random.nextInt(61);
   }
 
@@ -50,9 +52,10 @@ class _CompositionStudioScreenState extends State<CompositionStudioScreen> {
                 CompositionStudio(
                   initialBpm: _initialBpm,
                   initialKey: _initialKey,
+                  onKeyChanged: (key) => setState(() => _theoryKey = key),
                 ),
                 const SizedBox(height: 16),
-                ChordTheoryCard(initialKey: _initialKey),
+                ChordTheoryCard(initialKey: _theoryKey),
                 const SizedBox(height: 16),
                 const NoteSequenceCard(),
                 const SizedBox(height: 20),
@@ -61,10 +64,6 @@ class _CompositionStudioScreenState extends State<CompositionStudioScreen> {
                   spacing: 12,
                   runSpacing: 12,
                   children: [
-                    NavButton(
-                      label: display.text('compositionStudio.songSeedGenerator'),
-                      routeName: AppRoutes.compositionSeedGenerator,
-                    ),
                     NavButton(label: display.text('home.title'), routeName: AppRoutes.home),
                     NavButton(label: display.text('nav.counterPlayground'), routeName: AppRoutes.counterPlayground),
                     NavButton(label: display.text('nav.ironyGenerator'), routeName: AppRoutes.ironyGenerator),

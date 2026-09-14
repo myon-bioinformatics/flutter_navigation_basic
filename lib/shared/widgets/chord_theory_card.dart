@@ -31,6 +31,16 @@ class _ChordTheoryCardState extends State<ChordTheoryCard> {
   }
 
   @override
+  void didUpdateWidget(covariant ChordTheoryCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialKey != widget.initialKey &&
+        ChordTheory.selectableKeys.contains(widget.initialKey) &&
+        widget.initialKey != _key) {
+      setState(() => _key = widget.initialKey);
+    }
+  }
+
+  @override
   void dispose() {
     _progressionController.dispose();
     super.dispose();

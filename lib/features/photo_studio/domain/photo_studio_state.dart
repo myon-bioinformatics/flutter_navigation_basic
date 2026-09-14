@@ -98,6 +98,12 @@ class PhotoStudioState {
         stampScale: stampScale ?? this.stampScale,
       );
 
+  /// Document content only (image / frames / stamps) — ignores selection & draft tools.
+  bool sameDocumentAs(PhotoStudioState other) =>
+      identical(imageBytes, other.imageBytes) &&
+      _listEquals(frames, other.frames) &&
+      _listEquals(stamps, other.stamps);
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||

@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
@@ -9,6 +8,7 @@ import '../domain/normalized_rect.dart';
 import '../domain/studio_frame.dart';
 import '../domain/studio_frame_style.dart';
 import '../domain/studio_geometry.dart';
+export 'studio_image_loader.dart' show decodeRasterImageBytes;
 
 int _nextStudioObjectId = 0;
 
@@ -721,18 +721,4 @@ class _CheckerPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _CheckerPainter oldDelegate) =>
       oldDelegate.color != color;
-}
-
-/// Validates image bytes by decoding a frame; returns null when invalid.
-Future<Uint8List?> decodeRasterImageBytes(Uint8List bytes) async {
-  if (bytes.isEmpty) return null;
-  try {
-    final codec = await ui.instantiateImageCodec(bytes);
-    final frame = await codec.getNextFrame();
-    frame.image.dispose();
-    codec.dispose();
-    return bytes;
-  } catch (_) {
-    return null;
-  }
 }

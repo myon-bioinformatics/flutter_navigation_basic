@@ -54,15 +54,15 @@ void main() {
     expect(find.text('BPM'), findsOneWidget);
   });
 
-  testWidgets('composition save current confirms the action', (tester) async {
+  testWidgets('composition seed panel has no no-op Save current control',
+      (tester) async {
     await tester.pumpWidget(await _app(const CompositionGeneratorScreen()));
+    await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Save current'));
-    await tester.pump();
-
-    expect(
-      find.text('Composition idea saved to recent ideas'),
-      findsOneWidget,
-    );
+    // Legacy host embeds SongSeedPanel without onApply; the old no-op
+    // "Save current" control was removed so only real actions remain.
+    expect(find.text('Save current'), findsNothing);
+    expect(find.text('Customize seed'), findsOneWidget);
+    expect(find.byTooltip('Copy composition idea'), findsOneWidget);
   });
 }

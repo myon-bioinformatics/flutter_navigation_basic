@@ -99,7 +99,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(await _app(const CompositionGeneratorScreen()));
 
-    expect(find.text('Song seed'), findsOneWidget);
+    expect(find.text('Song Seed Generator'), findsOneWidget);
     expect(find.text('Generate again'), findsOneWidget);
     expect(find.text('Shuffle chords'), findsOneWidget);
     expect(find.text('Recent ideas'), findsOneWidget);

@@ -2,18 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../../features/composition_generator/domain/metronome_timing.dart';
+import '../../features/composition_generator/domain/song_seed.dart';
 import '../display/display_scope.dart';
+import 'song_seed_panel.dart';
 
 class CompositionStudio extends StatefulWidget {
   const CompositionStudio({
     super.key,
     required this.initialBpm,
     required this.initialKey,
+    this.onKeyChanged,
     @visibleForTesting this.elapsedOverride,
   });
 
   final int initialBpm;
   final String initialKey;
+  final ValueChanged<String>? onKeyChanged;
 
   /// When set (tests only), musical position uses this elapsed instead of the
   /// wall-clock [Stopwatch], so FakeAsync pumps can drive subdivision changes.
@@ -40,6 +44,7 @@ class _CompositionStudioState extends State<CompositionStudio>
   int _subdivisionsPerBeat = 2;
   bool _running = false;
   List<String> _sections = ['Intro', 'Verse', 'Chorus', 'Verse', 'Chorus', 'Outro'];
+  late String _displayKey;
 
   @override
   void initState() {
@@ -48,6 +53,7 @@ class _CompositionStudioState extends State<CompositionStudio>
       MetronomeSnapshot.minBpm,
       MetronomeSnapshot.maxBpm,
     );
+    _displayKey = widget.initialKey;
     _tapClock.start();
     _ticker = createTicker((_) {
       if (!mounted || !_running) return;
@@ -134,6 +140,23 @@ class _CompositionStudioState extends State<CompositionStudio>
     return '${milliseconds.round()} ms';
   }
 
+  void applySongSeed(SongSeed seed) {
+    final parts = seed.timeSignature.split('/');
+    setState(() {
+      _displayKey = seed.tonicKey;
+      _bpm = seed.bpm.clamp(MetronomeSnapshot.minBpm, MetronomeSnapshot.maxBpm);
+      if (parts.length == 2) {
+        _beatsPerBar = int.tryParse(parts[0]) ?? _beatsPerBar;
+        _beatUnit = int.tryParse(parts[1]) ?? _beatUnit;
+      }
+      _chordsController.text = seed.progression;
+      if (_running) {
+        _clock.reset();
+      }
+    });
+    widget.onKeyChanged?.call(seed.tonicKey);
+  }
+
   @override
   Widget build(BuildContext context) {
     final display = DisplayScope.of(context);
@@ -146,11 +169,13 @@ class _CompositionStudioState extends State<CompositionStudio>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          display.text('compositionStudio.heading', arguments: {'key': widget.initialKey}),
+          display.text('compositionStudio.heading', arguments: {'key': _displayKey}),
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 6),
         Text(display.text('compositionStudio.subtitle')),
+        const SizedBox(height: 16),
+        SongSeedPanel(onApply: applySongSeed),
         const SizedBox(height: 16),
         _buildMetronomeCard(
           context,

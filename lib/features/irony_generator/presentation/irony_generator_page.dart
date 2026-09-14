@@ -2,11 +2,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../../core/navigation/app_navigation.dart';
 import '../../../shared/display/display_scope.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
-import '../../../shared/widgets/custom_button.dart';
 import '../domain/irony_generator_controller.dart';
+import '../../../core/navigation/route_names.dart';
+import '../../../shared/widgets/tool_door_selector.dart';
 
 class IronyGeneratorPage extends StatefulWidget {
   const IronyGeneratorPage({super.key, required this.controller});
@@ -269,24 +269,9 @@ class _IronyGeneratorPageState extends State<IronyGeneratorPage>
                 left: 16,
                 right: 16,
                 bottom: 20,
-                child: Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    CustomButton(
-                      label: display.text('home.title'),
-                      onPressed: AppNavigation.toHome,
-                    ),
-                    CustomButton(
-                      label: display.text('nav.counterPlayground'),
-                      onPressed: AppNavigation.toCounterPlayground,
-                    ),
-                    CustomButton(
-                      label: display.text('nav.compositionGenerator'),
-                      onPressed: AppNavigation.toCompositionGenerator,
-                    ),
-                  ],
+                child:
+                const ToolDoorSelector(
+                  currentRouteName: RouteNames.ironyGenerator,
                 ),
               ),
             ],

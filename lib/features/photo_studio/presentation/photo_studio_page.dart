@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../shared/clipboard/base64_image_bridge.dart';
+import '../../../shared/display/display_catalog.dart';
 import '../../../shared/display/display_scope.dart';
 import '../domain/emoji_stamp.dart';
 import '../domain/normalized_rect.dart';
@@ -13,10 +14,14 @@ import '../domain/studio_export_result.dart';
 import '../domain/studio_frame.dart';
 import '../domain/studio_frame_style.dart';
 import '../domain/studio_geometry.dart';
+import '../../../core/navigation/route_names.dart';
+import '../../../shared/widgets/tool_door_selector.dart';
+import 'browser_image_decode_adapter.dart';
 import 'export_studio_png.dart';
 import 'photo_rect_canvas.dart';
 import 'pick_local_image_bytes.dart';
 import 'read_web_clipboard_image_bytes.dart';
+import 'studio_image_loader.dart';
 
 typedef StudioImageSaver = Future<bool> Function({
   required Uint8List bytes,
@@ -30,6 +35,7 @@ class PhotoStudioPage extends StatefulWidget {
     this.imageBytesPicker,
     this.imageSaver,
     this.clipboardImageReader,
+    this.imageDecodeAdapter,
   });
 
   /// Optional override for tests / non-web hosts.
@@ -40,6 +46,9 @@ class PhotoStudioPage extends StatefulWidget {
 
   /// Optional override for reading binary clipboard images (tests / web).
   final Future<Uint8List?> Function()? clipboardImageReader;
+
+  /// Optional decode adapter (tests inject fakes; web defaults to browser bridge).
+  final StudioImageDecodeAdapter? imageDecodeAdapter;
 
   @override
   State<PhotoStudioPage> createState() => _PhotoStudioPageState();
@@ -70,11 +79,35 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
   String? _pendingEmoji;
   Size _canvasSize = _fallbackCanvasSize;
   String? _status;
+  bool _decoding = false;
+  /// Last successfully exported document; dirty iff document content differs.
+  PhotoStudioState _exportBaseline = PhotoStudioState.initial();
+  int _imageLoadGeneration = 0;
+  /// Lets Back pop once after Discard before the dirty rebuild settles.
+  bool _allowPopAfterDiscard = false;
 
   bool get _canUndo => _history.canUndo;
+  bool get _canRedo => _history.canRedo;
+  bool get _isDirty => !_studio.sameDocumentAs(_exportBaseline);
+
+  /// Bump the image-load generation so in-flight decodes cannot clobber state.
+  void _invalidatePendingImageLoad() {
+    _imageLoadGeneration++;
+    _decoding = false;
+  }
+
+  /// Restore the last exported document and drop undo/redo (true Discard).
+  void _discardUnsavedChanges() {
+    _invalidatePendingImageLoad();
+    _history.clear();
+    _studio = _exportBaseline;
+    _pendingEmoji = null;
+  }
 
   @override
   void dispose() {
+    // Drop any in-flight decode continuation when leaving the route.
+    _invalidatePendingImageLoad();
     _stampController.dispose();
     super.dispose();
   }
@@ -101,12 +134,46 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
   }
 
   void _undoOnce() {
-    final snap = _history.undo();
+    final snap = _history.undo(_studio);
     if (snap == null) return;
     setState(() {
+      _invalidatePendingImageLoad();
       _studio = snap;
       _status = DisplayScope.of(context).text('photoStudio.undoDone');
     });
+  }
+
+  void _redoOnce() {
+    final snap = _history.redo(_studio);
+    if (snap == null) return;
+    setState(() {
+      _invalidatePendingImageLoad();
+      _studio = snap;
+      _status = DisplayScope.of(context).text('photoStudio.redoDone');
+    });
+  }
+
+  Future<bool> _confirmDiscardIfDirty() async {
+    if (!_isDirty) return true;
+    final display = DisplayScope.of(context);
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(display.text('photoStudio.leaveTitle')),
+        content: Text(display.text('photoStudio.leaveBody')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(display.text('photoStudio.leaveStay')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(display.text('photoStudio.leaveDiscard')),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
   }
 
   Future<void> _copy(String text) async {
@@ -123,16 +190,38 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       setState(() => _status = display.text('photoStudio.imageError'));
       return;
     }
+    final generation = ++_imageLoadGeneration;
+    setState(() {
+      _decoding = true;
+      _status = display.text('photoStudio.decoding');
+    });
     try {
-      final validated = await decodeRasterImageBytes(rawBytes);
-      if (!mounted) return;
+      final adapter = widget.imageDecodeAdapter ??
+          (kIsWeb ? browserImageDecodeAdapter : null);
+      final validated = await loadStudioImageBytes(
+        rawBytes,
+        nativeDecodeAdapter: adapter,
+      );
+      if (!mounted || generation != _imageLoadGeneration) return;
       if (validated == null) {
-        setState(() => _status = display.text('photoStudio.imageError'));
+        setState(() {
+          _decoding = false;
+          _status = display.text('photoStudio.imageUnsupported');
+        });
         return;
       }
       final compact = await Base64ImageBridge.downscaleToPng(validated);
-      if (!mounted) return;
+      if (!mounted || generation != _imageLoadGeneration) return;
+      // Require a non-empty PNG payload before treating load as success.
+      if (compact.bytes.isEmpty) {
+        setState(() {
+          _decoding = false;
+          _status = display.text('photoStudio.imageError');
+        });
+        return;
+      }
       setState(() {
+        _decoding = false;
         _mutateWithUndo(
           (s) => s.copyWith(imageBytes: compact.bytes),
         );
@@ -142,8 +231,11 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
         );
       });
     } catch (_) {
-      if (!mounted) return;
-      setState(() => _status = display.text('photoStudio.imageError'));
+      if (!mounted || generation != _imageLoadGeneration) return;
+      setState(() {
+        _decoding = false;
+        _status = display.text('photoStudio.imageError');
+      });
     }
   }
 
@@ -230,6 +322,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
 
   void _clearImage() {
     setState(() {
+      _invalidatePendingImageLoad();
       _mutateWithUndo((s) => s.copyWith(imageBytes: null));
       _status = DisplayScope.of(context).text('photoStudio.imageCleared');
     });
@@ -270,9 +363,11 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     final logicalSize = _canvasSize.width > 0 && _canvasSize.height > 0
         ? _canvasSize
         : _fallbackCanvasSize;
+    // Freeze the document being exported so later edits stay dirty.
+    final exportedState = _studio;
     final result = await exportStudioPng(
       document: StudioDocument.fromState(
-        _studio,
+        exportedState,
         logicalCanvasSize: logicalSize,
       ),
       saver: widget.imageSaver,
@@ -283,7 +378,12 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       StudioExportOutcome.unavailable => 'photoStudio.saveUnavailable',
       StudioExportOutcome.failed => 'photoStudio.saveError',
     };
-    setState(() => _status = display.text(key));
+    setState(() {
+      _status = display.text(key);
+      if (result.outcome == StudioExportOutcome.saved) {
+        _exportBaseline = exportedState;
+      }
+    });
   }
 
   void _onFramesChanged(List<StudioFrame> frames) {
@@ -426,23 +526,77 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     final rectText =
         selected?.rect.labeledText ?? t('photoStudio.noFrameSelected');
 
-    return CallbackShortcuts(
+    return PopScope(
+      canPop: !_isDirty || _allowPopAfterDiscard,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) {
+          _allowPopAfterDiscard = false;
+          return;
+        }
+        final leave = await _confirmDiscardIfDirty();
+        if (!mounted || !leave) return;
+        // Restore in the same setState as the allow-pop flag so the next
+        // build's canPop is true (for any subsequent maybePop / system back).
+        setState(() {
+          _discardUnsavedChanges();
+          _allowPopAfterDiscard = true;
+        });
+        // Imperative pop does not consult canPop / popDisposition, so we can
+        // leave immediately without waiting for the rebuild frame (which is
+        // what re-enters the dialog when maybePop is used too early).
+        Navigator.of(context).pop();
+      },
+      child: CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.keyZ, control: true): _undoOnce,
         const SingleActivator(LogicalKeyboardKey.keyZ, meta: true): _undoOnce,
+        const SingleActivator(LogicalKeyboardKey.keyZ, control: true, shift: true):
+            _redoOnce,
+        const SingleActivator(LogicalKeyboardKey.keyZ, meta: true, shift: true):
+            _redoOnce,
       },
       child: Focus(
         autofocus: true,
         child: Scaffold(
           appBar: AppBar(
-            title: Text(t('photoStudio.title')),
+            title: Row(
+              children: [
+                Flexible(child: Text(t('photoStudio.title'))),
+                if (_isDirty) ...[
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.circle,
+                    size: 8,
+                    color: Theme.of(context).colorScheme.tertiary,
+                  ),
+                ],
+              ],
+            ),
             actions: [
               IconButton(
                 tooltip: t('photoStudio.undo'),
                 onPressed: _canUndo ? _undoOnce : null,
                 icon: const Icon(Icons.undo),
               ),
-              const DisplayLocalePicker(compact: true),
+              IconButton(
+                tooltip: t('photoStudio.redo'),
+                onPressed: _canRedo ? _redoOnce : null,
+                icon: const Icon(Icons.redo),
+              ),
+              PopupMenuButton<String>(
+                tooltip: t('photoStudio.languageMenu'),
+                icon: const Icon(Icons.language),
+                onSelected: (locale) {
+                  DisplayScope.of(context).setLocale(locale);
+                },
+                itemBuilder: (context) => [
+                  for (final locale in DisplayCatalog.supportedLocales)
+                    PopupMenuItem<String>(
+                      value: locale,
+                      child: Text(locale.toUpperCase()),
+                    ),
+                ],
+              ),
             ],
           ),
           body: SingleChildScrollView(
@@ -473,25 +627,55 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                           const SizedBox(height: 12),
-                          PhotoRectCanvas(
-                            frames: _studio.frames,
-                            onFramesChanged: _onFramesChanged,
-                            selectedStudioFrameId:
-                                _studio.selectedStudioFrameId,
-                            onSelectedStudioFrameIdChanged:
-                                _onSelectedStudioFrameIdChanged,
-                            draftShape: _studio.draftShape,
-                            draftStrokeArgb: _studio.draftStrokeArgb,
-                            imageBytes: _studio.imageBytes,
-                            stamps: _studio.stamps,
-                            onStampsChanged: _onStampsChanged,
-                            selectedEmojiStampId: _studio.selectedEmojiStampId,
-                            onSelectedEmojiStampIdChanged:
-                                _onSelectedEmojiStampIdChanged,
-                            pendingEmoji: _pendingEmoji,
-                            onEditStart: _beginUndoGesture,
-                            onEditEnd: _endUndoGesture,
-                            onCanvasSizeChanged: _onCanvasSizeChanged,
+                          if (_studio.imageBytes == null) ...[
+                            Text(
+                              t('photoStudio.emptyBody'),
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+                          Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              PhotoRectCanvas(
+                                frames: _studio.frames,
+                                onFramesChanged: _onFramesChanged,
+                                selectedStudioFrameId:
+                                    _studio.selectedStudioFrameId,
+                                onSelectedStudioFrameIdChanged:
+                                    _onSelectedStudioFrameIdChanged,
+                                draftShape: _studio.draftShape,
+                                draftStrokeArgb: _studio.draftStrokeArgb,
+                                imageBytes: _studio.imageBytes,
+                                stamps: _studio.stamps,
+                                onStampsChanged: _onStampsChanged,
+                                selectedEmojiStampId:
+                                    _studio.selectedEmojiStampId,
+                                onSelectedEmojiStampIdChanged:
+                                    _onSelectedEmojiStampIdChanged,
+                                pendingEmoji: _pendingEmoji,
+                                onEditStart: _beginUndoGesture,
+                                onEditEnd: _endUndoGesture,
+                                onCanvasSizeChanged: _onCanvasSizeChanged,
+                              ),
+                              if (_decoding)
+                                Positioned.fill(
+                                  child: ColoredBox(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .surface
+                                        .withValues(alpha: 0.72),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const CircularProgressIndicator(),
+                                        const SizedBox(height: 12),
+                                        Text(t('photoStudio.decoding')),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                           const SizedBox(height: 12),
                           Text(
@@ -684,12 +868,16 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                             runSpacing: 8,
                             children: [
                               FilledButton.tonalIcon(
-                                onPressed: _pickImage,
+                                onPressed: _decoding ? null : _pickImage,
                                 icon: const Icon(Icons.image_outlined),
-                                label: Text(t('photoStudio.pickImage')),
+                                label: Text(
+                                  _studio.imageBytes == null
+                                      ? t('photoStudio.importImage')
+                                      : t('photoStudio.replaceImage'),
+                                ),
                               ),
                               FilledButton.tonalIcon(
-                                onPressed: _pasteImage,
+                                onPressed: _decoding ? null : _pasteImage,
                                 icon: const Icon(Icons.content_paste),
                                 label: Text(t('photoStudio.pasteImage')),
                               ),
@@ -701,7 +889,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                 label: Text(t('photoStudio.copyImage')),
                               ),
                               OutlinedButton.icon(
-                                onPressed: _studio.imageBytes == null
+                                onPressed: (!_decoding && _studio.imageBytes == null)
                                     ? null
                                     : _clearImage,
                                 icon: const Icon(Icons.hide_image_outlined),
@@ -721,11 +909,6 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                 icon: const Icon(Icons.delete_outline),
                                 label: Text(t('photoStudio.deleteFrame')),
                               ),
-                              OutlinedButton.icon(
-                                onPressed: _canUndo ? _undoOnce : null,
-                                icon: const Icon(Icons.undo),
-                                label: Text(t('photoStudio.undo')),
-                              ),
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -742,7 +925,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                           Align(
                             alignment: Alignment.centerLeft,
                             child: FilledButton.icon(
-                              onPressed: _savePng,
+                              onPressed: _decoding ? null : _savePng,
                               icon: const Icon(Icons.download_outlined),
                               label: Text(t('photoStudio.saveFile')),
                             ),
@@ -775,12 +958,24 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 24),
+                    ToolDoorSelector(
+                      currentRouteName: RouteNames.photoStudio,
+                      beforeNavigate: () async {
+                        final ok = await _confirmDiscardIfDirty();
+                        if (ok && mounted && _isDirty) {
+                          setState(_discardUnsavedChanges);
+                        }
+                        return ok;
+                      },
+                    ),
                   ],
                 ),
               ),
             ),
           ),
         ),
+      ),
       ),
     );
   }
