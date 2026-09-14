@@ -51,11 +51,9 @@ String generateMcpSessionId({Random? random, int byteLength = 18}) {
 class McpFoundationHandler {
   McpFoundationHandler({
     String Function()? sessionIdFactory,
-    this.requiredAudience,
   }) : _sessionIdFactory = sessionIdFactory ?? generateMcpSessionId;
 
   final String Function() _sessionIdFactory;
-  final String? requiredAudience;
   final Map<String, McpSession> _sessions = {};
 
   McpSession? session(String id) => _sessions[id];

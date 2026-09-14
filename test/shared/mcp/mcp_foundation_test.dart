@@ -636,6 +636,57 @@ void main() {
     });
   });
 
+
+  group('OAuth metadata typing (post-merge #69 Copilot nits)', () {
+    test('registration_endpoint wrong type / empty → FormatException', () {
+      expect(
+        () => OAuthAuthorizationServerMetadata.fromJson({
+          'issuer': 'https://auth.example.test/',
+          'authorization_endpoint': 'https://auth.example.test/authorize',
+          'token_endpoint': 'https://auth.example.test/token',
+          'response_types_supported': ['code'],
+          'registration_endpoint': 123,
+        }),
+        throwsFormatException,
+      );
+      expect(
+        () => OAuthAuthorizationServerMetadata.fromJson({
+          'issuer': 'https://auth.example.test/',
+          'authorization_endpoint': 'https://auth.example.test/authorize',
+          'token_endpoint': 'https://auth.example.test/token',
+          'response_types_supported': ['code'],
+          'registration_endpoint': '',
+        }),
+        throwsFormatException,
+      );
+    });
+
+    test('authorization_servers rejects non-string / empty members', () {
+      expect(
+        () => OAuthProtectedResourceMetadata.fromJson({
+          'resource': 'https://mcp.example.test/',
+          'authorization_servers': ['https://auth.example.test/', 1],
+        }),
+        throwsFormatException,
+      );
+      expect(
+        () => OAuthProtectedResourceMetadata.fromJson({
+          'resource': 'https://mcp.example.test/',
+          'authorization_servers': [''],
+        }),
+        throwsFormatException,
+      );
+      expect(
+        () => OAuthProtectedResourceMetadata.fromJson({
+          'resource': 'https://mcp.example.test/',
+          'authorization_servers': ['https://auth.example.test/'],
+          'resource_name': 9,
+        }),
+        throwsFormatException,
+      );
+    });
+  });
+
   test('support matrix exposes pinned version and web OAuth caveat', () {
     expect(
       McpSupportMatrix.asJson['specificationVersion'],

@@ -83,11 +83,20 @@ class OAuthAuthorizationServerMetadata {
     final grantTypes = optionalStringList('grant_types_supported') ??
         const ['authorization_code', 'implicit'];
 
+    String? optionalNonEmptyString(String key) {
+      if (!json.containsKey(key) || json[key] == null) return null;
+      final value = json[key];
+      if (value is! String || value.isEmpty) {
+        throw FormatException('invalid OAuth metadata field: $key');
+      }
+      return value;
+    }
+
     return OAuthAuthorizationServerMetadata(
       issuer: req('issuer'),
       authorizationEndpoint: req('authorization_endpoint'),
       tokenEndpoint: req('token_endpoint'),
-      registrationEndpoint: json['registration_endpoint'] as String?,
+      registrationEndpoint: optionalNonEmptyString('registration_endpoint'),
       scopesSupported: listOrEmpty('scopes_supported'),
       responseTypesSupported: responseTypes,
       grantTypesSupported: grantTypes,
@@ -136,18 +145,52 @@ class OAuthProtectedResourceMetadata {
     if (servers is! List || servers.isEmpty) {
       throw const FormatException('missing authorization_servers');
     }
+    final authorizationServers = <String>[];
+    for (final item in servers) {
+      if (item is! String || item.isEmpty) {
+        throw const FormatException(
+          'invalid OAuth metadata field: authorization_servers',
+        );
+      }
+      authorizationServers.add(item);
+    }
+
+    List<String> optionalStringList(String key, {List<String>? whenAbsent}) {
+      if (!json.containsKey(key) || json[key] == null) {
+        return whenAbsent ?? const <String>[];
+      }
+      final value = json[key];
+      if (value is! List) {
+        throw FormatException('invalid OAuth metadata field: $key');
+      }
+      final out = <String>[];
+      for (final item in value) {
+        if (item is! String) {
+          throw FormatException('invalid OAuth metadata field: $key');
+        }
+        out.add(item);
+      }
+      return out;
+    }
+
+    String? optionalNonEmptyString(String key) {
+      if (!json.containsKey(key) || json[key] == null) return null;
+      final value = json[key];
+      if (value is! String || value.isEmpty) {
+        throw FormatException('invalid OAuth metadata field: $key');
+      }
+      return value;
+    }
+
     return OAuthProtectedResourceMetadata(
       resource: resource,
-      authorizationServers: servers.whereType<String>().toList(growable: false),
-      scopesSupported: (json['scopes_supported'] as List?)
-              ?.whereType<String>()
-              .toList(growable: false) ??
-          const [],
-      bearerMethodsSupported: (json['bearer_methods_supported'] as List?)
-              ?.whereType<String>()
-              .toList(growable: false) ??
-          const ['header'],
-      resourceName: json['resource_name'] as String?,
+      authorizationServers: authorizationServers,
+      scopesSupported: optionalStringList('scopes_supported'),
+      bearerMethodsSupported: optionalStringList(
+        'bearer_methods_supported',
+        whenAbsent: const ['header'],
+      ),
+      resourceName: optionalNonEmptyString('resource_name'),
     );
   }
 
