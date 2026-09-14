@@ -1,15 +1,21 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'src/mock_auth.dart';
+
 Future<void> main(List<String> args) async {
   final port = _readPort(args) ?? 8787;
+  final auth = MockAuthHandler();
   final server = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
   stdout.writeln('Mock HTTP server listening on http://127.0.0.1:$port');
-  stdout.writeln('Endpoints: /health, /status/<code>, /delay/<ms>, /echo');
+  stdout.writeln(
+    'Endpoints: /health, /status/<code>, /delay/<ms>, /echo, '
+    '/auth/bearer|api-key|basic|digest|hmac|rate-limited',
+  );
 
   await for (final request in server) {
     try {
-      await _handle(request);
+      await _handle(request, auth);
     } on Object catch (error) {
       request.response
         ..statusCode = HttpStatus.internalServerError
@@ -26,10 +32,37 @@ int? _readPort(List<String> args) {
   return int.tryParse(args[index + 1]);
 }
 
-Future<void> _handle(HttpRequest request) async {
+Future<void> _handle(HttpRequest request, MockAuthHandler auth) async {
   final response = request.response;
   response.headers.contentType = ContentType.json;
   final segments = request.uri.pathSegments;
+
+  final headerMap = <String, String>{};
+  request.headers.forEach((name, values) {
+    if (values.isNotEmpty) headerMap[name] = values.join(', ');
+  });
+  final queryMap = <String, String>{
+    for (final entry in request.uri.queryParameters.entries)
+      entry.key: entry.value,
+  };
+
+  final requestTarget = request.uri.hasQuery
+      ? '${request.uri.path}?${request.uri.query}'
+      : request.uri.path;
+  final authResult = auth.handle(
+    method: request.method,
+    path: request.uri.path,
+    headers: headerMap,
+    query: queryMap,
+    requestTarget: requestTarget,
+  );
+  if (authResult != null) {
+    response.statusCode = authResult.statusCode;
+    authResult.headers.forEach(response.headers.set);
+    response.write(jsonEncode(authResult.body));
+    await response.close();
+    return;
+  }
 
   if (request.uri.path == '/health') {
     response.write(jsonEncode({'ok': true, 'service': 'developer-toolkit-mock'}));

@@ -26,6 +26,7 @@ class CurlImportResult {
 /// `-d/--data/--data-raw/--data-binary/--data-urlencode`, `-G/--get`,
 /// `-u/--user` (→ Basic Authorization, sensitive), `-A/--user-agent`,
 /// `-e/--referer`, `-I/--head`, ignored-with-warning `-L/--location`.
+/// Long options also accept the `--flag=value` form (empty value allowed).
 ///
 /// Rejected: shell metacharacters / command substitution, `@file` bodies,
 /// `--config` / proxy / cert / unix-socket / output redirects, and other
@@ -108,11 +109,21 @@ class CurlSafeSubset {
     while (index < tokens.length) {
       final token = tokens[index];
       index++;
+      final long = _splitLongOption(token);
+      final flag = long.flag;
+      final inlineValue = long.inlineValue;
 
-      if (token == '-X' || token == '--request') {
-        final value = _needArg(tokens, index, errors, token);
-        if (value == null) break;
-        index++;
+      if (flag == '-X' || flag == '--request') {
+        final taken = _takeArg(
+          inlineValue: inlineValue,
+          tokens: tokens,
+          index: index,
+          errors: errors,
+          flag: flag,
+        );
+        if (!taken.ok) break;
+        index = taken.nextIndex;
+        final value = taken.value!;
         final parsed = HttpMethodX.tryParse(value);
         if (parsed == null) {
           errors.add(
@@ -128,19 +139,31 @@ class CurlSafeSubset {
         continue;
       }
 
-      if (token == '--url') {
-        final value = _needArg(tokens, index, errors, token);
-        if (value == null) break;
-        index++;
-        url = value;
+      if (flag == '--url') {
+        final taken = _takeArg(
+          inlineValue: inlineValue,
+          tokens: tokens,
+          index: index,
+          errors: errors,
+          flag: flag,
+        );
+        if (!taken.ok) break;
+        index = taken.nextIndex;
+        url = taken.value!;
         continue;
       }
 
-      if (token == '-H' || token == '--header') {
-        final value = _needArg(tokens, index, errors, token);
-        if (value == null) break;
-        index++;
-        final header = _parseHeader(value, id);
+      if (flag == '-H' || flag == '--header') {
+        final taken = _takeArg(
+          inlineValue: inlineValue,
+          tokens: tokens,
+          index: index,
+          errors: errors,
+          flag: flag,
+        );
+        if (!taken.ok) break;
+        index = taken.nextIndex;
+        final header = _parseHeader(taken.value!, id);
         if (header == null) {
           errors.add(
             const RequestDraftIssue('httpDraft.curl.error.badHeader'),
@@ -151,13 +174,20 @@ class CurlSafeSubset {
         continue;
       }
 
-      if (token == '-d' ||
-          token == '--data' ||
-          token == '--data-raw' ||
-          token == '--data-binary') {
-        final value = _needArg(tokens, index, errors, token);
-        if (value == null) break;
-        index++;
+      if (flag == '-d' ||
+          flag == '--data' ||
+          flag == '--data-raw' ||
+          flag == '--data-binary') {
+        final taken = _takeArg(
+          inlineValue: inlineValue,
+          tokens: tokens,
+          index: index,
+          errors: errors,
+          flag: flag,
+        );
+        if (!taken.ok) break;
+        index = taken.nextIndex;
+        final value = taken.value!;
         if (value.startsWith('@')) {
           errors.add(
             const RequestDraftIssue('httpDraft.curl.error.fileBody'),
@@ -168,10 +198,17 @@ class CurlSafeSubset {
         continue;
       }
 
-      if (token == '--data-urlencode') {
-        final value = _needArg(tokens, index, errors, token);
-        if (value == null) break;
-        index++;
+      if (flag == '--data-urlencode') {
+        final taken = _takeArg(
+          inlineValue: inlineValue,
+          tokens: tokens,
+          index: index,
+          errors: errors,
+          flag: flag,
+        );
+        if (!taken.ok) break;
+        index = taken.nextIndex;
+        final value = taken.value!;
         if (_isDataUrlEncodeFileForm(value)) {
           errors.add(
             const RequestDraftIssue('httpDraft.curl.error.fileBody'),
@@ -199,45 +236,67 @@ class CurlSafeSubset {
         continue;
       }
 
-      if (token == '-u' || token == '--user') {
-        final value = _needArg(tokens, index, errors, token);
-        if (value == null) break;
-        index++;
-        headers.add(_basicAuthHeader(value, id));
+      if (flag == '-u' || flag == '--user') {
+        final taken = _takeArg(
+          inlineValue: inlineValue,
+          tokens: tokens,
+          index: index,
+          errors: errors,
+          flag: flag,
+        );
+        if (!taken.ok) break;
+        index = taken.nextIndex;
+        headers.add(_basicAuthHeader(taken.value!, id));
         warnings.add(
           const RequestDraftIssue('httpDraft.curl.warn.basicAuthMapped'),
         );
         continue;
       }
 
-      if (token == '-A' || token == '--user-agent') {
-        final value = _needArg(tokens, index, errors, token);
-        if (value == null) break;
-        index++;
-        headers.add(RequestField(id: id(), name: 'User-Agent', value: value));
+      if (flag == '-A' || flag == '--user-agent') {
+        final taken = _takeArg(
+          inlineValue: inlineValue,
+          tokens: tokens,
+          index: index,
+          errors: errors,
+          flag: flag,
+        );
+        if (!taken.ok) break;
+        index = taken.nextIndex;
+        headers.add(
+          RequestField(id: id(), name: 'User-Agent', value: taken.value!),
+        );
         continue;
       }
 
-      if (token == '-e' || token == '--referer') {
-        final value = _needArg(tokens, index, errors, token);
-        if (value == null) break;
-        index++;
-        headers.add(RequestField(id: id(), name: 'Referer', value: value));
+      if (flag == '-e' || flag == '--referer') {
+        final taken = _takeArg(
+          inlineValue: inlineValue,
+          tokens: tokens,
+          index: index,
+          errors: errors,
+          flag: flag,
+        );
+        if (!taken.ok) break;
+        index = taken.nextIndex;
+        headers.add(
+          RequestField(id: id(), name: 'Referer', value: taken.value!),
+        );
         continue;
       }
 
-      if (token == '-G' || token == '--get') {
+      if (flag == '-G' || flag == '--get') {
         useGetWithData = true;
         continue;
       }
 
-      if (token == '-I' || token == '--head') {
+      if (flag == '-I' || flag == '--head') {
         method = HttpMethod.head;
         methodSet = true;
         continue;
       }
 
-      if (token == '-L' || token == '--location') {
+      if (flag == '-L' || flag == '--location') {
         warnings.add(
           const RequestDraftIssue('httpDraft.curl.warn.ignoredRedirect'),
         );
@@ -245,9 +304,8 @@ class CurlSafeSubset {
       }
 
       if (_displayOnlyShortFlags.contains(token) ||
-          (token.startsWith('--') &&
-              _displayOnlyLongFlags
-                  .contains(token.substring(2).split('=').first))) {
+          (flag.startsWith('--') &&
+              _displayOnlyLongFlags.contains(flag.substring(2)))) {
         warnings.add(
           RequestDraftIssue(
             'httpDraft.curl.warn.ignoredFlag',
@@ -257,7 +315,7 @@ class CurlSafeSubset {
         continue;
       }
 
-      if (token.startsWith('--')) {
+      if (flag.startsWith('--')) {
         // Fail closed: do not consume a following positional token.
         errors.add(
           RequestDraftIssue(
@@ -380,6 +438,19 @@ class CurlSafeSubset {
   static var _seq = 0;
   static String _defaultId() => 'c${_seq++}';
 
+  /// Splits `--flag=value` into flag + inline value. Short options unchanged.
+  static ({String flag, String? inlineValue}) _splitLongOption(String token) {
+    if (!token.startsWith('--')) {
+      return (flag: token, inlineValue: null);
+    }
+    final eq = token.indexOf('=');
+    if (eq <= 2) return (flag: token, inlineValue: null);
+    return (
+      flag: token.substring(0, eq),
+      inlineValue: token.substring(eq + 1),
+    );
+  }
+
   static String? _needArg(
     List<String> tokens,
     int index,
@@ -393,6 +464,24 @@ class CurlSafeSubset {
       return null;
     }
     return tokens[index];
+  }
+
+  /// Prefer `--flag=value` inline; otherwise consume the next token.
+  static ({String? value, int nextIndex, bool ok}) _takeArg({
+    required String? inlineValue,
+    required List<String> tokens,
+    required int index,
+    required List<RequestDraftIssue> errors,
+    required String flag,
+  }) {
+    if (inlineValue != null) {
+      return (value: inlineValue, nextIndex: index, ok: true);
+    }
+    final value = _needArg(tokens, index, errors, flag);
+    if (value == null) {
+      return (value: null, nextIndex: index, ok: false);
+    }
+    return (value: value, nextIndex: index + 1, ok: true);
   }
 
   static RequestField? _parseHeader(String raw, String Function() id) {
