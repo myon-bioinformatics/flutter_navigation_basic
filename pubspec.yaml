@@ -2,7 +2,9 @@ name: flutter_application_1
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 0.0.1+1
+# Product release (before +) vs store/CI build counter (after +).
+# Git SHA is never encoded here — it ships separately in build diagnostics.
+version: 0.1.0+1
 
 environment:
   sdk: '>=3.12.0 <4.0.0'

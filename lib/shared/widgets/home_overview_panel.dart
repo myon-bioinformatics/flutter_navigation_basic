@@ -73,6 +73,7 @@ class HomeOverviewPanel extends StatelessWidget {
                     label: display.text('homeOverview.metricStage'),
                     value: display.text('homeOverview.metricStageValue'),
                   ),
+                  _VersionMetric(loader: metadataLoader),
                   _RevisionMetric(loader: metadataLoader),
                 ],
               ),
@@ -123,6 +124,52 @@ class _Metric extends StatelessWidget {
   }
 }
 
+class _VersionMetric extends StatefulWidget {
+  const _VersionMetric({required this.loader});
+
+  final Future<BuildMetadata> Function() loader;
+
+  @override
+  State<_VersionMetric> createState() => _VersionMetricState();
+}
+
+class _VersionMetricState extends State<_VersionMetric> {
+  late final Future<BuildMetadata> _metadata;
+
+  @override
+  void initState() {
+    super.initState();
+    _metadata = widget.loader();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
+    return FutureBuilder<BuildMetadata>(
+      future: _metadata,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return _Metric(
+            label: display.text('homeOverview.version'),
+            value: display.text('homeOverview.loading'),
+          );
+        }
+        final metadata = snapshot.data!;
+        return _Metric(
+          label: display.text('homeOverview.version'),
+          value: display.text(
+            'homeOverview.versionWithBuild',
+            arguments: {
+              'version': metadata.displayVersion,
+              'build': '${metadata.buildNumber}',
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _RevisionMetric extends StatefulWidget {
   const _RevisionMetric({required this.loader});
 
@@ -152,7 +199,7 @@ class _RevisionMetricState extends State<_RevisionMetric> {
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return _Metric(
-            label: display.text('homeOverview.revision'),
+            label: display.text('homeOverview.commit'),
             value: display.text('homeOverview.loading'),
           );
         }
@@ -169,8 +216,8 @@ class _RevisionMetricState extends State<_RevisionMetric> {
         final commitUrl = revision.commitUrl;
         final metric = _Metric(
           label: revision.ref == null || revision.ref!.isEmpty
-              ? display.text('homeOverview.revision')
-              : display.text('homeOverview.revisionWithRef', arguments: {'ref': revision.ref}),
+              ? display.text('homeOverview.commit')
+              : display.text('homeOverview.commitWithRef', arguments: {'ref': revision.ref}),
           value: revision.displaySha,
         );
         return Tooltip(

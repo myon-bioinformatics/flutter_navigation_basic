@@ -29,7 +29,14 @@ class BuildMetadata {
   final Map<String, ScreenWeightMetadata> screens;
   final Map<String, RouteSourceWeightMetadata> routeSources;
 
-  String get displayVersion => 'v$version+$buildNumber';
+  /// Product release only (`v0.1.0`). Build counter and Git SHA stay separate.
+  String get displayVersion => 'v$version';
+
+  /// Monotonic build counter from `pubspec` (`+N`), not a commit identity.
+  String get displayBuild => 'build $buildNumber';
+
+  /// Flutter-style combined label when a single version token is required.
+  String get displayVersionWithBuild => 'v$version+$buildNumber';
 
   factory BuildMetadata.fromJson(Map<String, dynamic> json) {
     final app = json['app'] as Map<String, dynamic>? ?? const {};

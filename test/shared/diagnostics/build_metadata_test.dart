@@ -61,7 +61,7 @@ void main() {
       // stable stand-in for "revision missing".
       final metadata = BuildMetadata.fromJson(const {
         'app': {
-          'version': '0.0.1',
+          'version': '0.1.0',
           'buildNumber': 1,
           'stage': 'pre-beta',
         },
@@ -80,14 +80,17 @@ void main() {
       expect(metadata.revision.sha, isNull);
       expect(metadata.revision.dirty, isFalse);
       expect(metadata.revision.displaySha, 'unknown');
-      expect(metadata.version, '0.0.1');
+      expect(metadata.version, '0.1.0');
       expect(metadata.buildNumber, 1);
+      expect(metadata.displayVersion, 'v0.1.0');
+      expect(metadata.displayBuild, 'build 1');
+      expect(metadata.displayVersionWithBuild, 'v0.1.0+1');
     });
 
     test('parses repository.revision when present', () {
       final metadata = BuildMetadata.fromJson(const {
         'app': {
-          'version': '0.0.1',
+          'version': '0.1.0',
           'buildNumber': 1,
           'stage': 'pre-beta',
         },
@@ -126,6 +129,9 @@ void main() {
 
       expect(metadata.version, isNotEmpty);
       expect(metadata.displayVersion, startsWith('v'));
+      expect(metadata.displayVersion, isNot(contains('+')));
+      expect(metadata.displayBuild, startsWith('build '));
+      expect(metadata.displayVersionWithBuild, contains('+'));
     });
   });
 }

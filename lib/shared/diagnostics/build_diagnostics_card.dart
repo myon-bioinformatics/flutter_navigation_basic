@@ -42,9 +42,11 @@ class _BuildDiagnosticsCardState extends State<BuildDiagnosticsCard> {
                   spacing: 16,
                   runSpacing: 8,
                   children: [
-                    Text('${metadata.displayVersion} · ${metadata.stage}'),
+                    Text('Version ${metadata.displayVersion}'),
+                    Text(metadata.displayBuild),
+                    Text('Stage ${metadata.stage}'),
                     Text('${metadata.platform} · ${metadata.mode}'),
-                    Text('commit ${metadata.revision.displaySha}'),
+                    Text('Commit ${metadata.revision.displaySha}'),
                     Text('artifact ${formatDiagnosticBytes(metadata.artifactBytes)}'),
                     Text('repo ${formatDiagnosticBytes(metadata.sourceBytes)}'),
                     Text('assets ${formatDiagnosticBytes(metadata.assetBytes)}'),
