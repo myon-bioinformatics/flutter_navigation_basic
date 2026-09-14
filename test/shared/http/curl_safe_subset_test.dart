@@ -107,6 +107,7 @@ curl -X POST 'https://example.com/api' \
     test('rejects --proxy and unknown long options fail-closed', () {
       for (final flag in [
         '--proxy http://p',
+        '--proxy=http://p',
         '--config ./curlrc',
         '--compressed',
         '--max-time 5',
@@ -123,6 +124,25 @@ curl -X POST 'https://example.com/api' \
         // Must not silently succeed with a shifted URL/body.
         expect(result.draft, isNull);
       }
+    });
+
+    test('accepts --flag=value for supported long options', () {
+      final result = CurlSafeSubset.tryParse(
+        r'''curl --request=POST --url=https://example.com/api '''
+        r'''--header=Content-Type:application/json '''
+        r"""--data-raw='{"ok":true}'""",
+        newId: newId,
+      );
+      expect(result.isOk, isTrue);
+      final draft = result.draft!;
+      expect(draft.method, HttpMethod.post);
+      expect(draft.url, 'https://example.com/api');
+      expect(draft.bodyMode, RequestBodyMode.json);
+      expect(draft.rawBody, '{"ok":true}');
+      expect(
+        draft.headers.any((h) => h.normalizedName == 'content-type'),
+        isTrue,
+      );
     });
 
     test('rejects @file and name@file data-urlencode forms', () {
