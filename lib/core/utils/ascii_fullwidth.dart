@@ -1,7 +1,7 @@
 /// Runtime helpers that map fullwidth / compatibility ASCII into plain ASCII.
 ///
 /// Used at parse boundaries (`int` / `double` / `Uri`) and by
-/// [AsciiFullwidthInputFormatter] so IME/clipboard fullwidth digits never
+/// [AsciiFullwidthTextInputFormatter] so IME/clipboard fullwidth digits never
 /// reach numeric parsers as U+FF0x code points.
 library;
 

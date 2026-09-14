@@ -88,6 +88,41 @@ void main() {
   group('AsciiFullwidthTextInputFormatter', () {
     const formatter = AsciiFullwidthTextInputFormatter();
 
+    test('leaves active composing fullwidth text unchanged', () {
+      const composing = TextEditingValue(
+        text: '３５',
+        selection: TextSelection.collapsed(offset: 2),
+        composing: TextRange(start: 0, end: 2),
+      );
+      final next = formatter.formatEditUpdate(
+        TextEditingValue.empty,
+        composing,
+      );
+      expect(identical(next, composing), isTrue);
+      expect(next.text, '３５');
+      expect(next.composing, const TextRange(start: 0, end: 2));
+    });
+
+    test('normalizes the same value after composition commits', () {
+      const committed = TextEditingValue(
+        text: '３５．６',
+        selection: TextSelection.collapsed(offset: 4),
+        composing: TextRange.empty,
+      );
+      final next = formatter.formatEditUpdate(
+        const TextEditingValue(
+          text: '３５．６',
+          selection: TextSelection.collapsed(offset: 4),
+          composing: TextRange(start: 0, end: 4),
+        ),
+        committed,
+      );
+      expect(next.text, '35.6');
+      expect(next.selection.baseOffset, 4);
+      expect(next.composing.isCollapsed, isTrue);
+      expect(containsFullwidthDigits(next.text), isFalse);
+    });
+
     test('normalizes paste while preserving selection offsets', () {
       final next = formatter.formatEditUpdate(
         TextEditingValue.empty,
@@ -108,6 +143,20 @@ void main() {
       );
       final next = formatter.formatEditUpdate(value, value);
       expect(identical(next, value), isTrue);
+    });
+  });
+
+  group('parse after composition path', () {
+    test('parse helpers still accept fullwidth that skipped the formatter', () {
+      // Mimics IME commit that somehow left fullwidth until parse time.
+      expect(tryParseAsciiDouble('３５．６８１２３６'), 35.681236);
+      expect(
+        CoordinateValue.parse(
+          latitude: '３５．６',
+          longitude: '１３９．７',
+        ).latitude,
+        closeTo(35.6, 1e-9),
+      );
     });
   });
 }
