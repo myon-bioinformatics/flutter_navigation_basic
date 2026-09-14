@@ -105,17 +105,31 @@ Shows DNS resolution, TCP connection details, TLS peer-certificate metadata for 
 dart run tool/mock_http_server.dart --port 8787
 ```
 
-Built only with `dart:io`. Endpoints:
+Built with `dart:io` plus the verified `crypto` package for Digest/HMAC
+fixtures. Endpoints:
 
 - `GET /health`
 - `/status/<100..599>`
 - `/delay/<0..30000>`
 - `/echo`
+- Auth scenario stubs (demo credentials only — never real secrets):
+  - `GET /auth/bearer` — Bearer token (`demo-bearer-token`); also covers
+    missing/malformed/expired (`demo-expired-token`) / wrong-audience
+    (`demo-wrong-aud-token` → 403)
+  - `GET /auth/api-key` — `X-API-Key` header or `api_key` query (`demo-api-key`)
+  - `GET /auth/basic` — HTTP Basic (`demo` / `s3cret`)
+  - `GET /auth/digest` — Digest challenge/response (same demo user/password)
+  - `GET /auth/hmac` — HMAC-SHA256 over `METHOD\npath\ntimestamp\nnonce`
+    with `X-Key-Id` / `X-Timestamp` / `X-Nonce` / `X-Signature`
+    (`demo-key` / `demo-hmac-secret`); rejects skew and nonce replay
+  - `GET /auth/rate-limited` — always `429` with `Retry-After: 1`
 
 Example:
 
 ```bash
 dart run tool/dev.dart net http://127.0.0.1:8787/health
+curl -s -H 'Authorization: Bearer demo-bearer-token' \
+  http://127.0.0.1:8787/auth/bearer
 ```
 
 ## Diagnostic bundle
