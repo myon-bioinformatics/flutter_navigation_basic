@@ -535,16 +535,16 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
         }
         final leave = await _confirmDiscardIfDirty();
         if (!mounted || !leave) return;
-        // Same setState as restore so the next frame's canPop is true before
-        // we pop — avoids re-entering the dialog on the pre-rebuild canPop.
+        // Restore in the same setState as the allow-pop flag so the next
+        // build's canPop is true (for any subsequent maybePop / system back).
         setState(() {
           _discardUnsavedChanges();
           _allowPopAfterDiscard = true;
         });
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          Navigator.of(context).maybePop();
-        });
+        // Imperative pop does not consult canPop / popDisposition, so we can
+        // leave immediately without waiting for the rebuild frame (which is
+        // what re-enters the dialog when maybePop is used too early).
+        Navigator.of(context).pop();
       },
       child: CallbackShortcuts(
       bindings: {

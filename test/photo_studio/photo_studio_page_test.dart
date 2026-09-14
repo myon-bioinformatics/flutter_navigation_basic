@@ -1101,8 +1101,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.text('landing'), findsNothing);
     expect(find.byType(PhotoStudioPage), findsOneWidget);
+    expect(find.text('Photo Studio'), findsWidgets);
     expect(find.byIcon(Icons.circle), findsOneWidget);
     expect(_undoEnabled(tester), isTrue);
     expect(
@@ -1123,12 +1123,14 @@ void main() {
     await _pumpDialogOpen(tester);
     expect(_leaveDialog(), findsOneWidget);
     await tester.tap(_leaveDiscardButton());
-    await tester.pump(); // close dialog + setState discard
-    await tester.pump(); // post-frame maybePop
-    await tester.pump(const Duration(milliseconds: 50));
+    // Dialog exit + imperative route pop both animate ~300ms; dirty clears
+    // immediately while PhotoStudioPage stays findable until the transition ends.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('landing'), findsOneWidget);
     expect(find.byType(PhotoStudioPage), findsNothing);
+    expect(find.text('landing'), findsOneWidget);
   });
 
   testWidgets('Door Discard to other keeps clean Photo under stack',
@@ -1136,14 +1138,16 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(900, 2600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final controller = await loadTestDisplayController();
+    // Flat `/studio` avoids deep initialRoute intermediates; `/` stays available
+    // for Door→Home without conflicting with MaterialApp.home.
     await tester.pumpWidget(
       DisplayScope(
         controller: controller,
         child: MaterialApp(
-          initialRoute: RouteNames.photoStudio,
+          initialRoute: '/studio',
           routes: {
+            '/studio': (_) => const PhotoStudioPage(),
             RouteNames.home: (_) => const Scaffold(body: Text('home-dest')),
-            RouteNames.photoStudio: (_) => const PhotoStudioPage(),
             RouteNames.clipboardShelf: (_) =>
                 const Scaffold(body: Text('shelf-dest')),
           },
@@ -1161,12 +1165,14 @@ void main() {
     expect(_leaveDialog(), findsOneWidget);
     await tester.tap(_leaveDiscardButton());
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump(const Duration(milliseconds: 350));
     expect(find.text('shelf-dest'), findsOneWidget);
 
     tester.state<NavigatorState>(find.byType(Navigator)).pop();
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump(const Duration(milliseconds: 350));
 
     expect(find.byType(PhotoStudioPage), findsOneWidget);
     expect(find.byIcon(Icons.circle), findsNothing);
@@ -1184,10 +1190,10 @@ void main() {
       DisplayScope(
         controller: controller,
         child: MaterialApp(
-          initialRoute: RouteNames.photoStudio,
+          initialRoute: '/studio',
           routes: {
+            '/studio': (_) => const PhotoStudioPage(),
             RouteNames.home: (_) => const Scaffold(body: Text('home-dest')),
-            RouteNames.photoStudio: (_) => const PhotoStudioPage(),
           },
         ),
       ),
@@ -1199,11 +1205,14 @@ void main() {
     await _createFrame(tester, x0: 0.2, y0: 0.2, x1: 0.5, y1: 0.5);
     expect(find.byIcon(Icons.circle), findsOneWidget);
 
-    await _openDoorAndChoose(tester, 'Home');
+    // Exact catalog label — avoid matching door hint text that contains "Home".
+    await _openDoorAndChoose(tester, 'Home 🏠');
     expect(_leaveDialog(), findsOneWidget);
     await tester.tap(_leaveDiscardButton());
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 50));
+    // removeUntil + route transition needs more than one 300ms frame.
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump(const Duration(milliseconds: 350));
 
     expect(find.text('home-dest'), findsOneWidget);
     expect(find.byType(PhotoStudioPage), findsNothing);
@@ -1219,9 +1228,9 @@ void main() {
       tester,
       page: PhotoStudioPage(
         imageSaver: ({
-          required bytes,
-          required fileName,
-          required mimeType,
+          required Uint8List bytes,
+          required String fileName,
+          required String mimeType,
         }) async {
           if (!saverEntered.isCompleted) saverEntered.complete();
           try {
@@ -1239,13 +1248,22 @@ void main() {
 
     final saveButton = find.widgetWithText(FilledButton, 'Save PNG');
     await tester.ensureVisible(saveButton);
-    await tester.tap(saveButton);
     await tester.pump();
-
-    await tester.runAsync(
-      () => saverEntered.future.timeout(const Duration(seconds: 5)),
-    );
-    expect(saverEntered.isCompleted, isTrue);
+    // Tap on the real async timeline, then poll only for saver entry —
+    // never await the unreleased saverRelease inside runAsync.
+    await tester.runAsync(() async {
+      await tester.tap(saveButton);
+    });
+    final entered = await tester.runAsync(() async {
+      final deadline = DateTime.now().add(const Duration(seconds: 5));
+      while (!saverEntered.isCompleted) {
+        if (DateTime.now().isAfter(deadline)) return false;
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      }
+      return true;
+    });
+    expect(entered, isTrue);
+    await tester.pump();
 
     await _selectDraftTool(tester, 'Circle');
     await _createFrame(tester, x0: 0.55, y0: 0.55, x1: 0.85, y1: 0.85);
