@@ -141,4 +141,18 @@ class JsonRpcResponse {
   }) {
     return JsonRpcResponse(id: id, error: error);
   }
+
+  factory JsonRpcResponse.fromJson(Map<String, Object?> json) {
+    final errorJson = json['error'];
+    if (errorJson is Map) {
+      return JsonRpcResponse.failure(
+        id: json['id'],
+        error: JsonRpcError.fromJson(Map<String, Object?>.from(errorJson)),
+      );
+    }
+    return JsonRpcResponse.result(
+      id: json['id'],
+      result: json['result'],
+    );
+  }
 }

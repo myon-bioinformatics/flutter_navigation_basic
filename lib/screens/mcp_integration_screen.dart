@@ -1,8 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+
 import '../data/mock_api_client.dart';
 import '../shared/display/display_scope.dart';
+import '../shared/mcp/mcp.dart';
 
 class McpIntegrationScreen extends StatefulWidget {
   const McpIntegrationScreen({super.key});
@@ -16,6 +18,7 @@ class _McpIntegrationScreenState extends State<McpIntegrationScreen> {
   bool _loading = false;
   String _resultKey = 'mcp.chooseScenario';
   Map<String, Object?> _resultArgs = const {};
+  String _foundationLog = '';
 
   Future<void> _run(String scenario) async {
     setState(() {
@@ -59,6 +62,35 @@ class _McpIntegrationScreenState extends State<McpIntegrationScreen> {
     }
   }
 
+
+  Future<void> _runFoundationEcho() async {
+    setState(() {
+      _loading = true;
+      _foundationLog = 'Running pinned MCP session…';
+    });
+    try {
+      final client = McpSessionClient(
+        transport: FoundationHandlerTransport(McpFoundationHandler()),
+      );
+      final result = await client.runEchoDemo(text: 'hello-from-ui');
+      if (!mounted) return;
+      setState(() {
+        _foundationLog = [
+          'pinned=${McpProtocol.specificationVersion}',
+          'currentOfficial=${McpProtocol.currentOfficialVersion}',
+          'implementsCurrentOfficial=${McpProtocol.implementsCurrentOfficial}',
+          'ok=${result.ok} session=${result.sessionId}',
+          ...result.log,
+        ].join('\n');
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _foundationLog = 'foundation demo failed: $error');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final display = DisplayScope.of(context);
@@ -84,7 +116,32 @@ class _McpIntegrationScreenState extends State<McpIntegrationScreen> {
           Text(display.text('mcp.description')),
           const SizedBox(height: 12),
           SelectableText(display.text('common.mockLabel', arguments: {'url': MockApiClient.defaultBaseUrl})),
+          const SizedBox(height: 16),
+          Text(
+            'Foundation session (pinned ${McpProtocol.specificationVersion})',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          FilledButton.icon(
+            onPressed: _loading ? null : _runFoundationEcho,
+            icon: const Icon(Icons.hub_outlined),
+            label: const Text('Run initialize → tools/call(echo)'),
+          ),
+          if (_foundationLog.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: SelectableText(_foundationLog),
+              ),
+            ),
+          ],
           const SizedBox(height: 20),
+          Text(
+            'Legacy mock scenarios',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
           Wrap(
             spacing: 10,
             runSpacing: 10,
