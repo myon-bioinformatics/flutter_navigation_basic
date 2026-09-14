@@ -75,6 +75,17 @@ void main() {
       expect(uri.queryParametersAll['tag'], ['a', 'b']);
     });
 
+    test('preserves interleaved duplicate keys from base URL query', () {
+      // Uri.queryParametersAll groups by key and would reorder to
+      // tag=a&tag=c&keep=1; raw-pair parsing must keep tag=a&keep=1&tag=c.
+      final draft = RequestDraft(
+        url: 'https://example.com/path?tag=a&keep=1&tag=c',
+      );
+      final uri = RequestDraftCodec.buildUri(draft)!;
+      expect(uri.query, 'tag=a&keep=1&tag=c');
+      expect(uri.queryParametersAll['tag'], ['a', 'c']);
+    });
+
     test('redacts sensitive query names and URL userInfo in curl', () {
       final draft = RequestDraft(
         url: 'https://user:pass@example.com/api?api_key=from-url&ok=1',

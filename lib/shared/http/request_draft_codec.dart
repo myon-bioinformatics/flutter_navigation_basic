@@ -106,6 +106,10 @@ class RequestDraftCodec {
 
   /// Builds the request URI while preserving query order and duplicate keys.
   ///
+  /// Base-URL query pairs are parsed from the raw `uri.query` string in
+  /// appearance order (not via [Uri.queryParametersAll], which groups by key
+  /// and can reorder interleaved duplicates). Draft query rows append after.
+  ///
   /// When [redactSecrets] is true, sensitive query names (explicit flag or
   /// known secret-ish names), URL `userInfo`, and fragment secrets are
   /// replaced with `***`.
@@ -119,13 +123,12 @@ class RequestDraftCodec {
     if (uri == null) return null;
 
     final pairs = <({String name, String value, bool sensitive})>[
-      for (final entry in uri.queryParametersAll.entries)
-        for (final value in entry.value)
-          (
-            name: entry.key,
-            value: value,
-            sensitive: isSensitiveQueryName(entry.key),
-          ),
+      for (final pair in _parseQueryPairs(uri.query))
+        (
+          name: pair.name,
+          value: pair.value,
+          sensitive: isSensitiveQueryName(pair.name),
+        ),
       for (final field in draft.enabledQuery)
         (
           name: normalizeAsciiFullwidth(field.name).trim(),
@@ -148,6 +151,28 @@ class RequestDraftCodec {
       result = result.replace(fragment: _redactFragment(result.fragment));
     }
     return result;
+  }
+
+  /// Parses `a=1&b=2` style query text into decoded name/value pairs in order.
+  ///
+  /// Empty segments (`&&`) are skipped. A segment without `=` is treated as a
+  /// key with an empty value (same as [Uri.queryParametersAll]).
+  static List<({String name, String value})> _parseQueryPairs(String query) {
+    if (query.isEmpty) return const [];
+    final pairs = <({String name, String value})>[];
+    for (final part in query.split('&')) {
+      if (part.isEmpty) continue;
+      final eq = part.indexOf('=');
+      if (eq < 0) {
+        pairs.add((name: Uri.decodeQueryComponent(part), value: ''));
+        continue;
+      }
+      pairs.add((
+        name: Uri.decodeQueryComponent(part.substring(0, eq)),
+        value: Uri.decodeQueryComponent(part.substring(eq + 1)),
+      ));
+    }
+    return pairs;
   }
 
   /// Redacts OAuth/signed fragment payloads. Opaque fragments (no `=`) become
