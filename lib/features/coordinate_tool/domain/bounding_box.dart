@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:math' as math;
 
+import '../../../core/utils/ascii_fullwidth.dart';
+
 class BoundingBox {
   const BoundingBox({
     required this.south,
@@ -132,7 +134,7 @@ class BoundingBox {
       });
 
   static double _parseFinite(String raw, String label) {
-    final value = double.tryParse(raw.trim());
+    final value = tryParseAsciiDouble(raw);
     if (value == null || !value.isFinite) {
       throw FormatException('$label must be a finite number.');
     }

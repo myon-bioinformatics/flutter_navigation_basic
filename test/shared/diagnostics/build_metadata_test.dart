@@ -55,10 +55,11 @@ void main() {
 
   group('BuildMetadata.fromJson backward compatibility', () {
     test('degrades gracefully when repository.revision is absent', () {
-      // Use an inline legacy fixture instead of the live asset. CI refreshes
-      // assets/diagnostics/build_meta.json via `dart run tool/dev.dart meta`
-      // before the GitHub Pages web build, so the checked-in file is not a
-      // stable stand-in for "revision missing".
+      // Prefer an inline legacy fixture for the "revision missing" case.
+      // The checked-in assets/diagnostics/build_meta.json is now the
+      // deterministic neutral fallback (asserted in BuildMetadata.load),
+      // and CI still refreshes it via `dart run tool/dev.dart meta` before
+      // the GitHub Pages web build — so do not use that live asset here.
       final metadata = BuildMetadata.fromJson(const {
         'app': {
           'version': '0.1.0',

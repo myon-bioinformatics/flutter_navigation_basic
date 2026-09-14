@@ -118,10 +118,10 @@ void main() {
     await tester.pumpAndSettle();
 
     // Once the initial metadata future resolves, Version settles on
-    // "vunknown · build 0" and Commit on the display sha "unknown".
+    // "vunknown · build 0 · Version" and Commit on exact "unknown · Commit".
     expect(find.textContaining('loading…'), findsNothing);
-    expect(find.textContaining('vunknown'), findsOneWidget);
-    expect(find.textContaining('unknown'), findsWidgets);
+    expect(find.text('vunknown · build 0 · Version'), findsOneWidget);
+    expect(find.text('unknown · Commit'), findsOneWidget);
     expect(loadCount, 1);
 
     // Mirrors HomeScreen's Refresh action, which calls setState on an
@@ -131,10 +131,11 @@ void main() {
 
     // With the future cached, the rebuild must not reset the FutureBuilder
     // to a waiting state, so "loading…" should never reappear even for a
-    // single frame, the previously resolved values stay put, and the
-    // loader must not be invoked again.
+    // single frame, both Version and Commit stay put, and the loader must
+    // not be invoked again.
     expect(find.textContaining('loading…'), findsNothing);
-    expect(find.textContaining('vunknown'), findsOneWidget);
+    expect(find.text('vunknown · build 0 · Version'), findsOneWidget);
+    expect(find.text('unknown · Commit'), findsOneWidget);
     expect(loadCount, 1);
   });
 }

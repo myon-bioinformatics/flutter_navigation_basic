@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import '../../../core/utils/ascii_fullwidth.dart';
 import 'maps_url_policy.dart';
 
 class CoordinateValue {
@@ -12,8 +13,8 @@ class CoordinateValue {
     required String latitude,
     required String longitude,
   }) {
-    final lat = double.tryParse(latitude.trim());
-    final lon = double.tryParse(longitude.trim());
+    final lat = tryParseAsciiDouble(latitude);
+    final lon = tryParseAsciiDouble(longitude);
     if (lat == null || lon == null) {
       throw const FormatException('Latitude and longitude must be numbers.');
     }
@@ -34,7 +35,7 @@ class CoordinateValue {
   /// Supports the URLs this tool emits (`query=`, `@lat,lng`, `ll=`) plus
   /// common share forms (`q=`, `/@lat,lng` inside place paths).
   static CoordinateValue? tryParseMapsUrl(String input) {
-    final raw = input.trim();
+    final raw = normalizeAsciiFullwidth(input).trim();
     if (raw.isEmpty) return null;
 
     for (final text in _mapsUrlDecodeCandidates(raw)) {
@@ -57,7 +58,7 @@ class CoordinateValue {
     String input, {
     Future<Uri> Function(Uri url)? expand,
   }) async {
-    final raw = input.trim();
+    final raw = normalizeAsciiFullwidth(input).trim();
     if (raw.isEmpty) return null;
 
     final sync = tryParseMapsUrl(raw);
@@ -82,7 +83,7 @@ class CoordinateValue {
   /// Whether [input] looks like a Maps short / share link that may need
   /// redirect expansion before coordinates are visible.
   static bool looksLikeMapsShortShare(String input) {
-    final trimmed = input.trim();
+    final trimmed = normalizeAsciiFullwidth(input).trim();
     if (trimmed.isEmpty) return false;
     final uri = Uri.tryParse(
       trimmed.contains('://') ? trimmed : 'https://$trimmed',

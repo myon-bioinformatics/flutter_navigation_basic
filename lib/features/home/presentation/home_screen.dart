@@ -97,7 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () => Navigator.of(context)
                           .pushNamed(RouteNames.clipboardWorkbench),
                     ),
-                                        HomeOverviewAction(
+                    HomeOverviewAction(
                       label: display.text('home.action.hub.label'),
                       subtitle: display.text('home.action.hub.subtitle'),
                       icon: Icons.map_outlined,

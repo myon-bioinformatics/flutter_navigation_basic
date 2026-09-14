@@ -11,6 +11,9 @@ import '../../../shared/platform/open_external_url.dart';
 import '../domain/bounding_box.dart';
 import '../domain/coordinate_formatter.dart';
 import '../domain/maps_url_expander.dart';
+import '../../../core/utils/ascii_fullwidth.dart';
+import '../../../shared/input/ascii_fullwidth_text_input_formatter.dart';
+
 
 class CoordinateToolPage extends StatefulWidget {
   const CoordinateToolPage({
@@ -73,7 +76,7 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
   double _selectedRadius() {
     final presetRadius = _preset.radiusMeters;
     if (presetRadius != null) return presetRadius;
-    final radius = double.tryParse(_customRadius.text.trim());
+    final radius = tryParseAsciiDouble(_customRadius.text);
     if (radius == null || !radius.isFinite || radius <= 0) {
       throw const FormatException('Custom radius must be a number greater than zero.');
     }
@@ -118,7 +121,13 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
   Future<void> _applyMapsUrl() async {
     if (_mapsUrlBusy) return;
     final display = DisplayScope.of(context);
-    final raw = _mapsUrl.text;
+    final raw = normalizeAsciiFullwidth(_mapsUrl.text);
+    if (raw != _mapsUrl.text) {
+      _mapsUrl.value = TextEditingValue(
+        text: raw,
+        selection: TextSelection.collapsed(offset: raw.length),
+      );
+    }
     final needsExpand = CoordinateValue.tryParseMapsUrl(raw) == null &&
         CoordinateValue.looksLikeMapsShortShare(raw);
 
@@ -241,9 +250,18 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
 
   void _generateManualBox() {
     try {
-      final latitude = double.parse(_boxCenterLatitude.text.trim());
-      final longitude = double.parse(_boxCenterLongitude.text.trim());
-      final radius = double.parse(_boxRadiusMeters.text.trim());
+      final latitude = tryParseAsciiDouble(_boxCenterLatitude.text);
+      final longitude = tryParseAsciiDouble(_boxCenterLongitude.text);
+      final radius = tryParseAsciiDouble(_boxRadiusMeters.text);
+      if (latitude == null || !latitude.isFinite) {
+        throw const FormatException('Latitude must be a finite number.');
+      }
+      if (longitude == null || !longitude.isFinite) {
+        throw const FormatException('Longitude must be a finite number.');
+      }
+      if (radius == null || !radius.isFinite) {
+        throw const FormatException('Radius must be a finite number.');
+      }
       final box = BoundingBox.fromCenterRadius(
         latitude: latitude,
         longitude: longitude,
@@ -296,6 +314,8 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: _mapsUrl,
+                  inputFormatters: asciiFullwidthInputFormatters,
+                  style: const TextStyle(letterSpacing: 0),
                   keyboardType: TextInputType.url,
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _applyMapsUrl(),
@@ -315,6 +335,8 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: _latitude,
+                  inputFormatters: asciiFullwidthInputFormatters,
+                  style: const TextStyle(letterSpacing: 0),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
                   decoration: InputDecoration(
                     labelText: t('coordinate.latitude'),
@@ -325,6 +347,8 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: _longitude,
+                  inputFormatters: asciiFullwidthInputFormatters,
+                  style: const TextStyle(letterSpacing: 0),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
                   decoration: InputDecoration(
                     labelText: t('coordinate.longitude'),
@@ -423,6 +447,8 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                     const SizedBox(height: 12),
                     TextField(
                       controller: _customRadius,
+                      inputFormatters: asciiFullwidthInputFormatters,
+                      style: const TextStyle(letterSpacing: 0),
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
                         labelText: t('coordinate.customRadius'),
@@ -554,6 +580,8 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                     Expanded(
                       child: TextField(
                         controller: _boxCenterLatitude,
+                        inputFormatters: asciiFullwidthInputFormatters,
+                        style: const TextStyle(letterSpacing: 0),
                         keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
                         decoration: InputDecoration(labelText: t('coordinate.boxCenterLatitude'), border: const OutlineInputBorder()),
                       ),
@@ -562,6 +590,8 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                     Expanded(
                       child: TextField(
                         controller: _boxCenterLongitude,
+                        inputFormatters: asciiFullwidthInputFormatters,
+                        style: const TextStyle(letterSpacing: 0),
                         keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
                         decoration: InputDecoration(labelText: t('coordinate.boxCenterLongitude'), border: const OutlineInputBorder()),
                       ),
@@ -571,6 +601,8 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: _boxRadiusMeters,
+                  inputFormatters: asciiFullwidthInputFormatters,
+                  style: const TextStyle(letterSpacing: 0),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(labelText: t('coordinate.boxRadius'), border: const OutlineInputBorder()),
                 ),
@@ -588,6 +620,8 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                     Expanded(
                       child: TextField(
                         controller: _boxSouth,
+                        inputFormatters: asciiFullwidthInputFormatters,
+                        style: const TextStyle(letterSpacing: 0),
                         keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
                         decoration: InputDecoration(labelText: t('coordinate.boxSouth'), border: const OutlineInputBorder()),
                       ),
@@ -596,6 +630,8 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                     Expanded(
                       child: TextField(
                         controller: _boxNorth,
+                        inputFormatters: asciiFullwidthInputFormatters,
+                        style: const TextStyle(letterSpacing: 0),
                         keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
                         decoration: InputDecoration(labelText: t('coordinate.boxNorth'), border: const OutlineInputBorder()),
                       ),
@@ -608,6 +644,8 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                     Expanded(
                       child: TextField(
                         controller: _boxWest,
+                        inputFormatters: asciiFullwidthInputFormatters,
+                        style: const TextStyle(letterSpacing: 0),
                         keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
                         decoration: InputDecoration(labelText: t('coordinate.boxWest'), border: const OutlineInputBorder()),
                       ),
@@ -616,6 +654,8 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
                     Expanded(
                       child: TextField(
                         controller: _boxEast,
+                        inputFormatters: asciiFullwidthInputFormatters,
+                        style: const TextStyle(letterSpacing: 0),
                         keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
                         decoration: InputDecoration(labelText: t('coordinate.boxEast'), border: const OutlineInputBorder()),
                       ),

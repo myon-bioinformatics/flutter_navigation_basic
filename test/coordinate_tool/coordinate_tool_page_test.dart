@@ -314,6 +314,37 @@ void main() {
     expect(find.text('BBox [west, south, east, north]'), findsWidgets);
   });
 
+  testWidgets('generates manual box from fullwidth center and radius',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 2400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(home: await wrapWithDisplayScope(const CoordinateToolPage())),
+    );
+    await tester.pumpAndSettle();
+
+    final centerLat = find.widgetWithText(TextField, 'Center latitude');
+    final centerLon = find.widgetWithText(TextField, 'Center longitude');
+    final radiusField = find.widgetWithText(TextField, 'Radius (meters)');
+    await tester.ensureVisible(centerLat);
+    await tester.enterText(centerLat, '３５．６８１２３６');
+    await tester.enterText(centerLon, '１３９．７６７１２５');
+    await tester.enterText(radiusField, '５００');
+    await tester.pump();
+
+    final generate = find.text('Generate bounds');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Center:'), findsWidgets);
+    expect(find.textContaining('35.681236'), findsWidgets);
+    expect(find.textContaining('139.767125'), findsWidgets);
+    expect(find.textContaining('Span:'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
 
   testWidgets('invalid point keeps manual box visible and usable', (tester) async {
     await tester.pumpWidget(

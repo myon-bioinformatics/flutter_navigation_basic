@@ -5,7 +5,10 @@ import 'package:flutter_application_1/core/navigation/app_route_registry.dart';
 import 'package:flutter_application_1/core/navigation/app_tools.dart';
 import 'package:flutter_application_1/core/navigation/route_names.dart';
 import 'package:flutter_application_1/features/composition_generator/presentation/composition_generator_page.dart';
+import 'package:flutter_application_1/features/counter_playground/presentation/counter_playground_page.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/photo_studio_page.dart';
+import 'package:flutter_application_1/screens/counter_playground_screen.dart';
+import 'package:flutter_application_1/screens/generic_screen.dart';
 import 'package:flutter_application_1/shared/widgets/tool_door_selector.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -58,6 +61,61 @@ void main() {
       RouteNames.compositionSeedGenerator,
       '/examples/composition-generator/seed',
     );
+  });
+
+  testWidgets('catalogue screen builders capture distinct screen ids',
+      (tester) async {
+    Future<void> expectScreenId(int id) async {
+      await tester.pumpWidget(
+        await wrapWithDisplayScope(
+          MaterialApp(
+            home: Builder(
+              builder: (context) =>
+                  AppRoutes.routes[AppRoutes.screenRoute(id)]!(context),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      final screen = tester.widget<GenericScreen>(find.byType(GenericScreen));
+      expect(screen.screenId, id);
+    }
+
+    await expectScreenId(1);
+    await expectScreenId(42);
+    await expectScreenId(198);
+  });
+
+  testWidgets('CounterPlaygroundScreen keeps controller across parent rebuild',
+      (tester) async {
+    Future<void> pumpWithWidth(double width) async {
+      await tester.pumpWidget(
+        await wrapWithDisplayScope(
+          MaterialApp(
+            home: MediaQuery(
+              data: MediaQueryData(size: Size(width, 800)),
+              child: const CounterPlaygroundScreen(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    await pumpWithWidth(390);
+    final page = tester.widget<CounterPlaygroundPage>(
+      find.byType(CounterPlaygroundPage),
+    );
+    final controller = page.controller;
+    controller.increment();
+    expect(controller.counter, 1);
+
+    await pumpWithWidth(320);
+    final rebuilt = tester.widget<CounterPlaygroundPage>(
+      find.byType(CounterPlaygroundPage),
+    );
+    expect(identical(rebuilt.controller, controller), isTrue);
+    expect(rebuilt.controller.counter, 1);
   });
 
   testWidgets('public AppRoutes boundingBox alias lands on PhotoStudioPage',
