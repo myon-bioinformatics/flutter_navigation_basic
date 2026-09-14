@@ -501,6 +501,52 @@ void main() {
       expect(replay.statusCode, 401);
       expect(replay.body['reason'], 'replay');
     });
+
+    test('HMAC binds to actual path including trailing slash', () {
+      final fixedNow = DateTime.utc(2026, 9, 14, 12, 0, 0);
+      final auth = MockAuthHandler(clock: () => fixedNow);
+      final ts = (fixedNow.millisecondsSinceEpoch ~/ 1000).toString();
+
+      final slashSig = MockAuthHandler.hmacSignature(
+        method: 'GET',
+        path: '/auth/hmac/',
+        timestamp: ts,
+        nonce: 'slash-1',
+      );
+      final ok = auth.handle(
+        method: 'GET',
+        path: '/auth/hmac/',
+        headers: {
+          'x-key-id': MockAuthDemo.hmacKeyId,
+          'x-timestamp': ts,
+          'x-nonce': 'slash-1',
+          'x-signature': slashSig,
+        },
+        query: const {},
+      )!;
+      expect(ok.statusCode, 200);
+
+      // Signing the stripped path while calling the slash variant must fail.
+      final strippedSig = MockAuthHandler.hmacSignature(
+        method: 'GET',
+        path: '/auth/hmac',
+        timestamp: ts,
+        nonce: 'slash-2',
+      );
+      final mismatch = auth.handle(
+        method: 'GET',
+        path: '/auth/hmac/',
+        headers: {
+          'x-key-id': MockAuthDemo.hmacKeyId,
+          'x-timestamp': ts,
+          'x-nonce': 'slash-2',
+          'x-signature': strippedSig,
+        },
+        query: const {},
+      )!;
+      expect(mismatch.statusCode, 401);
+      expect(mismatch.body['reason'], 'invalid_signature');
+    });
   });
 
   test('rate-limited returns 429', () {
