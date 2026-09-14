@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/features/composition_generator/domain/song_seed.dart';
 import 'package:flutter_application_1/features/composition_generator/domain/song_seed_generator.dart';
 import 'package:flutter_application_1/shared/widgets/composition_studio.dart';
 import 'package:flutter_test/flutter_test.dart';
