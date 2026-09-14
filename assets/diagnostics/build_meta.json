@@ -9,129 +9,21 @@
     "mode": "release",
     "artifactBytes": null,
     "analysisJsonBytes": null,
-    "artifactPath": null,
-    "analysisPath": null,
-    "note": "Source metadata only. Pass --artifact and --analysis after a release/analyze-size build for binary measurements."
+    "note": "Tracked deterministic fallback only (no live SHA/sizes). Pages/release always regenerate via `dart run tool/dev.dart meta` after checkout; do not treat this file as the deployed commit identity."
   },
   "repository": {
-    "sourceBytes": 25263986,
-    "assetBytes": 642180,
+    "sourceBytes": null,
+    "assetBytes": null,
     "revision": {
-      "sha": "b45bffc4b46f2c6ddc4192d973c27d41bc07db19",
-      "shortSha": "b45bffc4",
-      "ref": "cursor/version-commit-split-d1c2",
-      "committedAt": "2026-09-14T01:02:28+00:00",
-      "subject": "Merge pull request #62 from myon-bioinformatics/cursor/studio-tools-integration-1cbc",
+      "sha": null,
+      "shortSha": null,
+      "ref": null,
+      "committedAt": null,
+      "subject": null,
       "commitUrl": null,
-      "dirty": true
+      "dirty": false
     }
   },
-  "screens": {
-    "clipboard_shelf": {
-      "sourceBytes": 1114,
-      "featureBytes": 1114
-    },
-    "clipboard_workbench": {
-      "sourceBytes": 1150,
-      "featureBytes": 1150
-    },
-    "composition_generator": {
-      "sourceBytes": 2116,
-      "featureBytes": 18926
-    },
-    "coordinate_tool": {
-      "sourceBytes": 31174,
-      "featureBytes": 62834
-    },
-    "counter_playground": {
-      "sourceBytes": 7415,
-      "featureBytes": 9597
-    },
-    "home": {
-      "sourceBytes": 4385,
-      "featureBytes": 4709
-    },
-    "irony_generator": {
-      "sourceBytes": 11872,
-      "featureBytes": 12694
-    },
-    "now_timeline": {
-      "sourceBytes": 15898,
-      "featureBytes": 25122
-    },
-    "photo_studio": {
-      "sourceBytes": 79185,
-      "featureBytes": 102625
-    },
-    "screen5": {
-      "sourceBytes": 2899,
-      "featureBytes": 3030
-    }
-  },
-  "routeSources": {
-    "clipboard_shelf_screen": {
-      "sourceBytes": 735,
-      "path": "lib/screens/clipboard_shelf_screen.dart"
-    },
-    "clipboard_workbench_screen": {
-      "sourceBytes": 767,
-      "path": "lib/screens/clipboard_workbench_screen.dart"
-    },
-    "composition_generator_screen": {
-      "sourceBytes": 1883,
-      "path": "lib/screens/composition_generator_screen.dart"
-    },
-    "composition_studio_screen": {
-      "sourceBytes": 2672,
-      "path": "lib/screens/composition_studio_screen.dart"
-    },
-    "coordinate_tool_screen": {
-      "sourceBytes": 298,
-      "path": "lib/screens/coordinate_tool_screen.dart"
-    },
-    "counter_playground_screen": {
-      "sourceBytes": 10001,
-      "path": "lib/screens/counter_playground_screen.dart"
-    },
-    "generic_screen": {
-      "sourceBytes": 12772,
-      "path": "lib/screens/generic_screen.dart"
-    },
-    "home_screen": {
-      "sourceBytes": 5450,
-      "path": "lib/screens/home_screen.dart"
-    },
-    "hub_screen": {
-      "sourceBytes": 6464,
-      "path": "lib/screens/hub_screen.dart"
-    },
-    "irony_generator_screen": {
-      "sourceBytes": 12477,
-      "path": "lib/screens/irony_generator_screen.dart"
-    },
-    "mcp_integration_screen": {
-      "sourceBytes": 3820,
-      "path": "lib/screens/mcp_integration_screen.dart"
-    },
-    "mock_api_screen": {
-      "sourceBytes": 3281,
-      "path": "lib/screens/mock_api_screen.dart"
-    },
-    "now_timeline_screen": {
-      "sourceBytes": 283,
-      "path": "lib/screens/now_timeline_screen.dart"
-    },
-    "pattern_template_screen": {
-      "sourceBytes": 11681,
-      "path": "lib/screens/pattern_template_screen.dart"
-    },
-    "photo_studio_screen": {
-      "sourceBytes": 283,
-      "path": "lib/screens/photo_studio_screen.dart"
-    },
-    "ui_showcase_screen": {
-      "sourceBytes": 21075,
-      "path": "lib/screens/ui_showcase_screen.dart"
-    }
-  }
+  "screens": {},
+  "routeSources": {}
 }

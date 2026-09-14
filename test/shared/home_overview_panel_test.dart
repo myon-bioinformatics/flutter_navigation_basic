@@ -110,31 +110,31 @@ void main() {
     );
 
     // Before the injected future resolves, Version + Commit metrics both
-    // show loading, and the loader has been invoked once per metric widget.
+    // show loading, and the parent loads metadata exactly once.
     expect(find.textContaining('loading…'), findsNWidgets(2));
-    expect(loadCount, 2);
+    expect(loadCount, 1);
 
     completer.complete(_fakeMetadata());
     await tester.pumpAndSettle();
 
-    // Once the initial metadata futures resolve, Version settles on
+    // Once the initial metadata future resolves, Version settles on
     // "vunknown · build 0" and Commit on the display sha "unknown".
     expect(find.textContaining('loading…'), findsNothing);
     expect(find.textContaining('vunknown'), findsOneWidget);
     expect(find.textContaining('unknown'), findsWidgets);
-    expect(loadCount, 2);
+    expect(loadCount, 1);
 
     // Mirrors HomeScreen's Refresh action, which calls setState on an
     // ancestor and rebuilds HomeOverviewPanel and its children.
     await tester.tap(find.byKey(const Key('refresh')));
     await tester.pump();
 
-    // With the futures cached, the rebuild must not reset the FutureBuilders
+    // With the future cached, the rebuild must not reset the FutureBuilder
     // to a waiting state, so "loading…" should never reappear even for a
     // single frame, the previously resolved values stay put, and the
     // loader must not be invoked again.
     expect(find.textContaining('loading…'), findsNothing);
     expect(find.textContaining('vunknown'), findsOneWidget);
-    expect(loadCount, 2);
+    expect(loadCount, 1);
   });
 }
