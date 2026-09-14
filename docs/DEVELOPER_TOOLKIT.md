@@ -126,6 +126,13 @@ fixtures. Endpoints:
     with `X-Key-Id` / `X-Timestamp` / `X-Nonce` / `X-Signature`
     (`demo-key` / `demo-hmac-secret`); rejects skew and nonce replay
   - `GET /auth/rate-limited` — always `429` with `Retry-After: 1`
+- MCP Streamable HTTP foundation stubs (pinned spec `2025-03-26`):
+  - `POST /mcp` — JSON-RPC `initialize` / `tools/*` / `resources/*` /
+    `prompts/*` / `ping` with `Mcp-Session-Id`
+  - `GET /.well-known/oauth-authorization-server` — AS metadata (+ PKCE S256)
+  - `GET /.well-known/oauth-protected-resource` — protected resource metadata
+  - `GET /mcp/support-matrix` — capability flags (Flutter Web in-app OAuth
+    is **not** guaranteed)
 
 Example:
 
@@ -133,6 +140,9 @@ Example:
 dart run tool/dev.dart net http://127.0.0.1:8787/health
 curl -s -H 'Authorization: Bearer demo-bearer-token' \
   http://127.0.0.1:8787/auth/bearer
+curl -s -X POST http://127.0.0.1:8787/mcp \
+  -H 'content-type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","clientInfo":{"name":"demo","version":"0"}}}'
 ```
 
 ## Diagnostic bundle
