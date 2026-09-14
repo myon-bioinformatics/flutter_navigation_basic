@@ -14,5 +14,6 @@ class RouteNames {
   static const String compositionSeedGenerator =
       '/examples/composition-generator/seed';
   static const String clipboardWorkbench = '/examples/clipboard-workbench';
+  static const String httpRequestDraft = '/tools/http/request-draft';
   static const String screen5 = '/screen5';
 }

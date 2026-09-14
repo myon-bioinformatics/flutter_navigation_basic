@@ -44,6 +44,8 @@ class AppNavigation {
       _navigator.pushNamed(RouteNames.compositionGenerator);
   static void toClipboardWorkbench() =>
       _navigator.pushNamed(RouteNames.clipboardWorkbench);
+  static void toHttpRequestDraft() =>
+      _navigator.pushNamed(RouteNames.httpRequestDraft);
   static void toScreen5() => _navigator.pushNamed(RouteNames.screen5);
   static void back() => _navigator.maybePop();
 }

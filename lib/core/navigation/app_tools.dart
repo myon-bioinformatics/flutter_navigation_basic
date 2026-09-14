@@ -44,6 +44,10 @@ List<AppTool> get appTools => const [
         labelKey: 'clipboardWorkbench.appBarTitle',
       ),
       AppTool(
+        routeName: RouteNames.httpRequestDraft,
+        labelKey: 'httpDraft.title',
+      ),
+      AppTool(
         routeName: RouteNames.counterPlayground,
         labelKey: 'nav.counterPlayground',
       ),
