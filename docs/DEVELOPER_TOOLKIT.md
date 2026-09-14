@@ -139,7 +139,10 @@ fixtures. Endpoints:
   - Unsupported *string* `protocolVersion` still yields a successful
     InitializeResult with the pinned `2025-03-26` (client may disconnect).
     Missing/non-string `protocolVersion`, `capabilities`, or `clientInfo`
-    → `invalidParams` (no session).
+    → `invalidParams` (no session). `clientInfo.name` and `clientInfo.version`
+    must be non-empty strings.
+    This foundation is **legacy MCP `2025-03-26`** support (not current
+    official `2026-07-28`); dual-era support is deferred to #70.
   - Present Bearer on `/mcp` (including `notifications/initialized`) is
     audience-checked; expired/malformed → 401, wrong audience → 403.
   - Discovery `issuer` / `resource` / audience follow the effective

@@ -286,6 +286,21 @@ class McpFoundationHandler {
         'clientInfo must be an object',
       );
     }
+    // Implementation info requires string name + version (MCP InitializeRequest).
+    final clientName = clientInfo['name'];
+    final clientVersion = clientInfo['version'];
+    if (clientName is! String || clientName.isEmpty) {
+      return _invalidInitialize(
+        request,
+        'clientInfo.name must be a non-empty string',
+      );
+    }
+    if (clientVersion is! String || clientVersion.isEmpty) {
+      return _invalidInitialize(
+        request,
+        'clientInfo.version must be a non-empty string',
+      );
+    }
 
     final id = _sessionIdFactory();
     _sessions[id] = McpSession(

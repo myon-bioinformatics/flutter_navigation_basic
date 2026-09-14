@@ -2,10 +2,21 @@
 ///
 /// Full UI/executor wiring lands in a later PR; this file is the single place
 /// that records which protocol versions the foundation targets.
+///
+/// **Legacy scope:** this foundation pins MCP `2025-03-26` (initialize +
+/// `Mcp-Session-Id` Streamable HTTP). The current official MCP revision is
+/// `2026-07-28` (stateless / `server/discover`). Treat this package as
+/// legacy-era support unless a later PR adds dual-era compatibility.
 abstract final class McpProtocol {
   /// MCP specification revision this foundation targets.
   /// Display this value in diagnostics / support matrix UIs.
   static const specificationVersion = '2025-03-26';
+
+  /// Newest official MCP revision known to this repo (not implemented here).
+  static const currentOfficialVersion = '2026-07-28';
+
+  /// Whether this foundation implements the current official MCP revision.
+  static const implementsCurrentOfficial = false;
 
   /// JSON-RPC 2.0 version string required on every request/response.
   static const jsonRpcVersion = '2.0';
@@ -44,8 +55,17 @@ abstract final class McpSupportMatrix {
   static const flutterWebInAppOAuthGuaranteed = false;
   static const legacySseDefault = false;
 
+  /// This matrix describes the pinned `2025-03-26` path only.
+  static const legacyMcpEra = true;
+  static const currentOfficialVersion = McpProtocol.currentOfficialVersion;
+  static const implementsCurrentOfficial =
+      McpProtocol.implementsCurrentOfficial;
+
   static Map<String, Object?> get asJson => {
         'specificationVersion': specificationVersion,
+        'currentOfficialVersion': currentOfficialVersion,
+        'implementsCurrentOfficial': implementsCurrentOfficial,
+        'legacyMcpEra': legacyMcpEra,
         'streamableHttp': streamableHttp,
         'jsonRpc': jsonRpc,
         'sessionHeader': sessionHeader,

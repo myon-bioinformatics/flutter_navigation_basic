@@ -309,6 +309,41 @@ void main() {
           'capabilities': <String, Object?>{},
           'clientInfo': 'nope',
         },
+        {
+          'protocolVersion': McpProtocol.specificationVersion,
+          'capabilities': <String, Object?>{},
+          'clientInfo': <String, Object?>{},
+        },
+        {
+          'protocolVersion': McpProtocol.specificationVersion,
+          'capabilities': <String, Object?>{},
+          'clientInfo': {'version': '0'},
+        },
+        {
+          'protocolVersion': McpProtocol.specificationVersion,
+          'capabilities': <String, Object?>{},
+          'clientInfo': {'name': 'x'},
+        },
+        {
+          'protocolVersion': McpProtocol.specificationVersion,
+          'capabilities': <String, Object?>{},
+          'clientInfo': {'name': '', 'version': '0'},
+        },
+        {
+          'protocolVersion': McpProtocol.specificationVersion,
+          'capabilities': <String, Object?>{},
+          'clientInfo': {'name': 'x', 'version': ''},
+        },
+        {
+          'protocolVersion': McpProtocol.specificationVersion,
+          'capabilities': <String, Object?>{},
+          'clientInfo': {'name': 1, 'version': '0'},
+        },
+        {
+          'protocolVersion': McpProtocol.specificationVersion,
+          'capabilities': <String, Object?>{},
+          'clientInfo': {'name': 'x', 'version': 2},
+        },
       ]) {
         final bad = handler.handleRpc(
           request: JsonRpcRequest(
@@ -608,5 +643,11 @@ void main() {
     );
     expect(McpSupportMatrix.flutterWebInAppOAuthGuaranteed, isFalse);
     expect(McpSupportMatrix.legacySseDefault, isFalse);
+    expect(McpSupportMatrix.legacyMcpEra, isTrue);
+    expect(
+      McpSupportMatrix.currentOfficialVersion,
+      McpProtocol.currentOfficialVersion,
+    );
+    expect(McpSupportMatrix.implementsCurrentOfficial, isFalse);
   });
 }
