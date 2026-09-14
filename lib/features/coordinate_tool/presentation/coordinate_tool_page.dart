@@ -250,9 +250,18 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
 
   void _generateManualBox() {
     try {
-      final latitude = double.parse(_boxCenterLatitude.text.trim());
-      final longitude = double.parse(_boxCenterLongitude.text.trim());
-      final radius = double.parse(_boxRadiusMeters.text.trim());
+      final latitude = tryParseAsciiDouble(_boxCenterLatitude.text);
+      final longitude = tryParseAsciiDouble(_boxCenterLongitude.text);
+      final radius = tryParseAsciiDouble(_boxRadiusMeters.text);
+      if (latitude == null || !latitude.isFinite) {
+        throw const FormatException('Latitude must be a finite number.');
+      }
+      if (longitude == null || !longitude.isFinite) {
+        throw const FormatException('Longitude must be a finite number.');
+      }
+      if (radius == null || !radius.isFinite) {
+        throw const FormatException('Radius must be a finite number.');
+      }
       final box = BoundingBox.fromCenterRadius(
         latitude: latitude,
         longitude: longitude,
