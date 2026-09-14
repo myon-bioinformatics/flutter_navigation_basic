@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
+import '../../core/utils/ascii_fullwidth.dart';
 import '../../features/composition_generator/domain/metronome_timing.dart';
 import '../../features/composition_generator/domain/song_seed.dart';
 import '../display/display_scope.dart';
@@ -146,8 +147,8 @@ class _CompositionStudioState extends State<CompositionStudio>
       _displayKey = seed.tonicKey;
       _bpm = seed.bpm.clamp(MetronomeSnapshot.minBpm, MetronomeSnapshot.maxBpm);
       if (parts.length == 2) {
-        _beatsPerBar = int.tryParse(parts[0]) ?? _beatsPerBar;
-        _beatUnit = int.tryParse(parts[1]) ?? _beatUnit;
+        _beatsPerBar = tryParseAsciiInt(parts[0]) ?? _beatsPerBar;
+        _beatUnit = tryParseAsciiInt(parts[1]) ?? _beatUnit;
       }
       _chordsController.text = seed.progression;
       if (_running) {

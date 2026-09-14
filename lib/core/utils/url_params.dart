@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 
+import 'ascii_fullwidth.dart';
+
 /// URLパラメータ取得の標準化ユーティリティ
 ///
 /// GetX 4.x では [Get.parameters] からパスパラメータとクエリパラメータの
@@ -28,7 +30,7 @@ class UrlParams {
   // ルート例: /item/:id → /item/10
   // ─────────────────────────────────────────────
   static int pathInt(String key, {int fallback = 0}) {
-    return int.tryParse(Get.parameters[key] ?? '') ?? fallback;
+    return tryParseAsciiInt(Get.parameters[key] ?? '') ?? fallback;
   }
 
   // ─────────────────────────────────────────────
@@ -36,7 +38,7 @@ class UrlParams {
   // ルート例: /price/:amount → /price/3.14
   // ─────────────────────────────────────────────
   static double pathDouble(String key, {double fallback = 0.0}) {
-    return double.tryParse(Get.parameters[key] ?? '') ?? fallback;
+    return tryParseAsciiDouble(Get.parameters[key] ?? '') ?? fallback;
   }
 
   // ─────────────────────────────────────────────
@@ -70,7 +72,7 @@ class UrlParams {
   // URL例: /list?page=2
   // ─────────────────────────────────────────────
   static int queryInt(String key, {int fallback = 0}) {
-    return int.tryParse(Get.parameters[key] ?? '') ?? fallback;
+    return tryParseAsciiInt(Get.parameters[key] ?? '') ?? fallback;
   }
 
   // ─────────────────────────────────────────────
@@ -78,7 +80,7 @@ class UrlParams {
   // URL例: /map?zoom=1.5
   // ─────────────────────────────────────────────
   static double queryDouble(String key, {double fallback = 0.0}) {
-    return double.tryParse(Get.parameters[key] ?? '') ?? fallback;
+    return tryParseAsciiDouble(Get.parameters[key] ?? '') ?? fallback;
   }
 
   // ─────────────────────────────────────────────
@@ -118,7 +120,7 @@ class UrlParams {
     if (raw == null || raw.isEmpty) return [];
     return raw
         .split(separator)
-        .map((e) => int.tryParse(e.trim()))
+        .map((e) => tryParseAsciiInt(e))
         .whereType<int>()
         .toList();
   }
