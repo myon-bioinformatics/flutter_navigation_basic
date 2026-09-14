@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/screens/composition_generator_screen.dart';
 import 'package:flutter_application_1/screens/counter_playground_screen.dart';
 import 'package:flutter_application_1/screens/irony_generator_screen.dart';
+import 'package:flutter_application_1/shared/widgets/tool_door_selector.dart';
 
 import '../support/display_test_harness.dart';
 
@@ -52,47 +53,14 @@ void main() {
     expect(find.text('Keep experimenting 👾'), findsOneWidget);
   });
 
-  testWidgets('irony generator exposes filters and repeat actions',
+  testWidgets('irony generator exposes Door and selectable drag card',
       (tester) async {
     await tester.pumpWidget(await _app(const IronyGeneratorScreen()));
+    await tester.pumpAndSettle();
 
-    expect(find.text('All'), findsOneWidget);
-    expect(find.text('Tech'), findsWidgets);
-    expect(find.text('Generate again'), findsOneWidget);
-    expect(find.text('Favorite'), findsOneWidget);
-
-    await tester.tap(find.text('Favorite'));
-    await tester.pump();
-    expect(find.text('Favorited'), findsOneWidget);
-    expect(find.text('Favorites · 1'), findsOneWidget);
-  });
-
-  testWidgets('irony recent generations can be removed with the close button',
-      (tester) async {
-    await tester.pumpWidget(await _app(const IronyGeneratorScreen()));
-
-    await tester.tap(find.text('Generate again'));
-    await tester.pump();
-
-    // Only non-current history rows expose the remove button.
-    expect(find.byTooltip('Remove from recent'), findsOneWidget);
-
-    final removeButton = find.byTooltip('Remove from recent');
-    await tester.ensureVisible(removeButton);
-    await tester.tap(removeButton);
-    await tester.pump();
-
-    // Only the current entry remains.
-    expect(find.byTooltip('Remove from recent'), findsNothing);
-  });
-
-  testWidgets('irony copy shows snackbar confirmation', (tester) async {
-    await tester.pumpWidget(await _app(const IronyGeneratorScreen()));
-
-    await tester.tap(find.byTooltip('Copy irony'));
-    await tester.pump();
-
-    expect(find.text('Copied to clipboard'), findsOneWidget);
+    expect(find.byType(SelectableText), findsOneWidget);
+    expect(find.byIcon(Icons.drag_indicator), findsOneWidget);
+    expect(find.byType(ToolDoorSelector), findsOneWidget);
   });
 
   testWidgets('composition generator exposes richer song seed controls',

@@ -21,5 +21,19 @@ void main() {
         equals('/examples/composition-generator'),
       );
     });
+
+    test('legacy composition seed deep link stays as an alias path', () {
+      expect(
+        RouteNames.compositionSeedGenerator,
+        equals('/examples/composition-generator/seed'),
+      );
+    });
+
+    test('legacy bounding-box deep link stays as an alias path', () {
+      expect(
+        RouteNames.boundingBox,
+        equals('/tools/location/bounding-box'),
+      );
+    });
   });
 }

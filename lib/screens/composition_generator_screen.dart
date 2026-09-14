@@ -5,8 +5,10 @@ import '../shared/display/display_scope.dart';
 import '../shared/widgets/song_seed_panel.dart';
 import '../widgets/nav_button.dart';
 
-/// Legacy Song Seed screen kept for catalogue/tests; prod deep links redirect
-/// to Composition Studio. This host reuses [SongSeedPanel] to avoid logic drift.
+/// Catalogue / widget-test host for [SongSeedPanel].
+///
+/// Public and prod Door routes use [CompositionGeneratorPage] via
+/// [AppRouteRegistry]; this screen is not registered there.
 class CompositionGeneratorScreen extends StatelessWidget {
   const CompositionGeneratorScreen({super.key});
 
@@ -33,7 +35,10 @@ class CompositionGeneratorScreen extends StatelessWidget {
                   spacing: 12,
                   runSpacing: 12,
                   children: [
-                    NavButton(label: display.text('home.title'), routeName: AppRoutes.home),
+                    NavButton(
+                      label: display.text('home.title'),
+                      routeName: AppRoutes.home,
+                    ),
                     NavButton(
                       label: display.text('nav.counterPlayground'),
                       routeName: AppRoutes.counterPlayground,

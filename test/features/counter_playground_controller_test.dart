@@ -15,7 +15,9 @@ void main() {
 
     test('initial counter is 0', () {
       expect(controller.counter, equals(0));
+      expect(controller.step, equals(1));
       expect(controller.battleEffect.isIdle, isTrue);
+      expect(controller.history, equals([0]));
     });
 
     test('increment increases counter and deals damage', () {
@@ -68,6 +70,26 @@ void main() {
       controller.decrement();
       expect(controller.counter, CounterPlaygroundController.min);
       expect(controller.burstToken, token);
+    });
+
+    test('controller is the source of truth for step, history, and undo', () {
+      controller.setStep(5);
+      controller.increment();
+      expect(controller.counter, 5);
+      expect(controller.history, [5, 0]);
+
+      controller.decrement();
+      expect(controller.counter, 0);
+      expect(controller.canUndo, isTrue);
+
+      controller.undo();
+      expect(controller.counter, 5);
+
+      controller.restore(2);
+      expect(controller.counter, 2);
+
+      controller.reset();
+      expect(controller.counter, 0);
     });
   });
 }
