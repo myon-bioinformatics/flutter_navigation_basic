@@ -64,27 +64,69 @@ class RequestDraftCodec {
     'x-auth-token',
   };
 
-  static bool isSensitiveHeaderName(String name) {
+  /// True when a header/query/form field name looks secret-bearing.
+  static bool isSensitiveFieldName(String name) {
     final n = normalizeAsciiFullwidth(name).trim().toLowerCase();
-    return sensitiveHeaderNames.contains(n) ||
-        n.contains('api-key') ||
+    if (n.isEmpty) return false;
+    if (sensitiveHeaderNames.contains(n)) return true;
+    if (n == 'key' || n == 'token' || n == 'secret' || n == 'password') {
+      return true;
+    }
+    return n.contains('api-key') ||
+        n.contains('api_key') ||
         n.contains('token') ||
         n.contains('secret') ||
-        n.contains('password');
+        n.contains('password') ||
+        n.endsWith('_key') ||
+        n.endsWith('-key') ||
+        n.contains('access_key') ||
+        n.contains('access-key');
   }
 
-  static Uri? buildUri(RequestDraft draft) {
+  static bool isSensitiveHeaderName(String name) => isSensitiveFieldName(name);
+
+  static bool isSensitiveQueryName(String name) => isSensitiveFieldName(name);
+
+  /// Builds the request URI while preserving query order and duplicate keys.
+  ///
+  /// When [redactSecrets] is true, sensitive query names (explicit flag or
+  /// known secret-ish names) and URL `userInfo` are replaced with `***`.
+  static Uri? buildUri(
+    RequestDraft draft, {
+    bool redactSecrets = false,
+  }) {
     final base = draft.normalizedUrl;
     if (base.isEmpty) return null;
     final uri = Uri.tryParse(base);
     if (uri == null) return null;
-    if (draft.enabledQuery.isEmpty) return uri;
-    final merged = Map<String, String>.from(uri.queryParameters);
-    for (final field in draft.enabledQuery) {
-      merged[normalizeAsciiFullwidth(field.name).trim()] =
-          field.normalizedValue;
+
+    final pairs = <({String name, String value, bool sensitive})>[
+      for (final entry in uri.queryParametersAll.entries)
+        for (final value in entry.value)
+          (
+            name: entry.key,
+            value: value,
+            sensitive: isSensitiveQueryName(entry.key),
+          ),
+      for (final field in draft.enabledQuery)
+        (
+          name: normalizeAsciiFullwidth(field.name).trim(),
+          value: field.normalizedValue,
+          sensitive: field.sensitive || isSensitiveQueryName(field.name),
+        ),
+    ];
+
+    final encoded = pairs.map((pair) {
+      final value = redactSecrets && pair.sensitive ? '***' : pair.value;
+      return '${Uri.encodeQueryComponent(pair.name)}='
+          '${Uri.encodeQueryComponent(value)}';
+    }).join('&');
+
+    var result = uri.replace(query: encoded.isEmpty ? null : encoded);
+    if (redactSecrets && result.userInfo.isNotEmpty) {
+      result = result.replace(userInfo: '***');
     }
-    return uri.replace(queryParameters: merged);
+    return result;
   }
 
   static Map<String, String> buildHeaders(
@@ -95,7 +137,8 @@ class RequestDraftCodec {
     for (final field in draft.enabledHeaders) {
       final name = normalizeAsciiFullwidth(field.name).trim();
       final value = field.normalizedValue;
-      final sensitive = field.sensitive || isSensitiveHeaderName(name);
+      final sensitive =
+          field.sensitive || isSensitiveHeaderName(name);
       headers[name] = redactSecrets && sensitive ? '***' : value;
     }
 
@@ -140,8 +183,10 @@ class RequestDraftCodec {
               final name = Uri.encodeQueryComponent(
                 normalizeAsciiFullwidth(f.name).trim(),
               );
+              final sensitive =
+                  f.sensitive || isSensitiveFieldName(f.name);
               final value = Uri.encodeQueryComponent(
-                redactSecrets && f.sensitive ? '***' : f.normalizedValue,
+                redactSecrets && sensitive ? '***' : f.normalizedValue,
               );
               return '$name=$value';
             })
@@ -151,8 +196,11 @@ class RequestDraftCodec {
         final chunks = <String>[];
         for (final field in draft.enabledFormFields) {
           final name = normalizeAsciiFullwidth(field.name).trim();
-          final value =
-              redactSecrets && field.sensitive ? '***' : field.normalizedValue;
+          final sensitive =
+              field.sensitive || isSensitiveFieldName(name);
+          final value = redactSecrets && sensitive
+              ? '***'
+              : field.normalizedValue;
           chunks.add(
             '--$boundary\r\n'
             'Content-Disposition: form-data; name="$name"\r\n\r\n'
@@ -185,7 +233,7 @@ class RequestDraftCodec {
     RequestDraft draft, {
     bool redactSecrets = true,
   }) {
-    final uri = buildUri(draft);
+    final uri = buildUri(draft, redactSecrets: redactSecrets);
     final url = uri?.toString() ?? draft.normalizedUrl;
     final parts = <String>['curl -X ${draft.method.label}'];
     if (url.isNotEmpty) {

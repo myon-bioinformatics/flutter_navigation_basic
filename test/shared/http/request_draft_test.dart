@@ -62,6 +62,48 @@ void main() {
       expect(uri.queryParameters['q'], '35');
     });
 
+    test('preserves duplicate query keys and order', () {
+      final draft = RequestDraft(
+        url: 'https://example.com/path?tag=a&keep=1',
+        query: const [
+          RequestField(id: '1', name: 'tag', value: 'b'),
+          RequestField(id: '2', name: 'empty', value: ''),
+        ],
+      );
+      final uri = RequestDraftCodec.buildUri(draft)!;
+      expect(uri.query, 'tag=a&keep=1&tag=b&empty=');
+      expect(uri.queryParametersAll['tag'], ['a', 'b']);
+    });
+
+    test('redacts sensitive query names and URL userInfo in curl', () {
+      final draft = RequestDraft(
+        url: 'https://user:pass@example.com/api?api_key=from-url&ok=1',
+        query: const [
+          RequestField(id: '1', name: 'token', value: 'query-secret'),
+          RequestField(
+            id: '2',
+            name: 'note',
+            value: 'visible',
+            sensitive: true,
+          ),
+        ],
+      );
+      final uri = RequestDraftCodec.buildUri(draft, redactSecrets: true)!;
+      expect(uri.userInfo, '***');
+      expect(uri.query, contains('api_key=%2A%2A%2A'));
+      expect(uri.query, contains('token=%2A%2A%2A'));
+      expect(uri.query, contains('note=%2A%2A%2A'));
+      expect(uri.query, contains('ok=1'));
+      expect(uri.query, isNot(contains('from-url')));
+      expect(uri.query, isNot(contains('query-secret')));
+
+      final curl = RequestDraftCodec.toCurl(draft);
+      expect(curl, contains('***'));
+      expect(curl, isNot(contains('from-url')));
+      expect(curl, isNot(contains('query-secret')));
+      expect(curl, isNot(contains('user:pass')));
+    });
+
     test('form-urlencoded encodes fields', () {
       final draft = RequestDraft(
         url: 'https://example.com',

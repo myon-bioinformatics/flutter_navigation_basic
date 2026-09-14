@@ -586,7 +586,8 @@
       "httpDraft.error.duplicateHeader": "Duplicate header name: {name}.",
       "httpDraft.error.headerCrLf": "Header names and values must not contain CR or LF.",
       "httpDraft.error.jsonInvalid": "JSON body is not valid JSON.",
-      "home.action.httpRequestDraft.subtitle": "Offline Header/Query/Body editor with redacted curl preview."
+      "home.action.httpRequestDraft.subtitle": "Offline Header/Query/Body editor with redacted curl preview.",
+      "httpDraft.bodySecretDisclaimer": "Raw/JSON bodies are not auto-scanned for secrets. Prefer sensitive form fields or assume redacted curl may still contain body secrets."
     },
     "jpn": {
       "common.copy": "コピー",
@@ -1174,7 +1175,8 @@
       "httpDraft.error.duplicateHeader": "Duplicate header name: {name}.",
       "httpDraft.error.headerCrLf": "Header names and values must not contain CR or LF.",
       "httpDraft.error.jsonInvalid": "JSON body is not valid JSON.",
-      "home.action.httpRequestDraft.subtitle": "オフラインの Header/Query/Body 編集と伏せ字 curl プレビュー。"
+      "home.action.httpRequestDraft.subtitle": "オフラインの Header/Query/Body 編集と伏せ字 curl プレビュー。",
+      "httpDraft.bodySecretDisclaimer": "Raw/JSONボディは秘密の自動除去を保証しません。機密はsensitiveなフォーム行を使うか、伏せ字curlにボディ秘密が残る可能性を想定してください。"
     },
     "fra": {
       "common.copy": "Copier",
@@ -1762,7 +1764,8 @@
       "httpDraft.error.duplicateHeader": "Duplicate header name: {name}.",
       "httpDraft.error.headerCrLf": "Header names and values must not contain CR or LF.",
       "httpDraft.error.jsonInvalid": "JSON body is not valid JSON.",
-      "home.action.httpRequestDraft.subtitle": "Offline Header/Query/Body editor with redacted curl preview."
+      "home.action.httpRequestDraft.subtitle": "Offline Header/Query/Body editor with redacted curl preview.",
+      "httpDraft.bodySecretDisclaimer": "Raw/JSON bodies are not auto-scanned for secrets. Prefer sensitive form fields or assume redacted curl may still contain body secrets."
     },
     "spa": {
       "common.copy": "Copiar",
@@ -2350,7 +2353,8 @@
       "httpDraft.error.duplicateHeader": "Duplicate header name: {name}.",
       "httpDraft.error.headerCrLf": "Header names and values must not contain CR or LF.",
       "httpDraft.error.jsonInvalid": "JSON body is not valid JSON.",
-      "home.action.httpRequestDraft.subtitle": "Offline Header/Query/Body editor with redacted curl preview."
+      "home.action.httpRequestDraft.subtitle": "Offline Header/Query/Body editor with redacted curl preview.",
+      "httpDraft.bodySecretDisclaimer": "Raw/JSON bodies are not auto-scanned for secrets. Prefer sensitive form fields or assume redacted curl may still contain body secrets."
     },
     "por": {
       "common.copy": "Copiar",
@@ -2938,7 +2942,8 @@
       "httpDraft.error.duplicateHeader": "Duplicate header name: {name}.",
       "httpDraft.error.headerCrLf": "Header names and values must not contain CR or LF.",
       "httpDraft.error.jsonInvalid": "JSON body is not valid JSON.",
-      "home.action.httpRequestDraft.subtitle": "Offline Header/Query/Body editor with redacted curl preview."
+      "home.action.httpRequestDraft.subtitle": "Offline Header/Query/Body editor with redacted curl preview.",
+      "httpDraft.bodySecretDisclaimer": "Raw/JSON bodies are not auto-scanned for secrets. Prefer sensitive form fields or assume redacted curl may still contain body secrets."
     },
     "ara": {
       "common.copy": "نسخ",
@@ -3526,7 +3531,8 @@
       "httpDraft.error.duplicateHeader": "Duplicate header name: {name}.",
       "httpDraft.error.headerCrLf": "Header names and values must not contain CR or LF.",
       "httpDraft.error.jsonInvalid": "JSON body is not valid JSON.",
-      "home.action.httpRequestDraft.subtitle": "Offline Header/Query/Body editor with redacted curl preview."
+      "home.action.httpRequestDraft.subtitle": "Offline Header/Query/Body editor with redacted curl preview.",
+      "httpDraft.bodySecretDisclaimer": "Raw/JSON bodies are not auto-scanned for secrets. Prefer sensitive form fields or assume redacted curl may still contain body secrets."
     },
     "zho": {
       "common.copy": "复制",
@@ -4114,7 +4120,8 @@
       "httpDraft.error.duplicateHeader": "Duplicate header name: {name}.",
       "httpDraft.error.headerCrLf": "Header names and values must not contain CR or LF.",
       "httpDraft.error.jsonInvalid": "JSON body is not valid JSON.",
-      "home.action.httpRequestDraft.subtitle": "Offline Header/Query/Body editor with redacted curl preview."
+      "home.action.httpRequestDraft.subtitle": "Offline Header/Query/Body editor with redacted curl preview.",
+      "httpDraft.bodySecretDisclaimer": "Raw/JSON bodies are not auto-scanned for secrets. Prefer sensitive form fields or assume redacted curl may still contain body secrets."
     },
     "rus": {
       "common.copy": "Копировать",
@@ -4702,7 +4709,8 @@
       "httpDraft.error.duplicateHeader": "Duplicate header name: {name}.",
       "httpDraft.error.headerCrLf": "Header names and values must not contain CR or LF.",
       "httpDraft.error.jsonInvalid": "JSON body is not valid JSON.",
-      "home.action.httpRequestDraft.subtitle": "Offline Header/Query/Body editor with redacted curl preview."
+      "home.action.httpRequestDraft.subtitle": "Offline Header/Query/Body editor with redacted curl preview.",
+      "httpDraft.bodySecretDisclaimer": "Raw/JSON bodies are not auto-scanned for secrets. Prefer sensitive form fields or assume redacted curl may still contain body secrets."
     },
     "ind": {
       "common.copy": "Salin",
@@ -5290,7 +5298,8 @@
       "httpDraft.error.duplicateHeader": "Duplicate header name: {name}.",
       "httpDraft.error.headerCrLf": "Header names and values must not contain CR or LF.",
       "httpDraft.error.jsonInvalid": "JSON body is not valid JSON.",
-      "home.action.httpRequestDraft.subtitle": "Offline Header/Query/Body editor with redacted curl preview."
+      "home.action.httpRequestDraft.subtitle": "Offline Header/Query/Body editor with redacted curl preview.",
+      "httpDraft.bodySecretDisclaimer": "Raw/JSON bodies are not auto-scanned for secrets. Prefer sensitive form fields or assume redacted curl may still contain body secrets."
     },
     "deu": {
       "common.copy": "Kopieren",
@@ -5878,7 +5887,8 @@
       "httpDraft.error.duplicateHeader": "Duplicate header name: {name}.",
       "httpDraft.error.headerCrLf": "Header names and values must not contain CR or LF.",
       "httpDraft.error.jsonInvalid": "JSON body is not valid JSON.",
-      "home.action.httpRequestDraft.subtitle": "Offline Header/Query/Body editor with redacted curl preview."
+      "home.action.httpRequestDraft.subtitle": "Offline Header/Query/Body editor with redacted curl preview.",
+      "httpDraft.bodySecretDisclaimer": "Raw/JSON bodies are not auto-scanned for secrets. Prefer sensitive form fields or assume redacted curl may still contain body secrets."
     },
     "swa": {
       "common.copy": "Nakili",
@@ -6466,7 +6476,8 @@
       "httpDraft.error.duplicateHeader": "Duplicate header name: {name}.",
       "httpDraft.error.headerCrLf": "Header names and values must not contain CR or LF.",
       "httpDraft.error.jsonInvalid": "JSON body is not valid JSON.",
-      "home.action.httpRequestDraft.subtitle": "Offline Header/Query/Body editor with redacted curl preview."
+      "home.action.httpRequestDraft.subtitle": "Offline Header/Query/Body editor with redacted curl preview.",
+      "httpDraft.bodySecretDisclaimer": "Raw/JSON bodies are not auto-scanned for secrets. Prefer sensitive form fields or assume redacted curl may still contain body secrets."
     }
   }
 }

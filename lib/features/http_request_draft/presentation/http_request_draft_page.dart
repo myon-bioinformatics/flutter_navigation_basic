@@ -126,7 +126,7 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
     final issues = RequestDraftValidator.validate(_draft);
     final redactedCurl =
         RequestDraftCodec.toCurl(_draft, redactSecrets: true);
-    final uri = RequestDraftCodec.buildUri(_draft);
+    final uri = RequestDraftCodec.buildUri(_draft, redactSecrets: true);
     final headers =
         RequestDraftCodec.buildHeaders(_draft, redactSecrets: true);
     final body = RequestDraftCodec.buildBody(_draft, redactSecrets: true);
@@ -187,7 +187,7 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
             fields: _draft.query,
             controllers: _queryControllers,
             onChanged: (next) => _setDraft(_draft.copyWith(query: next)),
-            showSensitive: false,
+            showSensitive: true,
           ),
           const SizedBox(height: 16),
           _sectionTitle(display.text('httpDraft.headers')),
@@ -220,7 +220,12 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
           ),
           const SizedBox(height: 12),
           if (_draft.bodyMode == RequestBodyMode.raw ||
-              _draft.bodyMode == RequestBodyMode.json)
+              _draft.bodyMode == RequestBodyMode.json) ...[
+            Text(
+              display.text('httpDraft.bodySecretDisclaimer'),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 8),
             TextField(
               controller: _rawBody,
               minLines: 4,
@@ -237,6 +242,7 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
               onChanged: (value) =>
                   _setDraft(_draft.copyWith(rawBody: value)),
             ),
+          ],
           if (_draft.bodyMode == RequestBodyMode.formUrlEncoded ||
               _draft.bodyMode == RequestBodyMode.multipart)
             _fieldEditor(
