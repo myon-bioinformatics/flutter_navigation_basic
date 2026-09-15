@@ -219,6 +219,28 @@ void main() {
       );
     });
 
+
+    test('two consecutive Digest executions succeed; replay still fails', () {
+      const base = 'http://127.0.0.1:8787';
+      final draft =
+          AuthMatrixScenario.digest.applyTo(const RequestDraft(), baseUrl: base);
+
+      final first = executor.execute(draft, scenario: AuthMatrixScenario.digest);
+      expect(first.statusCode, 200, reason: first.body.toString());
+      expect(first.executionPath, 'digest-retry');
+
+      final second =
+          executor.execute(draft, scenario: AuthMatrixScenario.digest);
+      expect(second.statusCode, 200, reason: second.body.toString());
+      expect(second.executionPath, 'digest-retry');
+
+      // Same Authorization header replayed against the mock is rejected.
+      final wire = second.wireDraft!;
+      final replay = executor.execute(wire);
+      expect(replay.statusCode, 401);
+      expect(replay.body['reason'], 'digest_replay');
+    });
+
     test('HMAC binds ordered query + body; tamper / replay / bad secret fail', () {
       const base = 'http://127.0.0.1:8787';
       final draft = AuthMatrixScenario.hmac
@@ -293,8 +315,6 @@ void main() {
       expect(client.sessionId, isNull);
     });
   });
-
-
   test('support matrix still marks legacy MCP era', () {
     expect(McpProtocol.implementsCurrentOfficial, isTrue);
     expect(McpSupportMatrix.legacyMcpEra, isTrue);
@@ -362,4 +382,3 @@ class _FailInitializeWithSessionTransport implements McpStreamableTransport {
     );
   }
 }
-

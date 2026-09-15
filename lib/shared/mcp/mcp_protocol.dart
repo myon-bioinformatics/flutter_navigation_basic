@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 /// Pinned MCP + OAuth foundation constants for this repository.
 ///
 /// Full UI/executor wiring lands in a later PR; this file is the single place
@@ -84,3 +86,51 @@ abstract final class McpSupportMatrix {
         'legacySseDefault': legacySseDefault,
       };
 }
+
+/// Encode/decode current-official MCP header values (`Mcp-Name`, etc.).
+///
+/// Values that are not plain printable ASCII, that carry leading/trailing
+/// whitespace, or that already look like the sentinel MUST be encoded as
+/// `=?base64?<b64>?=` so intermediaries and `dart:io` do not corrupt them.
+abstract final class McpHeaderCodec {
+  static final RegExp _sentinel =
+      RegExp(r'^=\?base64\?([A-Za-z0-9+/=]+)\?=$');
+
+  /// True when [value] cannot safely travel as a raw ASCII header.
+  static bool needsEncoding(String value) {
+    if (value != value.trim()) return true;
+    if (_sentinel.hasMatch(value) ||
+        (value.startsWith('=?') && value.endsWith('?='))) {
+      return true;
+    }
+    for (final unit in value.codeUnits) {
+      if (unit < 0x20 || unit > 0x7e) return true;
+    }
+    return false;
+  }
+
+  /// Returns [value] unchanged when ASCII-safe; otherwise a base64 sentinel.
+  static String encode(String value) {
+    if (!needsEncoding(value)) return value;
+    return '=?base64?${base64.encode(utf8.encode(value))}?=';
+  }
+
+  /// Decodes a raw or sentinel header value. Returns null for malformed
+  /// sentinel-shaped input.
+  static String? decode(String value) {
+    final match = _sentinel.firstMatch(value);
+    if (match != null) {
+      try {
+        return utf8.decode(base64.decode(match.group(1)!));
+      } on FormatException {
+        return null;
+      }
+    }
+    // Reject broken sentinel-shaped values that are not well-formed.
+    if (value.startsWith('=?') && value.contains('?=')) {
+      return null;
+    }
+    return value;
+  }
+}
+

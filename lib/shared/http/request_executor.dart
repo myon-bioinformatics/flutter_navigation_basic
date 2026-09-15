@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:crypto/crypto.dart';
 
 import 'auth_matrix.dart';
+import 'digest_nc.dart';
 import 'request_draft.dart';
 import 'request_draft_codec.dart';
 import 'request_field.dart';
@@ -98,13 +100,18 @@ class MockAuthRequestExecutor {
     this.hmacKeyId = 'demo-key',
     this.digestUsername = 'demo',
     this.digestPassword = 's3cret',
-  });
+    Random? digestRandom,
+  }) : _digestRandom = digestRandom ?? Random.secure();
 
   final MockAuthRouteHandler handler;
   final String hmacSecret;
   final String hmacKeyId;
   final String digestUsername;
   final String digestPassword;
+  final Random _digestRandom;
+
+  /// Next Digest `nc` value per server `nonce` (hex-formatted on the wire).
+  final Map<String, int> _digestNextNcByNonce = {};
 
   RequestExecutionResult execute(
     RequestDraft draft, {
@@ -266,12 +273,16 @@ class MockAuthRequestExecutor {
   }
 
   /// Builds a Digest Authorization header from a WWW-Authenticate challenge.
+  ///
+  /// When [nc] / [cnonce] are omitted, allocates the next 8-digit hex `nc`
+  /// for the challenge nonce and a fresh unpredictable `cnonce` so consecutive
+  /// legitimate executions are not rejected as replay against a stable nonce.
   RequestDraft applyDigestChallenge(
     RequestDraft draft, {
     required String wwwAuthenticate,
     required String requestTarget,
-    String nc = '00000001',
-    String cnonce = 'demo-cnonce',
+    String? nc,
+    String? cnonce,
   }) {
     final params = _parseDigestChallenge(wwwAuthenticate);
     final realm = params['realm'] ?? '';
@@ -282,6 +293,8 @@ class MockAuthRequestExecutor {
           orElse: () => 'auth',
         ) ??
         'auth';
+    final resolvedCnonce = cnonce ?? _freshDigestCnonce();
+    final resolvedNc = nc ?? _allocateDigestNc(nonce);
     final response = digestResponse(
       method: draft.method.label,
       uri: requestTarget,
@@ -289,14 +302,14 @@ class MockAuthRequestExecutor {
       password: digestPassword,
       realm: realm,
       nonce: nonce,
-      nc: nc,
-      cnonce: cnonce,
+      nc: resolvedNc,
+      cnonce: resolvedCnonce,
       qop: qop,
     );
     final auth =
         'Digest username="$digestUsername", realm="$realm", nonce="$nonce", '
-        'uri="$requestTarget", algorithm=MD5, qop=$qop, nc=$nc, '
-        'cnonce="$cnonce", response="$response", opaque="$opaque"';
+        'uri="$requestTarget", algorithm=MD5, qop=$qop, nc=$resolvedNc, '
+        'cnonce="$resolvedCnonce", response="$response", opaque="$opaque"';
     final headers = [
       for (final field in draft.enabledHeaders)
         if (field.normalizedName != 'authorization') field,
@@ -308,6 +321,17 @@ class MockAuthRequestExecutor {
       ),
     ];
     return draft.copyWith(headers: headers);
+  }
+
+  String _allocateDigestNc(String nonce) {
+    final next = _digestNextNcByNonce[nonce] ?? 1;
+    _digestNextNcByNonce[nonce] = next + 1;
+    return DigestNc.format(next);
+  }
+
+  String _freshDigestCnonce() {
+    final bytes = List<int>.generate(8, (_) => _digestRandom.nextInt(256));
+    return base64Url.encode(bytes).replaceAll('=', '');
   }
 
   RequestExecutionResult _dispatch(RequestDraft draft) {

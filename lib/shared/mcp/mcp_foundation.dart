@@ -37,7 +37,8 @@ Map<String, String> mcpStreamableHeaders({
     if (sessionId != null && sessionId.isNotEmpty)
       McpProtocol.sessionIdHeader: sessionId,
     if (method != null && method.isNotEmpty) McpProtocol.methodHeader: method,
-    if (name != null && name.isNotEmpty) McpProtocol.nameHeader: name,
+    if (name != null && name.isNotEmpty)
+      McpProtocol.nameHeader: McpHeaderCodec.encode(name),
   };
 }
 
@@ -161,22 +162,27 @@ class McpFoundationHandler {
           );
         });
       case 'resources/list':
-        return _requireSession(request, sessionId, (_) {
-          return JsonRpcResponse.result(
-            id: request.id,
-            result: {
-              'resources': [
-                {
-                  'uri': 'demo://readme',
-                  'name': 'README',
-                  'mimeType': 'text/plain',
-                },
-              ],
-            },
-          );
-        });
+        return _modernOrSession(
+          request,
+          sessionId,
+          (_) {
+            return JsonRpcResponse.result(
+              id: request.id,
+              result: {
+                'resources': [
+                  {
+                    'uri': 'demo://readme',
+                    'name': 'README',
+                    'mimeType': 'text/plain',
+                  },
+                ],
+              },
+            );
+          },
+          listResult: true,
+        );
       case 'resources/read':
-        return _requireSession(request, sessionId, (_) {
+        return _modernOrSession(request, sessionId, (_) {
           final params = _asMap(request.params);
           final uri = params?['uri'];
           if (uri != 'demo://readme') {
@@ -202,21 +208,26 @@ class McpFoundationHandler {
           );
         });
       case 'prompts/list':
-        return _requireSession(request, sessionId, (_) {
-          return JsonRpcResponse.result(
-            id: request.id,
-            result: {
-              'prompts': [
-                {
-                  'name': 'greet',
-                  'description': 'Greeting prompt',
-                },
-              ],
-            },
-          );
-        });
+        return _modernOrSession(
+          request,
+          sessionId,
+          (_) {
+            return JsonRpcResponse.result(
+              id: request.id,
+              result: {
+                'prompts': [
+                  {
+                    'name': 'greet',
+                    'description': 'Greeting prompt',
+                  },
+                ],
+              },
+            );
+          },
+          listResult: true,
+        );
       case 'prompts/get':
-        return _requireSession(request, sessionId, (_) {
+        return _modernOrSession(request, sessionId, (_) {
           final params = _asMap(request.params);
           final name = params?['name'];
           if (name != 'greet') {

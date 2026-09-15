@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 
+import 'digest_nc.dart';
+
 /// Well-known **demo** credentials for local mock auth scenarios.
 ///
 /// These are intentionally public fixture values — never real secrets.
@@ -338,6 +340,15 @@ class MockAuthHandler {
       );
     }
 
+    // nc must be exactly 8 hex digits (RFC 7616) before response/replay checks.
+    final ncValue = DigestNc.tryParse(nc);
+    if (ncValue == null || ncValue < 1) {
+      return _unauthorized(
+        reason: 'invalid_nc',
+        wwwAuthenticate: challenge,
+      );
+    }
+
     final ha1 = _md5Hex(
       '$username:$realm:${MockAuthDemo.basicPassword}',
     );
@@ -352,13 +363,6 @@ class MockAuthHandler {
 
     // Replay protection: reject duplicate or non-monotonic nc for the same
     // nonce+cnonce tuple. MD5 Digest remains fixture-only.
-    final ncValue = int.tryParse(nc);
-    if (ncValue == null || ncValue < 1) {
-      return _unauthorized(
-        reason: 'invalid_nc',
-        wwwAuthenticate: challenge,
-      );
-    }
     final clientKey = '$nonce|$cnonce';
     final previous = _digestNcByClient[clientKey];
     if (previous != null && ncValue <= previous) {

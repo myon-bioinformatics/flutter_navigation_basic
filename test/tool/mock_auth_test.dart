@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:flutter_application_1/shared/http/digest_nc.dart';
 import 'package:flutter_application_1/shared/http/mock_auth.dart';
 
 void main() {
@@ -479,6 +480,69 @@ void main() {
       )!;
       expect(replayed.statusCode, 401);
       expect(replayed.body['reason'], 'digest_replay');
+    });
+
+    test('parses nc as exactly 8 hex digits (0000000a == 10)', () {
+      const uri = '/auth/digest';
+      const cnonce = 'hex-nc-cnonce';
+      const hexNc = '0000000a';
+      expect(DigestNc.tryParse(hexNc), 10);
+
+      final response = MockAuthHandler.digestResponse(
+        method: 'GET',
+        uri: uri,
+        username: MockAuthDemo.basicUser,
+        password: MockAuthDemo.basicPassword,
+        realm: MockAuthDemo.digestRealm,
+        nonce: MockAuthDemo.digestNonce,
+        nc: hexNc,
+        cnonce: cnonce,
+      );
+      final header = 'Digest username="${MockAuthDemo.basicUser}", '
+          'realm="${MockAuthDemo.digestRealm}", '
+          'nonce="${MockAuthDemo.digestNonce}", '
+          'uri="$uri", '
+          'qop=auth, nc=$hexNc, cnonce="$cnonce", '
+          'response="$response", '
+          'opaque="${MockAuthDemo.digestOpaque}"';
+      final ok = auth.handle(
+        method: 'GET',
+        path: uri,
+        headers: {'authorization': header},
+        query: const {},
+      )!;
+      expect(ok.statusCode, 200);
+
+      for (final bad in ['10', '0000000g', '000000001']) {
+        final rejected = auth.handle(
+          method: 'GET',
+          path: uri,
+          headers: {
+            'authorization': 'Digest username="${MockAuthDemo.basicUser}", '
+                'realm="${MockAuthDemo.digestRealm}", '
+                'nonce="${MockAuthDemo.digestNonce}", '
+                'uri="$uri", '
+                'qop=auth, nc=$bad, cnonce="bad-$bad", '
+                'response="$response", '
+                'opaque="${MockAuthDemo.digestOpaque}"',
+          },
+          query: const {},
+        )!;
+        expect(rejected.statusCode, 401, reason: 'nc=$bad');
+        expect(rejected.body['reason'], 'invalid_nc');
+      }
+    });
+  });
+
+  group('DigestNc', () {
+    test('formats and parses 8-digit hex; rejects malformed', () {
+      expect(DigestNc.format(1), '00000001');
+      expect(DigestNc.format(10), '0000000a');
+      expect(DigestNc.tryParse('0000000a'), 10);
+      expect(DigestNc.tryParse('0000000A'), 10);
+      expect(DigestNc.tryParse('10'), isNull);
+      expect(DigestNc.tryParse('0000000g'), isNull);
+      expect(DigestNc.tryParse('000000001'), isNull);
     });
   });
 

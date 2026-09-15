@@ -289,6 +289,15 @@ class MockMcpRoutes {
       return (statusCode: 202, headers: outHeaders, body: null);
     }
 
+    // Current-official Streamable HTTP: unimplemented RPC → HTTP 404.
+    if (looksModern && code == JsonRpcErrorCode.methodNotFound) {
+      return (
+        statusCode: 404,
+        headers: outHeaders,
+        body: outcome.response.toJson(),
+      );
+    }
+
     return (
       statusCode: 200,
       headers: outHeaders,
@@ -321,6 +330,23 @@ JsonRpcResponse? _validateModernMcpHttp({
       error: const JsonRpcError(
         code: JsonRpcErrorCode.headerMismatch,
         message: 'MCP-Protocol-Version header is required',
+      ),
+    );
+  }
+  final params = request.params is Map
+      ? Map<String, Object?>.from(request.params as Map)
+      : null;
+  final meta = params == null
+      ? null
+      : (params['_meta'] is Map
+          ? Map<String, Object?>.from(params['_meta'] as Map)
+          : null);
+  if (meta == null) {
+    return JsonRpcResponse.failure(
+      id: request.id,
+      error: const JsonRpcError(
+        code: JsonRpcErrorCode.headerMismatch,
+        message: 'params._meta is required',
       ),
     );
   }
@@ -362,6 +388,49 @@ JsonRpcResponse? _validateModernMcpHttp({
       ),
     );
   }
+
+  final clientInfo = meta['io.modelcontextprotocol/clientInfo'];
+  if (clientInfo is! Map) {
+    return JsonRpcResponse.failure(
+      id: request.id,
+      error: const JsonRpcError(
+        code: JsonRpcErrorCode.headerMismatch,
+        message: 'params._meta clientInfo must be an object',
+      ),
+    );
+  }
+  final clientInfoMap = Map<String, Object?>.from(clientInfo);
+  final clientName = clientInfoMap['name'];
+  final clientVersion = clientInfoMap['version'];
+  if (clientName is! String || clientName.isEmpty) {
+    return JsonRpcResponse.failure(
+      id: request.id,
+      error: const JsonRpcError(
+        code: JsonRpcErrorCode.headerMismatch,
+        message: 'params._meta clientInfo.name must be a non-empty string',
+      ),
+    );
+  }
+  if (clientVersion is! String || clientVersion.isEmpty) {
+    return JsonRpcResponse.failure(
+      id: request.id,
+      error: const JsonRpcError(
+        code: JsonRpcErrorCode.headerMismatch,
+        message: 'params._meta clientInfo.version must be a non-empty string',
+      ),
+    );
+  }
+  final clientCapabilities = meta['io.modelcontextprotocol/clientCapabilities'];
+  if (clientCapabilities is! Map) {
+    return JsonRpcResponse.failure(
+      id: request.id,
+      error: const JsonRpcError(
+        code: JsonRpcErrorCode.headerMismatch,
+        message: 'params._meta clientCapabilities must be an object',
+      ),
+    );
+  }
+
   if (headerMethod == null || headerMethod.isEmpty) {
     return JsonRpcResponse.failure(
       id: request.id,
@@ -389,10 +458,7 @@ JsonRpcResponse? _validateModernMcpHttp({
       request.method == 'resources/read' ||
       request.method == 'prompts/get';
   if (needsName) {
-    final params = request.params is Map
-        ? Map<String, Object?>.from(request.params as Map)
-        : null;
-    final expected = request.method == 'resources/read'
+    final Object? expected = request.method == 'resources/read'
         ? (params == null ? null : params['uri'])
         : (params == null ? null : params['name']);
     if (headerName == null || headerName.isEmpty) {
@@ -404,7 +470,17 @@ JsonRpcResponse? _validateModernMcpHttp({
         ),
       );
     }
-    if (expected is String && headerName != expected) {
+    final decodedName = McpHeaderCodec.decode(headerName);
+    if (decodedName == null) {
+      return JsonRpcResponse.failure(
+        id: request.id,
+        error: const JsonRpcError(
+          code: JsonRpcErrorCode.headerMismatch,
+          message: 'Mcp-Name header is malformed',
+        ),
+      );
+    }
+    if (expected is String && decodedName != expected) {
       return JsonRpcResponse.failure(
         id: request.id,
         error: JsonRpcError(
@@ -412,6 +488,7 @@ JsonRpcResponse? _validateModernMcpHttp({
           message: 'Mcp-Name does not match body params',
           data: {
             'header': headerName,
+            'decoded': decodedName,
             'expected': expected,
           },
         ),
