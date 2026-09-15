@@ -66,6 +66,7 @@ class JsonBodyField {
     this.name = '',
     this.type = JsonFieldType.string,
     this.value = '',
+    this.sensitive = false,
   });
 
   final String id;
@@ -73,6 +74,7 @@ class JsonBodyField {
   final String name;
   final JsonFieldType type;
   final String value;
+  final bool sensitive;
 
   JsonBodyField copyWith({
     String? id,
@@ -80,6 +82,7 @@ class JsonBodyField {
     String? name,
     JsonFieldType? type,
     String? value,
+    bool? sensitive,
   }) {
     return JsonBodyField(
       id: id ?? this.id,
@@ -87,6 +90,7 @@ class JsonBodyField {
       name: name ?? this.name,
       type: type ?? this.type,
       value: value ?? this.value,
+      sensitive: sensitive ?? this.sensitive,
     );
   }
 }

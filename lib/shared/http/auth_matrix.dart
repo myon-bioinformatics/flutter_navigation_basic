@@ -22,6 +22,14 @@ enum AuthMatrixScenario {
 extension AuthMatrixScenarioX on AuthMatrixScenario {
   String get id => name;
 
+  /// Display catalog key for this scenario (11-locale matrix).
+  ///
+  /// Non-English locales may intentionally carry English fallback text for
+  /// these demo auth labels until product translation lands; key parity across
+  /// locales is still required.
+  String get labelKey => 'httpDraft.authScenario.$name';
+
+  /// English fallback label (tests / non-UI callers). Prefer [labelKey] in UI.
   String get label => switch (this) {
         AuthMatrixScenario.none => 'No auth',
         AuthMatrixScenario.bearer => 'Bearer (valid demo)',

@@ -702,4 +702,149 @@ void main() {
     );
     expect(McpSupportMatrix.implementsCurrentOfficial, isTrue);
   });
+
+
+  group('MockMcpRoutes modern HTTP dual-era', () {
+    late MockMcpRoutes routes;
+
+    setUp(() {
+      routes = MockMcpRoutes(
+        handler: McpFoundationHandler(sessionIdFactory: () => 'sess-modern'),
+      );
+    });
+
+    Map<String, String> modernHeaders({
+      required String method,
+      String? name,
+      String version = McpProtocol.currentOfficialVersion,
+    }) =>
+        {
+          McpProtocol.protocolVersionHeader: version,
+          McpProtocol.methodHeader: method,
+          if (name != null) McpProtocol.nameHeader: name,
+        };
+
+    Map<String, Object?> modernMeta([String version = McpProtocol.currentOfficialVersion]) =>
+        {
+          'io.modelcontextprotocol/protocolVersion': version,
+          'io.modelcontextprotocol/clientInfo': {
+            'name': 'test',
+            'version': '0',
+          },
+          'io.modelcontextprotocol/clientCapabilities': <String, Object?>{},
+        };
+
+    test('server/discover without session succeeds', () {
+      final response = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: modernHeaders(method: 'server/discover'),
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 1,
+          'method': 'server/discover',
+          'params': {'_meta': modernMeta()},
+        }),
+      )!;
+      expect(response.statusCode, 200);
+      final body = response.body as Map;
+      expect(body['result'], isA<Map>());
+      expect((body['result'] as Map)['resultType'], 'complete');
+    });
+
+    test('modern tools/list + tools/call without session', () {
+      final listed = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: modernHeaders(method: 'tools/list'),
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 2,
+          'method': 'tools/list',
+          'params': {'_meta': modernMeta()},
+        }),
+      )!;
+      expect(listed.statusCode, 200);
+      final listResult = (listed.body as Map)['result'] as Map;
+      expect(listResult['resultType'], 'complete');
+      expect(listResult['ttlMs'], isNotNull);
+      expect(listResult['cacheScope'], isNotNull);
+
+      final called = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: modernHeaders(method: 'tools/call', name: 'echo'),
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 3,
+          'method': 'tools/call',
+          'params': {
+            'name': 'echo',
+            'arguments': {'text': 'via-http'},
+            '_meta': modernMeta(),
+          },
+        }),
+      )!;
+      expect(called.statusCode, 200);
+      final callResult = (called.body as Map)['result'] as Map;
+      expect(callResult['resultType'], 'complete');
+      expect(((callResult['content'] as List).first as Map)['text'], 'via-http');
+    });
+
+    test('missing Mcp-Method → headerMismatch', () {
+      final response = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: {
+          McpProtocol.protocolVersionHeader:
+              McpProtocol.currentOfficialVersion,
+        },
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 4,
+          'method': 'server/discover',
+          'params': {'_meta': modernMeta()},
+        }),
+      )!;
+      expect(response.statusCode, 400);
+      final error = (response.body as Map)['error'] as Map;
+      expect(error['code'], JsonRpcErrorCode.headerMismatch);
+    });
+
+    test('mismatched protocol header/meta → headerMismatch', () {
+      final response = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: modernHeaders(
+          method: 'server/discover',
+          version: '2099-01-01',
+        ),
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 5,
+          'method': 'server/discover',
+          'params': {'_meta': modernMeta('2099-01-01')},
+        }),
+      )!;
+      expect(response.statusCode, 400);
+      final error = (response.body as Map)['error'] as Map;
+      expect(error['code'], JsonRpcErrorCode.unsupportedProtocolVersion);
+    });
+
+    test('legacy tools/list still requires session', () {
+      final response = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: const {},
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 6,
+          'method': 'tools/list',
+        }),
+      )!;
+      expect(response.statusCode, 400);
+      expect((response.body as Map)['error'], 'session_required');
+    });
+  });
+
 }

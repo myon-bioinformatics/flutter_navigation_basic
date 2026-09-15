@@ -45,12 +45,20 @@ class MockAuthResult {
 
 /// Stateless-ish auth scenario router (nonce replay tracked in-memory).
 class MockAuthHandler {
-  MockAuthHandler({Set<String>? seenNonces, DateTime Function()? clock})
-      : _seenNonces = seenNonces ?? <String>{},
-        _clock = clock ?? DateTime.now;
+  MockAuthHandler({
+    Set<String>? seenNonces,
+    DateTime Function()? clock,
+    Map<String, int>? digestNcByClient,
+  })  : _seenNonces = seenNonces ?? <String>{},
+        _clock = clock ?? DateTime.now,
+        _digestNcByClient = digestNcByClient ?? <String, int>{};
 
   final Set<String> _seenNonces;
   final DateTime Function() _clock;
+
+  /// Tracks highest accepted Digest `nc` per `nonce|cnonce` client tuple.
+  /// Fixture MD5 Digest only — not for production auth.
+  final Map<String, int> _digestNcByClient;
 
   /// Returns a result when [path] is an `/auth/...` scenario; otherwise null.
   ///
@@ -341,6 +349,26 @@ class MockAuthHandler {
         wwwAuthenticate: challenge,
       );
     }
+
+    // Replay protection: reject duplicate or non-monotonic nc for the same
+    // nonce+cnonce tuple. MD5 Digest remains fixture-only.
+    final ncValue = int.tryParse(nc);
+    if (ncValue == null || ncValue < 1) {
+      return _unauthorized(
+        reason: 'invalid_nc',
+        wwwAuthenticate: challenge,
+      );
+    }
+    final clientKey = '$nonce|$cnonce';
+    final previous = _digestNcByClient[clientKey];
+    if (previous != null && ncValue <= previous) {
+      return _unauthorized(
+        reason: 'digest_replay',
+        wwwAuthenticate: challenge,
+      );
+    }
+    _digestNcByClient[clientKey] = ncValue;
+
     return const MockAuthResult(
       statusCode: 200,
       body: {

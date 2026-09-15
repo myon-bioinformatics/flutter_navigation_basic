@@ -236,13 +236,24 @@ class RequestDraftCodec {
       case RequestBodyMode.none:
         return null;
       case RequestBodyMode.raw:
-        return normalizeAsciiFullwidth(draft.rawBody);
+        return _redactRawOrJsonBody(
+          normalizeAsciiFullwidth(draft.rawBody),
+          redactSecrets: redactSecrets,
+        );
       case RequestBodyMode.json:
         if (draft.enabledJsonFields.isNotEmpty &&
             normalizeAsciiFullwidth(draft.rawBody).trim().isEmpty) {
-          return jsonEncode(_jsonFromFields(draft.enabledJsonFields));
+          return jsonEncode(
+            _jsonFromFields(
+              draft.enabledJsonFields,
+              redactSecrets: redactSecrets,
+            ),
+          );
         }
-        return normalizeAsciiFullwidth(draft.rawBody);
+        return _redactRawOrJsonBody(
+          normalizeAsciiFullwidth(draft.rawBody),
+          redactSecrets: redactSecrets,
+        );
       case RequestBodyMode.formUrlEncoded:
         return draft.enabledFormFields
             .map((f) {
@@ -278,11 +289,21 @@ class RequestDraftCodec {
     }
   }
 
-  static Map<String, Object?> _jsonFromFields(List<JsonBodyField> fields) {
+ 
+  static Map<String, Object?> _jsonFromFields(
+    List<JsonBodyField> fields, {
+    bool redactSecrets = false,
+  }) {
     final map = <String, Object?>{};
     for (final field in fields) {
       final name = normalizeAsciiFullwidth(field.name).trim();
       final raw = normalizeAsciiFullwidth(field.value);
+      final sensitive =
+          field.sensitive || isSensitiveFieldName(name);
+      if (redactSecrets && sensitive) {
+        map[name] = '***';
+        continue;
+      }
       map[name] = switch (field.type) {
         JsonFieldType.string => raw,
         JsonFieldType.number => num.tryParse(raw) ?? raw,
@@ -292,6 +313,45 @@ class RequestDraftCodec {
     }
     return map;
   }
+
+  /// Redacts parseable JSON by sensitive keys. Opaque raw bodies are omitted
+  /// from shareable snapshots when [redactSecrets] is true.
+  static String? _redactRawOrJsonBody(
+    String raw, {
+    required bool redactSecrets,
+  }) {
+    if (!redactSecrets) return raw;
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return raw;
+    try {
+      final decoded = jsonDecode(trimmed);
+      return jsonEncode(_redactJsonTree(decoded));
+    } on FormatException {
+      // Cannot safely scan opaque bodies for secrets — omit from shareable
+      // curl/receipts by default.
+      return '[omitted: opaque raw body]';
+    }
+  }
+
+  static Object? _redactJsonTree(Object? value) {
+    if (value is Map) {
+      final out = <String, Object?>{};
+      for (final entry in value.entries) {
+        final key = entry.key.toString();
+        if (isSensitiveFieldName(key)) {
+          out[key] = '***';
+        } else {
+          out[key] = _redactJsonTree(entry.value);
+        }
+      }
+      return out;
+    }
+    if (value is List) {
+      return [for (final item in value) _redactJsonTree(item)];
+    }
+    return value;
+  }
+
 
   /// Redacted curl by default. Pass [redactSecrets]: false only for explicit
   /// user-confirmed secret copy.
@@ -310,7 +370,9 @@ class RequestDraftCodec {
       parts.add('-H ${_shellQuote('${entry.key}: ${entry.value}')}');
     }
     final body = buildBody(draft, redactSecrets: redactSecrets);
-    if (body != null && body.isNotEmpty) {
+    final methodAllowsBody =
+        draft.method != HttpMethod.get && draft.method != HttpMethod.head;
+    if (methodAllowsBody && body != null && body.isNotEmpty) {
       parts.add('--data-binary ${_shellQuote(body)}');
     }
     return parts.join(' \\\n  ');

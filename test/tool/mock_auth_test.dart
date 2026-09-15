@@ -356,11 +356,29 @@ void main() {
       )!;
       expect(ok.statusCode, 200);
 
-      // Same digest claimed against path-only target must fail.
+      // Second success needs a fresh nc (replay protection tracks nonce|cnonce).
+      const nc2 = '00000002';
+      final response2 = MockAuthHandler.digestResponse(
+        method: 'GET',
+        uri: target,
+        username: MockAuthDemo.basicUser,
+        password: MockAuthDemo.basicPassword,
+        realm: MockAuthDemo.digestRealm,
+        nonce: MockAuthDemo.digestNonce,
+        nc: nc2,
+        cnonce: cnonce,
+      );
+      final header2 = 'Digest username="${MockAuthDemo.basicUser}", '
+          'realm="${MockAuthDemo.digestRealm}", '
+          'nonce="${MockAuthDemo.digestNonce}", '
+          'uri="$target", '
+          'qop=auth, nc=$nc2, cnonce="$cnonce", '
+          'response="$response2", '
+          'opaque="${MockAuthDemo.digestOpaque}"';
       final mismatch = auth.handle(
         method: 'GET',
         path: '/auth/digest',
-        headers: {'authorization': header},
+        headers: {'authorization': header2},
         query: const {'x': '1'},
       )!;
       // Derived target is /auth/digest?x=1, claimed uri matches → still 200
@@ -372,14 +390,14 @@ void main() {
         password: MockAuthDemo.basicPassword,
         realm: MockAuthDemo.digestRealm,
         nonce: MockAuthDemo.digestNonce,
-        nc: nc,
+        nc: '00000003',
         cnonce: cnonce,
       );
       final pathHeader = 'Digest username="${MockAuthDemo.basicUser}", '
           'realm="${MockAuthDemo.digestRealm}", '
           'nonce="${MockAuthDemo.digestNonce}", '
           'uri="/auth/digest", '
-          'qop=auth, nc=$nc, cnonce="$cnonce", '
+          'qop=auth, nc=00000003, cnonce="$cnonce", '
           'response="$pathOnly", '
           'opaque="${MockAuthDemo.digestOpaque}"';
       final bad = auth.handle(
@@ -422,7 +440,48 @@ void main() {
       expect(result.statusCode, 401);
       expect(result.body['reason'], 'invalid_opaque');
     });
+
+
+    test('rejects replayed nc/cnonce for same nonce', () {
+      const uri = '/auth/digest';
+      const nc = '00000001';
+      const cnonce = 'demo-cnonce';
+      final response = MockAuthHandler.digestResponse(
+        method: 'GET',
+        uri: uri,
+        username: MockAuthDemo.basicUser,
+        password: MockAuthDemo.basicPassword,
+        realm: MockAuthDemo.digestRealm,
+        nonce: MockAuthDemo.digestNonce,
+        nc: nc,
+        cnonce: cnonce,
+      );
+      final header = 'Digest username="${MockAuthDemo.basicUser}", '
+          'realm="${MockAuthDemo.digestRealm}", '
+          'nonce="${MockAuthDemo.digestNonce}", '
+          'uri="$uri", '
+          'qop=auth, nc=$nc, cnonce="$cnonce", '
+          'response="$response", '
+          'opaque="${MockAuthDemo.digestOpaque}"';
+      final first = auth.handle(
+        method: 'GET',
+        path: uri,
+        headers: {'authorization': header},
+        query: const {},
+      )!;
+      expect(first.statusCode, 200);
+
+      final replayed = auth.handle(
+        method: 'GET',
+        path: uri,
+        headers: {'authorization': header},
+        query: const {},
+      )!;
+      expect(replayed.statusCode, 401);
+      expect(replayed.body['reason'], 'digest_replay');
+    });
   });
+
 
   group('MockAuthHandler hmac', () {
     test('missing headers / skew / bad signature / replay', () {

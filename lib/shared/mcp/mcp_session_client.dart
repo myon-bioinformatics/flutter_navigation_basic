@@ -270,9 +270,22 @@ class McpSessionClient {
   Future<({JsonRpcResponse response, String? sessionId})> _send(
     JsonRpcRequest request,
   ) async {
+    String? mcpName;
+    final params = request.params;
+    if (params is Map) {
+      if (request.method == 'tools/call' || request.method == 'prompts/get') {
+        final name = params['name'];
+        if (name is String) mcpName = name;
+      } else if (request.method == 'resources/read') {
+        final uri = params['uri'];
+        if (uri is String) mcpName = uri;
+      }
+    }
     final headers = mcpStreamableHeaders(
       sessionId: sessionId,
       protocolVersion: protocolVersion,
+      method: request.method,
+      name: mcpName,
     );
     final transportResponse = await transport.post(
       headers: headers,

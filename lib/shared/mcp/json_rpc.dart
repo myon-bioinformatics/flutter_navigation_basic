@@ -13,6 +13,10 @@ abstract final class JsonRpcErrorCode {
   static const forbidden = -32003;
   static const sessionRequired = -32010;
   static const sessionInvalid = -32011;
+
+  /// Current-official Streamable HTTP header/body validation failures.
+  static const headerMismatch = -32020;
+  static const unsupportedProtocolVersion = -32022;
 }
 
 class JsonRpcError {

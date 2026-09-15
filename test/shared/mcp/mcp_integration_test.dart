@@ -21,6 +21,34 @@ void main() {
       final content = (result.lastResponse!.result as Map)['content'] as List;
       expect((content.first as Map)['text'], 'modern-ping');
     });
+
+    test('modern echo demo over MockMcpRoutes in-process transport', () async {
+      final routes = MockMcpRoutes(
+        handler: McpFoundationHandler(sessionIdFactory: () => 'sess-modern-demo'),
+      );
+      final client = McpSessionClient(
+        transport: InProcessMcpTransport(
+          dispatch: ({
+            required method,
+            required path,
+            required headers,
+            required rawBody,
+          }) =>
+              routes.handle(
+            method: method,
+            path: path,
+            headers: headers,
+            rawBody: rawBody,
+          ),
+        ),
+      );
+      final result = await client.runModernEchoDemo(text: 'modern-http');
+      expect(result.ok, isTrue);
+      expect(result.sessionId, isNull);
+      final content = (result.lastResponse!.result as Map)['content'] as List;
+      expect((content.first as Map)['text'], 'modern-http');
+    });
+
     test('echo demo over FoundationHandlerTransport', () async {
       final client = McpSessionClient(
         transport: FoundationHandlerTransport(McpFoundationHandler()),

@@ -32,6 +32,8 @@ class RequestExecutionResult {
     required this.body,
     this.headers = const {},
     this.requestTarget = '',
+    this.executionPath = 'direct',
+    this.wireDraft,
   });
 
   final int statusCode;
@@ -39,12 +41,38 @@ class RequestExecutionResult {
   final Map<String, String> headers;
   final String requestTarget;
 
+  /// Which preparation/dispatch path produced this result
+  /// (`direct`, `hmac`, `digest-challenge`, `digest-retry`, `live`, …).
+  final String executionPath;
+
+  /// Final wire draft after auth preparation (HMAC sign / Digest retry).
+  final RequestDraft? wireDraft;
+
   Map<String, Object?> toJson() => {
         'statusCode': statusCode,
         'headers': headers,
         'requestTarget': requestTarget,
+        'executionPath': executionPath,
         'body': body,
       };
+
+  RequestExecutionResult copyWith({
+    int? statusCode,
+    Map<String, Object?>? body,
+    Map<String, String>? headers,
+    String? requestTarget,
+    String? executionPath,
+    RequestDraft? wireDraft,
+  }) {
+    return RequestExecutionResult(
+      statusCode: statusCode ?? this.statusCode,
+      body: body ?? this.body,
+      headers: headers ?? this.headers,
+      requestTarget: requestTarget ?? this.requestTarget,
+      executionPath: executionPath ?? this.executionPath,
+      wireDraft: wireDraft ?? this.wireDraft,
+    );
+  }
 }
 
 /// Executes drafts in-process against a mock auth route handler (no network).
@@ -52,6 +80,17 @@ class RequestExecutionResult {
 /// Live TLS (`-k`) / redirect (`-L`) policy and production JWT verification
 /// remain follow-ups — this path is mock-only and must not use the unsigned
 /// foundation JWT inspector for live verification.
+/// Final wire snapshot after transport-independent auth preparation.
+class AuthWireSnapshot {
+  const AuthWireSnapshot({
+    required this.draft,
+    required this.path,
+  });
+
+  final RequestDraft draft;
+  final String path;
+}
+
 class MockAuthRequestExecutor {
   MockAuthRequestExecutor({
     required this.handler,
@@ -71,28 +110,95 @@ class MockAuthRequestExecutor {
     RequestDraft draft, {
     AuthMatrixScenario? scenario,
   }) {
-    var prepared = draft;
-    if (scenario == AuthMatrixScenario.hmac) {
-      prepared = signHmac(draft);
-    }
-
-    var result = _dispatch(prepared);
+    final prepared = prepareWireDraft(draft, scenario: scenario);
+    var path = scenario == AuthMatrixScenario.hmac ? 'hmac' : 'direct';
+    var result = _dispatch(prepared.draft);
 
     if (scenario == AuthMatrixScenario.digest) {
-      if (result.statusCode != 401) return result;
+      if (result.statusCode != 401) {
+        return result.copyWith(
+          executionPath: 'digest-challenge',
+          wireDraft: prepared.draft,
+        );
+      }
       final challenge = _header(result.headers, 'www-authenticate');
       if (challenge == null || !challenge.toLowerCase().startsWith('digest ')) {
-        return result;
+        return result.copyWith(
+          executionPath: 'digest-challenge',
+          wireDraft: prepared.draft,
+        );
       }
       final authed = applyDigestChallenge(
-        prepared,
+        prepared.draft,
         wwwAuthenticate: challenge,
         requestTarget: result.requestTarget,
       );
-      return _dispatch(authed);
+      result = _dispatch(authed);
+      return result.copyWith(
+        executionPath: 'digest-retry',
+        wireDraft: authed,
+      );
     }
 
-    return result;
+    return result.copyWith(
+      executionPath: path,
+      wireDraft: prepared.draft,
+    );
+  }
+
+  /// Transport-independent auth preparation shared by mock, live, and curl.
+  AuthWireSnapshot prepareWireDraft(
+    RequestDraft draft, {
+    AuthMatrixScenario? scenario,
+  }) {
+    if (scenario == AuthMatrixScenario.hmac) {
+      return AuthWireSnapshot(
+        draft: signHmac(draft),
+        path: 'hmac',
+      );
+    }
+    return AuthWireSnapshot(draft: draft, path: 'direct');
+  }
+
+  /// Completes a Digest challenge against an arbitrary dispatcher (mock/live).
+  Future<RequestExecutionResult> executePrepared(
+    RequestDraft draft, {
+    AuthMatrixScenario? scenario,
+    required Future<RequestExecutionResult> Function(RequestDraft draft)
+        dispatch,
+    String basePath = 'live',
+  }) async {
+    final prepared = prepareWireDraft(draft, scenario: scenario);
+    var result = await dispatch(prepared.draft);
+    if (scenario != AuthMatrixScenario.digest) {
+      return result.copyWith(
+        executionPath: prepared.path == 'hmac' ? 'hmac-$basePath' : basePath,
+        wireDraft: prepared.draft,
+      );
+    }
+    if (result.statusCode != 401) {
+      return result.copyWith(
+        executionPath: '$basePath-digest-challenge',
+        wireDraft: prepared.draft,
+      );
+    }
+    final challenge = _header(result.headers, 'www-authenticate');
+    if (challenge == null || !challenge.toLowerCase().startsWith('digest ')) {
+      return result.copyWith(
+        executionPath: '$basePath-digest-challenge',
+        wireDraft: prepared.draft,
+      );
+    }
+    final authed = applyDigestChallenge(
+      prepared.draft,
+      wwwAuthenticate: challenge,
+      requestTarget: result.requestTarget,
+    );
+    result = await dispatch(authed);
+    return result.copyWith(
+      executionPath: '$basePath-digest-retry',
+      wireDraft: authed,
+    );
   }
 
   /// Runs every auth-matrix scenario (except [AuthMatrixScenario.none]).
@@ -361,13 +467,16 @@ String formatExecutionReceipt({
 }) {
   final safe = redactExecutionResult(result);
   final body = const JsonEncoder.withIndent('  ').convert(safe);
-  return 'request-target: ${result.requestTarget}\n'
+  final wire = result.wireDraft ?? draft;
+  final redactedTarget = redactRequestTarget(result.requestTarget, wire);
+  return 'request-target: $redactedTarget\n'
+      'execution-path: ${result.executionPath}\n'
       'status: ${result.statusCode}\n'
       'curl (redacted):\n$redactedCurl\n\n'
       'response:\n$body';
 }
 
-/// Redacts sensitive response headers and token/cookie-shaped body fields.
+/// Redacts sensitive response headers, request-target secrets, and body fields.
 Map<String, Object?> redactExecutionResult(RequestExecutionResult result) {
   final headers = <String, String>{};
   for (final entry in result.headers.entries) {
@@ -375,12 +484,42 @@ Map<String, Object?> redactExecutionResult(RequestExecutionResult result) {
         ? '***'
         : entry.value;
   }
+  final wire = result.wireDraft;
   return {
     'statusCode': result.statusCode,
+    'executionPath': result.executionPath,
     'headers': headers,
-    'requestTarget': result.requestTarget,
+    'requestTarget': redactRequestTarget(result.requestTarget, wire),
     'body': redactJsonValue(result.body),
   };
+}
+
+/// Redacts secret-bearing query pairs in a request-target / path+query string.
+String redactRequestTarget(String requestTarget, [RequestDraft? draft]) {
+  if (draft != null) {
+    final uri = RequestDraftCodec.buildUri(draft, redactSecrets: true);
+    if (uri != null) {
+      return uri.hasQuery ? '${uri.path}?${uri.query}' : uri.path;
+    }
+  }
+  final q = requestTarget.indexOf('?');
+  if (q < 0) return requestTarget;
+  final path = requestTarget.substring(0, q);
+  final query = requestTarget.substring(q + 1);
+  final pairs = <String>[];
+  for (final part in query.split('&')) {
+    if (part.isEmpty) continue;
+    final eq = part.indexOf('=');
+    final rawName = eq < 0 ? part : part.substring(0, eq);
+    final rawValue = eq < 0 ? '' : part.substring(eq + 1);
+    final name = Uri.decodeQueryComponent(rawName);
+    if (RequestDraftCodec.isSensitiveFieldName(name)) {
+      pairs.add('$rawName=***');
+    } else {
+      pairs.add(eq < 0 ? rawName : '$rawName=$rawValue');
+    }
+  }
+  return pairs.isEmpty ? path : '$path?${pairs.join('&')}';
 }
 
 Object? redactJsonValue(Object? value) {

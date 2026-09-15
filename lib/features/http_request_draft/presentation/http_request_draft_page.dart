@@ -205,18 +205,26 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
 
   Future<void> _executeMock() async {
     if (_executing) return;
+    final issues = RequestDraftValidator.validate(_draft);
+    if (issues.isNotEmpty) {
+      setState(() {
+        _receipt = 'validation_failed: ${[for (final i in issues) i.code].join(', ')}';
+      });
+      return;
+    }
     setState(() {
       _executing = true;
       _receipt = '';
     });
     try {
-      final result = _mockExecutor.execute(
-        _draft,
-        scenario: _authScenario == AuthMatrixScenario.none ? null : _authScenario,
-      );
-      final redactedCurl = RequestDraftCodec.toCurl(_draft, redactSecrets: true);
+      final scenario =
+          _authScenario == AuthMatrixScenario.none ? null : _authScenario;
+      final result = _mockExecutor.execute(_draft, scenario: scenario);
+      final wire = result.wireDraft ?? _draft;
+      final redactedCurl =
+          RequestDraftCodec.toCurl(wire, redactSecrets: true);
       final receipt = formatExecutionReceipt(
-        draft: _draft,
+        draft: wire,
         result: result,
         redactedCurl: redactedCurl,
       );
@@ -229,15 +237,31 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
 
   Future<void> _executeLive() async {
     if (_executing) return;
+    final issues = RequestDraftValidator.validate(_draft);
+    if (issues.isNotEmpty) {
+      setState(() {
+        _receipt = 'validation_failed: ${[for (final i in issues) i.code].join(', ')}';
+      });
+      return;
+    }
     setState(() {
       _executing = true;
       _receipt = '';
     });
     try {
-      final result = await executeLiveRequest(_draft);
-      final redactedCurl = RequestDraftCodec.toCurl(_draft, redactSecrets: true);
+      final scenario =
+          _authScenario == AuthMatrixScenario.none ? null : _authScenario;
+      final result = await _mockExecutor.executePrepared(
+        _draft,
+        scenario: scenario,
+        dispatch: executeLiveRequest,
+        basePath: 'live',
+      );
+      final wire = result.wireDraft ?? _draft;
+      final redactedCurl =
+          RequestDraftCodec.toCurl(wire, redactSecrets: true);
       final receipt = formatExecutionReceipt(
-        draft: _draft,
+        draft: wire,
         result: result,
         redactedCurl: redactedCurl,
       );
@@ -253,12 +277,18 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
   @override
   Widget build(BuildContext context) {
     final display = DisplayScope.of(context);
-    final issues = RequestDraftValidator.validate(_draft);
-    final redactedCurl = CurlSafeSubset.export(_draft, redactSecrets: true);
-    final uri = RequestDraftCodec.buildUri(_draft, redactSecrets: true);
+        final issues = RequestDraftValidator.validate(_draft);
+    final previewScenario =
+        _authScenario == AuthMatrixScenario.none ? null : _authScenario;
+    final previewWire = _mockExecutor
+        .prepareWireDraft(_draft, scenario: previewScenario)
+        .draft;
+    final redactedCurl =
+        CurlSafeSubset.export(previewWire, redactSecrets: true);
+    final uri = RequestDraftCodec.buildUri(previewWire, redactSecrets: true);
     final headers =
-        RequestDraftCodec.buildHeaders(_draft, redactSecrets: true);
-    final body = RequestDraftCodec.buildBody(_draft, redactSecrets: true);
+        RequestDraftCodec.buildHeaders(previewWire, redactSecrets: true);
+    final body = RequestDraftCodec.buildBody(previewWire, redactSecrets: true);
 
     return Scaffold(
       appBar: AppBar(
@@ -505,7 +535,7 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
                   for (final scenario in AuthMatrixScenario.values)
                     DropdownMenuItem(
                       value: scenario,
-                      child: Text(scenario.label),
+                      child: Text(display.text(scenario.labelKey)),
                     ),
                 ],
                 onChanged: _executing

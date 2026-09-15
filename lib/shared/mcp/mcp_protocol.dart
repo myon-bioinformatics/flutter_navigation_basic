@@ -27,6 +27,12 @@ abstract final class McpProtocol {
   /// HTTP header carrying the MCP session id after `initialize`.
   static const sessionIdHeader = 'mcp-session-id';
 
+  /// HTTP header mirroring JSON-RPC `method` (current-official Streamable HTTP).
+  static const methodHeader = 'mcp-method';
+
+  /// HTTP header mirroring tool/prompt `name` or resource `uri` when required.
+  static const nameHeader = 'mcp-name';
+
   /// Accept values for Streamable HTTP (JSON and optional SSE stream).
   static const acceptJson = 'application/json';
   static const acceptEventStream = 'text/event-stream';

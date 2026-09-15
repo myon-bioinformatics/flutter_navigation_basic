@@ -611,7 +611,18 @@
       "mcp.support.implementsCurrent": "implementsCurrentOfficial={value}",
       "mcp.support.pinned": "pinned={version}",
       "mcp.support.currentOfficial": "currentOfficial={version}",
-      "mcp.support.okSession": "ok={ok} session={session}"
+      "mcp.support.okSession": "ok={ok} session={session}",
+      "httpDraft.authScenario.none": "No auth",
+      "httpDraft.authScenario.bearer": "Bearer (valid demo)",
+      "httpDraft.authScenario.bearerExpired": "Bearer (expired)",
+      "httpDraft.authScenario.bearerWrongAudience": "Bearer (wrong audience)",
+      "httpDraft.authScenario.apiKeyHeader": "API key (header)",
+      "httpDraft.authScenario.apiKeyQuery": "API key (query)",
+      "httpDraft.authScenario.basic": "HTTP Basic",
+      "httpDraft.authScenario.digestChallengeOnly": "Digest (challenge path)",
+      "httpDraft.authScenario.digest": "Digest (challenge-response)",
+      "httpDraft.authScenario.hmac": "HMAC-SHA256",
+      "httpDraft.authScenario.rateLimited": "Rate limited (429)"
     },
     "jpn": {
       "common.copy": "コピー",
@@ -1224,7 +1235,18 @@
       "mcp.support.implementsCurrent": "implementsCurrentOfficial={value}",
       "mcp.support.pinned": "pinned={version}",
       "mcp.support.currentOfficial": "currentOfficial={version}",
-      "mcp.support.okSession": "ok={ok} session={session}"
+      "mcp.support.okSession": "ok={ok} session={session}",
+      "httpDraft.authScenario.none": "認証なし",
+      "httpDraft.authScenario.bearer": "Bearer（有効デモ）",
+      "httpDraft.authScenario.bearerExpired": "Bearer（期限切れ）",
+      "httpDraft.authScenario.bearerWrongAudience": "Bearer（audience不一致）",
+      "httpDraft.authScenario.apiKeyHeader": "APIキー（ヘッダー）",
+      "httpDraft.authScenario.apiKeyQuery": "APIキー（クエリ）",
+      "httpDraft.authScenario.basic": "HTTP Basic",
+      "httpDraft.authScenario.digestChallengeOnly": "Digest（チャレンジのみ）",
+      "httpDraft.authScenario.digest": "Digest（チャレンジ応答）",
+      "httpDraft.authScenario.hmac": "HMAC-SHA256",
+      "httpDraft.authScenario.rateLimited": "レート制限（429）"
     },
     "fra": {
       "common.copy": "Copier",
@@ -1837,7 +1859,18 @@
       "mcp.support.implementsCurrent": "implementsCurrentOfficial={value}",
       "mcp.support.pinned": "pinned={version}",
       "mcp.support.currentOfficial": "currentOfficial={version}",
-      "mcp.support.okSession": "ok={ok} session={session}"
+      "mcp.support.okSession": "ok={ok} session={session}",
+      "httpDraft.authScenario.none": "No auth",
+      "httpDraft.authScenario.bearer": "Bearer (valid demo)",
+      "httpDraft.authScenario.bearerExpired": "Bearer (expired)",
+      "httpDraft.authScenario.bearerWrongAudience": "Bearer (wrong audience)",
+      "httpDraft.authScenario.apiKeyHeader": "API key (header)",
+      "httpDraft.authScenario.apiKeyQuery": "API key (query)",
+      "httpDraft.authScenario.basic": "HTTP Basic",
+      "httpDraft.authScenario.digestChallengeOnly": "Digest (challenge path)",
+      "httpDraft.authScenario.digest": "Digest (challenge-response)",
+      "httpDraft.authScenario.hmac": "HMAC-SHA256",
+      "httpDraft.authScenario.rateLimited": "Rate limited (429)"
     },
     "spa": {
       "common.copy": "Copiar",
@@ -2450,7 +2483,18 @@
       "mcp.support.implementsCurrent": "implementsCurrentOfficial={value}",
       "mcp.support.pinned": "pinned={version}",
       "mcp.support.currentOfficial": "currentOfficial={version}",
-      "mcp.support.okSession": "ok={ok} session={session}"
+      "mcp.support.okSession": "ok={ok} session={session}",
+      "httpDraft.authScenario.none": "No auth",
+      "httpDraft.authScenario.bearer": "Bearer (valid demo)",
+      "httpDraft.authScenario.bearerExpired": "Bearer (expired)",
+      "httpDraft.authScenario.bearerWrongAudience": "Bearer (wrong audience)",
+      "httpDraft.authScenario.apiKeyHeader": "API key (header)",
+      "httpDraft.authScenario.apiKeyQuery": "API key (query)",
+      "httpDraft.authScenario.basic": "HTTP Basic",
+      "httpDraft.authScenario.digestChallengeOnly": "Digest (challenge path)",
+      "httpDraft.authScenario.digest": "Digest (challenge-response)",
+      "httpDraft.authScenario.hmac": "HMAC-SHA256",
+      "httpDraft.authScenario.rateLimited": "Rate limited (429)"
     },
     "por": {
       "common.copy": "Copiar",
@@ -3063,7 +3107,18 @@
       "mcp.support.implementsCurrent": "implementsCurrentOfficial={value}",
       "mcp.support.pinned": "pinned={version}",
       "mcp.support.currentOfficial": "currentOfficial={version}",
-      "mcp.support.okSession": "ok={ok} session={session}"
+      "mcp.support.okSession": "ok={ok} session={session}",
+      "httpDraft.authScenario.none": "No auth",
+      "httpDraft.authScenario.bearer": "Bearer (valid demo)",
+      "httpDraft.authScenario.bearerExpired": "Bearer (expired)",
+      "httpDraft.authScenario.bearerWrongAudience": "Bearer (wrong audience)",
+      "httpDraft.authScenario.apiKeyHeader": "API key (header)",
+      "httpDraft.authScenario.apiKeyQuery": "API key (query)",
+      "httpDraft.authScenario.basic": "HTTP Basic",
+      "httpDraft.authScenario.digestChallengeOnly": "Digest (challenge path)",
+      "httpDraft.authScenario.digest": "Digest (challenge-response)",
+      "httpDraft.authScenario.hmac": "HMAC-SHA256",
+      "httpDraft.authScenario.rateLimited": "Rate limited (429)"
     },
     "ara": {
       "common.copy": "نسخ",
@@ -3676,7 +3731,18 @@
       "mcp.support.implementsCurrent": "implementsCurrentOfficial={value}",
       "mcp.support.pinned": "pinned={version}",
       "mcp.support.currentOfficial": "currentOfficial={version}",
-      "mcp.support.okSession": "ok={ok} session={session}"
+      "mcp.support.okSession": "ok={ok} session={session}",
+      "httpDraft.authScenario.none": "No auth",
+      "httpDraft.authScenario.bearer": "Bearer (valid demo)",
+      "httpDraft.authScenario.bearerExpired": "Bearer (expired)",
+      "httpDraft.authScenario.bearerWrongAudience": "Bearer (wrong audience)",
+      "httpDraft.authScenario.apiKeyHeader": "API key (header)",
+      "httpDraft.authScenario.apiKeyQuery": "API key (query)",
+      "httpDraft.authScenario.basic": "HTTP Basic",
+      "httpDraft.authScenario.digestChallengeOnly": "Digest (challenge path)",
+      "httpDraft.authScenario.digest": "Digest (challenge-response)",
+      "httpDraft.authScenario.hmac": "HMAC-SHA256",
+      "httpDraft.authScenario.rateLimited": "Rate limited (429)"
     },
     "zho": {
       "common.copy": "复制",
@@ -4289,7 +4355,18 @@
       "mcp.support.implementsCurrent": "implementsCurrentOfficial={value}",
       "mcp.support.pinned": "pinned={version}",
       "mcp.support.currentOfficial": "currentOfficial={version}",
-      "mcp.support.okSession": "ok={ok} session={session}"
+      "mcp.support.okSession": "ok={ok} session={session}",
+      "httpDraft.authScenario.none": "No auth",
+      "httpDraft.authScenario.bearer": "Bearer (valid demo)",
+      "httpDraft.authScenario.bearerExpired": "Bearer (expired)",
+      "httpDraft.authScenario.bearerWrongAudience": "Bearer (wrong audience)",
+      "httpDraft.authScenario.apiKeyHeader": "API key (header)",
+      "httpDraft.authScenario.apiKeyQuery": "API key (query)",
+      "httpDraft.authScenario.basic": "HTTP Basic",
+      "httpDraft.authScenario.digestChallengeOnly": "Digest (challenge path)",
+      "httpDraft.authScenario.digest": "Digest (challenge-response)",
+      "httpDraft.authScenario.hmac": "HMAC-SHA256",
+      "httpDraft.authScenario.rateLimited": "Rate limited (429)"
     },
     "rus": {
       "common.copy": "Копировать",
@@ -4902,7 +4979,18 @@
       "mcp.support.implementsCurrent": "implementsCurrentOfficial={value}",
       "mcp.support.pinned": "pinned={version}",
       "mcp.support.currentOfficial": "currentOfficial={version}",
-      "mcp.support.okSession": "ok={ok} session={session}"
+      "mcp.support.okSession": "ok={ok} session={session}",
+      "httpDraft.authScenario.none": "No auth",
+      "httpDraft.authScenario.bearer": "Bearer (valid demo)",
+      "httpDraft.authScenario.bearerExpired": "Bearer (expired)",
+      "httpDraft.authScenario.bearerWrongAudience": "Bearer (wrong audience)",
+      "httpDraft.authScenario.apiKeyHeader": "API key (header)",
+      "httpDraft.authScenario.apiKeyQuery": "API key (query)",
+      "httpDraft.authScenario.basic": "HTTP Basic",
+      "httpDraft.authScenario.digestChallengeOnly": "Digest (challenge path)",
+      "httpDraft.authScenario.digest": "Digest (challenge-response)",
+      "httpDraft.authScenario.hmac": "HMAC-SHA256",
+      "httpDraft.authScenario.rateLimited": "Rate limited (429)"
     },
     "ind": {
       "common.copy": "Salin",
@@ -5515,7 +5603,18 @@
       "mcp.support.implementsCurrent": "implementsCurrentOfficial={value}",
       "mcp.support.pinned": "pinned={version}",
       "mcp.support.currentOfficial": "currentOfficial={version}",
-      "mcp.support.okSession": "ok={ok} session={session}"
+      "mcp.support.okSession": "ok={ok} session={session}",
+      "httpDraft.authScenario.none": "No auth",
+      "httpDraft.authScenario.bearer": "Bearer (valid demo)",
+      "httpDraft.authScenario.bearerExpired": "Bearer (expired)",
+      "httpDraft.authScenario.bearerWrongAudience": "Bearer (wrong audience)",
+      "httpDraft.authScenario.apiKeyHeader": "API key (header)",
+      "httpDraft.authScenario.apiKeyQuery": "API key (query)",
+      "httpDraft.authScenario.basic": "HTTP Basic",
+      "httpDraft.authScenario.digestChallengeOnly": "Digest (challenge path)",
+      "httpDraft.authScenario.digest": "Digest (challenge-response)",
+      "httpDraft.authScenario.hmac": "HMAC-SHA256",
+      "httpDraft.authScenario.rateLimited": "Rate limited (429)"
     },
     "deu": {
       "common.copy": "Kopieren",
@@ -6128,7 +6227,18 @@
       "mcp.support.implementsCurrent": "implementsCurrentOfficial={value}",
       "mcp.support.pinned": "pinned={version}",
       "mcp.support.currentOfficial": "currentOfficial={version}",
-      "mcp.support.okSession": "ok={ok} session={session}"
+      "mcp.support.okSession": "ok={ok} session={session}",
+      "httpDraft.authScenario.none": "No auth",
+      "httpDraft.authScenario.bearer": "Bearer (valid demo)",
+      "httpDraft.authScenario.bearerExpired": "Bearer (expired)",
+      "httpDraft.authScenario.bearerWrongAudience": "Bearer (wrong audience)",
+      "httpDraft.authScenario.apiKeyHeader": "API key (header)",
+      "httpDraft.authScenario.apiKeyQuery": "API key (query)",
+      "httpDraft.authScenario.basic": "HTTP Basic",
+      "httpDraft.authScenario.digestChallengeOnly": "Digest (challenge path)",
+      "httpDraft.authScenario.digest": "Digest (challenge-response)",
+      "httpDraft.authScenario.hmac": "HMAC-SHA256",
+      "httpDraft.authScenario.rateLimited": "Rate limited (429)"
     },
     "swa": {
       "common.copy": "Nakili",
@@ -6741,7 +6851,18 @@
       "mcp.support.implementsCurrent": "implementsCurrentOfficial={value}",
       "mcp.support.pinned": "pinned={version}",
       "mcp.support.currentOfficial": "currentOfficial={version}",
-      "mcp.support.okSession": "ok={ok} session={session}"
+      "mcp.support.okSession": "ok={ok} session={session}",
+      "httpDraft.authScenario.none": "No auth",
+      "httpDraft.authScenario.bearer": "Bearer (valid demo)",
+      "httpDraft.authScenario.bearerExpired": "Bearer (expired)",
+      "httpDraft.authScenario.bearerWrongAudience": "Bearer (wrong audience)",
+      "httpDraft.authScenario.apiKeyHeader": "API key (header)",
+      "httpDraft.authScenario.apiKeyQuery": "API key (query)",
+      "httpDraft.authScenario.basic": "HTTP Basic",
+      "httpDraft.authScenario.digestChallengeOnly": "Digest (challenge path)",
+      "httpDraft.authScenario.digest": "Digest (challenge-response)",
+      "httpDraft.authScenario.hmac": "HMAC-SHA256",
+      "httpDraft.authScenario.rateLimited": "Rate limited (429)"
     }
   }
 }

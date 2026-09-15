@@ -32,11 +32,25 @@ const liveHttpCapabilities = LiveHttpCapabilities(
 /// Does **not** enable insecure TLS (`-k`) or automatic redirects (`-L`);
 /// those remain explicit follow-ups.
 Future<RequestExecutionResult> executeLiveRequest(RequestDraft draft) async {
+  final issues = RequestDraftValidator.validate(draft);
+  if (issues.isNotEmpty) {
+    return RequestExecutionResult(
+      statusCode: 0,
+      body: {
+        'ok': false,
+        'error': 'validation_failed',
+        'issues': [for (final i in issues) i.code],
+      },
+      executionPath: 'live-validation',
+    );
+  }
+
   final uri = RequestDraftCodec.buildUri(draft);
   if (uri == null) {
     return const RequestExecutionResult(
       statusCode: 0,
       body: {'ok': false, 'error': 'invalid_url'},
+      executionPath: 'live-validation',
     );
   }
   final target = uri.hasQuery ? '${uri.path}?${uri.query}' : uri.path;
@@ -44,8 +58,13 @@ Future<RequestExecutionResult> executeLiveRequest(RequestDraft draft) async {
       RequestDraftCodec.buildHeaders(draft, redactSecrets: false);
   final body = RequestDraftCodec.buildBody(draft, redactSecrets: false);
   final client = HttpClient();
+  client.connectionTimeout = const Duration(seconds: 15);
+  client.idleTimeout = const Duration(seconds: 15);
   try {
     final request = await client.openUrl(draft.method.label, uri);
+    // Explicitly disable automatic redirects — labels claim no `-L`.
+    request.followRedirects = false;
+    request.maxRedirects = 0;
     headers.forEach(request.headers.set);
     final canWriteBody = draft.method != HttpMethod.get &&
         draft.method != HttpMethod.head &&
@@ -54,8 +73,11 @@ Future<RequestExecutionResult> executeLiveRequest(RequestDraft draft) async {
     if (canWriteBody) {
       request.write(body);
     }
-    final response = await request.close();
-    final responseBody = await response.transform(utf8.decoder).join();
+    final response = await request.close().timeout(const Duration(seconds: 30));
+    final responseBody =
+        await response.transform(utf8.decoder).join().timeout(
+              const Duration(seconds: 30),
+            );
     final responseHeaders = <String, String>{};
     response.headers.forEach((name, values) {
       responseHeaders[name] = values.join(', ');
@@ -76,6 +98,8 @@ Future<RequestExecutionResult> executeLiveRequest(RequestDraft draft) async {
       headers: responseHeaders,
       body: bodyMap,
       requestTarget: target,
+      executionPath: 'live',
+      wireDraft: draft,
     );
   } on Object catch (error) {
     return RequestExecutionResult(
@@ -86,6 +110,8 @@ Future<RequestExecutionResult> executeLiveRequest(RequestDraft draft) async {
         'message': '$error',
       },
       requestTarget: target,
+      executionPath: 'live-error',
+      wireDraft: draft,
     );
   } finally {
     client.close(force: true);
