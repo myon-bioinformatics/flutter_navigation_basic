@@ -3,10 +3,10 @@
 /// Full UI/executor wiring lands in a later PR; this file is the single place
 /// that records which protocol versions the foundation targets.
 ///
-/// **Legacy scope:** this foundation pins MCP `2025-03-26` (initialize +
-/// `Mcp-Session-Id` Streamable HTTP). The current official MCP revision is
-/// `2026-07-28` (stateless / `server/discover`). Treat this package as
-/// legacy-era support unless a later PR adds dual-era compatibility.
+/// **Dual-era scope:** this foundation implements legacy MCP `2025-03-26`
+/// (initialize + `Mcp-Session-Id` Streamable HTTP) **and** current-official
+/// `2026-07-28` (`server/discover`, stateless tools with per-request `_meta`).
+/// 
 abstract final class McpProtocol {
   /// MCP specification revision this foundation targets.
   /// Display this value in diagnostics / support matrix UIs.
@@ -16,7 +16,7 @@ abstract final class McpProtocol {
   static const currentOfficialVersion = '2026-07-28';
 
   /// Whether this foundation implements the current official MCP revision.
-  static const implementsCurrentOfficial = false;
+  static const implementsCurrentOfficial = true;
 
   /// JSON-RPC 2.0 version string required on every request/response.
   static const jsonRpcVersion = '2.0';
@@ -55,8 +55,9 @@ abstract final class McpSupportMatrix {
   static const flutterWebInAppOAuthGuaranteed = false;
   static const legacySseDefault = false;
 
-  /// This matrix describes the pinned `2025-03-26` path only.
+  /// Dual-era: legacy `2025-03-26` and current-official `2026-07-28`.
   static const legacyMcpEra = true;
+  static const currentOfficialEra = true;
   static const currentOfficialVersion = McpProtocol.currentOfficialVersion;
   static const implementsCurrentOfficial =
       McpProtocol.implementsCurrentOfficial;
@@ -66,6 +67,7 @@ abstract final class McpSupportMatrix {
         'currentOfficialVersion': currentOfficialVersion,
         'implementsCurrentOfficial': implementsCurrentOfficial,
         'legacyMcpEra': legacyMcpEra,
+        'currentOfficialEra': currentOfficialEra,
         'streamableHttp': streamableHttp,
         'jsonRpc': jsonRpc,
         'sessionHeader': sessionHeader,

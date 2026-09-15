@@ -695,10 +695,11 @@ void main() {
     expect(McpSupportMatrix.flutterWebInAppOAuthGuaranteed, isFalse);
     expect(McpSupportMatrix.legacySseDefault, isFalse);
     expect(McpSupportMatrix.legacyMcpEra, isTrue);
+    expect(McpSupportMatrix.currentOfficialEra, isTrue);
     expect(
       McpSupportMatrix.currentOfficialVersion,
       McpProtocol.currentOfficialVersion,
     );
-    expect(McpSupportMatrix.implementsCurrentOfficial, isFalse);
+    expect(McpSupportMatrix.implementsCurrentOfficial, isTrue);
   });
 }

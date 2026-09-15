@@ -97,7 +97,7 @@ class McpFoundationHandler {
           );
         });
       case 'tools/list':
-        return _requireSession(request, sessionId, (_) {
+        return _modernOrSession(request, sessionId, (_) {
           return JsonRpcResponse.result(
             id: request.id,
             result: {
@@ -118,7 +118,7 @@ class McpFoundationHandler {
           );
         });
       case 'tools/call':
-        return _requireSession(request, sessionId, (_) {
+        return _modernOrSession(request, sessionId, (_) {
           final params = _asMap(request.params);
           final name = params?['name'];
           final args = _asMap(params?['arguments']) ?? const {};
@@ -235,6 +235,8 @@ class McpFoundationHandler {
             },
           );
         });
+      case 'server/discover':
+        return _serverDiscover(request);
       default:
         return (
           response: JsonRpcResponse.failure(
@@ -340,6 +342,56 @@ class McpFoundationHandler {
       ),
       sessionId: null,
     );
+  }
+
+
+  ({JsonRpcResponse response, String? sessionId}) _serverDiscover(
+    JsonRpcRequest request,
+  ) {
+    return (
+      response: JsonRpcResponse.result(
+        id: request.id,
+        result: {
+          'protocolVersions': [
+            McpProtocol.specificationVersion,
+            McpProtocol.currentOfficialVersion,
+          ],
+          'capabilities': {
+            'tools': {'listChanged': false},
+            'resources': {'subscribe': false, 'listChanged': false},
+            'prompts': {'listChanged': false},
+          },
+          'serverInfo': {
+            'name': 'flutter-navigation-basic-mcp-foundation',
+            'version': '0.1.0',
+          },
+          'instructions':
+              'Dual-era demo server. Prefer '
+              '${McpProtocol.currentOfficialVersion} with per-request _meta, '
+              'or legacy initialize + session.',
+        },
+      ),
+      sessionId: null,
+    );
+  }
+
+  bool _hasModernMeta(JsonRpcRequest request) {
+    final params = _asMap(request.params);
+    final meta = _asMap(params?['_meta']);
+    if (meta == null) return false;
+    final version = meta['io.modelcontextprotocol/protocolVersion'];
+    return version == McpProtocol.currentOfficialVersion;
+  }
+
+  ({JsonRpcResponse response, String? sessionId}) _modernOrSession(
+    JsonRpcRequest request,
+    String? sessionId,
+    JsonRpcResponse Function(McpSession? session) build,
+  ) {
+    if (_hasModernMeta(request)) {
+      return (response: build(null), sessionId: null);
+    }
+    return _requireSession(request, sessionId, (session) => build(session));
   }
 
   ({JsonRpcResponse response, String? sessionId}) _requireSession(

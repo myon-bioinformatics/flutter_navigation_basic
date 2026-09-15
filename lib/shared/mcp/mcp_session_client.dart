@@ -113,10 +113,14 @@ class McpSessionClient {
     return outcome.response;
   }
 
-  Future<void> notifyInitialized() async {
-    await _send(
+  /// Sends `notifications/initialized` and returns the transport outcome.
+  ///
+  /// Callers must inspect [JsonRpcResponse.isError] — a rejected notification
+  /// is never treated as success by [runEchoDemo].
+  Future<JsonRpcResponse> notifyInitialized() async {
+    return (await _send(
       const JsonRpcRequest(method: 'notifications/initialized'),
-    );
+    )).response;
   }
 
   Future<JsonRpcResponse> listTools() {
@@ -158,7 +162,14 @@ class McpSessionClient {
     if (init.isError) {
       return McpDemoRunResult(ok: false, log: log, sessionId: sessionId);
     }
-    await notifyInitialized();
+    final notified = await notifyInitialized();
+    if (notified.isError) {
+      log.add(
+        'notifications/initialized → rejected '
+        '${jsonEncode(notified.toJson())} (session=$sessionId)',
+      );
+      return McpDemoRunResult(ok: false, log: log, sessionId: sessionId);
+    }
     log.add('notifications/initialized → accepted (session=$sessionId)');
     final listed = await listTools();
     log.add('tools/list → ${jsonEncode(listed.toJson())}');
@@ -168,6 +179,75 @@ class McpSessionClient {
     final called = await callTool(
       name: 'echo',
       arguments: {'text': text},
+    );
+    log.add('tools/call(echo) → ${jsonEncode(called.toJson())}');
+    return McpDemoRunResult(
+      ok: !called.isError,
+      log: log,
+      sessionId: sessionId,
+      lastResponse: called,
+    );
+  }
+
+
+  /// Current-official `2026-07-28` path: server/discover → tools/list → tools/call(echo).
+  ///
+  /// No initialize / session header. Each RPC carries `_meta` protocol version.
+  Future<McpDemoRunResult> runModernEchoDemo({String text = 'hello'}) async {
+    final log = <String>[];
+    protocolVersion = McpProtocol.currentOfficialVersion;
+    sessionId = null;
+
+    final discover = await _rpc(
+      JsonRpcRequest(
+        method: 'server/discover',
+        params: {
+          '_meta': {
+            'io.modelcontextprotocol/protocolVersion':
+                McpProtocol.currentOfficialVersion,
+            'io.modelcontextprotocol/clientInfo': {
+              'name': clientName,
+              'version': clientVersion,
+            },
+            'io.modelcontextprotocol/clientCapabilities': <String, Object?>{},
+          },
+        },
+      ),
+    );
+    log.add('server/discover → ${jsonEncode(discover.toJson())}');
+    if (discover.isError) {
+      return McpDemoRunResult(ok: false, log: log, sessionId: sessionId);
+    }
+
+    Map<String, Object?> metaParams([Map<String, Object?>? extra]) => {
+          '_meta': {
+            'io.modelcontextprotocol/protocolVersion':
+                McpProtocol.currentOfficialVersion,
+            'io.modelcontextprotocol/clientInfo': {
+              'name': clientName,
+              'version': clientVersion,
+            },
+            'io.modelcontextprotocol/clientCapabilities': <String, Object?>{},
+          },
+          if (extra != null) ...extra,
+        };
+
+    final listed = await _rpc(
+      JsonRpcRequest(method: 'tools/list', params: metaParams()),
+    );
+    log.add('tools/list → ${jsonEncode(listed.toJson())}');
+    if (listed.isError) {
+      return McpDemoRunResult(ok: false, log: log, sessionId: sessionId);
+    }
+
+    final called = await _rpc(
+      JsonRpcRequest(
+        method: 'tools/call',
+        params: metaParams({
+          'name': 'echo',
+          'arguments': {'text': text},
+        }),
+      ),
     );
     log.add('tools/call(echo) → ${jsonEncode(called.toJson())}');
     return McpDemoRunResult(
@@ -208,13 +288,15 @@ class McpSessionClient {
     }
 
     final returnedSession = headerValue(McpProtocol.sessionIdHeader);
-    if (returnedSession != null && returnedSession.isNotEmpty) {
-      sessionId = returnedSession;
-    }
+    final httpOk = transportResponse.statusCode >= 200 &&
+        transportResponse.statusCode < 300;
 
     if (request.isNotification) {
-      if (transportResponse.statusCode >= 200 &&
-          transportResponse.statusCode < 300) {
+      // Notifications never adopt a session id from a rejected response.
+      if (httpOk) {
+        if (returnedSession != null && returnedSession.isNotEmpty) {
+          sessionId = returnedSession;
+        }
         return (
           response: JsonRpcResponse.result(id: null, result: null),
           sessionId: sessionId,
@@ -237,34 +319,43 @@ class McpSessionClient {
     }
 
     final body = transportResponse.body;
+    JsonRpcResponse response;
     if (body is Map) {
       final map = Map<String, Object?>.from(body);
       if (map.containsKey('error') && !map.containsKey('jsonrpc')) {
         final status = transportResponse.statusCode;
-        return (
-          response: JsonRpcResponse.failure(
+        response = JsonRpcResponse.failure(
+          id: request.id,
+          error: JsonRpcError(
+            code: status == 401
+                ? JsonRpcErrorCode.unauthorized
+                : status == 403
+                    ? JsonRpcErrorCode.forbidden
+                    : JsonRpcErrorCode.internalError,
+            message: map['error']?.toString() ?? 'http_error',
+            data: map,
+          ),
+        );
+      } else {
+        try {
+          // Validate jsonrpc / result-xor-error / id correlation.
+          response = JsonRpcResponse.parse(map, expectedId: request.id);
+        } on FormatException catch (error) {
+          response = JsonRpcResponse.failure(
             id: request.id,
             error: JsonRpcError(
-              code: status == 401
-                  ? JsonRpcErrorCode.unauthorized
-                  : status == 403
-                      ? JsonRpcErrorCode.forbidden
-                      : JsonRpcErrorCode.internalError,
-              message: map['error']?.toString() ?? 'http_error',
-              data: map,
+              code: JsonRpcErrorCode.internalError,
+              message: 'invalid JSON-RPC response: $error',
+              data: {
+                'statusCode': transportResponse.statusCode,
+                'body': body,
+              },
             ),
-          ),
-          sessionId: sessionId,
-        );
+          );
+        }
       }
-      return (
-        response: JsonRpcResponse.fromJson(map),
-        sessionId: sessionId,
-      );
-    }
-
-    return (
-      response: JsonRpcResponse.failure(
+    } else {
+      response = JsonRpcResponse.failure(
         id: request.id,
         error: JsonRpcError(
           code: JsonRpcErrorCode.internalError,
@@ -274,9 +365,37 @@ class McpSessionClient {
             'body': body,
           },
         ),
-      ),
-      sessionId: sessionId,
-    );
+      );
+    }
+
+    // HTTP error status must not be treated as success even if the body looks
+    // like a JSON-RPC result. Do not retain a session header from failures
+    // (including a failed initialize).
+    if (!httpOk && !response.isError) {
+      response = JsonRpcResponse.failure(
+        id: request.id,
+        error: JsonRpcError(
+          code: transportResponse.statusCode == 401
+              ? JsonRpcErrorCode.unauthorized
+              : transportResponse.statusCode == 403
+                  ? JsonRpcErrorCode.forbidden
+                  : JsonRpcErrorCode.internalError,
+          message: 'HTTP ${transportResponse.statusCode} with result-shaped body',
+          data: {
+            'statusCode': transportResponse.statusCode,
+            'body': body,
+          },
+        ),
+      );
+    }
+
+    if (httpOk && !response.isError) {
+      if (returnedSession != null && returnedSession.isNotEmpty) {
+        sessionId = returnedSession;
+      }
+    }
+
+    return (response: response, sessionId: sessionId);
   }
 }
 

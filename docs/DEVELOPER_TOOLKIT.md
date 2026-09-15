@@ -122,9 +122,11 @@ fixtures. Endpoints:
     requires `qop=auth` + `nc` + `cnonce`, binds `uri=` to the real
     request-target (path + query), requires challenge `opaque`, and accepts
     only `algorithm=MD5`
-  - `GET /auth/hmac` — HMAC-SHA256 over `METHOD\npath\ntimestamp\nnonce`
+  - `GET /auth/hmac` — HMAC-SHA256 over
+    `METHOD\npath\nqueryString\nbody\ntimestamp\nnonce`
     with `X-Key-Id` / `X-Timestamp` / `X-Nonce` / `X-Signature`
-    (`demo-key` / `demo-hmac-secret`); rejects skew and nonce replay
+    (`demo-key` / `demo-hmac-secret`); queryString preserves pair order
+    and duplicate keys; rejects skew and nonce replay
   - `GET /auth/rate-limited` — always `429` with `Retry-After: 1`
 - MCP Streamable HTTP foundation stubs (pinned spec `2025-03-26`):
   - `POST /mcp` — JSON-RPC `initialize` / `tools/*` / `resources/*` /
@@ -141,8 +143,9 @@ fixtures. Endpoints:
     Missing/non-string `protocolVersion`, `capabilities`, or `clientInfo`
     → `invalidParams` (no session). `clientInfo.name` and `clientInfo.version`
     must be non-empty strings.
-    This foundation is **legacy MCP `2025-03-26`** support (not current
-    official `2026-07-28`); dual-era support is deferred to #70.
+    This foundation ships **dual-era** MCP: legacy `2025-03-26`
+    (initialize + session) and current official `2026-07-28`
+    (`server/discover`, stateless tools).
   - #70 adds an in-app MCP session client (initialize → tools/call) over the
     foundation handler, plus an offline auth-matrix executor for mock
     `/auth/*` drafts. Live TLS (`-k`) / redirect (`-L`), dual-era MCP

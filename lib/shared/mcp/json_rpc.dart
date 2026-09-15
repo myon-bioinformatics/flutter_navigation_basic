@@ -143,8 +143,22 @@ class JsonRpcResponse {
   }
 
   factory JsonRpcResponse.fromJson(Map<String, Object?> json) {
-    final errorJson = json['error'];
-    if (errorJson is Map) {
+    final version = json['jsonrpc'];
+    if (version != '2.0') {
+      throw const FormatException('invalid JSON-RPC response version');
+    }
+    final hasResult = json.containsKey('result');
+    final hasError = json.containsKey('error');
+    if (hasResult == hasError) {
+      throw const FormatException(
+        'JSON-RPC response must contain exactly one of result or error',
+      );
+    }
+    if (hasError) {
+      final errorJson = json['error'];
+      if (errorJson is! Map) {
+        throw const FormatException('invalid JSON-RPC error payload');
+      }
       return JsonRpcResponse.failure(
         id: json['id'],
         error: JsonRpcError.fromJson(Map<String, Object?>.from(errorJson)),
@@ -154,5 +168,19 @@ class JsonRpcResponse {
       id: json['id'],
       result: json['result'],
     );
+  }
+
+  /// Parses [json] and optionally checks that [expectedId] matches `id`.
+  factory JsonRpcResponse.parse(
+    Map<String, Object?> json, {
+    Object? expectedId,
+  }) {
+    final response = JsonRpcResponse.fromJson(json);
+    if (expectedId != null && response.id != expectedId) {
+      throw FormatException(
+        'JSON-RPC response id mismatch: expected $expectedId got ${response.id}',
+      );
+    }
+    return response;
   }
 }

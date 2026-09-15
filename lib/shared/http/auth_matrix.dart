@@ -14,6 +14,7 @@ enum AuthMatrixScenario {
   apiKeyQuery,
   basic,
   digestChallengeOnly,
+  digest,
   hmac,
   rateLimited,
 }
@@ -30,6 +31,7 @@ extension AuthMatrixScenarioX on AuthMatrixScenario {
         AuthMatrixScenario.apiKeyQuery => 'API key (query)',
         AuthMatrixScenario.basic => 'HTTP Basic',
         AuthMatrixScenario.digestChallengeOnly => 'Digest (challenge path)',
+        AuthMatrixScenario.digest => 'Digest (challenge-response)',
         AuthMatrixScenario.hmac => 'HMAC-SHA256',
         AuthMatrixScenario.rateLimited => 'Rate limited (429)',
       };
@@ -45,7 +47,9 @@ extension AuthMatrixScenarioX on AuthMatrixScenario {
         AuthMatrixScenario.apiKeyQuery =>
           '/auth/api-key',
         AuthMatrixScenario.basic => '/auth/basic',
-        AuthMatrixScenario.digestChallengeOnly => '/auth/digest',
+        AuthMatrixScenario.digestChallengeOnly ||
+        AuthMatrixScenario.digest =>
+          '/auth/digest',
         AuthMatrixScenario.hmac => '/auth/hmac',
         AuthMatrixScenario.rateLimited => '/auth/rate-limited',
       };
@@ -126,6 +130,9 @@ extension AuthMatrixScenarioX on AuthMatrixScenario {
           ],
         );
       case AuthMatrixScenario.digestChallengeOnly:
+        return next;
+      case AuthMatrixScenario.digest:
+        // Challenge-response is completed by MockAuthRequestExecutor.execute.
         return next;
       case AuthMatrixScenario.hmac:
         return next.copyWith(

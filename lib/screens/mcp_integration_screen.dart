@@ -64,9 +64,10 @@ class _McpIntegrationScreenState extends State<McpIntegrationScreen> {
 
 
   Future<void> _runFoundationEcho() async {
+    final display = DisplayScope.of(context);
     setState(() {
       _loading = true;
-      _foundationLog = 'Running pinned MCP session…';
+      _foundationLog = display.text('mcp.foundationRunning');
     });
     try {
       final client = McpSessionClient(
@@ -74,22 +75,91 @@ class _McpIntegrationScreenState extends State<McpIntegrationScreen> {
       );
       final result = await client.runEchoDemo(text: 'hello-from-ui');
       if (!mounted) return;
+      final display2 = DisplayScope.of(context);
       setState(() {
         _foundationLog = [
-          'pinned=${McpProtocol.specificationVersion}',
-          'currentOfficial=${McpProtocol.currentOfficialVersion}',
-          'implementsCurrentOfficial=${McpProtocol.implementsCurrentOfficial}',
-          'ok=${result.ok} session=${result.sessionId}',
+          display2.text(
+            'mcp.support.pinned',
+            arguments: {'version': McpProtocol.specificationVersion},
+          ),
+          display2.text(
+            'mcp.support.currentOfficial',
+            arguments: {'version': McpProtocol.currentOfficialVersion},
+          ),
+          display2.text(
+            'mcp.support.implementsCurrent',
+            arguments: {
+              'value': '${McpProtocol.implementsCurrentOfficial}',
+            },
+          ),
+          display2.text(
+            'mcp.support.okSession',
+            arguments: {
+              'ok': '${result.ok}',
+              'session': '${result.sessionId}',
+            },
+          ),
           ...result.log,
         ].join('\n');
       });
     } catch (error) {
       if (!mounted) return;
-      setState(() => _foundationLog = 'foundation demo failed: $error');
+      final display2 = DisplayScope.of(context);
+      setState(() {
+        _foundationLog = display2.text(
+          'mcp.foundationFailed',
+          arguments: {'error': '$error'},
+        );
+      });
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
+
+  Future<void> _runModernEcho() async {
+    final display = DisplayScope.of(context);
+    setState(() {
+      _loading = true;
+      _foundationLog = display.text('mcp.era.modernRunning');
+    });
+    try {
+      final client = McpSessionClient(
+        transport: FoundationHandlerTransport(McpFoundationHandler()),
+      );
+      final result = await client.runModernEchoDemo(text: 'hello-modern');
+      if (!mounted) return;
+      final display2 = DisplayScope.of(context);
+      setState(() {
+        _foundationLog = [
+          display2.text('mcp.era.dualSupported'),
+          display2.text(
+            'mcp.support.currentOfficial',
+            arguments: {'version': McpProtocol.currentOfficialVersion},
+          ),
+          display2.text(
+            'mcp.support.okSession',
+            arguments: {
+              'ok': '${result.ok}',
+              'session': '${result.sessionId ?? '-'}',
+            },
+          ),
+          ...result.log,
+        ].join('\n');
+      });
+    } catch (error) {
+      if (!mounted) return;
+      final display2 = DisplayScope.of(context);
+      setState(() {
+        _foundationLog = display2.text(
+          'mcp.foundationFailed',
+          arguments: {'error': '$error'},
+        );
+      });
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -118,14 +188,30 @@ class _McpIntegrationScreenState extends State<McpIntegrationScreen> {
           SelectableText(display.text('common.mockLabel', arguments: {'url': MockApiClient.defaultBaseUrl})),
           const SizedBox(height: 16),
           Text(
-            'Foundation session (pinned ${McpProtocol.specificationVersion})',
+            display.text('mcp.foundationSection', arguments: {'version': McpProtocol.specificationVersion}),
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
           FilledButton.icon(
             onPressed: _loading ? null : _runFoundationEcho,
             icon: const Icon(Icons.hub_outlined),
-            label: const Text('Run initialize → tools/call(echo)'),
+            label: Text(display.text('mcp.foundationRunEcho')),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            display.text(
+              'mcp.era.modernSection',
+              arguments: {'version': McpProtocol.currentOfficialVersion},
+            ),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(display.text('mcp.era.dualSupported')),
+          const SizedBox(height: 8),
+          FilledButton.tonalIcon(
+            onPressed: _loading ? null : _runModernEcho,
+            icon: const Icon(Icons.auto_awesome_outlined),
+            label: Text(display.text('mcp.era.modernRun')),
           ),
           if (_foundationLog.isNotEmpty) ...[
             const SizedBox(height: 12),
@@ -138,7 +224,7 @@ class _McpIntegrationScreenState extends State<McpIntegrationScreen> {
           ],
           const SizedBox(height: 20),
           Text(
-            'Legacy mock scenarios',
+            display.text('mcp.legacyScenariosSection'),
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),

@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../tool/src/mock_auth.dart';
+import 'package:flutter_application_1/shared/http/mock_auth.dart';
 
 void main() {
   group('MockAuthHandler bearer', () {
