@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'src/mock_auth.dart';
+import 'package:flutter_application_1/shared/http/mock_auth.dart';
 import 'src/mock_mcp.dart';
 
 Future<void> main(List<String> args) async {
@@ -53,15 +53,31 @@ Future<void> _handle(
       entry.key: entry.value,
   };
 
+  // Preserve raw query order (Uri.queryParameters collapses duplicate keys).
+  final queryPairs = <({String name, String value})>[
+    for (final part in request.uri.query.split('&'))
+      if (part.isNotEmpty)
+        (
+          name: Uri.decodeQueryComponent(
+            part.contains('=') ? part.split('=').first : part,
+          ),
+          value: Uri.decodeQueryComponent(
+            part.contains('=') ? part.substring(part.indexOf('=') + 1) : '',
+          ),
+        ),
+  ];
   final requestTarget = request.uri.hasQuery
       ? '${request.uri.path}?${request.uri.query}'
       : request.uri.path;
+  final body = await utf8.decoder.bind(request).join();
   final authResult = auth.handle(
     method: request.method,
     path: request.uri.path,
     headers: headerMap,
     query: queryMap,
     requestTarget: requestTarget,
+    body: body.isEmpty ? null : body,
+    queryPairs: queryPairs,
   );
   if (authResult != null) {
     response.statusCode = authResult.statusCode;
@@ -71,7 +87,6 @@ Future<void> _handle(
     return;
   }
 
-  final body = await utf8.decoder.bind(request).join();
   final mcpResult = mcp.handle(
     method: request.method,
     path: request.uri.path,

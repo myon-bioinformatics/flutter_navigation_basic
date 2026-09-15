@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 
+import 'digest_nc.dart';
+
 /// Well-known **demo** credentials for local mock auth scenarios.
 ///
 /// These are intentionally public fixture values — never real secrets.
@@ -45,12 +47,20 @@ class MockAuthResult {
 
 /// Stateless-ish auth scenario router (nonce replay tracked in-memory).
 class MockAuthHandler {
-  MockAuthHandler({Set<String>? seenNonces, DateTime Function()? clock})
-      : _seenNonces = seenNonces ?? <String>{},
-        _clock = clock ?? DateTime.now;
+  MockAuthHandler({
+    Set<String>? seenNonces,
+    DateTime Function()? clock,
+    Map<String, int>? digestNcByClient,
+  })  : _seenNonces = seenNonces ?? <String>{},
+        _clock = clock ?? DateTime.now,
+        _digestNcByClient = digestNcByClient ?? <String, int>{};
 
   final Set<String> _seenNonces;
   final DateTime Function() _clock;
+
+  /// Tracks highest accepted Digest `nc` per `nonce|cnonce` client tuple.
+  /// Fixture MD5 Digest only — not for production auth.
+  final Map<String, int> _digestNcByClient;
 
   /// Returns a result when [path] is an `/auth/...` scenario; otherwise null.
   ///
@@ -63,11 +73,16 @@ class MockAuthHandler {
     required Map<String, String> headers,
     required Map<String, String> query,
     String? requestTarget,
+    String? body,
+    List<({String name, String value})>? queryPairs,
   }) {
     final normalized = path.endsWith('/') && path.length > 1
         ? path.substring(0, path.length - 1)
         : path;
-    final target = requestTarget ?? requestTargetFrom(path, query);
+    final target = requestTarget ??
+        (queryPairs != null
+            ? requestTargetFromPairs(path, queryPairs)
+            : requestTargetFrom(path, query));
 
     switch (normalized) {
       case '/auth/bearer':
@@ -79,10 +94,20 @@ class MockAuthHandler {
       case '/auth/digest':
         return _digest(method, target, headers);
       case '/auth/hmac':
-        // Bind HMAC to the actual request path (including a trailing slash
-        // when present). Routing still uses [normalized]; the signed path
-        // must match what the client sent.
-        return _hmac(method, path, headers);
+        // Bind HMAC to path + ordered query + body. Routing still uses
+        // [normalized]; the signed path must match what the client sent.
+        final queryString = queryPairs != null
+            ? encodeQueryPairs(queryPairs)
+            : encodeQueryPairs([
+                for (final e in query.entries) (name: e.key, value: e.value),
+              ]);
+        return _hmac(
+          method,
+          path,
+          headers,
+          queryString: queryString,
+          body: body ?? '',
+        );
       case '/auth/rate-limited':
         return const MockAuthResult(
           statusCode: 429,
@@ -315,6 +340,15 @@ class MockAuthHandler {
       );
     }
 
+    // nc must be exactly 8 hex digits (RFC 7616) before response/replay checks.
+    final ncValue = DigestNc.tryParse(nc);
+    if (ncValue == null || ncValue < 1) {
+      return _unauthorized(
+        reason: 'invalid_nc',
+        wwwAuthenticate: challenge,
+      );
+    }
+
     final ha1 = _md5Hex(
       '$username:$realm:${MockAuthDemo.basicPassword}',
     );
@@ -326,6 +360,19 @@ class MockAuthHandler {
         wwwAuthenticate: challenge,
       );
     }
+
+    // Replay protection: reject duplicate or non-monotonic nc for the same
+    // nonce+cnonce tuple. MD5 Digest remains fixture-only.
+    final clientKey = '$nonce|$cnonce';
+    final previous = _digestNcByClient[clientKey];
+    if (previous != null && ncValue <= previous) {
+      return _unauthorized(
+        reason: 'digest_replay',
+        wwwAuthenticate: challenge,
+      );
+    }
+    _digestNcByClient[clientKey] = ncValue;
+
     return const MockAuthResult(
       statusCode: 200,
       body: {
@@ -339,8 +386,10 @@ class MockAuthHandler {
   MockAuthResult _hmac(
     String method,
     String path,
-    Map<String, String> headers,
-  ) {
+    Map<String, String> headers, {
+    required String queryString,
+    required String body,
+  }) {
     final keyId = _header(headers, 'x-key-id');
     final timestampRaw = _header(headers, 'x-timestamp');
     final nonce = _header(headers, 'x-nonce');
@@ -410,6 +459,8 @@ class MockAuthHandler {
     final expected = hmacSignature(
       method: method,
       path: path,
+      queryString: queryString,
+      body: body,
       timestamp: timestampRaw,
       nonce: nonce,
     );
@@ -435,16 +486,41 @@ class MockAuthHandler {
   }
 
   /// Canonical HMAC-SHA256 hex digest for the mock contract.
+  ///
+  /// Payload: `METHOD\npath\nqueryString\nbody\ntimestamp\nnonce`.
   static String hmacSignature({
     required String method,
     required String path,
     required String timestamp,
     required String nonce,
+    String queryString = '',
+    String body = '',
     String secret = MockAuthDemo.hmacSecret,
   }) {
-    final payload = '${method.toUpperCase()}\n$path\n$timestamp\n$nonce';
-    final digest = Hmac(sha256, utf8.encode(secret)).convert(utf8.encode(payload));
+    final payload =
+        '${method.toUpperCase()}\n$path\n$queryString\n$body\n$timestamp\n$nonce';
+    final digest =
+        Hmac(sha256, utf8.encode(secret)).convert(utf8.encode(payload));
     return digest.toString();
+  }
+
+  /// Builds an HTTP request-target from ordered query pairs.
+  static String requestTargetFromPairs(
+    String path,
+    List<({String name, String value})> pairs,
+  ) {
+    final encoded = encodeQueryPairs(pairs);
+    return encoded.isEmpty ? path : '$path?$encoded';
+  }
+
+  static String encodeQueryPairs(List<({String name, String value})> pairs) {
+    if (pairs.isEmpty) return '';
+    return pairs
+        .map(
+          (p) =>
+              '${Uri.encodeQueryComponent(p.name)}=${Uri.encodeQueryComponent(p.value)}',
+        )
+        .join('&');
   }
 
   /// Builds an HTTP request-target (`path` or `path?query`) for Digest binding.

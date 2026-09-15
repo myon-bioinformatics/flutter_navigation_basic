@@ -24,6 +24,8 @@ Map<String, String> mcpStreamableHeaders({
   String? sessionId,
   String protocolVersion = McpProtocol.specificationVersion,
   bool acceptEventStream = true,
+  String? method,
+  String? name,
 }) {
   final accept = acceptEventStream
       ? '${McpProtocol.acceptJson}, ${McpProtocol.acceptEventStream}'
@@ -34,6 +36,9 @@ Map<String, String> mcpStreamableHeaders({
     McpProtocol.protocolVersionHeader: protocolVersion,
     if (sessionId != null && sessionId.isNotEmpty)
       McpProtocol.sessionIdHeader: sessionId,
+    if (method != null && method.isNotEmpty) McpProtocol.methodHeader: method,
+    if (name != null && name.isNotEmpty)
+      McpProtocol.nameHeader: McpHeaderCodec.encode(name),
   };
 }
 
@@ -51,11 +56,9 @@ String generateMcpSessionId({Random? random, int byteLength = 18}) {
 class McpFoundationHandler {
   McpFoundationHandler({
     String Function()? sessionIdFactory,
-    this.requiredAudience,
   }) : _sessionIdFactory = sessionIdFactory ?? generateMcpSessionId;
 
   final String Function() _sessionIdFactory;
-  final String? requiredAudience;
   final Map<String, McpSession> _sessions = {};
 
   McpSession? session(String id) => _sessions[id];
@@ -99,28 +102,33 @@ class McpFoundationHandler {
           );
         });
       case 'tools/list':
-        return _requireSession(request, sessionId, (_) {
-          return JsonRpcResponse.result(
-            id: request.id,
-            result: {
-              'tools': [
-                {
-                  'name': 'echo',
-                  'description': 'Echo a string argument',
-                  'inputSchema': {
-                    'type': 'object',
-                    'properties': {
-                      'text': {'type': 'string'},
+        return _modernOrSession(
+          request,
+          sessionId,
+          (_) {
+            return JsonRpcResponse.result(
+              id: request.id,
+              result: {
+                'tools': [
+                  {
+                    'name': 'echo',
+                    'description': 'Echo a string argument',
+                    'inputSchema': {
+                      'type': 'object',
+                      'properties': {
+                        'text': {'type': 'string'},
+                      },
+                      'required': ['text'],
                     },
-                    'required': ['text'],
                   },
-                },
-              ],
-            },
-          );
-        });
+                ],
+              },
+            );
+          },
+          listResult: true,
+        );
       case 'tools/call':
-        return _requireSession(request, sessionId, (_) {
+        return _modernOrSession(request, sessionId, (_) {
           final params = _asMap(request.params);
           final name = params?['name'];
           final args = _asMap(params?['arguments']) ?? const {};
@@ -154,22 +162,27 @@ class McpFoundationHandler {
           );
         });
       case 'resources/list':
-        return _requireSession(request, sessionId, (_) {
-          return JsonRpcResponse.result(
-            id: request.id,
-            result: {
-              'resources': [
-                {
-                  'uri': 'demo://readme',
-                  'name': 'README',
-                  'mimeType': 'text/plain',
-                },
-              ],
-            },
-          );
-        });
+        return _modernOrSession(
+          request,
+          sessionId,
+          (_) {
+            return JsonRpcResponse.result(
+              id: request.id,
+              result: {
+                'resources': [
+                  {
+                    'uri': 'demo://readme',
+                    'name': 'README',
+                    'mimeType': 'text/plain',
+                  },
+                ],
+              },
+            );
+          },
+          listResult: true,
+        );
       case 'resources/read':
-        return _requireSession(request, sessionId, (_) {
+        return _modernOrSession(request, sessionId, (_) {
           final params = _asMap(request.params);
           final uri = params?['uri'];
           if (uri != 'demo://readme') {
@@ -195,21 +208,26 @@ class McpFoundationHandler {
           );
         });
       case 'prompts/list':
-        return _requireSession(request, sessionId, (_) {
-          return JsonRpcResponse.result(
-            id: request.id,
-            result: {
-              'prompts': [
-                {
-                  'name': 'greet',
-                  'description': 'Greeting prompt',
-                },
-              ],
-            },
-          );
-        });
+        return _modernOrSession(
+          request,
+          sessionId,
+          (_) {
+            return JsonRpcResponse.result(
+              id: request.id,
+              result: {
+                'prompts': [
+                  {
+                    'name': 'greet',
+                    'description': 'Greeting prompt',
+                  },
+                ],
+              },
+            );
+          },
+          listResult: true,
+        );
       case 'prompts/get':
-        return _requireSession(request, sessionId, (_) {
+        return _modernOrSession(request, sessionId, (_) {
           final params = _asMap(request.params);
           final name = params?['name'];
           if (name != 'greet') {
@@ -237,6 +255,8 @@ class McpFoundationHandler {
             },
           );
         });
+      case 'server/discover':
+        return _serverDiscover(request);
       default:
         return (
           response: JsonRpcResponse.failure(
@@ -342,6 +362,91 @@ class McpFoundationHandler {
       ),
       sessionId: null,
     );
+  }
+
+
+  ({JsonRpcResponse response, String? sessionId}) _serverDiscover(
+    JsonRpcRequest request,
+  ) {
+    return (
+      response: JsonRpcResponse.result(
+        id: request.id,
+        result: {
+          'resultType': 'complete',
+          'protocolVersions': [
+            McpProtocol.specificationVersion,
+            McpProtocol.currentOfficialVersion,
+          ],
+          'capabilities': {
+            'tools': {'listChanged': false},
+            'resources': {'subscribe': false, 'listChanged': false},
+            'prompts': {'listChanged': false},
+          },
+          'serverInfo': {
+            'name': 'flutter-navigation-basic-mcp-foundation',
+            'version': '0.1.0',
+          },
+          'instructions':
+              'Dual-era demo server. Prefer '
+              '${McpProtocol.currentOfficialVersion} with per-request _meta, '
+              'or legacy initialize + session.',
+        },
+      ),
+      sessionId: null,
+    );
+  }
+
+  bool _hasModernMeta(JsonRpcRequest request) {
+    final params = _asMap(request.params);
+    final meta = _asMap(params?['_meta']);
+    if (meta == null) return false;
+    final version = meta['io.modelcontextprotocol/protocolVersion'];
+    return version == McpProtocol.currentOfficialVersion;
+  }
+
+  ({JsonRpcResponse response, String? sessionId}) _modernOrSession(
+    JsonRpcRequest request,
+    String? sessionId,
+    JsonRpcResponse Function(McpSession? session) build, {
+    bool listResult = false,
+  }) {
+    if (_hasModernMeta(request)) {
+      final response = build(null);
+      return (
+        response: _withModernResultShape(
+          response,
+          listResult: listResult,
+        ),
+        sessionId: null,
+      );
+    }
+    return _requireSession(request, sessionId, (session) => build(session));
+  }
+
+  /// Current-official results require `resultType`; list results also carry
+  /// cache hint fields (`ttlMs`, `cacheScope`).
+  JsonRpcResponse _withModernResultShape(
+    JsonRpcResponse response, {
+    bool listResult = false,
+  }) {
+    if (response.isError) return response;
+    final result = response.result;
+    if (result is! Map) {
+      return JsonRpcResponse.result(
+        id: response.id,
+        result: {
+          'resultType': 'complete',
+          'value': result,
+        },
+      );
+    }
+    final map = Map<String, Object?>.from(result);
+    map.putIfAbsent('resultType', () => 'complete');
+    if (listResult) {
+      map.putIfAbsent('ttlMs', () => 60000);
+      map.putIfAbsent('cacheScope', () => 'private');
+    }
+    return JsonRpcResponse.result(id: response.id, result: map);
   }
 
   ({JsonRpcResponse response, String? sessionId}) _requireSession(

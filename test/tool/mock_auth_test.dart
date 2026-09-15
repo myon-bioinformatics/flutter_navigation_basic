@@ -2,7 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../tool/src/mock_auth.dart';
+import 'package:flutter_application_1/shared/http/digest_nc.dart';
+import 'package:flutter_application_1/shared/http/mock_auth.dart';
 
 void main() {
   group('MockAuthHandler bearer', () {
@@ -356,11 +357,29 @@ void main() {
       )!;
       expect(ok.statusCode, 200);
 
-      // Same digest claimed against path-only target must fail.
+      // Second success needs a fresh nc (replay protection tracks nonce|cnonce).
+      const nc2 = '00000002';
+      final response2 = MockAuthHandler.digestResponse(
+        method: 'GET',
+        uri: target,
+        username: MockAuthDemo.basicUser,
+        password: MockAuthDemo.basicPassword,
+        realm: MockAuthDemo.digestRealm,
+        nonce: MockAuthDemo.digestNonce,
+        nc: nc2,
+        cnonce: cnonce,
+      );
+      final header2 = 'Digest username="${MockAuthDemo.basicUser}", '
+          'realm="${MockAuthDemo.digestRealm}", '
+          'nonce="${MockAuthDemo.digestNonce}", '
+          'uri="$target", '
+          'qop=auth, nc=$nc2, cnonce="$cnonce", '
+          'response="$response2", '
+          'opaque="${MockAuthDemo.digestOpaque}"';
       final mismatch = auth.handle(
         method: 'GET',
         path: '/auth/digest',
-        headers: {'authorization': header},
+        headers: {'authorization': header2},
         query: const {'x': '1'},
       )!;
       // Derived target is /auth/digest?x=1, claimed uri matches → still 200
@@ -372,14 +391,14 @@ void main() {
         password: MockAuthDemo.basicPassword,
         realm: MockAuthDemo.digestRealm,
         nonce: MockAuthDemo.digestNonce,
-        nc: nc,
+        nc: '00000003',
         cnonce: cnonce,
       );
       final pathHeader = 'Digest username="${MockAuthDemo.basicUser}", '
           'realm="${MockAuthDemo.digestRealm}", '
           'nonce="${MockAuthDemo.digestNonce}", '
           'uri="/auth/digest", '
-          'qop=auth, nc=$nc, cnonce="$cnonce", '
+          'qop=auth, nc=00000003, cnonce="$cnonce", '
           'response="$pathOnly", '
           'opaque="${MockAuthDemo.digestOpaque}"';
       final bad = auth.handle(
@@ -422,7 +441,111 @@ void main() {
       expect(result.statusCode, 401);
       expect(result.body['reason'], 'invalid_opaque');
     });
+
+
+    test('rejects replayed nc/cnonce for same nonce', () {
+      const uri = '/auth/digest';
+      const nc = '00000001';
+      const cnonce = 'demo-cnonce';
+      final response = MockAuthHandler.digestResponse(
+        method: 'GET',
+        uri: uri,
+        username: MockAuthDemo.basicUser,
+        password: MockAuthDemo.basicPassword,
+        realm: MockAuthDemo.digestRealm,
+        nonce: MockAuthDemo.digestNonce,
+        nc: nc,
+        cnonce: cnonce,
+      );
+      final header = 'Digest username="${MockAuthDemo.basicUser}", '
+          'realm="${MockAuthDemo.digestRealm}", '
+          'nonce="${MockAuthDemo.digestNonce}", '
+          'uri="$uri", '
+          'qop=auth, nc=$nc, cnonce="$cnonce", '
+          'response="$response", '
+          'opaque="${MockAuthDemo.digestOpaque}"';
+      final first = auth.handle(
+        method: 'GET',
+        path: uri,
+        headers: {'authorization': header},
+        query: const {},
+      )!;
+      expect(first.statusCode, 200);
+
+      final replayed = auth.handle(
+        method: 'GET',
+        path: uri,
+        headers: {'authorization': header},
+        query: const {},
+      )!;
+      expect(replayed.statusCode, 401);
+      expect(replayed.body['reason'], 'digest_replay');
+    });
+
+    test('parses nc as exactly 8 hex digits (0000000a == 10)', () {
+      const uri = '/auth/digest';
+      const cnonce = 'hex-nc-cnonce';
+      const hexNc = '0000000a';
+      expect(DigestNc.tryParse(hexNc), 10);
+
+      final response = MockAuthHandler.digestResponse(
+        method: 'GET',
+        uri: uri,
+        username: MockAuthDemo.basicUser,
+        password: MockAuthDemo.basicPassword,
+        realm: MockAuthDemo.digestRealm,
+        nonce: MockAuthDemo.digestNonce,
+        nc: hexNc,
+        cnonce: cnonce,
+      );
+      final header = 'Digest username="${MockAuthDemo.basicUser}", '
+          'realm="${MockAuthDemo.digestRealm}", '
+          'nonce="${MockAuthDemo.digestNonce}", '
+          'uri="$uri", '
+          'qop=auth, nc=$hexNc, cnonce="$cnonce", '
+          'response="$response", '
+          'opaque="${MockAuthDemo.digestOpaque}"';
+      final ok = auth.handle(
+        method: 'GET',
+        path: uri,
+        headers: {'authorization': header},
+        query: const {},
+      )!;
+      expect(ok.statusCode, 200);
+
+      for (final bad in ['10', '0000000g', '000000001']) {
+        final rejected = auth.handle(
+          method: 'GET',
+          path: uri,
+          headers: {
+            'authorization': 'Digest username="${MockAuthDemo.basicUser}", '
+                'realm="${MockAuthDemo.digestRealm}", '
+                'nonce="${MockAuthDemo.digestNonce}", '
+                'uri="$uri", '
+                'qop=auth, nc=$bad, cnonce="bad-$bad", '
+                'response="$response", '
+                'opaque="${MockAuthDemo.digestOpaque}"',
+          },
+          query: const {},
+        )!;
+        expect(rejected.statusCode, 401, reason: 'nc=$bad');
+        expect(rejected.body['reason'], 'invalid_nc');
+      }
+    });
   });
+
+  group('DigestNc', () {
+    test('formats and parses 8-digit hex; rejects malformed', () {
+      expect(DigestNc.format(1), '00000001');
+      expect(DigestNc.format(10), '0000000a');
+      expect(DigestNc.tryParse('0000000a'), 10);
+      expect(DigestNc.tryParse('0000000A'), 10);
+      expect(DigestNc.tryParse('10'), isNull);
+      expect(DigestNc.tryParse('0000000g'), isNull);
+      expect(DigestNc.tryParse('000000001'), isNull);
+    });
+  });
+
 
   group('MockAuthHandler hmac', () {
     test('missing headers / skew / bad signature / replay', () {

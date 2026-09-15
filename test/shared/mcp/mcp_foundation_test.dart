@@ -636,6 +636,57 @@ void main() {
     });
   });
 
+
+  group('OAuth metadata typing (post-merge #69 Copilot nits)', () {
+    test('registration_endpoint wrong type / empty → FormatException', () {
+      expect(
+        () => OAuthAuthorizationServerMetadata.fromJson({
+          'issuer': 'https://auth.example.test/',
+          'authorization_endpoint': 'https://auth.example.test/authorize',
+          'token_endpoint': 'https://auth.example.test/token',
+          'response_types_supported': ['code'],
+          'registration_endpoint': 123,
+        }),
+        throwsFormatException,
+      );
+      expect(
+        () => OAuthAuthorizationServerMetadata.fromJson({
+          'issuer': 'https://auth.example.test/',
+          'authorization_endpoint': 'https://auth.example.test/authorize',
+          'token_endpoint': 'https://auth.example.test/token',
+          'response_types_supported': ['code'],
+          'registration_endpoint': '',
+        }),
+        throwsFormatException,
+      );
+    });
+
+    test('authorization_servers rejects non-string / empty members', () {
+      expect(
+        () => OAuthProtectedResourceMetadata.fromJson({
+          'resource': 'https://mcp.example.test/',
+          'authorization_servers': ['https://auth.example.test/', 1],
+        }),
+        throwsFormatException,
+      );
+      expect(
+        () => OAuthProtectedResourceMetadata.fromJson({
+          'resource': 'https://mcp.example.test/',
+          'authorization_servers': [''],
+        }),
+        throwsFormatException,
+      );
+      expect(
+        () => OAuthProtectedResourceMetadata.fromJson({
+          'resource': 'https://mcp.example.test/',
+          'authorization_servers': ['https://auth.example.test/'],
+          'resource_name': 9,
+        }),
+        throwsFormatException,
+      );
+    });
+  });
+
   test('support matrix exposes pinned version and web OAuth caveat', () {
     expect(
       McpSupportMatrix.asJson['specificationVersion'],
@@ -644,10 +695,404 @@ void main() {
     expect(McpSupportMatrix.flutterWebInAppOAuthGuaranteed, isFalse);
     expect(McpSupportMatrix.legacySseDefault, isFalse);
     expect(McpSupportMatrix.legacyMcpEra, isTrue);
+    expect(McpSupportMatrix.currentOfficialEra, isTrue);
     expect(
       McpSupportMatrix.currentOfficialVersion,
       McpProtocol.currentOfficialVersion,
     );
-    expect(McpSupportMatrix.implementsCurrentOfficial, isFalse);
+    expect(McpSupportMatrix.implementsCurrentOfficial, isTrue);
   });
+
+
+  group('MockMcpRoutes modern HTTP dual-era', () {
+    late MockMcpRoutes routes;
+
+    setUp(() {
+      routes = MockMcpRoutes(
+        handler: McpFoundationHandler(sessionIdFactory: () => 'sess-modern'),
+      );
+    });
+
+    Map<String, String> modernHeaders({
+      required String method,
+      String? name,
+      String version = McpProtocol.currentOfficialVersion,
+    }) =>
+        {
+          McpProtocol.protocolVersionHeader: version,
+          McpProtocol.methodHeader: method,
+          if (name != null) McpProtocol.nameHeader: name,
+        };
+
+    Map<String, Object?> modernMeta([String version = McpProtocol.currentOfficialVersion]) =>
+        {
+          'io.modelcontextprotocol/protocolVersion': version,
+          'io.modelcontextprotocol/clientInfo': {
+            'name': 'test',
+            'version': '0',
+          },
+          'io.modelcontextprotocol/clientCapabilities': <String, Object?>{},
+        };
+
+    test('server/discover without session succeeds', () {
+      final response = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: modernHeaders(method: 'server/discover'),
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 1,
+          'method': 'server/discover',
+          'params': {'_meta': modernMeta()},
+        }),
+      )!;
+      expect(response.statusCode, 200);
+      final body = response.body as Map;
+      expect(body['result'], isA<Map>());
+      expect((body['result'] as Map)['resultType'], 'complete');
+    });
+
+    test('modern tools/list + tools/call without session', () {
+      final listed = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: modernHeaders(method: 'tools/list'),
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 2,
+          'method': 'tools/list',
+          'params': {'_meta': modernMeta()},
+        }),
+      )!;
+      expect(listed.statusCode, 200);
+      final listResult = (listed.body as Map)['result'] as Map;
+      expect(listResult['resultType'], 'complete');
+      expect(listResult['ttlMs'], isNotNull);
+      expect(listResult['cacheScope'], isNotNull);
+
+      final called = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: modernHeaders(method: 'tools/call', name: 'echo'),
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 3,
+          'method': 'tools/call',
+          'params': {
+            'name': 'echo',
+            'arguments': {'text': 'via-http'},
+            '_meta': modernMeta(),
+          },
+        }),
+      )!;
+      expect(called.statusCode, 200);
+      final callResult = (called.body as Map)['result'] as Map;
+      expect(callResult['resultType'], 'complete');
+      expect(((callResult['content'] as List).first as Map)['text'], 'via-http');
+    });
+
+    test('missing Mcp-Method → headerMismatch', () {
+      final response = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: {
+          McpProtocol.protocolVersionHeader:
+              McpProtocol.currentOfficialVersion,
+        },
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 4,
+          'method': 'server/discover',
+          'params': {'_meta': modernMeta()},
+        }),
+      )!;
+      expect(response.statusCode, 400);
+      final error = (response.body as Map)['error'] as Map;
+      expect(error['code'], JsonRpcErrorCode.headerMismatch);
+    });
+
+    test('mismatched protocol header/meta → headerMismatch', () {
+      final response = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: modernHeaders(
+          method: 'server/discover',
+          version: '2099-01-01',
+        ),
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 5,
+          'method': 'server/discover',
+          'params': {'_meta': modernMeta('2099-01-01')},
+        }),
+      )!;
+      expect(response.statusCode, 400);
+      final error = (response.body as Map)['error'] as Map;
+      expect(error['code'], JsonRpcErrorCode.unsupportedProtocolVersion);
+    });
+
+    test('legacy tools/list still requires session', () {
+      final response = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: const {},
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 6,
+          'method': 'tools/list',
+        }),
+      )!;
+      expect(response.statusCode, 400);
+      expect((response.body as Map)['error'], 'session_required');
+    });
+
+    test('rejects missing/wrong-type modern _meta clientInfo/capabilities', () {
+      JsonRpcResponse errorFor(Map<String, Object?> meta) {
+        final response = routes.handle(
+          method: 'POST',
+          path: '/mcp',
+          headers: modernHeaders(method: 'server/discover'),
+          rawBody: jsonEncode({
+            'jsonrpc': '2.0',
+            'id': 70,
+            'method': 'server/discover',
+            'params': {'_meta': meta},
+          }),
+        )!;
+        expect(response.statusCode, 400);
+        return JsonRpcResponse.fromJson(
+          Map<String, Object?>.from(response.body as Map),
+        );
+      }
+
+      final versionOnly = errorFor({
+        'io.modelcontextprotocol/protocolVersion':
+            McpProtocol.currentOfficialVersion,
+      });
+      expect(versionOnly.error?.code, JsonRpcErrorCode.headerMismatch);
+      expect(versionOnly.error?.message, contains('clientInfo'));
+
+      final badInfoType = errorFor({
+        ...modernMeta(),
+        'io.modelcontextprotocol/clientInfo': 'nope',
+      });
+      expect(badInfoType.error?.message, contains('clientInfo'));
+
+      final emptyName = errorFor({
+        ...modernMeta(),
+        'io.modelcontextprotocol/clientInfo': {
+          'name': '',
+          'version': '0',
+        },
+      });
+      expect(emptyName.error?.message, contains('clientInfo.name'));
+
+      final missingVersion = errorFor({
+        ...modernMeta(),
+        'io.modelcontextprotocol/clientInfo': {'name': 'x'},
+      });
+      expect(missingVersion.error?.message, contains('clientInfo.version'));
+
+      final badCaps = errorFor({
+        ...modernMeta(),
+        'io.modelcontextprotocol/clientCapabilities': 'nope',
+      });
+      expect(badCaps.error?.message, contains('clientCapabilities'));
+
+      final missingCaps = errorFor({
+        'io.modelcontextprotocol/protocolVersion':
+            McpProtocol.currentOfficialVersion,
+        'io.modelcontextprotocol/clientInfo': {
+          'name': 'test',
+          'version': '0',
+        },
+      });
+      expect(missingCaps.error?.message, contains('clientCapabilities'));
+    });
+
+    test('modern resources/prompts succeed without session + modern shape', () {
+      final listed = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: modernHeaders(method: 'resources/list'),
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 71,
+          'method': 'resources/list',
+          'params': {'_meta': modernMeta()},
+        }),
+      )!;
+      expect(listed.statusCode, 200);
+      final listResult = (listed.body as Map)['result'] as Map;
+      expect(listResult['resultType'], 'complete');
+      expect(listResult['ttlMs'], isNotNull);
+      expect(listResult['cacheScope'], isNotNull);
+      expect(listResult['resources'], isA<List>());
+
+      final read = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: modernHeaders(method: 'resources/read', name: 'demo://readme'),
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 72,
+          'method': 'resources/read',
+          'params': {
+            'uri': 'demo://readme',
+            '_meta': modernMeta(),
+          },
+        }),
+      )!;
+      expect(read.statusCode, 200);
+      expect(((read.body as Map)['result'] as Map)['resultType'], 'complete');
+
+      final prompts = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: modernHeaders(method: 'prompts/list'),
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 73,
+          'method': 'prompts/list',
+          'params': {'_meta': modernMeta()},
+        }),
+      )!;
+      expect(prompts.statusCode, 200);
+      final promptsResult = (prompts.body as Map)['result'] as Map;
+      expect(promptsResult['resultType'], 'complete');
+      expect(promptsResult['ttlMs'], isNotNull);
+      expect(promptsResult['cacheScope'], isNotNull);
+
+      final get = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: modernHeaders(method: 'prompts/get', name: 'greet'),
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 74,
+          'method': 'prompts/get',
+          'params': {
+            'name': 'greet',
+            '_meta': modernMeta(),
+          },
+        }),
+      )!;
+      expect(get.statusCode, 200);
+      expect(((get.body as Map)['result'] as Map)['resultType'], 'complete');
+    });
+
+    test('modern unknown method → HTTP 404 with methodNotFound', () {
+      final response = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: modernHeaders(method: 'totally/unknown'),
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 75,
+          'method': 'totally/unknown',
+          'params': {'_meta': modernMeta()},
+        }),
+      )!;
+      expect(response.statusCode, 404);
+      final error = (response.body as Map)['error'] as Map;
+      expect(error['code'], JsonRpcErrorCode.methodNotFound);
+    });
+
+    test('Mcp-Name base64 sentinel encode/decode for Unicode and edges', () {
+      const unicodeName = 'エコー';
+      const spacedName = ' leading ';
+      const sentinelLiteral = '=?base64?YQ==?=';
+
+      expect(McpHeaderCodec.needsEncoding(unicodeName), isTrue);
+      expect(McpHeaderCodec.needsEncoding(spacedName), isTrue);
+      expect(McpHeaderCodec.needsEncoding(sentinelLiteral), isTrue);
+      expect(McpHeaderCodec.needsEncoding('echo'), isFalse);
+
+      final encodedUnicode = McpHeaderCodec.encode(unicodeName);
+      expect(encodedUnicode.startsWith('=?base64?'), isTrue);
+      expect(McpHeaderCodec.decode(encodedUnicode), unicodeName);
+      // Raw non-sentinel values decode as-is; encode wraps unsafe edges.
+      expect(McpHeaderCodec.decode(spacedName), spacedName);
+      expect(McpHeaderCodec.decode(McpHeaderCodec.encode(spacedName)), spacedName);
+      expect(
+        McpHeaderCodec.decode(McpHeaderCodec.encode(sentinelLiteral)),
+        sentinelLiteral,
+      );
+      expect(McpHeaderCodec.decode('=?base64?!!!?='), isNull);
+      expect(McpHeaderCodec.decode('=?notbase64?YQ==?='), isNull);
+
+      // Wire: Unicode tool name via encoded Mcp-Name header.
+      final called = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: {
+          ...modernHeaders(method: 'tools/call'),
+          McpProtocol.nameHeader: McpHeaderCodec.encode(unicodeName),
+        },
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 76,
+          'method': 'tools/call',
+          'params': {
+            'name': unicodeName,
+            'arguments': {'text': 'hi'},
+            '_meta': modernMeta(),
+          },
+        }),
+      )!;
+      // Unknown tool name → JSON-RPC tool error (or method path), but NOT
+      // headerMismatch — proves encode/decode matched the body param.
+      expect(called.statusCode, isNot(400));
+      final body = called.body as Map;
+      if (body.containsKey('error')) {
+        expect(
+          (body['error'] as Map)['code'],
+          isNot(JsonRpcErrorCode.headerMismatch),
+        );
+      }
+
+      final malformed = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: {
+          ...modernHeaders(method: 'tools/call'),
+          McpProtocol.nameHeader: '=?base64?!!!?=',
+        },
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 77,
+          'method': 'tools/call',
+          'params': {
+            'name': 'echo',
+            'arguments': {'text': 'hi'},
+            '_meta': modernMeta(),
+          },
+        }),
+      )!;
+      expect(malformed.statusCode, 400);
+      expect(
+        ((malformed.body as Map)['error'] as Map)['message'],
+        contains('malformed'),
+      );
+
+      // mcpStreamableHeaders applies the codec for callers.
+      final headers = mcpStreamableHeaders(
+        protocolVersion: McpProtocol.currentOfficialVersion,
+        method: 'tools/call',
+        name: unicodeName,
+      );
+      expect(
+        headers[McpProtocol.nameHeader],
+        McpHeaderCodec.encode(unicodeName),
+      );
+    });
+  });
+
+  group('McpHeaderCodec', () {
+    test('round-trips ASCII-safe values unchanged', () {
+      expect(McpHeaderCodec.encode('echo'), 'echo');
+      expect(McpHeaderCodec.decode('echo'), 'echo');
+    });
+  });
+
 }
