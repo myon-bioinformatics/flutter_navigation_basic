@@ -204,59 +204,46 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
   }
 
   Future<void> _executeMock() async {
-    if (_executing) return;
-    final issues = RequestDraftValidator.validate(_draft);
-    if (issues.isNotEmpty) {
-      setState(() {
-        _receipt = 'validation_failed: ${[for (final i in issues) i.code].join(', ')}';
-      });
-      return;
-    }
-    setState(() {
-      _executing = true;
-      _receipt = '';
-    });
-    try {
-      final scenario =
-          _authScenario == AuthMatrixScenario.none ? null : _authScenario;
-      final result = _mockExecutor.execute(_draft, scenario: scenario);
-      final wire = result.wireDraft ?? _draft;
-      final redactedCurl =
-          RequestDraftCodec.toCurl(wire, redactSecrets: true);
-      final receipt = formatExecutionReceipt(
-        draft: wire,
-        result: result,
-        redactedCurl: redactedCurl,
-      );
-      if (!mounted) return;
-      setState(() => _receipt = receipt);
-    } finally {
-      if (mounted) setState(() => _executing = false);
-    }
+    await _runExecution(
+      run: (scenario) async => _mockExecutor.execute(_draft, scenario: scenario),
+      prependLimitation: false,
+    );
   }
 
   Future<void> _executeLive() async {
-    if (_executing) return;
-    final issues = RequestDraftValidator.validate(_draft);
-    if (issues.isNotEmpty) {
-      setState(() {
-        _receipt = 'validation_failed: ${[for (final i in issues) i.code].join(', ')}';
-      });
-      return;
-    }
-    setState(() {
-      _executing = true;
-      _receipt = '';
-    });
-    try {
-      final scenario =
-          _authScenario == AuthMatrixScenario.none ? null : _authScenario;
-      final result = await _mockExecutor.executePrepared(
+    await _runExecution(
+      run: (scenario) => _mockExecutor.executePrepared(
         _draft,
         scenario: scenario,
         dispatch: executeLiveRequest,
         basePath: 'live',
-      );
+      ),
+      prependLimitation: true,
+    );
+  }
+
+  Future<void> _runExecution({
+    required Future<RequestExecutionResult> Function(AuthMatrixScenario? scenario)
+        run,
+    required bool prependLimitation,
+  }) async {
+    if (_executing) return;
+    final issues = RequestDraftValidator.validate(_draft);
+    if (issues.isNotEmpty) {
+      setState(() {
+        _receipt =
+            'validation_failed: ${[for (final i in issues) i.code].join(', ')}';
+      });
+      return;
+    }
+    setState(() {
+      _executing = true;
+      _receipt = '';
+    });
+    try {
+      final scenario =
+          _authScenario == AuthMatrixScenario.none ? null : _authScenario;
+      final result = await run(scenario);
       final wire = result.wireDraft ?? _draft;
       final redactedCurl =
           RequestDraftCodec.toCurl(wire, redactSecrets: true);
@@ -266,9 +253,13 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
         redactedCurl: redactedCurl,
       );
       if (!mounted) return;
-      final display = DisplayScope.of(context);
-      final limitation = display.text(liveHttpCapabilities.limitationKey);
-      setState(() => _receipt = '$limitation\n\n$receipt');
+      if (prependLimitation) {
+        final display = DisplayScope.of(context);
+        final limitation = display.text(liveHttpCapabilities.limitationKey);
+        setState(() => _receipt = '$limitation\n\n$receipt');
+      } else {
+        setState(() => _receipt = receipt);
+      }
     } finally {
       if (mounted) setState(() => _executing = false);
     }

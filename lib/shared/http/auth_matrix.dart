@@ -140,7 +140,8 @@ extension AuthMatrixScenarioX on AuthMatrixScenario {
       case AuthMatrixScenario.digestChallengeOnly:
         return next;
       case AuthMatrixScenario.digest:
-        // Challenge-response is completed by MockAuthRequestExecutor.execute.
+        // Challenge-response is completed by MockAuthRequestExecutor
+        // (execute / executePrepared share the Digest orchestrator).
         return next;
       case AuthMatrixScenario.hmac:
         return next.copyWith(

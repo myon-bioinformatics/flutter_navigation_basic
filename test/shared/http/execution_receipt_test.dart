@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_application_1/shared/http/auth_matrix.dart';
 import 'package:flutter_application_1/shared/http/mock_auth.dart';
 import 'package:flutter_application_1/shared/http/request_draft.dart';
@@ -116,6 +118,173 @@ void main() {
           RequestDraftCodec.toCurl(wire.draft, redactSecrets: true);
       expect(curl, isNot(contains(sig)));
       expect(curl.toLowerCase(), contains('x-signature'));
+    });
+  });
+
+  group('mock/live wire parity via shared orchestrator', () {
+    late MockAuthRequestExecutor executor;
+
+    MockAuthRouteHandler _handler() {
+      final auth = MockAuthHandler();
+      return ({
+        required method,
+        required path,
+        required headers,
+        required query,
+        required queryPairs,
+        requestTarget,
+        body,
+      }) {
+        final result = auth.handle(
+          method: method,
+          path: path,
+          headers: headers,
+          query: query,
+          requestTarget: requestTarget,
+          body: body,
+          queryPairs: queryPairs,
+        );
+        if (result == null) return null;
+        return (
+          statusCode: result.statusCode,
+          body: result.body,
+          headers: result.headers,
+        );
+      };
+    }
+
+    setUp(() {
+      executor = MockAuthRequestExecutor(
+        handler: _handler(),
+        digestRandom: Random(42),
+      );
+    });
+
+    String? _header(RequestDraft draft, String name) {
+      final wanted = name.toLowerCase();
+      for (final field in draft.enabledHeaders) {
+        if (field.normalizedName == wanted) return field.normalizedValue;
+      }
+      return null;
+    }
+
+    test('HMAC mock execute and prepareWireDraft share signed wire', () {
+      final draft = AuthMatrixScenario.hmac.applyTo(
+        const RequestDraft(),
+        baseUrl: 'http://127.0.0.1:8787',
+      );
+      final mock = executor.execute(draft, scenario: AuthMatrixScenario.hmac);
+      final prepared = executor.prepareWireDraft(
+        draft,
+        scenario: AuthMatrixScenario.hmac,
+      );
+      expect(mock.executionPath, 'hmac');
+      expect(prepared.path, 'hmac');
+      // execute re-signs (fresh timestamp); path + header names must match.
+      expect(_header(mock.wireDraft!, 'x-signature'), isNotNull);
+      expect(_header(prepared.draft, 'x-signature'), isNotNull);
+      expect(
+        RequestDraftCodec.toCurl(mock.wireDraft!, redactSecrets: true)
+            .toLowerCase(),
+        contains('x-signature'),
+      );
+    });
+
+    test('Digest mock and prepared retry share Authorization wire', () async {
+      final digestExecutor = MockAuthRequestExecutor(
+        handler: _handler(),
+        digestRandom: Random(7),
+      );
+      final draft = AuthMatrixScenario.digest.applyTo(
+        const RequestDraft(),
+        baseUrl: 'http://127.0.0.1:8787',
+      );
+
+      final mock = digestExecutor.execute(
+        draft,
+        scenario: AuthMatrixScenario.digest,
+      );
+      expect(mock.executionPath, 'digest-retry');
+      expect(mock.statusCode, 200);
+
+      final liveStyle = MockAuthRequestExecutor(
+        handler: _handler(),
+        digestRandom: Random(7),
+      );
+      final prepared = await liveStyle.executePrepared(
+        draft,
+        scenario: AuthMatrixScenario.digest,
+        dispatch: (d) async {
+          final pairs = MockAuthRequestExecutor.orderedQueryPairs(d);
+          final path = Uri.parse(d.normalizedUrl).path;
+          final queryString =
+              MockAuthRequestExecutor.encodeQueryPairs(pairs);
+          final target =
+              queryString.isEmpty ? path : '$path?$queryString';
+          final body =
+              RequestDraftCodec.buildBody(d, redactSecrets: false);
+          final headers = <String, String>{
+            for (final field in d.enabledHeaders)
+              field.name.trim(): field.normalizedValue,
+          };
+          final query = <String, String>{
+            for (final pair in pairs) pair.name: pair.value,
+          };
+          final auth = liveStyle.handler(
+            method: d.method.label,
+            path: path,
+            headers: headers,
+            query: query,
+            queryPairs: pairs,
+            requestTarget: target,
+            body: body,
+          )!;
+          return RequestExecutionResult(
+            statusCode: auth.statusCode,
+            body: auth.body,
+            headers: auth.headers,
+            requestTarget: target,
+            wireDraft: d,
+          );
+        },
+        basePath: 'live',
+      );
+
+      expect(prepared.executionPath, 'live-digest-retry');
+      expect(prepared.statusCode, 200);
+      expect(
+        _header(mock.wireDraft!, 'authorization'),
+        _header(prepared.wireDraft!, 'authorization'),
+      );
+      expect(
+        RequestDraftCodec.toCurl(mock.wireDraft!, redactSecrets: true),
+        RequestDraftCodec.toCurl(prepared.wireDraft!, redactSecrets: true),
+      );
+      expect(
+        RequestDraftCodec.toCurl(mock.wireDraft!, redactSecrets: true),
+        isNot(contains('s3cret')),
+      );
+    });
+
+    test('orderedWireQueryPairs matches codec and executor', () {
+      const draft = RequestDraft(
+        url: 'http://127.0.0.1:8787/echo?b=1&a=2&b=3',
+        query: [
+          RequestField(id: 'q1', name: 'z', value: '9'),
+        ],
+      );
+      final fromCodec = RequestDraftCodec.orderedWireQueryPairs(draft);
+      final fromExecutor = MockAuthRequestExecutor.orderedQueryPairs(draft);
+      expect(fromExecutor.map((p) => '${p.name}=${p.value}').toList(), [
+        'b=1',
+        'a=2',
+        'b=3',
+        'z=9',
+      ]);
+      expect(
+        fromCodec.map((p) => '${p.name}=${p.value}').toList(),
+        fromExecutor.map((p) => '${p.name}=${p.value}').toList(),
+      );
     });
   });
 }
