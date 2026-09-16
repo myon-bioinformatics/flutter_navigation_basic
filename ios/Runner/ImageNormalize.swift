@@ -9,14 +9,26 @@ enum ImageNormalize {
   }
 
   /// Pure pixel-budget gate (mirrors Android `ImageNormalizeSupport.rejectIfTooManyPixels`).
+  /// Overflow on width×height is treated as `too_many_pixels` (no trap).
   static func rejectIfTooManyPixels(width: Int, height: Int, maxPixels: Int64) throws {
-    let pixels = Int64(width) * Int64(height)
-    if pixels > maxPixels {
-      throw NormalizeError(
-        code: "too_many_pixels",
-        message: "Image is \(width)x\(height) (\(pixels) px) which exceeds \(maxPixels)"
-      )
+    guard width > 0, height > 0 else { return }
+    let (pixels, overflow) = Int64(width).multipliedReportingOverflow(by: Int64(height))
+    if overflow || pixels > maxPixels {
+      let detail = overflow
+        ? "Image is \(width)x\(height) (pixel count overflows Int64) which exceeds \(maxPixels)"
+        : "Image is \(width)x\(height) (\(pixels) px) which exceeds \(maxPixels)"
+      throw NormalizeError(code: "too_many_pixels", message: detail)
     }
+  }
+
+  /// Big-endian UInt32 via byte shifts (alignment-safe for arbitrary Data slices).
+  static func readUInt32BE(_ data: Data, at offset: Int) -> UInt32? {
+    guard offset >= 0, data.count >= offset + 4 else { return nil }
+    let b0 = UInt32(data[data.startIndex + offset])
+    let b1 = UInt32(data[data.startIndex + offset + 1])
+    let b2 = UInt32(data[data.startIndex + offset + 2])
+    let b3 = UInt32(data[data.startIndex + offset + 3])
+    return (b0 << 24) | (b1 << 16) | (b2 << 8) | b3
   }
 
   /// Probe encoded dimensions without full raster.
@@ -40,19 +52,19 @@ enum ImageNormalize {
     let signature: [UInt8] = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]
     guard data.count >= 24 else { return nil }
     guard Array(data.prefix(8)) == signature else { return nil }
-    let length = data.subdata(in: 8..<12).withUnsafeBytes {
-      Int(UInt32(bigEndian: $0.load(as: UInt32.self)))
-    }
-    guard length == 13 else { return nil }
+    guard let length = readUInt32BE(data, at: 8), length == 13 else { return nil }
     guard String(data: data.subdata(in: 12..<16), encoding: .ascii) == "IHDR" else {
       return nil
     }
-    let width = data.subdata(in: 16..<20).withUnsafeBytes {
-      Int(UInt32(bigEndian: $0.load(as: UInt32.self)))
+    guard let rawWidth = readUInt32BE(data, at: 16),
+          let rawHeight = readUInt32BE(data, at: 20)
+    else {
+      return nil
     }
-    let height = data.subdata(in: 20..<24).withUnsafeBytes {
-      Int(UInt32(bigEndian: $0.load(as: UInt32.self)))
-    }
+    // PNG forbids zero dimensions; reject before Int conversion edge cases.
+    guard rawWidth > 0, rawHeight > 0 else { return nil }
+    let width = Int(rawWidth)
+    let height = Int(rawHeight)
     guard width > 0, height > 0 else { return nil }
     return (width, height)
   }
