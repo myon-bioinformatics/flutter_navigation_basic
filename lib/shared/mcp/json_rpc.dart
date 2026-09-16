@@ -37,9 +37,17 @@ class JsonRpcError {
       };
 
   factory JsonRpcError.fromJson(Map<String, Object?> json) {
+    final code = json['code'];
+    final message = json['message'];
+    if (code is! int) {
+      throw const FormatException('JSON-RPC error code must be an int');
+    }
+    if (message is! String) {
+      throw const FormatException('JSON-RPC error message must be a String');
+    }
     return JsonRpcError(
-      code: json['code'] as int? ?? JsonRpcErrorCode.internalError,
-      message: json['message'] as String? ?? 'error',
+      code: code,
+      message: message,
       data: json['data'],
     );
   }
@@ -163,9 +171,17 @@ class JsonRpcResponse {
       if (errorJson is! Map) {
         throw const FormatException('invalid JSON-RPC error payload');
       }
+      final errorMap = <String, Object?>{};
+      for (final entry in errorJson.entries) {
+        final key = entry.key;
+        if (key is! String) {
+          throw const FormatException('invalid JSON-RPC error payload keys');
+        }
+        errorMap[key] = entry.value;
+      }
       return JsonRpcResponse.failure(
         id: json['id'],
-        error: JsonRpcError.fromJson(Map<String, Object?>.from(errorJson)),
+        error: JsonRpcError.fromJson(errorMap),
       );
     }
     return JsonRpcResponse.result(

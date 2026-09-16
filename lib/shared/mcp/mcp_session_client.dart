@@ -354,9 +354,22 @@ class McpSessionClient {
         );
       } else {
         try {
-          // Validate jsonrpc / result-xor-error / id correlation.
+          // Validate jsonrpc / result-xor-error / id correlation / error shape.
           response = JsonRpcResponse.parse(map, expectedId: request.id);
         } on FormatException catch (error) {
+          response = JsonRpcResponse.failure(
+            id: request.id,
+            error: JsonRpcError(
+              code: JsonRpcErrorCode.internalError,
+              message: 'invalid JSON-RPC response: $error',
+              data: {
+                'statusCode': transportResponse.statusCode,
+                'body': body,
+              },
+            ),
+          );
+        } on Object catch (error) {
+          // External payloads must never surface as uncaught TypeError etc.
           response = JsonRpcResponse.failure(
             id: request.id,
             error: JsonRpcError(

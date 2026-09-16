@@ -1261,6 +1261,62 @@ void main() {
       );
       expect(ok.result, {'ok': true});
     });
+
+    test('rejects malformed error code/message shapes', () {
+      expect(
+        () => JsonRpcResponse.fromJson({
+          'jsonrpc': '2.0',
+          'id': 1,
+          'error': {'code': '-32603', 'message': 'x'},
+        }),
+        throwsA(isA<FormatException>()),
+      );
+      expect(
+        () => JsonRpcResponse.fromJson({
+          'jsonrpc': '2.0',
+          'id': 1,
+          'error': {'code': -32603, 'message': 42},
+        }),
+        throwsA(isA<FormatException>()),
+      );
+      expect(
+        () => JsonRpcResponse.fromJson({
+          'jsonrpc': '2.0',
+          'id': 1,
+          'error': {'message': 'x'},
+        }),
+        throwsA(isA<FormatException>()),
+      );
+      expect(
+        () => JsonRpcResponse.fromJson({
+          'jsonrpc': '2.0',
+          'id': 1,
+          'error': {'code': -32603},
+        }),
+        throwsA(isA<FormatException>()),
+      );
+      expect(
+        () => JsonRpcResponse.fromJson({
+          'jsonrpc': '2.0',
+          'id': 1,
+          'error': <Object?, Object?>{
+            1: 'bad-key',
+            'code': -32603,
+            'message': 'x',
+          },
+        }),
+        throwsA(isA<FormatException>()),
+      );
+
+      final valid = JsonRpcResponse.fromJson({
+        'jsonrpc': '2.0',
+        'id': 1,
+        'error': {'code': -32603, 'message': 'boom', 'data': {'k': 1}},
+      });
+      expect(valid.isError, isTrue);
+      expect(valid.error!.code, -32603);
+      expect(valid.error!.message, 'boom');
+    });
   });
 
   group('McpHeaderCodec', () {
