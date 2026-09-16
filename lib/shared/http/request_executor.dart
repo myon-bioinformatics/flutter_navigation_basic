@@ -77,11 +77,6 @@ class RequestExecutionResult {
   }
 }
 
-/// Executes drafts in-process against a mock auth route handler (no network).
-///
-/// Live TLS (`-k`) / redirect (`-L`) policy and production JWT verification
-/// remain follow-ups — this path is mock-only and must not use the unsigned
-/// foundation JWT inspector for live verification.
 /// Final wire snapshot after transport-independent auth preparation.
 class AuthWireSnapshot {
   const AuthWireSnapshot({
@@ -93,6 +88,15 @@ class AuthWireSnapshot {
   final String path;
 }
 
+/// Executes drafts against a mock auth handler and/or an arbitrary dispatcher.
+///
+/// Mock [execute], live [executePrepared], and curl preview all share
+/// [prepareWireDraft] + the Digest challenge/retry orchestrator so HMAC /
+/// Digest wire bytes cannot drift by transport.
+///
+/// Live TLS (`-k`) / redirect (`-L`) and production JWT verification remain
+/// follow-ups — this must not use the unsigned foundation JWT inspector for
+/// live verification.
 class MockAuthRequestExecutor {
   MockAuthRequestExecutor({
     required this.handler,
@@ -118,38 +122,21 @@ class MockAuthRequestExecutor {
     AuthMatrixScenario? scenario,
   }) {
     final prepared = prepareWireDraft(draft, scenario: scenario);
-    var path = scenario == AuthMatrixScenario.hmac ? 'hmac' : 'direct';
-    var result = _dispatch(prepared.draft);
-
-    if (scenario == AuthMatrixScenario.digest) {
-      if (result.statusCode != 401) {
-        return result.copyWith(
-          executionPath: 'digest-challenge',
-          wireDraft: prepared.draft,
-        );
-      }
-      final challenge = _header(result.headers, 'www-authenticate');
-      if (challenge == null || !challenge.toLowerCase().startsWith('digest ')) {
-        return result.copyWith(
-          executionPath: 'digest-challenge',
-          wireDraft: prepared.draft,
-        );
-      }
-      final authed = applyDigestChallenge(
-        prepared.draft,
-        wwwAuthenticate: challenge,
-        requestTarget: result.requestTarget,
-      );
-      result = _dispatch(authed);
-      return result.copyWith(
-        executionPath: 'digest-retry',
-        wireDraft: authed,
-      );
-    }
-
-    return result.copyWith(
-      executionPath: path,
-      wireDraft: prepared.draft,
+    final first = _dispatch(prepared.draft);
+    final step = _authFlowAfterFirst(
+      prepared: prepared,
+      scenario: scenario,
+      first: first,
+      nonDigestPath:
+          prepared.path == 'hmac' ? 'hmac' : 'direct',
+      digestChallengePath: 'digest-challenge',
+      digestRetryPath: 'digest-retry',
+    );
+    if (step.retryDraft == null) return step.done!;
+    final second = _dispatch(step.retryDraft!);
+    return second.copyWith(
+      executionPath: step.digestRetryPath,
+      wireDraft: step.retryDraft,
     );
   }
 
@@ -168,6 +155,9 @@ class MockAuthRequestExecutor {
   }
 
   /// Completes a Digest challenge against an arbitrary dispatcher (mock/live).
+  ///
+  /// Mock [execute] and live UI both use this same prepare → first dispatch →
+  /// optional Digest retry orchestrator; only [dispatch] / path labels differ.
   Future<RequestExecutionResult> executePrepared(
     RequestDraft draft, {
     AuthMatrixScenario? scenario,
@@ -176,35 +166,77 @@ class MockAuthRequestExecutor {
     String basePath = 'live',
   }) async {
     final prepared = prepareWireDraft(draft, scenario: scenario);
-    var result = await dispatch(prepared.draft);
+    final first = await dispatch(prepared.draft);
+    final step = _authFlowAfterFirst(
+      prepared: prepared,
+      scenario: scenario,
+      first: first,
+      nonDigestPath:
+          prepared.path == 'hmac' ? 'hmac-$basePath' : basePath,
+      digestChallengePath: '$basePath-digest-challenge',
+      digestRetryPath: '$basePath-digest-retry',
+    );
+    if (step.retryDraft == null) return step.done!;
+    final second = await dispatch(step.retryDraft!);
+    return second.copyWith(
+      executionPath: step.digestRetryPath,
+      wireDraft: step.retryDraft,
+    );
+  }
+
+  /// Shared mock/live decision after the first dispatch.
+  ({
+    RequestExecutionResult? done,
+    RequestDraft? retryDraft,
+    String digestRetryPath,
+  }) _authFlowAfterFirst({
+    required AuthWireSnapshot prepared,
+    required AuthMatrixScenario? scenario,
+    required RequestExecutionResult first,
+    required String nonDigestPath,
+    required String digestChallengePath,
+    required String digestRetryPath,
+  }) {
     if (scenario != AuthMatrixScenario.digest) {
-      return result.copyWith(
-        executionPath: prepared.path == 'hmac' ? 'hmac-$basePath' : basePath,
-        wireDraft: prepared.draft,
+      return (
+        done: first.copyWith(
+          executionPath: nonDigestPath,
+          wireDraft: prepared.draft,
+        ),
+        retryDraft: null,
+        digestRetryPath: digestRetryPath,
       );
     }
-    if (result.statusCode != 401) {
-      return result.copyWith(
-        executionPath: '$basePath-digest-challenge',
-        wireDraft: prepared.draft,
+    if (first.statusCode != 401) {
+      return (
+        done: first.copyWith(
+          executionPath: digestChallengePath,
+          wireDraft: prepared.draft,
+        ),
+        retryDraft: null,
+        digestRetryPath: digestRetryPath,
       );
     }
-    final challenge = _header(result.headers, 'www-authenticate');
+    final challenge = _header(first.headers, 'www-authenticate');
     if (challenge == null || !challenge.toLowerCase().startsWith('digest ')) {
-      return result.copyWith(
-        executionPath: '$basePath-digest-challenge',
-        wireDraft: prepared.draft,
+      return (
+        done: first.copyWith(
+          executionPath: digestChallengePath,
+          wireDraft: prepared.draft,
+        ),
+        retryDraft: null,
+        digestRetryPath: digestRetryPath,
       );
     }
     final authed = applyDigestChallenge(
       prepared.draft,
       wwwAuthenticate: challenge,
-      requestTarget: result.requestTarget,
+      requestTarget: first.requestTarget,
     );
-    result = await dispatch(authed);
-    return result.copyWith(
-      executionPath: '$basePath-digest-retry',
-      wireDraft: authed,
+    return (
+      done: null,
+      retryDraft: authed,
+      digestRetryPath: digestRetryPath,
     );
   }
 
@@ -380,19 +412,14 @@ class MockAuthRequestExecutor {
   }
 
   /// URL query pairs first (raw order), then enabled draft query rows.
+  ///
+  /// Delegates to [RequestDraftCodec.orderedWireQueryPairs] so HMAC / Digest
+  /// binding matches curl + live URI construction.
   static List<QueryPair> orderedQueryPairs(RequestDraft draft) {
-    final uri = Uri.tryParse(draft.normalizedUrl);
-    final pairs = <QueryPair>[
-      if (uri != null)
-        for (final pair in _parseQueryPairs(uri.query))
-          (name: pair.name, value: pair.value),
-      for (final field in draft.enabledQuery)
-        (
-          name: normalizeAsciiName(field.name),
-          value: field.normalizedValue,
-        ),
+    return [
+      for (final pair in RequestDraftCodec.orderedWireQueryPairs(draft))
+        (name: pair.name, value: pair.value),
     ];
-    return pairs;
   }
 
   static String encodeQueryPairs(List<QueryPair> pairs) {
@@ -442,24 +469,6 @@ class MockAuthRequestExecutor {
           (m) => String.fromCharCode(m.group(0)!.codeUnitAt(0) - 0xfee0),
         )
         .trim();
-  }
-
-  static List<({String name, String value})> _parseQueryPairs(String query) {
-    if (query.isEmpty) return const [];
-    final pairs = <({String name, String value})>[];
-    for (final part in query.split('&')) {
-      if (part.isEmpty) continue;
-      final eq = part.indexOf('=');
-      if (eq < 0) {
-        pairs.add((name: Uri.decodeQueryComponent(part), value: ''));
-        continue;
-      }
-      pairs.add((
-        name: Uri.decodeQueryComponent(part.substring(0, eq)),
-        value: Uri.decodeQueryComponent(part.substring(eq + 1)),
-      ));
-    }
-    return pairs;
   }
 
   static Map<String, String> _parseDigestChallenge(String raw) {

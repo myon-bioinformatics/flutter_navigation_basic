@@ -123,7 +123,7 @@ class RequestDraftCodec {
     if (uri == null) return null;
 
     final pairs = <({String name, String value, bool sensitive})>[
-      for (final pair in _parseQueryPairs(uri.query))
+      for (final pair in parseQueryPairs(uri.query))
         (
           name: pair.name,
           value: pair.value,
@@ -157,7 +157,7 @@ class RequestDraftCodec {
   ///
   /// Empty segments (`&&`) are skipped. A segment without `=` is treated as a
   /// key with an empty value (same as [Uri.queryParametersAll]).
-  static List<({String name, String value})> _parseQueryPairs(String query) {
+  static List<({String name, String value})> parseQueryPairs(String query) {
     if (query.isEmpty) return const [];
     final pairs = <({String name, String value})>[];
     for (final part in query.split('&')) {
@@ -173,6 +173,24 @@ class RequestDraftCodec {
       ));
     }
     return pairs;
+  }
+
+  /// URL query pairs first (raw order), then enabled draft query rows.
+  ///
+  /// Shared by curl/URI build, mock dispatch, HMAC binding, and the local
+  /// mock server so duplicate keys / order cannot drift by transport.
+  static List<({String name, String value})> orderedWireQueryPairs(
+    RequestDraft draft,
+  ) {
+    final uri = Uri.tryParse(draft.normalizedUrl);
+    return [
+      if (uri != null) ...parseQueryPairs(uri.query),
+      for (final field in draft.enabledQuery)
+        (
+          name: normalizeAsciiFullwidth(field.name).trim(),
+          value: field.normalizedValue,
+        ),
+    ];
   }
 
   /// Redacts OAuth/signed fragment payloads. Opaque fragments (no `=`) become
