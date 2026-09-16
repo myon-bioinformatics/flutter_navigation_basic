@@ -1,7 +1,7 @@
 import Flutter
 import UIKit
 import XCTest
-import ImageIO
+@testable import Runner
 
 final class ImageNormalizeTests: XCTestCase {
   /// 1×1 PNG fixture.
@@ -27,7 +27,7 @@ final class ImageNormalizeTests: XCTestCase {
   }
 
   func testNormalizeTinyPngReturnsPng() throws {
-    let out = try AppDelegate.normalizeToPng(
+    let out = try ImageNormalize.normalizeToPng(
       data: tinyPng,
       maxPixels: 40_000_000,
       maxLongEdge: 4096
@@ -38,13 +38,13 @@ final class ImageNormalizeTests: XCTestCase {
 
   func testNormalizeRejectsOversizedPixelClaimBeforeRaster() {
     XCTAssertThrowsError(
-      try AppDelegate.normalizeToPng(
+      try ImageNormalize.normalizeToPng(
         data: oversizedClaimPng,
         maxPixels: 40_000_000,
         maxLongEdge: 4096
       )
     ) { error in
-      guard let normalizeError = error as? AppDelegate.NormalizeError else {
+      guard let normalizeError = error as? ImageNormalize.NormalizeError else {
         return XCTFail("expected NormalizeError, got \(error)")
       }
       XCTAssertEqual(normalizeError.code, "too_many_pixels")
@@ -52,7 +52,7 @@ final class ImageNormalizeTests: XCTestCase {
   }
 
   func testNormalizeEmptyDataReturnsNil() throws {
-    let out = try AppDelegate.normalizeToPng(
+    let out = try ImageNormalize.normalizeToPng(
       data: Data(),
       maxPixels: 40_000_000,
       maxLongEdge: 4096

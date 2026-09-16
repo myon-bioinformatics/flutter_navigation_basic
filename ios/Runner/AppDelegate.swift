@@ -1,6 +1,5 @@
 import Flutter
 import UIKit
-import ImageIO
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -36,7 +35,7 @@ import ImageIO
 
       DispatchQueue.global(qos: .userInitiated).async {
         do {
-          let png = try Self.normalizeToPng(
+          let png = try ImageNormalize.normalizeToPng(
             data: data,
             maxPixels: maxPixels,
             maxLongEdge: maxLongEdge
@@ -48,7 +47,7 @@ import ImageIO
               result(nil)
             }
           }
-        } catch let error as NormalizeError {
+        } catch let error as ImageNormalize.NormalizeError {
           DispatchQueue.main.async {
             result(
               FlutterError(
@@ -71,57 +70,5 @@ import ImageIO
         }
       }
     }
-  }
-
-  /// Probe ImageIO properties first, reject >maxPixels, then thumbnail with
-  /// orientation transform baked in (long edge ≤ maxLongEdge).
-  static func normalizeToPng(
-    data: Data,
-    maxPixels: Int64,
-    maxLongEdge: Int
-  ) throws -> Data? {
-    guard let source = CGImageSourceCreateWithData(data as CFData, nil) else {
-      return nil
-    }
-    guard
-      let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil)
-        as? [CFString: Any]
-    else {
-      return nil
-    }
-    let width = (props[kCGImagePropertyPixelWidth] as? NSNumber)?.intValue ?? 0
-    let height = (props[kCGImagePropertyPixelHeight] as? NSNumber)?.intValue ?? 0
-    guard width > 0, height > 0 else { return nil }
-
-    let pixels = Int64(width) * Int64(height)
-    if pixels > maxPixels {
-      throw NormalizeError(
-        code: "too_many_pixels",
-        message: "Image is \(width)x\(height) (\(pixels) px) which exceeds \(maxPixels)"
-      )
-    }
-
-    let options: [CFString: Any] = [
-      kCGImageSourceCreateThumbnailFromImageAlways: true,
-      kCGImageSourceCreateThumbnailWithTransform: true,
-      kCGImageSourceThumbnailMaxPixelSize: maxLongEdge,
-    ]
-    guard
-      let cgImage = CGImageSourceCreateThumbnailAtIndex(
-        source,
-        0,
-        options as CFDictionary
-      )
-    else {
-      return nil
-    }
-    // Thumbnail already has orientation baked via CreateThumbnailWithTransform.
-    let image = UIImage(cgImage: cgImage, scale: 1.0, orientation: .up)
-    return image.pngData()
-  }
-
-  struct NormalizeError: Error {
-    let code: String
-    let message: String
   }
 }
