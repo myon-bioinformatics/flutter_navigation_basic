@@ -122,20 +122,7 @@ class RequestDraftCodec {
     final uri = Uri.tryParse(base);
     if (uri == null) return null;
 
-    final pairs = <({String name, String value, bool sensitive})>[
-      for (final pair in parseQueryPairs(uri.query))
-        (
-          name: pair.name,
-          value: pair.value,
-          sensitive: isSensitiveQueryName(pair.name),
-        ),
-      for (final field in draft.enabledQuery)
-        (
-          name: normalizeAsciiFullwidth(field.name).trim(),
-          value: field.normalizedValue,
-          sensitive: field.sensitive || isSensitiveQueryName(field.name),
-        ),
-    ];
+    final pairs = _orderedWireQueryPairsDetailed(draft);
 
     final encoded = pairs.map((pair) {
       final value = redactSecrets && pair.sensitive ? '***' : pair.value;
@@ -182,13 +169,29 @@ class RequestDraftCodec {
   static List<({String name, String value})> orderedWireQueryPairs(
     RequestDraft draft,
   ) {
+    return [
+      for (final pair in _orderedWireQueryPairsDetailed(draft))
+        (name: pair.name, value: pair.value),
+    ];
+  }
+
+  /// Same order as [orderedWireQueryPairs], with sensitivity for redaction.
+  static List<({String name, String value, bool sensitive})>
+      _orderedWireQueryPairsDetailed(RequestDraft draft) {
     final uri = Uri.tryParse(draft.normalizedUrl);
     return [
-      if (uri != null) ...parseQueryPairs(uri.query),
+      if (uri != null)
+        for (final pair in parseQueryPairs(uri.query))
+          (
+            name: pair.name,
+            value: pair.value,
+            sensitive: isSensitiveQueryName(pair.name),
+          ),
       for (final field in draft.enabledQuery)
         (
           name: normalizeAsciiFullwidth(field.name).trim(),
           value: field.normalizedValue,
+          sensitive: field.sensitive || isSensitiveQueryName(field.name),
         ),
     ];
   }

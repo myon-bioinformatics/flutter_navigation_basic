@@ -461,16 +461,6 @@ class MockAuthRequestExecutor {
         .toString();
   }
 
-  static String normalizeAsciiName(String name) {
-    // Keep wire casing for query names; only strip fullwidth + trim.
-    return name
-        .replaceAllMapped(
-          RegExp(r'[\uff01-\uff5e]'),
-          (m) => String.fromCharCode(m.group(0)!.codeUnitAt(0) - 0xfee0),
-        )
-        .trim();
-  }
-
   static Map<String, String> _parseDigestChallenge(String raw) {
     final out = <String, String>{};
     final pattern = RegExp(r'(\w+)=(?:"([^"]*)"|([^\s,]+))');
