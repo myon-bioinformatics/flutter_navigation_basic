@@ -14,9 +14,7 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
-import java.util.concurrent.Executors
 import kotlin.math.max
-import kotlin.math.roundToInt
 
 /**
  * Photo Studio image_normalize channel: HEIC/HEIF (and other platform-decodable
@@ -24,42 +22,83 @@ import kotlin.math.roundToInt
  * full-size bitmap is allocated.
  */
 class MainActivity : FlutterActivity() {
-    private val normalizeChannel = "com.example.flutter_application_1/image_normalize"
-    private val normalizeExecutor = Executors.newSingleThreadExecutor()
+    private val normalizeChannelName =
+        "com.example.flutter_application_1/image_normalize"
+    private var normalizeChannel: MethodChannel? = null
+    private val normalizeController = NormalizeExecutorController()
     private val mainHandler = Handler(Looper.getMainLooper())
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, normalizeChannel)
-            .setMethodCallHandler { call, result ->
-                if (call.method != "normalizeToPng") {
-                    result.notImplemented()
-                    return@setMethodCallHandler
-                }
-                val args = call.arguments as? Map<*, *>
-                val bytes = args?.get("bytes") as? ByteArray
-                val maxPixels = (args?.get("maxPixels") as? Number)?.toLong()
-                    ?: (40L * 1000L * 1000L)
-                val maxLongEdge = (args?.get("maxLongEdge") as? Number)?.toInt() ?: 4096
-                if (bytes == null || bytes.isEmpty()) {
-                    result.success(null)
-                    return@setMethodCallHandler
-                }
-                normalizeExecutor.execute {
+        // Fresh engine attach: drop any prior channel/executor and start clean.
+        tearDownNormalizeSession()
+        val channel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            normalizeChannelName,
+        )
+        normalizeChannel = channel
+        channel.setMethodCallHandler { call, result ->
+            if (call.method != "normalizeToPng") {
+                result.notImplemented()
+                return@setMethodCallHandler
+            }
+            val args = call.arguments as? Map<*, *>
+            val bytes = args?.get("bytes") as? ByteArray
+            val maxPixels = (args?.get("maxPixels") as? Number)?.toLong()
+                ?: (40L * 1000L * 1000L)
+            val maxLongEdge = (args?.get("maxLongEdge") as? Number)?.toInt() ?: 4096
+            if (bytes == null || bytes.isEmpty()) {
+                result.success(null)
+                return@setMethodCallHandler
+            }
+            val generation = normalizeController.currentGeneration()
+            val executor = try {
+                normalizeController.ensureExecutor()
+            } catch (_: Exception) {
+                result.error("normalize_unavailable", "executor unavailable", null)
+                return@setMethodCallHandler
+            }
+            try {
+                executor.execute {
                     try {
                         val png = normalizeToPng(bytes, maxPixels, maxLongEdge)
-                        mainHandler.post { result.success(png) }
-                    } catch (error: TooManyPixelsException) {
                         mainHandler.post {
+                            if (!normalizeController.isActive(generation)) return@post
+                            result.success(png)
+                        }
+                    } catch (error: ImageNormalizeSupport.TooManyPixelsException) {
+                        mainHandler.post {
+                            if (!normalizeController.isActive(generation)) return@post
                             result.error("too_many_pixels", error.message, null)
                         }
                     } catch (error: Exception) {
                         mainHandler.post {
+                            if (!normalizeController.isActive(generation)) return@post
                             result.error("normalize_failed", error.message, null)
                         }
                     }
                 }
+            } catch (_: java.util.concurrent.RejectedExecutionException) {
+                result.error("normalize_unavailable", "executor shut down", null)
             }
+        }
+    }
+
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        tearDownNormalizeSession()
+        super.cleanUpFlutterEngine(flutterEngine)
+    }
+
+    override fun onDestroy() {
+        tearDownNormalizeSession()
+        super.onDestroy()
+    }
+
+    /** Idempotent: clear channel handler + bump generation + shutdownNow (no wait). */
+    private fun tearDownNormalizeSession() {
+        normalizeChannel?.setMethodCallHandler(null)
+        normalizeChannel = null
+        normalizeController.tearDown()
     }
 
     private fun normalizeToPng(
@@ -101,10 +140,9 @@ class MainActivity : FlutterActivity() {
         return ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
             val width = info.size.width
             val height = info.size.height
-            rejectIfTooManyPixels(width, height, maxPixels)
-            val target = targetSize(width, height, maxLongEdge)
+            ImageNormalizeSupport.rejectIfTooManyPixels(width, height, maxPixels)
+            val target = ImageNormalizeSupport.targetSize(width, height, maxLongEdge)
             decoder.setTargetSize(target.first, target.second)
-            // ImageDecoder applies EXIF/HEIF orientation by default.
         }
     }
 
@@ -118,9 +156,10 @@ class MainActivity : FlutterActivity() {
         val width = bounds.outWidth
         val height = bounds.outHeight
         if (width <= 0 || height <= 0) return null
-        rejectIfTooManyPixels(width, height, maxPixels)
+        ImageNormalizeSupport.rejectIfTooManyPixels(width, height, maxPixels)
 
-        val sample = sampleSizeForMaxEdge(width, height, maxLongEdge)
+        val sample =
+            ImageNormalizeSupport.sampleSizeForMaxEdge(width, height, maxLongEdge)
         val opts = BitmapFactory.Options().apply { inSampleSize = sample }
         val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
             ?: return null
@@ -128,40 +167,11 @@ class MainActivity : FlutterActivity() {
         return scaleToMaxLongEdge(oriented, maxLongEdge)
     }
 
-    private fun rejectIfTooManyPixels(width: Int, height: Int, maxPixels: Long) {
-        val pixels = width.toLong() * height.toLong()
-        if (pixels > maxPixels) {
-            throw TooManyPixelsException(
-                "Image is ${width}x$height ($pixels px) which exceeds $maxPixels",
-            )
-        }
-    }
-
-    private fun targetSize(width: Int, height: Int, maxLongEdge: Int): Pair<Int, Int> {
-        val longEdge = max(width, height)
-        if (longEdge <= maxLongEdge) return width to height
-        val scale = maxLongEdge.toDouble() / longEdge.toDouble()
-        val tw = max(1, (width * scale).roundToInt())
-        val th = max(1, (height * scale).roundToInt())
-        return tw to th
-    }
-
-    private fun sampleSizeForMaxEdge(width: Int, height: Int, maxLongEdge: Int): Int {
-        var sample = 1
-        var w = width
-        var h = height
-        while (max(w / 2, h / 2) >= maxLongEdge) {
-            sample *= 2
-            w /= 2
-            h /= 2
-        }
-        return sample.coerceAtLeast(1)
-    }
-
     private fun scaleToMaxLongEdge(bitmap: Bitmap, maxLongEdge: Int): Bitmap {
         val longEdge = max(bitmap.width, bitmap.height)
         if (longEdge <= maxLongEdge) return bitmap
-        val target = targetSize(bitmap.width, bitmap.height, maxLongEdge)
+        val target =
+            ImageNormalizeSupport.targetSize(bitmap.width, bitmap.height, maxLongEdge)
         val scaled = Bitmap.createScaledBitmap(bitmap, target.first, target.second, true)
         if (scaled !== bitmap) {
             bitmap.recycle()
@@ -169,10 +179,6 @@ class MainActivity : FlutterActivity() {
         return scaled
     }
 
-    /**
-     * BitmapFactory does not honor JPEG/HEIF EXIF orientation on API ≤27.
-     * Orientation values 1–8 are mapped to rotate/flip matrices.
-     */
     internal fun applyExifOrientation(bytes: ByteArray, bitmap: Bitmap): Bitmap {
         val orientation = try {
             ExifInterface(ByteArrayInputStream(bytes)).getAttributeInt(
@@ -199,31 +205,22 @@ class MainActivity : FlutterActivity() {
     }
 
     companion object {
-        /** Exposed for JVM unit tests of orientation 1–8 matrices. */
         fun orientationMatrix(orientation: Int): Matrix? {
+            val op = ImageNormalizeSupport.orientationOp(orientation) ?: return null
             val matrix = Matrix()
-            when (orientation) {
-                ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.setScale(-1f, 1f)
-                ExifInterface.ORIENTATION_ROTATE_180 -> matrix.setRotate(180f)
-                ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.setScale(1f, -1f)
-                ExifInterface.ORIENTATION_TRANSPOSE -> {
-                    matrix.setRotate(90f)
-                    matrix.postScale(-1f, 1f)
+            if (op.degrees != 0f) {
+                matrix.setRotate(op.degrees)
+            }
+            if (op.flipX || op.flipY) {
+                val sx = if (op.flipX) -1f else 1f
+                val sy = if (op.flipY) -1f else 1f
+                if (op.degrees == 0f) {
+                    matrix.setScale(sx, sy)
+                } else {
+                    matrix.postScale(sx, sy)
                 }
-                ExifInterface.ORIENTATION_ROTATE_90 -> matrix.setRotate(90f)
-                ExifInterface.ORIENTATION_TRANSVERSE -> {
-                    matrix.setRotate(-90f)
-                    matrix.postScale(-1f, 1f)
-                }
-                ExifInterface.ORIENTATION_ROTATE_270 -> matrix.setRotate(-90f)
-                ExifInterface.ORIENTATION_NORMAL,
-                ExifInterface.ORIENTATION_UNDEFINED,
-                -> return null
-                else -> return null
             }
             return matrix
         }
     }
-
-    private class TooManyPixelsException(message: String) : Exception(message)
 }

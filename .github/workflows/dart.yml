@@ -85,8 +85,13 @@ jobs:
           done
 
           # Workflow / CI path-list edits still need a Flutter smoke.
+          # Native test lanes live in dart.yml — keep android/ios on when it changes.
           for f in "${files[@]}"; do
-            if [[ "$f" == ".github/workflows/dart.yml" || "$f" == ".github/workflows/non-dart.yml" || "$f" == tool/ci/* ]]; then
+            if [[ "$f" == ".github/workflows/dart.yml" ]]; then
+              flutter=true
+              android=true
+              ios=true
+            elif [[ "$f" == ".github/workflows/non-dart.yml" || "$f" == tool/ci/* ]]; then
               flutter=true
             fi
           done
@@ -354,6 +359,50 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  # JVM unit tests for native normalize helpers (pixel gate / EXIF / lifecycle).
+  android-unit-tests:
+    name: Android JVM unit tests
+    needs: changes
+    if: needs.changes.outputs.android == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter 3.47.0
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.0"
+          cache: true
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run app JVM unit tests
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          # Wrapper scripts are committed; Flutter writes local.properties (sdk.dir).
+          cd android
+          chmod +x ./gradlew
+          ./gradlew :app:testDebugUnitTest --info | tee ../build/android-unit-tests.log
+          grep -E 'ImageNormalizeSupportTest|NormalizeExecutorControllerTest' ../build/android-unit-tests.log
+
+      - name: Upload JVM test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-jvm-unit-tests
+          path: build/android-unit-tests.log
+          if-no-files-found: warn
+          retention-days: 14
+
   # macOS-only compile proof for the restored ios/ tree + image_picker/gal.
   ios-build:
     name: iOS no-codesign build
@@ -375,3 +424,66 @@ jobs:
 
       - name: Build iOS release without codesigning
         run: flutter build ios --release --no-codesign -t lib/main_prod.dart
+
+  # RunnerTests XCTest (ImageNormalizeTests) on the iOS Simulator.
+  ios-tests:
+    name: iOS Simulator XCTest
+    needs: changes
+    if: needs.changes.outputs.ios == 'true'
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter 3.47.0
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.0"
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Prepare iOS simulator build
+        run: flutter build ios --simulator --debug --no-codesign -t lib/main_prod.dart
+
+      - name: Select iPhone simulator destination
+        id: sim
+        run: |
+          set -euo pipefail
+          # Use UDID to avoid whitespace / ambiguous name matching.
+          UDID=$(xcrun simctl list devices available \
+            | grep -E 'iPhone.+\([A-F0-9-]{36}\)' \
+            | head -1 \
+            | sed -E 's/.*\(([A-F0-9-]{36})\).*/\1/')
+          if [[ -z "${UDID}" ]]; then
+            echo "::error::No available iPhone simulator"
+            xcrun simctl list devices available || true
+            exit 1
+          fi
+          echo "udid=${UDID}" >> "$GITHUB_OUTPUT"
+          echo "Using simulator udid=${UDID}"
+
+      - name: Run RunnerTests with xcodebuild
+        run: |
+          set -euo pipefail
+          mkdir -p build/ios-xctest
+          set -o pipefail
+          xcodebuild test \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -only-testing:RunnerTests \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee build/ios-xctest/xcodebuild.log
+          grep -E 'ImageNormalizeTests|testNormalize' build/ios-xctest/xcodebuild.log
+
+      - name: Upload XCTest log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-xctest-log
+          path: build/ios-xctest/
+          if-no-files-found: warn
+          retention-days: 14
