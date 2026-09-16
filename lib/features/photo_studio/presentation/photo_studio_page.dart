@@ -297,6 +297,14 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
               DisplayScope.of(context).text('photoStudio.imageError'),
         );
         return;
+      case PhotoPickStatus.rejected:
+        setState(
+          () => _status = _rejectionMessage(
+            DisplayScope.of(context),
+            outcome.rejection ?? PhotoImportRejection.undecodable,
+          ),
+        );
+        return;
       case PhotoPickStatus.success:
         final bytes = outcome.bytes;
         if (bytes == null || bytes.isEmpty) return;

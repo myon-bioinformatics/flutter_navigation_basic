@@ -93,7 +93,13 @@ Future<Uint8List?> loadStudioImageBytes(
     return null;
   }
 
-  final adapted = await adapter(rawBytes);
+  late final Uint8List? adapted;
+  try {
+    adapted = await adapter(rawBytes);
+  } on NativeImageNormalizeException catch (error) {
+    onRejected?.call(error.rejection);
+    return null;
+  }
   if (adapted == null || adapted.isEmpty) {
     onRejected?.call(
       PhotoImportGate.looksLikeHeic(rawBytes)

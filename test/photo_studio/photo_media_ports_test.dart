@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_application_1/features/photo_studio/data/image_picker_photo_source.dart';
@@ -20,7 +19,6 @@ final _tinyPng = Uint8List.fromList([
 ]);
 
 /// PNG whose IHDR claims 10000×10000 (100 MP) without a full pixel payload.
-/// [readEncodedImageSize] must reject this before any full-frame raster.
 final _oversizedClaimPng = Uint8List.fromList([
   137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 39, 16,
   0, 0, 39, 16, 8, 2, 0, 0, 0, 53, 44, 245, 112, 0, 0, 0, 9, 73, 68, 65, 84,
@@ -36,6 +34,24 @@ Uint8List _heicLike() {
   heic[7] = 0x70;
   heic.setAll(8, 'heic'.codeUnits);
   return heic;
+}
+
+/// Mirrors Android `MainActivity.orientationMatrix` / ExifInterface 1–8.
+/// Used as fixture evidence that the native orientation table is complete.
+({String op, double degrees, bool flipX, bool flipY})? exifOrientationOp(
+  int orientation,
+) {
+  return switch (orientation) {
+    2 => (op: 'flipX', degrees: 0, flipX: true, flipY: false),
+    3 => (op: 'rotate', degrees: 180, flipX: false, flipY: false),
+    4 => (op: 'flipY', degrees: 0, flipX: false, flipY: true),
+    5 => (op: 'transpose', degrees: 90, flipX: true, flipY: false),
+    6 => (op: 'rotate', degrees: 90, flipX: false, flipY: false),
+    7 => (op: 'transverse', degrees: -90, flipX: true, flipY: false),
+    8 => (op: 'rotate', degrees: -90, flipX: false, flipY: false),
+    1 || 0 => null,
+    _ => null,
+  };
 }
 
 void main() {
@@ -125,6 +141,26 @@ void main() {
       final outcome = await source.pickFromGallery();
       expect(outcome.status, PhotoPickStatus.failed);
     });
+
+    test('rejects oversized length before readAsBytes', () async {
+      var readCalled = false;
+      final source = ImagePickerPhotoSource(
+        pickImage: ({required source}) async => XFile.fromData(
+          _tinyPng,
+          name: 'huge.bin',
+          mimeType: 'application/octet-stream',
+        ),
+        lengthOf: (_) async => PhotoImportLimits.maxInputBytes + 1,
+        readBytes: (_) async {
+          readCalled = true;
+          return _tinyPng;
+        },
+      );
+      final outcome = await source.pickFromGallery();
+      expect(outcome.status, PhotoPickStatus.rejected);
+      expect(outcome.rejection, PhotoImportRejection.tooLargeBytes);
+      expect(readCalled, isFalse);
+    });
   });
 
   group('GalPhotoSink contract', () {
@@ -191,13 +227,27 @@ void main() {
       );
       expect(loaded, isNull);
       expect(seen, PhotoImportRejection.tooManyPixels);
-      // Must not fall through to an adapter when size is already known.
       final loadedWithAdapter = await loadStudioImageBytes(
         _oversizedClaimPng,
         nativeDecodeAdapter: (_) async => _tinyPng,
         onRejected: (r) => seen = r,
       );
       expect(loadedWithAdapter, isNull);
+      expect(seen, PhotoImportRejection.tooManyPixels);
+    });
+
+    test('native too_many_pixels maps to PhotoImportRejection', () async {
+      PhotoImportRejection? seen;
+      final loaded = await loadStudioImageBytes(
+        _heicLike(),
+        nativeDecodeAdapter: (_) async {
+          throw const NativeImageNormalizeException(
+            PhotoImportRejection.tooManyPixels,
+          );
+        },
+        onRejected: (r) => seen = r,
+      );
+      expect(loaded, isNull);
       expect(seen, PhotoImportRejection.tooManyPixels);
     });
 
@@ -220,14 +270,17 @@ void main() {
       expect(out, _tinyPng);
     });
 
-    test('MethodChannel success path', () async {
+    test('MethodChannel passes pixel budgets and returns PNG', () async {
       TestWidgetsFlutterBinding.ensureInitialized();
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(kNativeImageNormalizeChannel, (
         call,
       ) async {
         expect(call.method, 'normalizeToPng');
-        expect(call.arguments, isA<Uint8List>());
+        final args = call.arguments as Map;
+        expect(args['bytes'], isA<Uint8List>());
+        expect(args['maxPixels'], PhotoImportLimits.maxPixels);
+        expect(args['maxLongEdge'], PhotoImportLimits.maxDocumentLongEdge);
         return _tinyPng;
       });
       addTearDown(() {
@@ -243,6 +296,29 @@ void main() {
         nativeDecodeAdapter: nativeImageNormalizeAdapter,
       );
       expect(loaded, _tinyPng);
+    });
+
+    test('MethodChannel too_many_pixels → NativeImageNormalizeException', () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(kNativeImageNormalizeChannel, (
+        call,
+      ) async {
+        throw PlatformException(code: 'too_many_pixels', message: 'too big');
+      });
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(kNativeImageNormalizeChannel, null);
+      });
+
+      PhotoImportRejection? seen;
+      final loaded = await loadStudioImageBytes(
+        _heicLike(),
+        nativeDecodeAdapter: nativeImageNormalizeAdapter,
+        onRejected: (r) => seen = r,
+      );
+      expect(loaded, isNull);
+      expect(seen, PhotoImportRejection.tooManyPixels);
     });
 
     test('MethodChannel failure → null / heicConversionFailed', () async {
@@ -265,6 +341,21 @@ void main() {
       );
       expect(loaded, isNull);
       expect(seen, PhotoImportRejection.heicConversionFailed);
+    });
+  });
+
+  group('EXIF orientation fixture table (native parity)', () {
+    test('covers orientations 1–8 including 90/180/mirror', () {
+      expect(exifOrientationOp(1), isNull);
+      expect(exifOrientationOp(2)?.flipX, isTrue);
+      expect(exifOrientationOp(3)?.degrees, 180);
+      expect(exifOrientationOp(4)?.flipY, isTrue);
+      expect(exifOrientationOp(5)?.degrees, 90);
+      expect(exifOrientationOp(5)?.flipX, isTrue);
+      expect(exifOrientationOp(6)?.degrees, 90);
+      expect(exifOrientationOp(7)?.degrees, -90);
+      expect(exifOrientationOp(7)?.flipX, isTrue);
+      expect(exifOrientationOp(8)?.degrees, -90);
     });
   });
 

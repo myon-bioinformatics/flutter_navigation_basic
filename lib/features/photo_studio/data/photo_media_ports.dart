@@ -11,17 +11,29 @@ enum PhotoImportRejection {
   heicConversionFailed,
 }
 
+/// Thrown by native normalize adapters when the host rejects for policy reasons
+/// (e.g. pixel budget) before returning PNG bytes.
+class NativeImageNormalizeException implements Exception {
+  const NativeImageNormalizeException(this.rejection);
+
+  final PhotoImportRejection rejection;
+
+  @override
+  String toString() => 'NativeImageNormalizeException($rejection)';
+}
+
 /// Status of a gallery / file pick attempt.
 enum PhotoPickStatus {
   success,
   cancelled,
   unavailable,
   failed,
+  rejected,
 }
 
-/// Structured pick outcome so cancel ≠ unavailable ≠ failure.
+/// Structured pick outcome so cancel ≠ unavailable ≠ failure ≠ policy reject.
 class PhotoPickOutcome {
-  const PhotoPickOutcome._(this.status, {this.bytes});
+  const PhotoPickOutcome._(this.status, {this.bytes, this.rejection});
 
   const PhotoPickOutcome.success(Uint8List bytes)
       : this._(PhotoPickStatus.success, bytes: bytes);
@@ -32,8 +44,12 @@ class PhotoPickOutcome {
 
   const PhotoPickOutcome.failed() : this._(PhotoPickStatus.failed);
 
+  const PhotoPickOutcome.rejected(PhotoImportRejection rejection)
+      : this._(PhotoPickStatus.rejected, rejection: rejection);
+
   final PhotoPickStatus status;
   final Uint8List? bytes;
+  final PhotoImportRejection? rejection;
 }
 
 /// Status of a PNG save attempt.
