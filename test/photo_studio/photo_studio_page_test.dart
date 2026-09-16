@@ -380,7 +380,7 @@ void main() {
 
   testWidgets('paste rejects oversized data:image clipboard text', (tester) async {
     final oversized =
-        'data:image/png;base64,${'A' * ((4 * 1024 * 1024) + 64)}';
+        'data:image/png;base64,${'A' * ((32 * 1024 * 1024) + 64)}';
     final messenger =
         tester.binding.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
@@ -413,7 +413,7 @@ void main() {
   });
 
   testWidgets('paste rejects oversized binary clipboard bytes', (tester) async {
-    final oversized = Uint8List(4 * 1024 * 1024 + 1);
+    final oversized = Uint8List(32 * 1024 * 1024 + 1);
     await _pumpPage(
       tester,
       page: PhotoStudioPage(
@@ -816,7 +816,10 @@ void main() {
       ),
     );
     await _tapSavePng(tester);
-    expect(find.textContaining('Save is available on web'), findsOneWidget);
+    expect(
+      find.textContaining('Could not save the PNG'),
+      findsOneWidget,
+    );
 
     await _pumpPage(
       tester,

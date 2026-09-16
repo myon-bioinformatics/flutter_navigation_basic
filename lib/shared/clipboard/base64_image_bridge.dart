@@ -41,44 +41,71 @@ class Base64ImageBridge {
   static Future<Base64ImagePayload> downscaleToPng(
     Uint8List source, {
     double scale = defaultScale,
+    int maxLongEdge = 4096,
   }) async {
     if (source.isEmpty) {
       throw const FormatException('Image bytes are empty.');
     }
-
-    final sourceCodec = await ui.instantiateImageCodec(source);
-    final sourceFrame = await sourceCodec.getNextFrame();
-    final sourceImage = sourceFrame.image;
-    final target = targetDimensions(
-      width: sourceImage.width,
-      height: sourceImage.height,
-      scale: scale,
-    );
-    sourceImage.dispose();
-    sourceCodec.dispose();
-
-    final scaledCodec = await ui.instantiateImageCodec(
-      source,
-      targetWidth: target.width,
-      targetHeight: target.height,
-      allowUpscaling: false,
-    );
-    final scaledFrame = await scaledCodec.getNextFrame();
-    final scaledImage = scaledFrame.image;
-    final pngData = await scaledImage.toByteData(format: ui.ImageByteFormat.png);
-    scaledImage.dispose();
-    scaledCodec.dispose();
-
-    if (pngData == null) {
-      throw StateError('Flutter could not encode the resized image as PNG.');
+    if (maxLongEdge < 1) {
+      throw ArgumentError.value(maxLongEdge, 'maxLongEdge', 'must be >= 1');
     }
-    return Base64ImagePayload(
-      bytes: pngData.buffer.asUint8List(
-        pngData.offsetInBytes,
-        pngData.lengthInBytes,
-      ),
-      mimeType: 'image/png',
-    );
+
+    // Probe dimensions without a full-size raster, then decode once at target.
+    ui.ImmutableBuffer? buffer;
+    ui.ImageDescriptor? descriptor;
+    ui.Codec? scaledCodec;
+    ui.Image? scaledImage;
+    try {
+      buffer = await ui.ImmutableBuffer.fromUint8List(source);
+      descriptor = await ui.ImageDescriptor.encoded(buffer);
+      final sourceWidth = descriptor.width;
+      final sourceHeight = descriptor.height;
+      if (sourceWidth <= 0 || sourceHeight <= 0) {
+        throw const FormatException('Image dimensions are invalid.');
+      }
+
+      var target = targetDimensions(
+        width: sourceWidth,
+        height: sourceHeight,
+        scale: scale,
+      );
+      final longEdge =
+          target.width > target.height ? target.width : target.height;
+      if (longEdge > maxLongEdge) {
+        final fit = maxLongEdge / longEdge;
+        target = (
+          width: (target.width * fit).round().clamp(1, sourceWidth).toInt(),
+          height: (target.height * fit).round().clamp(1, sourceHeight).toInt(),
+        );
+      }
+
+      scaledCodec = await descriptor.instantiateCodec(
+        targetWidth: target.width,
+        targetHeight: target.height,
+      );
+      final scaledFrame = await scaledCodec.getNextFrame();
+      scaledImage = scaledFrame.image;
+      final pngData =
+          await scaledImage.toByteData(format: ui.ImageByteFormat.png);
+      if (pngData == null) {
+        throw StateError('Flutter could not encode the resized image as PNG.');
+      }
+      final pngBytes = Uint8List.fromList(
+        pngData.buffer.asUint8List(
+          pngData.offsetInBytes,
+          pngData.lengthInBytes,
+        ),
+      );
+      return Base64ImagePayload(
+        bytes: pngBytes,
+        mimeType: 'image/png',
+      );
+    } finally {
+      scaledImage?.dispose();
+      scaledCodec?.dispose();
+      descriptor?.dispose();
+      buffer?.dispose();
+    }
   }
 
   static Base64ImagePayload decodeText(String input) {
