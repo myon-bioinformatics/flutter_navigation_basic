@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:html' as html;
 import 'dart:typed_data';
 
+import '../data/photo_import_limits.dart';
 import '../data/photo_media_ports.dart';
 
 /// Web-only local image pick via a hidden file input (no package dependency).
@@ -45,6 +46,13 @@ Future<PhotoPickOutcome> pickLocalImageBytesDetailed() {
       finish(const PhotoPickOutcome.cancelled());
       return;
     }
+    final file = files.first;
+    if (file.size > PhotoImportLimits.maxInputBytes) {
+      finish(
+        const PhotoPickOutcome.rejected(PhotoImportRejection.tooLargeBytes),
+      );
+      return;
+    }
     final reader = html.FileReader();
     reader.onError.listen((_) => finish(const PhotoPickOutcome.failed()));
     reader.onAbort.listen((_) => finish(const PhotoPickOutcome.cancelled()));
@@ -61,7 +69,7 @@ Future<PhotoPickOutcome> pickLocalImageBytesDetailed() {
         finish(const PhotoPickOutcome.failed());
       }
     });
-    reader.readAsArrayBuffer(files.first);
+    reader.readAsArrayBuffer(file);
   });
 
   // Hidden inputs rarely blur. When the file dialog closes without a selection,
