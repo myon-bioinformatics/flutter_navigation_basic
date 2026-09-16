@@ -14,9 +14,6 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import kotlin.math.max
 
 /**
@@ -28,12 +25,13 @@ class MainActivity : FlutterActivity() {
     private val normalizeChannelName =
         "com.example.flutter_application_1/image_normalize"
     private var normalizeChannel: MethodChannel? = null
-    private var normalizeExecutor: ExecutorService? =
-        Executors.newSingleThreadExecutor()
+    private val normalizeController = NormalizeExecutorController()
     private val mainHandler = Handler(Looper.getMainLooper())
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        // Fresh engine attach: drop any prior channel/executor and start clean.
+        tearDownNormalizeSession()
         val channel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             normalizeChannelName,
@@ -53,41 +51,54 @@ class MainActivity : FlutterActivity() {
                 result.success(null)
                 return@setMethodCallHandler
             }
-            val executor = normalizeExecutor
-            if (executor == null || executor.isShutdown) {
-                result.error("normalize_unavailable", "executor shut down", null)
+            val generation = normalizeController.currentGeneration()
+            val executor = try {
+                normalizeController.ensureExecutor()
+            } catch (_: Exception) {
+                result.error("normalize_unavailable", "executor unavailable", null)
                 return@setMethodCallHandler
             }
-            executor.execute {
-                try {
-                    val png = normalizeToPng(bytes, maxPixels, maxLongEdge)
-                    mainHandler.post { result.success(png) }
-                } catch (error: ImageNormalizeSupport.TooManyPixelsException) {
-                    mainHandler.post {
-                        result.error("too_many_pixels", error.message, null)
-                    }
-                } catch (error: Exception) {
-                    mainHandler.post {
-                        result.error("normalize_failed", error.message, null)
+            try {
+                executor.execute {
+                    try {
+                        val png = normalizeToPng(bytes, maxPixels, maxLongEdge)
+                        mainHandler.post {
+                            if (!normalizeController.isActive(generation)) return@post
+                            result.success(png)
+                        }
+                    } catch (error: ImageNormalizeSupport.TooManyPixelsException) {
+                        mainHandler.post {
+                            if (!normalizeController.isActive(generation)) return@post
+                            result.error("too_many_pixels", error.message, null)
+                        }
+                    } catch (error: Exception) {
+                        mainHandler.post {
+                            if (!normalizeController.isActive(generation)) return@post
+                            result.error("normalize_failed", error.message, null)
+                        }
                     }
                 }
+            } catch (_: java.util.concurrent.RejectedExecutionException) {
+                result.error("normalize_unavailable", "executor shut down", null)
             }
         }
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
-        normalizeChannel?.setMethodCallHandler(null)
-        normalizeChannel = null
+        tearDownNormalizeSession()
         super.cleanUpFlutterEngine(flutterEngine)
     }
 
     override fun onDestroy() {
+        tearDownNormalizeSession()
+        super.onDestroy()
+    }
+
+    /** Idempotent: clear channel handler + bump generation + shutdownNow (no wait). */
+    private fun tearDownNormalizeSession() {
         normalizeChannel?.setMethodCallHandler(null)
         normalizeChannel = null
-        normalizeExecutor?.shutdownNow()
-        normalizeExecutor?.awaitTermination(1, TimeUnit.SECONDS)
-        normalizeExecutor = null
-        super.onDestroy()
+        normalizeController.tearDown()
     }
 
     private fun normalizeToPng(
@@ -132,7 +143,6 @@ class MainActivity : FlutterActivity() {
             ImageNormalizeSupport.rejectIfTooManyPixels(width, height, maxPixels)
             val target = ImageNormalizeSupport.targetSize(width, height, maxLongEdge)
             decoder.setTargetSize(target.first, target.second)
-            // ImageDecoder applies EXIF/HEIF orientation by default.
         }
     }
 
@@ -169,10 +179,6 @@ class MainActivity : FlutterActivity() {
         return scaled
     }
 
-    /**
-     * BitmapFactory does not honor JPEG/HEIF EXIF orientation on API ≤27.
-     * Orientation values 1–8 are mapped to rotate/flip matrices.
-     */
     internal fun applyExifOrientation(bytes: ByteArray, bitmap: Bitmap): Bitmap {
         val orientation = try {
             ExifInterface(ByteArrayInputStream(bytes)).getAttributeInt(
@@ -199,7 +205,6 @@ class MainActivity : FlutterActivity() {
     }
 
     companion object {
-        /** Exposed for JVM unit tests of orientation 1–8 matrices. */
         fun orientationMatrix(orientation: Int): Matrix? {
             val op = ImageNormalizeSupport.orientationOp(orientation) ?: return null
             val matrix = Matrix()
