@@ -16,7 +16,7 @@ final class ImageNormalizeTests: XCTestCase {
     ])
   }
 
-  /// PNG whose IHDR claims 10000×10000 (100 MP).
+  /// PNG whose IHDR claims 10000×10000 (100 MP) — same bytes as Dart fixtures.
   private var oversizedClaimPng: Data {
     Data([
       137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 39, 16,
@@ -26,14 +26,33 @@ final class ImageNormalizeTests: XCTestCase {
     ])
   }
 
-  func testNormalizeTinyPngReturnsPng() throws {
-    let out = try ImageNormalize.normalizeToPng(
-      data: tinyPng,
-      maxPixels: 40_000_000,
-      maxLongEdge: 4096
+  func testRejectIfTooManyPixelsThrowsBeforeDecode() {
+    XCTAssertThrowsError(
+      try ImageNormalize.rejectIfTooManyPixels(
+        width: 10000,
+        height: 10000,
+        maxPixels: 40_000_000
+      )
+    ) { error in
+      guard let normalizeError = error as? ImageNormalize.NormalizeError else {
+        return XCTFail("expected NormalizeError, got \(error)")
+      }
+      XCTAssertEqual(normalizeError.code, "too_many_pixels")
+    }
+  }
+
+  func testRejectIfTooManyPixelsAllowsUnderBudget() throws {
+    try ImageNormalize.rejectIfTooManyPixels(
+      width: 4000,
+      height: 3000,
+      maxPixels: 40_000_000
     )
-    XCTAssertNotNil(out)
-    XCTAssertEqual(out?.prefix(8), tinyPng.prefix(8))
+  }
+
+  func testPngIhdrProbeReadsOversizedClaim() {
+    let size = ImageNormalize.pngIhdrSize(oversizedClaimPng)
+    XCTAssertEqual(size?.width, 10000)
+    XCTAssertEqual(size?.height, 10000)
   }
 
   func testNormalizeRejectsOversizedPixelClaimBeforeRaster() {
@@ -49,6 +68,16 @@ final class ImageNormalizeTests: XCTestCase {
       }
       XCTAssertEqual(normalizeError.code, "too_many_pixels")
     }
+  }
+
+  func testNormalizeTinyPngReturnsPng() throws {
+    let out = try ImageNormalize.normalizeToPng(
+      data: tinyPng,
+      maxPixels: 40_000_000,
+      maxLongEdge: 4096
+    )
+    XCTAssertNotNil(out)
+    XCTAssertEqual(out?.prefix(8), tinyPng.prefix(8))
   }
 
   func testNormalizeEmptyDataReturnsNil() throws {
