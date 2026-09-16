@@ -315,11 +315,98 @@ void main() {
       expect(client.sessionId, isNull);
     });
   });
-  test('support matrix still marks legacy MCP era', () {
+  test('support matrix marks dual-era MCP as implemented', () {
     expect(McpProtocol.implementsCurrentOfficial, isTrue);
     expect(McpSupportMatrix.legacyMcpEra, isTrue);
     expect(McpSupportMatrix.currentOfficialEra, isTrue);
+    expect(
+      McpSupportMatrix.currentOfficialVersion,
+      McpProtocol.currentOfficialVersion,
+    );
   });
+
+  test('non-2xx transport body with result shape is not success', () async {
+    final client = McpSessionClient(
+      transport: _HttpErrorWithResultBodyTransport(),
+    );
+    final init = await client.initialize();
+    expect(init.isError, isTrue);
+    expect(client.sessionId, isNull);
+  });
+
+  test('malformed JSON-RPC error via transport becomes failure not throw',
+      () async {
+    for (final body in <Map<String, Object?>>[
+      {
+        'jsonrpc': '2.0',
+        'id': 1,
+        'error': {'code': '-32603', 'message': 'x'},
+      },
+      {
+        'jsonrpc': '2.0',
+        'id': 1,
+        'error': {'code': -32603, 'message': 42},
+      },
+      {
+        'jsonrpc': '2.0',
+        'id': 1,
+        'error': {'message': 'x'},
+      },
+      {
+        'jsonrpc': '2.0',
+        'id': 1,
+        'error': {'code': -32603},
+      },
+    ]) {
+      final client = McpSessionClient(
+        transport: _FixedJsonBodyTransport(body),
+      );
+      final init = await client.initialize();
+      expect(init.isError, isTrue, reason: '$body');
+      expect(init.error?.message, contains('invalid JSON-RPC response'));
+      expect(client.sessionId, isNull);
+    }
+  });
+}
+
+class _HttpErrorWithResultBodyTransport implements McpStreamableTransport {
+  @override
+  Future<McpTransportResponse> post({
+    required Map<String, String> headers,
+    required String body,
+  }) async {
+    final request = JsonRpcRequest.tryParse(body);
+    return McpTransportResponse(
+      statusCode: 500,
+      headers: {McpProtocol.sessionIdHeader: 'sess-should-not-adopt'},
+      body: JsonRpcResponse.result(
+        id: request?.id ?? 1,
+        result: {
+          'protocolVersion': McpProtocol.specificationVersion,
+          'capabilities': <String, Object?>{},
+          'serverInfo': {'name': 'lie', 'version': '1'},
+        },
+      ).toJson(),
+    );
+  }
+}
+
+class _FixedJsonBodyTransport implements McpStreamableTransport {
+  _FixedJsonBodyTransport(this.body);
+
+  final Map<String, Object?> body;
+
+  @override
+  Future<McpTransportResponse> post({
+    required Map<String, String> headers,
+    required String body,
+  }) async {
+    return McpTransportResponse(
+      statusCode: 200,
+      headers: {McpProtocol.sessionIdHeader: 'sess-should-not-adopt'},
+      body: this.body,
+    );
+  }
 }
 
 

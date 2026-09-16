@@ -69,11 +69,14 @@ class InProcessMcpTransport implements McpStreamableTransport {
   }
 }
 
-/// Client session for the pinned legacy MCP `2025-03-26` Streamable HTTP path.
+/// Client for dual-era MCP Streamable HTTP demos.
 ///
-/// Does **not** implement current-official `2026-07-28` (stateless /
-/// `server/discover`). Live JWT verification must not use the demo unsigned
-/// audience inspector from the foundation fixtures.
+/// Legacy path: initialize + `Mcp-Session-Id` (`2025-03-26`) via
+/// [runEchoDemo]. Current-official path: stateless `server/discover` +
+/// `_meta` (`2026-07-28`) via [runModernEchoDemo].
+///
+/// Live JWT verification must not use the demo unsigned audience inspector
+/// from the foundation fixtures.
 class McpSessionClient {
   McpSessionClient({
     required this.transport,
@@ -351,9 +354,22 @@ class McpSessionClient {
         );
       } else {
         try {
-          // Validate jsonrpc / result-xor-error / id correlation.
+          // Validate jsonrpc / result-xor-error / id correlation / error shape.
           response = JsonRpcResponse.parse(map, expectedId: request.id);
         } on FormatException catch (error) {
+          response = JsonRpcResponse.failure(
+            id: request.id,
+            error: JsonRpcError(
+              code: JsonRpcErrorCode.internalError,
+              message: 'invalid JSON-RPC response: $error',
+              data: {
+                'statusCode': transportResponse.statusCode,
+                'body': body,
+              },
+            ),
+          );
+        } on Object catch (error) {
+          // External payloads must never surface as uncaught TypeError etc.
           response = JsonRpcResponse.failure(
             id: request.id,
             error: JsonRpcError(
