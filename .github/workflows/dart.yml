@@ -19,6 +19,7 @@ jobs:
     outputs:
       flutter: ${{ steps.filter.outputs.flutter }}
       android: ${{ steps.filter.outputs.android }}
+      ios: ${{ steps.filter.outputs.ios }}
       python: ${{ steps.filter.outputs.python }}
       patterns: ${{ steps.filter.outputs.patterns }}
     steps:
@@ -35,6 +36,7 @@ jobs:
             {
               echo "flutter=true"
               echo "android=true"
+              echo "ios=true"
               echo "python=true"
               echo "patterns=true"
             } >> "$GITHUB_OUTPUT"
@@ -47,6 +49,7 @@ jobs:
 
           flutter=false
           android=false
+          ios=false
           python=false
           patterns=false
           for f in "${files[@]}"; do
@@ -69,6 +72,11 @@ jobs:
                 ;;
             esac
             case "$f" in
+              ios/*|lib/*|assets/*|pubspec.yaml|pubspec.lock)
+                ios=true
+                ;;
+            esac
+            case "$f" in
               # Pattern catalogues + shared deps that can regress all ~792 controllers.
               test/features/*_patterns/*|lib/features/*_patterns/*|assets/screens.json|tool/ci/flutter_pattern_test_paths.txt|lib/core/services/base_controller.dart|pubspec.yaml|pubspec.lock)
                 patterns=true
@@ -86,13 +94,14 @@ jobs:
           {
             echo "flutter=$flutter"
             echo "android=$android"
+            echo "ios=$ios"
             echo "python=$python"
             echo "patterns=$patterns"
           } >> "$GITHUB_OUTPUT"
           {
             echo "Changed files (${#files[@]}):"
             printf '%s\n' "${files[@]}"
-            echo "outputs: flutter=$flutter android=$android python=$python patterns=$patterns"
+            echo "outputs: flutter=$flutter android=$android ios=$ios python=$python patterns=$patterns"
           }
 
   gate:
@@ -344,3 +353,25 @@ jobs:
           path: build/diagnostics/android-arm64/
           if-no-files-found: error
           retention-days: 30
+
+  # macOS-only compile proof for the restored ios/ tree + image_picker/gal.
+  ios-build:
+    name: iOS no-codesign build
+    needs: changes
+    if: needs.changes.outputs.ios == 'true'
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter 3.47.0
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.0"
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build iOS release without codesigning
+        run: flutter build ios --release --no-codesign -t lib/main_prod.dart

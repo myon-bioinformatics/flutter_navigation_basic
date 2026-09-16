@@ -11,8 +11,8 @@ typedef GalleryPickImage = Future<XFile?> Function({
 ///
 /// UI must not call [ImagePicker] directly — inject this (or a fake) instead.
 /// Transparent PNG stays as original bytes (no `imageQuality` re-encode).
-/// HEIC is returned as platform bytes; Flutter's codec + PNG normalize handle
-/// conversion on supported devices.
+/// HEIC/HEIF bytes are returned as-is; [nativeImageNormalizeAdapter] converts
+/// them to orientation-aware PNG when Flutter's codec cannot probe the file.
 class ImagePickerPhotoSource {
   ImagePickerPhotoSource({GalleryPickImage? pickImage})
       : _pickImage = pickImage ??

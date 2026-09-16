@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../../shared/clipboard/base64_image_bridge.dart';
 import '../../../shared/display/display_catalog.dart';
 import '../../../shared/display/display_scope.dart';
+import '../data/native_image_normalize_adapter.dart';
 import '../data/photo_import_limits.dart';
 import '../data/photo_media_ports.dart';
 import '../domain/emoji_stamp.dart';
@@ -201,7 +202,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     try {
       PhotoImportRejection? decodeReject;
       final adapter = widget.imageDecodeAdapter ??
-          (kIsWeb ? browserImageDecodeAdapter : null);
+          (kIsWeb ? browserImageDecodeAdapter : nativeImageNormalizeAdapter);
       final validated = await loadStudioImageBytes(
         rawBytes,
         nativeDecodeAdapter: adapter,

@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_application_1/features/photo_studio/data/image_picker_photo_source.dart';
+import 'package:flutter_application_1/features/photo_studio/data/native_image_normalize_adapter.dart';
 import 'package:flutter_application_1/features/photo_studio/data/photo_import_limits.dart';
 import 'package:flutter_application_1/features/photo_studio/data/photo_media_ports.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/studio_image_loader.dart';
@@ -15,6 +17,15 @@ final _tinyPng = Uint8List.fromList([
   0x0A, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
   0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49,
   0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+]);
+
+/// PNG whose IHDR claims 10000×10000 (100 MP) without a full pixel payload.
+/// [readEncodedImageSize] must reject this before any full-frame raster.
+final _oversizedClaimPng = Uint8List.fromList([
+  137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 39, 16,
+  0, 0, 39, 16, 8, 2, 0, 0, 0, 53, 44, 245, 112, 0, 0, 0, 9, 73, 68, 65, 84,
+  120, 156, 99, 0, 0, 0, 1, 0, 1, 94, 255, 125, 249, 0, 0, 0, 0, 73, 69, 78,
+  68, 174, 66, 96, 130,
 ]);
 
 Uint8List _heicLike() {
@@ -157,6 +168,39 @@ void main() {
       expect(seen, PhotoImportRejection.heicConversionFailed);
     });
 
+    test('HEIC-looking bytes with successful adapter → PNG', () async {
+      PhotoImportRejection? seen;
+      final loaded = await loadStudioImageBytes(
+        _heicLike(),
+        nativeDecodeAdapter: (_) async => _tinyPng,
+        onRejected: (r) => seen = r,
+      );
+      expect(loaded, _tinyPng);
+      expect(seen, isNull);
+    });
+
+    test('pixel gate rejects oversized IHDR before full raster', () async {
+      PhotoImportRejection? seen;
+      final size = await readEncodedImageSize(_oversizedClaimPng);
+      expect(size?.width, 10000);
+      expect(size?.height, 10000);
+
+      final loaded = await loadStudioImageBytes(
+        _oversizedClaimPng,
+        onRejected: (r) => seen = r,
+      );
+      expect(loaded, isNull);
+      expect(seen, PhotoImportRejection.tooManyPixels);
+      // Must not fall through to an adapter when size is already known.
+      final loadedWithAdapter = await loadStudioImageBytes(
+        _oversizedClaimPng,
+        nativeDecodeAdapter: (_) async => _tinyPng,
+        onRejected: (r) => seen = r,
+      );
+      expect(loadedWithAdapter, isNull);
+      expect(seen, PhotoImportRejection.tooManyPixels);
+    });
+
     test('oversized byte gate is separate from decode', () {
       expect(
         PhotoImportGate.rejectRawBytes(
@@ -164,6 +208,83 @@ void main() {
         ),
         PhotoImportRejection.tooLargeBytes,
       );
+    });
+  });
+
+  group('nativeImageNormalizeAdapter', () {
+    test('injected invoker returns PNG for HEIC-like bytes', () async {
+      final out = await nativeImageNormalizeAdapter(
+        _heicLike(),
+        invoke: (_) async => _tinyPng,
+      );
+      expect(out, _tinyPng);
+    });
+
+    test('MethodChannel success path', () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(kNativeImageNormalizeChannel, (
+        call,
+      ) async {
+        expect(call.method, 'normalizeToPng');
+        expect(call.arguments, isA<Uint8List>());
+        return _tinyPng;
+      });
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(kNativeImageNormalizeChannel, null);
+      });
+
+      final out = await nativeImageNormalizeAdapter(_heicLike());
+      expect(out, _tinyPng);
+
+      final loaded = await loadStudioImageBytes(
+        _heicLike(),
+        nativeDecodeAdapter: nativeImageNormalizeAdapter,
+      );
+      expect(loaded, _tinyPng);
+    });
+
+    test('MethodChannel failure → null / heicConversionFailed', () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(kNativeImageNormalizeChannel, (
+        call,
+      ) async =>
+              null);
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(kNativeImageNormalizeChannel, null);
+      });
+
+      PhotoImportRejection? seen;
+      final loaded = await loadStudioImageBytes(
+        _heicLike(),
+        nativeDecodeAdapter: nativeImageNormalizeAdapter,
+        onRejected: (r) => seen = r,
+      );
+      expect(loaded, isNull);
+      expect(seen, PhotoImportRejection.heicConversionFailed);
+    });
+  });
+
+  group('AndroidManifest permissions', () {
+    test('does not declare broad photo read permissions', () {
+      final xml =
+          File('android/app/src/main/AndroidManifest.xml').readAsStringSync();
+      expect(
+        RegExp(r'android\.permission\.READ_MEDIA_IMAGES').hasMatch(xml),
+        isFalse,
+      );
+      expect(
+        RegExp(r'android\.permission\.READ_EXTERNAL_STORAGE').hasMatch(xml),
+        isFalse,
+      );
+      expect(
+        RegExp(r'android\.permission\.WRITE_EXTERNAL_STORAGE').hasMatch(xml),
+        isTrue,
+      );
+      expect(xml.contains('maxSdkVersion="29"'), isTrue);
     });
   });
 }
