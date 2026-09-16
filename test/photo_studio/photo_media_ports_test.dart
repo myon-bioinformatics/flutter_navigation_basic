@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_application_1/features/photo_studio/data/image_picker_photo_source.dart';
-import 'package:flutter_application_1/features/photo_studio/data/native_image_normalize_adapter.dart';
+import 'package:flutter_application_1/features/photo_studio/data/native_image_normalize_adapter_io.dart';
 import 'package:flutter_application_1/features/photo_studio/data/photo_import_limits.dart';
 import 'package:flutter_application_1/features/photo_studio/data/photo_media_ports.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/studio_image_loader.dart';
