@@ -387,9 +387,11 @@ jobs:
       - name: Run app JVM unit tests
         run: |
           set -euo pipefail
+          mkdir -p build
+          # Wrapper scripts are committed; Flutter writes local.properties (sdk.dir).
           cd android
+          chmod +x ./gradlew
           ./gradlew :app:testDebugUnitTest --info | tee ../build/android-unit-tests.log
-          # Evidence that the Photo Studio normalize suites executed.
           grep -E 'ImageNormalizeSupportTest|NormalizeExecutorControllerTest' ../build/android-unit-tests.log
 
       - name: Upload JVM test log
@@ -449,14 +451,18 @@ jobs:
         id: sim
         run: |
           set -euo pipefail
-          # Prefer a common recent device; fall back to first available iPhone.
-          DEST=$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/{print $1}' | sed 's/[[:space:]]*$//' | head -1)
-          if [[ -z "${DEST}" ]]; then
+          # Use UDID to avoid whitespace / ambiguous name matching.
+          UDID=$(xcrun simctl list devices available \
+            | grep -E 'iPhone.+\([A-F0-9-]{36}\)' \
+            | head -1 \
+            | sed -E 's/.*\(([A-F0-9-]{36})\).*/\1/')
+          if [[ -z "${UDID}" ]]; then
             echo "::error::No available iPhone simulator"
+            xcrun simctl list devices available || true
             exit 1
           fi
-          echo "name=${DEST}" >> "$GITHUB_OUTPUT"
-          echo "Using simulator: ${DEST}"
+          echo "udid=${UDID}" >> "$GITHUB_OUTPUT"
+          echo "Using simulator udid=${UDID}"
 
       - name: Run RunnerTests with xcodebuild
         run: |
@@ -467,11 +473,10 @@ jobs:
             -workspace ios/Runner.xcworkspace \
             -scheme Runner \
             -configuration Debug \
-            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
             -only-testing:RunnerTests \
             CODE_SIGNING_ALLOWED=NO \
             | tee build/ios-xctest/xcodebuild.log
-          # Evidence that ImageNormalizeTests executed.
           grep -E 'ImageNormalizeTests|testNormalize' build/ios-xctest/xcodebuild.log
 
       - name: Upload XCTest log
