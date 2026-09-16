@@ -69,11 +69,14 @@ class InProcessMcpTransport implements McpStreamableTransport {
   }
 }
 
-/// Client session for the pinned legacy MCP `2025-03-26` Streamable HTTP path.
+/// Client for dual-era MCP Streamable HTTP demos.
 ///
-/// Does **not** implement current-official `2026-07-28` (stateless /
-/// `server/discover`). Live JWT verification must not use the demo unsigned
-/// audience inspector from the foundation fixtures.
+/// Legacy path: initialize + `Mcp-Session-Id` (`2025-03-26`) via
+/// [runEchoDemo]. Current-official path: stateless `server/discover` +
+/// `_meta` (`2026-07-28`) via [runModernEchoDemo].
+///
+/// Live JWT verification must not use the demo unsigned audience inspector
+/// from the foundation fixtures.
 class McpSessionClient {
   McpSessionClient({
     required this.transport,

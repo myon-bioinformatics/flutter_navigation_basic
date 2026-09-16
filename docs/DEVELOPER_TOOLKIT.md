@@ -148,9 +148,9 @@ fixtures. Endpoints:
     (`server/discover`, stateless tools).
   - #70 adds an in-app MCP session client (initialize → tools/call) over the
     foundation handler, plus an offline auth-matrix executor for mock
-    `/auth/*` drafts. Live TLS (`-k`) / redirect (`-L`), dual-era MCP
-    `2026-07-28`, and production JWT verification remain follow-ups — do not
-    use the unsigned foundation JWT inspector for live verification.
+    `/auth/*` drafts. Live TLS (`-k`) / redirect (`-L`) and production JWT
+    verification remain follow-ups — do not use the unsigned foundation JWT
+    inspector for live verification.
 
   - Present Bearer on `/mcp` (including `notifications/initialized`) is
     audience-checked; expired/malformed → 401, wrong audience → 403.

@@ -998,6 +998,134 @@ void main() {
       expect(error['code'], JsonRpcErrorCode.methodNotFound);
     });
 
+    test('Mcp-Method mismatch → headerMismatch', () {
+      final response = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: modernHeaders(method: 'tools/list'),
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 80,
+          'method': 'server/discover',
+          'params': {'_meta': modernMeta()},
+        }),
+      )!;
+      expect(response.statusCode, 400);
+      final error = (response.body as Map)['error'] as Map;
+      expect(error['code'], JsonRpcErrorCode.headerMismatch);
+      expect(error['message'], contains('Mcp-Method'));
+    });
+
+    test('true protocol header/meta mismatch → headerMismatch', () {
+      final response = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: modernHeaders(
+          method: 'server/discover',
+          version: McpProtocol.currentOfficialVersion,
+        ),
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 81,
+          'method': 'server/discover',
+          'params': {'_meta': modernMeta(McpProtocol.specificationVersion)},
+        }),
+      )!;
+      expect(response.statusCode, 400);
+      final error = (response.body as Map)['error'] as Map;
+      expect(error['code'], JsonRpcErrorCode.headerMismatch);
+      expect(error['message'], contains('does not match'));
+    });
+
+    test('missing Mcp-Name on tools/call → headerMismatch', () {
+      final response = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: modernHeaders(method: 'tools/call'),
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 82,
+          'method': 'tools/call',
+          'params': {
+            'name': 'echo',
+            'arguments': {'text': 'x'},
+            '_meta': modernMeta(),
+          },
+        }),
+      )!;
+      expect(response.statusCode, 400);
+      final error = (response.body as Map)['error'] as Map;
+      expect(error['code'], JsonRpcErrorCode.headerMismatch);
+      expect(error['message'], contains('Mcp-Name'));
+    });
+
+    test('Mcp-Name ≠ body name → headerMismatch', () {
+      final response = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: modernHeaders(method: 'tools/call', name: 'other'),
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 83,
+          'method': 'tools/call',
+          'params': {
+            'name': 'echo',
+            'arguments': {'text': 'x'},
+            '_meta': modernMeta(),
+          },
+        }),
+      )!;
+      expect(response.statusCode, 400);
+      final error = (response.body as Map)['error'] as Map;
+      expect(error['code'], JsonRpcErrorCode.headerMismatch);
+      expect(error['message'], contains('does not match body'));
+    });
+
+    test('non-POST /mcp → HTTP 405', () {
+      final response = routes.handle(
+        method: 'GET',
+        path: '/mcp',
+        headers: const {},
+        rawBody: null,
+      )!;
+      expect(response.statusCode, 405);
+      expect((response.body as Map)['error'], 'method_not_allowed');
+    });
+
+    test('legacy unknown method → HTTP 200 with methodNotFound', () {
+      final init = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: const {},
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 1,
+          'method': 'initialize',
+          'params': {
+            'protocolVersion': McpProtocol.specificationVersion,
+            'capabilities': <String, Object?>{},
+            'clientInfo': {'name': 't', 'version': '1'},
+          },
+        }),
+      )!;
+      expect(init.statusCode, 200);
+      final session = init.headers[McpProtocol.sessionIdHeader]!;
+
+      final response = routes.handle(
+        method: 'POST',
+        path: '/mcp',
+        headers: {McpProtocol.sessionIdHeader: session},
+        rawBody: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 84,
+          'method': 'totally/unknown',
+        }),
+      )!;
+      expect(response.statusCode, 200);
+      final error = (response.body as Map)['error'] as Map;
+      expect(error['code'], JsonRpcErrorCode.methodNotFound);
+    });
+
     test('Mcp-Name base64 sentinel encode/decode for Unicode and edges', () {
       const unicodeName = 'エコー';
       const spacedName = ' leading ';
@@ -1011,7 +1139,6 @@ void main() {
       final encodedUnicode = McpHeaderCodec.encode(unicodeName);
       expect(encodedUnicode.startsWith('=?base64?'), isTrue);
       expect(McpHeaderCodec.decode(encodedUnicode), unicodeName);
-      // Raw non-sentinel values decode as-is; encode wraps unsafe edges.
       expect(McpHeaderCodec.decode(spacedName), spacedName);
       expect(McpHeaderCodec.decode(McpHeaderCodec.encode(spacedName)), spacedName);
       expect(
@@ -1021,7 +1148,6 @@ void main() {
       expect(McpHeaderCodec.decode('=?base64?!!!?='), isNull);
       expect(McpHeaderCodec.decode('=?notbase64?YQ==?='), isNull);
 
-      // Wire: Unicode tool name via encoded Mcp-Name header.
       final called = routes.handle(
         method: 'POST',
         path: '/mcp',
@@ -1040,8 +1166,6 @@ void main() {
           },
         }),
       )!;
-      // Unknown tool name → JSON-RPC tool error (or method path), but NOT
-      // headerMismatch — proves encode/decode matched the body param.
       expect(called.statusCode, isNot(400));
       final body = called.body as Map;
       if (body.containsKey('error')) {
@@ -1075,7 +1199,6 @@ void main() {
         contains('malformed'),
       );
 
-      // mcpStreamableHeaders applies the codec for callers.
       final headers = mcpStreamableHeaders(
         protocolVersion: McpProtocol.currentOfficialVersion,
         method: 'tools/call',
@@ -1088,11 +1211,62 @@ void main() {
     });
   });
 
+  group('JsonRpcResponse parse contract', () {
+    test('rejects bad jsonrpc version', () {
+      expect(
+        () => JsonRpcResponse.fromJson({
+          'jsonrpc': '1.0',
+          'id': 1,
+          'result': {'ok': true},
+        }),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('rejects result and error together or neither', () {
+      expect(
+        () => JsonRpcResponse.fromJson({
+          'jsonrpc': '2.0',
+          'id': 1,
+          'result': {'ok': true},
+          'error': {'code': -1, 'message': 'x'},
+        }),
+        throwsA(isA<FormatException>()),
+      );
+      expect(
+        () => JsonRpcResponse.fromJson({'jsonrpc': '2.0', 'id': 1}),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('parse enforces expectedId', () {
+      expect(
+        () => JsonRpcResponse.parse(
+          {
+            'jsonrpc': '2.0',
+            'id': 2,
+            'result': {'ok': true},
+          },
+          expectedId: 1,
+        ),
+        throwsA(isA<FormatException>()),
+      );
+      final ok = JsonRpcResponse.parse(
+        {
+          'jsonrpc': '2.0',
+          'id': 1,
+          'result': {'ok': true},
+        },
+        expectedId: 1,
+      );
+      expect(ok.result, {'ok': true});
+    });
+  });
+
   group('McpHeaderCodec', () {
     test('round-trips ASCII-safe values unchanged', () {
       expect(McpHeaderCodec.encode('echo'), 'echo');
       expect(McpHeaderCodec.decode('echo'), 'echo');
     });
   });
-
 }

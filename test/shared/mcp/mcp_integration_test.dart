@@ -315,11 +315,46 @@ void main() {
       expect(client.sessionId, isNull);
     });
   });
-  test('support matrix still marks legacy MCP era', () {
+  test('support matrix marks dual-era MCP as implemented', () {
     expect(McpProtocol.implementsCurrentOfficial, isTrue);
     expect(McpSupportMatrix.legacyMcpEra, isTrue);
     expect(McpSupportMatrix.currentOfficialEra, isTrue);
+    expect(
+      McpSupportMatrix.currentOfficialVersion,
+      McpProtocol.currentOfficialVersion,
+    );
   });
+
+  test('non-2xx transport body with result shape is not success', () async {
+    final client = McpSessionClient(
+      transport: _HttpErrorWithResultBodyTransport(),
+    );
+    final init = await client.initialize();
+    expect(init.isError, isTrue);
+    expect(client.sessionId, isNull);
+  });
+}
+
+class _HttpErrorWithResultBodyTransport implements McpStreamableTransport {
+  @override
+  Future<McpTransportResponse> post({
+    required Map<String, String> headers,
+    required String body,
+  }) async {
+    final request = JsonRpcRequest.tryParse(body);
+    return McpTransportResponse(
+      statusCode: 500,
+      headers: const {},
+      body: JsonRpcResponse.result(
+        id: request?.id ?? 1,
+        result: {
+          'protocolVersion': McpProtocol.specificationVersion,
+          'capabilities': <String, Object?>{},
+          'serverInfo': {'name': 'lie', 'version': '1'},
+        },
+      ).toJson(),
+    );
+  }
 }
 
 

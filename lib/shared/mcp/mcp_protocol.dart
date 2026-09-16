@@ -2,19 +2,15 @@ import 'dart:convert';
 
 /// Pinned MCP + OAuth foundation constants for this repository.
 ///
-/// Full UI/executor wiring lands in a later PR; this file is the single place
-/// that records which protocol versions the foundation targets.
-///
 /// **Dual-era scope:** this foundation implements legacy MCP `2025-03-26`
 /// (initialize + `Mcp-Session-Id` Streamable HTTP) **and** current-official
 /// `2026-07-28` (`server/discover`, stateless tools with per-request `_meta`).
-/// 
 abstract final class McpProtocol {
-  /// MCP specification revision this foundation targets.
+  /// Legacy MCP specification revision (session Streamable HTTP).
   /// Display this value in diagnostics / support matrix UIs.
   static const specificationVersion = '2025-03-26';
 
-  /// Newest official MCP revision known to this repo (not implemented here).
+  /// Current official MCP revision implemented alongside the legacy era.
   static const currentOfficialVersion = '2026-07-28';
 
   /// Whether this foundation implements the current official MCP revision.
