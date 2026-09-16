@@ -2,9 +2,16 @@ import 'dart:async';
 import 'dart:html' as html;
 import 'dart:typed_data';
 
+import '../data/photo_media_ports.dart';
+
 /// Web-only local image pick via a hidden file input (no package dependency).
-Future<Uint8List?> pickLocalImageBytes() {
-  final completer = Completer<Uint8List?>();
+Future<Uint8List?> pickLocalImageBytes() async {
+  final outcome = await pickLocalImageBytesDetailed();
+  return outcome.bytes;
+}
+
+Future<PhotoPickOutcome> pickLocalImageBytesDetailed() {
+  final completer = Completer<PhotoPickOutcome>();
   final input = html.FileUploadInputElement()
     ..accept = 'image/png,image/jpeg,image/webp,image/*'
     ..style.display = 'none';
@@ -14,14 +21,14 @@ Future<Uint8List?> pickLocalImageBytes() {
   var selectionStarted = false;
   Timer? cancelTimer;
 
-  void finish(Uint8List? bytes) {
+  void finish(PhotoPickOutcome outcome) {
     cancelTimer?.cancel();
     cancelTimer = null;
     focusSubscription?.cancel();
     focusSubscription = null;
     input.remove();
     if (!completer.isCompleted) {
-      completer.complete(bytes);
+      completer.complete(outcome);
     }
   }
 
@@ -35,18 +42,23 @@ Future<Uint8List?> pickLocalImageBytes() {
 
     final files = input.files;
     if (files == null || files.isEmpty) {
-      finish(null);
+      finish(const PhotoPickOutcome.cancelled());
       return;
     }
     final reader = html.FileReader();
-    reader.onError.listen((_) => finish(null));
-    reader.onAbort.listen((_) => finish(null));
+    reader.onError.listen((_) => finish(const PhotoPickOutcome.failed()));
+    reader.onAbort.listen((_) => finish(const PhotoPickOutcome.cancelled()));
     reader.onLoad.listen((_) {
       final result = reader.result;
       if (result is ByteBuffer) {
-        finish(result.asUint8List());
+        final bytes = result.asUint8List();
+        if (bytes.isEmpty) {
+          finish(const PhotoPickOutcome.failed());
+        } else {
+          finish(PhotoPickOutcome.success(bytes));
+        }
       } else {
-        finish(null);
+        finish(const PhotoPickOutcome.failed());
       }
     });
     reader.readAsArrayBuffer(files.first);
@@ -59,7 +71,7 @@ Future<Uint8List?> pickLocalImageBytes() {
     cancelTimer?.cancel();
     cancelTimer = Timer(const Duration(milliseconds: 300), () {
       if (!selectionStarted && !completer.isCompleted) {
-        finish(null);
+        finish(const PhotoPickOutcome.cancelled());
       }
     });
   });

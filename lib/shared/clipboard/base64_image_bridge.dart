@@ -41,22 +41,36 @@ class Base64ImageBridge {
   static Future<Base64ImagePayload> downscaleToPng(
     Uint8List source, {
     double scale = defaultScale,
+    int maxLongEdge = 4096,
   }) async {
     if (source.isEmpty) {
       throw const FormatException('Image bytes are empty.');
+    }
+    if (maxLongEdge < 1) {
+      throw ArgumentError.value(maxLongEdge, 'maxLongEdge', 'must be >= 1');
     }
 
     final sourceCodec = await ui.instantiateImageCodec(source);
     final sourceFrame = await sourceCodec.getNextFrame();
     final sourceImage = sourceFrame.image;
-    final target = targetDimensions(
-      width: sourceImage.width,
-      height: sourceImage.height,
-      scale: scale,
-    );
+    final sourceWidth = sourceImage.width;
+    final sourceHeight = sourceImage.height;
     sourceImage.dispose();
     sourceCodec.dispose();
 
+    var target = targetDimensions(
+      width: sourceWidth,
+      height: sourceHeight,
+      scale: scale,
+    );
+    final longEdge = target.width > target.height ? target.width : target.height;
+    if (longEdge > maxLongEdge) {
+      final fit = maxLongEdge / longEdge;
+      target = (
+        width: (target.width * fit).round().clamp(1, sourceWidth).toInt(),
+        height: (target.height * fit).round().clamp(1, sourceHeight).toInt(),
+      );
+    }
     final scaledCodec = await ui.instantiateImageCodec(
       source,
       targetWidth: target.width,

@@ -17,9 +17,11 @@ dependencies:
 
   # Reference-catalogue compatibility only. The production/handcrafted app shell
   # is Flutter-native; remaining GetX usage is isolated to historical patterns.
+  gal: ^2.3.3
   get: ^4.7.3
 
   # Local storage (isolated behind StorageService).
+  image_picker: ^1.2.3
   shared_preferences: ^2.5.5
 
 dev_dependencies:

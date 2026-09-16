@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import '../../../shared/clipboard/base64_image_bridge.dart';
 import '../../../shared/display/display_catalog.dart';
 import '../../../shared/display/display_scope.dart';
+import '../data/photo_import_limits.dart';
+import '../data/photo_media_ports.dart';
 import '../domain/emoji_stamp.dart';
 import '../domain/normalized_rect.dart';
 import '../domain/photo_studio_history.dart';
@@ -67,7 +69,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     '🍀',
   ];
 
-  static const _maxImageBytes = 4 * 1024 * 1024;
+  static const _maxImageBytes = PhotoImportLimits.maxInputBytes;
   static const _maxImageClipboardChars = _maxImageBytes;
 
   /// Fallback until the first canvas layout reports its size.
@@ -186,8 +188,9 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
 
   Future<void> _setImage(Uint8List rawBytes) async {
     final display = DisplayScope.of(context);
-    if (rawBytes.lengthInBytes > _maxImageBytes) {
-      setState(() => _status = display.text('photoStudio.imageError'));
+    final rawReject = PhotoImportGate.rejectRawBytes(rawBytes);
+    if (rawReject != null) {
+      setState(() => _status = _rejectionMessage(display, rawReject));
       return;
     }
     final generation = ++_imageLoadGeneration;
@@ -196,21 +199,30 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       _status = display.text('photoStudio.decoding');
     });
     try {
+      PhotoImportRejection? decodeReject;
       final adapter = widget.imageDecodeAdapter ??
           (kIsWeb ? browserImageDecodeAdapter : null);
       final validated = await loadStudioImageBytes(
         rawBytes,
         nativeDecodeAdapter: adapter,
+        onRejected: (rejection) => decodeReject = rejection,
       );
       if (!mounted || generation != _imageLoadGeneration) return;
       if (validated == null) {
         setState(() {
           _decoding = false;
-          _status = display.text('photoStudio.imageUnsupported');
+          _status = _rejectionMessage(
+            display,
+            decodeReject ?? PhotoImportRejection.undecodable,
+          );
         });
         return;
       }
-      final compact = await Base64ImageBridge.downscaleToPng(validated);
+      final compact = await Base64ImageBridge.downscaleToPng(
+        validated,
+        scale: PhotoImportLimits.defaultDownscale,
+        maxLongEdge: PhotoImportLimits.maxDocumentLongEdge,
+      );
       if (!mounted || generation != _imageLoadGeneration) return;
       // Require a non-empty PNG payload before treating load as success.
       if (compact.bytes.isEmpty) {
@@ -239,20 +251,56 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     }
   }
 
+  String _rejectionMessage(
+    DisplayController display,
+    PhotoImportRejection rejection,
+  ) {
+    return switch (rejection) {
+      PhotoImportRejection.tooLargeBytes ||
+      PhotoImportRejection.tooManyPixels =>
+        display.text('photoStudio.imageTooLarge'),
+      PhotoImportRejection.heicConversionFailed =>
+        display.text('photoStudio.imageUnsupported'),
+      PhotoImportRejection.undecodable || PhotoImportRejection.empty =>
+        display.text(
+          rejection == PhotoImportRejection.undecodable
+              ? 'photoStudio.imageUnsupported'
+              : 'photoStudio.imageError',
+        ),
+    };
+  }
+
   Future<void> _pickImage() async {
-    final picker = widget.imageBytesPicker ?? pickLocalImageBytes;
-    final bytes = await picker();
+    if (widget.imageBytesPicker != null) {
+      final bytes = await widget.imageBytesPicker!();
+      if (!mounted) return;
+      if (bytes == null || bytes.isEmpty) return;
+      await _setImage(bytes);
+      return;
+    }
+
+    final outcome = await pickLocalImageBytesDetailed();
     if (!mounted) return;
-    if (bytes == null || bytes.isEmpty) {
-      if (!kIsWeb && widget.imageBytesPicker == null) {
+    switch (outcome.status) {
+      case PhotoPickStatus.cancelled:
+        return;
+      case PhotoPickStatus.unavailable:
         setState(
           () => _status = DisplayScope.of(context)
               .text('photoStudio.pickImageUnavailable'),
         );
-      }
-      return;
+        return;
+      case PhotoPickStatus.failed:
+        setState(
+          () => _status =
+              DisplayScope.of(context).text('photoStudio.imageError'),
+        );
+        return;
+      case PhotoPickStatus.success:
+        final bytes = outcome.bytes;
+        if (bytes == null || bytes.isEmpty) return;
+        await _setImage(bytes);
     }
-    await _setImage(bytes);
   }
 
   bool _looksLikeRawBase64(String value) {
