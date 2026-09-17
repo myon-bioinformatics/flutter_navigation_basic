@@ -447,7 +447,9 @@ class McpDemoRunResult {
 ///
 /// Mirrors [MockMcpRoutes] dual-era HTTP status mapping: modern envelope
 /// validation failures → HTTP 400; valid current-official unknown methods →
-/// HTTP 404; legacy unknown methods → HTTP 200 + JSON-RPC `methodNotFound`.
+/// HTTP 404; legacy post-initialize missing/unknown session → HTTP 400/404;
+/// legacy unknown methods (with valid session) → HTTP 200 + JSON-RPC
+/// `methodNotFound`.
 class FoundationHandlerTransport implements McpStreamableTransport {
   FoundationHandlerTransport(this.handler);
 
@@ -490,6 +492,7 @@ class FoundationHandlerTransport implements McpStreamableTransport {
       metaVersion: metaVersion,
     );
 
+    final isInitialize = request.method == 'initialize';
     if (looksModern) {
       final modernError = validateModernMcpHttp(
         request: request,
@@ -506,6 +509,29 @@ class FoundationHandlerTransport implements McpStreamableTransport {
                 McpProtocol.currentOfficialVersion,
           },
           body: modernError.toJson(),
+        );
+      }
+    } else if (!isInitialize) {
+      // Legacy Streamable HTTP: every post-initialize request/notification
+      // must carry the issued session id (parity with MockMcpRoutes).
+      if (inbound == null || inbound.isEmpty) {
+        return const McpTransportResponse(
+          statusCode: 400,
+          headers: {},
+          body: {
+            'error': 'session_required',
+            'message': 'Mcp-Session-Id required after initialize',
+          },
+        );
+      }
+      if (handler.session(inbound) == null) {
+        return const McpTransportResponse(
+          statusCode: 404,
+          headers: {},
+          body: {
+            'error': 'session_not_found',
+            'message': 'unknown Mcp-Session-Id',
+          },
         );
       }
     }
