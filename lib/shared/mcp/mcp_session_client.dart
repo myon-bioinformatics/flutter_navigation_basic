@@ -549,22 +549,42 @@ class FoundationHandlerTransport implements McpStreamableTransport {
           : McpProtocol.specificationVersion,
     };
 
+    final code = outcome.response.error?.code;
+    // Match MockMcpRoutes: auth failures are mapped before the notification
+    // branch so unauthorized/forbidden keep HTTP 401/403 (not collapsed to
+    // notification_rejected 400).
+    if (code == JsonRpcErrorCode.unauthorized) {
+      return McpTransportResponse(
+        statusCode: 401,
+        headers: outHeaders,
+        body: {
+          'error': 'unauthorized',
+          'message': outcome.response.error?.message,
+          'reason': outcome.response.error?.data,
+        },
+      );
+    }
+    if (code == JsonRpcErrorCode.forbidden) {
+      return McpTransportResponse(
+        statusCode: 403,
+        headers: outHeaders,
+        body: {
+          'error': 'forbidden',
+          'message': outcome.response.error?.message,
+          'reason': outcome.response.error?.data,
+        },
+      );
+    }
+
     if (request.isNotification) {
       if (outcome.response.isError) {
-        final code = outcome.response.error!.code;
-        final status = switch (code) {
-          JsonRpcErrorCode.unauthorized => 401,
-          JsonRpcErrorCode.forbidden => 403,
-          JsonRpcErrorCode.sessionRequired => 400,
-          JsonRpcErrorCode.sessionInvalid => 404,
-          _ => 400,
-        };
         return McpTransportResponse(
-          statusCode: status,
+          statusCode: 400,
           headers: outHeaders,
           body: {
-            'error': outcome.response.error!.message,
-            'code': code,
+            'error': 'notification_rejected',
+            'message': outcome.response.error!.message,
+            'code': outcome.response.error!.code,
           },
         );
       }
@@ -575,18 +595,15 @@ class FoundationHandlerTransport implements McpStreamableTransport {
       );
     }
 
-    final err = outcome.response.error?.code;
     // Current-official Streamable HTTP: unimplemented RPC → HTTP 404.
-    if (looksModern && err == JsonRpcErrorCode.methodNotFound) {
+    if (looksModern && code == JsonRpcErrorCode.methodNotFound) {
       return McpTransportResponse(
         statusCode: 404,
         headers: outHeaders,
         body: outcome.response.toJson(),
       );
     }
-    final status = switch (err) {
-      JsonRpcErrorCode.unauthorized => 401,
-      JsonRpcErrorCode.forbidden => 403,
+    final status = switch (code) {
       JsonRpcErrorCode.sessionRequired => 400,
       JsonRpcErrorCode.sessionInvalid => 404,
       _ => 200,
