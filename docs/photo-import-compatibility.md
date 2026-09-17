@@ -62,7 +62,7 @@ Do **not** treat Flutter CI / Chrome CI green as iOS Safari proof.
 
 ## Matrix (human summary)
 
-Filled from `flutter_test` probes on Linux (PR head — update SHA after push). Browser / iOS Safari remain **`not_verified`**.
+Filled from `flutter_test` probes on Linux (`fe937ee`). Browser / iOS Safari remain **`not_verified`**.
 
 ### Legend for entry points
 

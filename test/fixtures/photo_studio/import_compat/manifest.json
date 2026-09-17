@@ -23,7 +23,7 @@
       "os": "ci_linux_or_runner",
       "browser": null,
       "notes": "Filled by local flutter_test probe on Linux CI-like host; see photo_import_compat_probe_test.dart",
-      "commit": "pending_pr_head",
+      "commit": "fe937ee",
       "verifiedAt": "2026-09-17"
     },
     {
