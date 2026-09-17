@@ -4,7 +4,7 @@
   "runtime": "flutter_test",
   "os": "linux",
   "browser": null,
-  "commit": "pending",
+  "commit": "04edc3d",
   "verifiedAt": "2026-09-17",
   "notes": "Measured by test/photo_studio/photo_import_compat_probe_test.dart. EXIF orientations are visually sampled after Flutter codec apply. iOS Safari / Chrome Web / real native picker remain not_verified.",
   "outcomes": {
