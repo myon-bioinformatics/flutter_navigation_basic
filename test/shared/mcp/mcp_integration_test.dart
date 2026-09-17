@@ -389,6 +389,34 @@ void main() {
       JsonRpcErrorCode.headerMismatch,
     );
 
+    // Meta-only modern marker (no MCP-Protocol-Version header).
+    final metaOnly = await post(
+      headers: {
+        McpProtocol.methodHeader: 'totally/unknown',
+      },
+      body: {
+        'jsonrpc': '2.0',
+        'id': 15,
+        'method': 'totally/unknown',
+        'params': {
+          '_meta': {
+            'io.modelcontextprotocol/protocolVersion':
+                McpProtocol.currentOfficialVersion,
+            'io.modelcontextprotocol/clientInfo': {
+              'name': 't',
+              'version': '0',
+            },
+            'io.modelcontextprotocol/clientCapabilities': <String, Object?>{},
+          },
+        },
+      },
+    );
+    expect(metaOnly.statusCode, 400);
+    expect(
+      ((metaOnly.body as Map)['error'] as Map)['message'],
+      contains('MCP-Protocol-Version'),
+    );
+
     // Matching legacy versions still trip modern marker via _meta presence.
     final legacyVersions = await post(
       headers: {
@@ -469,6 +497,34 @@ void main() {
     expect(
       ((noClientInfo.body as Map)['error'] as Map)['message'],
       contains('clientInfo'),
+    );
+
+    // Missing clientCapabilities.
+    final noCaps = await post(
+      headers: mcpStreamableHeaders(
+        protocolVersion: McpProtocol.currentOfficialVersion,
+        method: 'totally/unknown',
+      ),
+      body: {
+        'jsonrpc': '2.0',
+        'id': 16,
+        'method': 'totally/unknown',
+        'params': {
+          '_meta': {
+            'io.modelcontextprotocol/protocolVersion':
+                McpProtocol.currentOfficialVersion,
+            'io.modelcontextprotocol/clientInfo': {
+              'name': 't',
+              'version': '0',
+            },
+          },
+        },
+      },
+    );
+    expect(noCaps.statusCode, 400);
+    expect(
+      ((noCaps.body as Map)['error'] as Map)['message'],
+      contains('clientCapabilities'),
     );
 
     // Mcp-Method mismatch.
