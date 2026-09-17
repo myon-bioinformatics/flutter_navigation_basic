@@ -5,11 +5,13 @@ import 'package:flutter/services.dart';
 import '../../../shared/clipboard/base64_image_bridge.dart';
 import '../../../shared/display/display_catalog.dart';
 import '../../../shared/display/display_scope.dart';
+import '../data/clipboard_image_read.dart';
 import '../data/native_image_normalize_adapter.dart';
 import '../data/photo_import_limits.dart';
 import '../data/photo_media_ports.dart';
 import '../domain/emoji_stamp.dart';
 import '../domain/normalized_rect.dart';
+import '../domain/photo_import_status.dart';
 import '../domain/photo_studio_history.dart';
 import '../domain/photo_studio_state.dart';
 import '../domain/studio_document.dart';
@@ -48,7 +50,8 @@ class PhotoStudioPage extends StatefulWidget {
   final StudioImageSaver? imageSaver;
 
   /// Optional override for reading binary clipboard images (tests / web).
-  final Future<Uint8List?> Function()? clipboardImageReader;
+  /// Prefer returning a structured [ClipboardImageRead] for reason-preserving tests.
+  final Future<ClipboardImageRead> Function()? clipboardImageReader;
 
   /// Optional decode adapter (tests inject fakes; web defaults to browser bridge).
   final StudioImageDecodeAdapter? imageDecodeAdapter;
@@ -82,7 +85,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
   String? _pendingEmoji;
   Size _canvasSize = _fallbackCanvasSize;
   String? _status;
-  bool _decoding = false;
+  PhotoImportStatus _importStatus = const PhotoImportStatus.idle();
   /// Last successfully exported document; dirty iff document content differs.
   PhotoStudioState _exportBaseline = PhotoStudioState.initial();
   int _imageLoadGeneration = 0;
@@ -92,14 +95,17 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
   bool get _canUndo => _history.canUndo;
   bool get _canRedo => _history.canRedo;
   bool get _isDirty => !_studio.sameDocumentAs(_exportBaseline);
+  bool get _decoding => _importStatus.isBusy;
 
-  /// Bump the image-load generation so in-flight decodes cannot clobber state.
-  void _invalidatePendingImageLoad() {
+  /// Bump the image-load generation so in-flight work cannot clobber state.
+  void _invalidatePendingImageLoad({bool markSuperseded = true}) {
+    final wasBusy = _importStatus.isBusy;
     _imageLoadGeneration++;
-    _decoding = false;
+    if (markSuperseded && wasBusy) {
+      _importStatus = PhotoImportStatus.superseded(source: _importStatus.source);
+    }
   }
 
-  /// Restore the last exported document and drop undo/redo (true Discard).
   void _discardUnsavedChanges() {
     _invalidatePendingImageLoad();
     _history.clear();
@@ -187,18 +193,37 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     );
   }
 
-  Future<void> _setImage(Uint8List rawBytes) async {
-    final display = DisplayScope.of(context);
+  int _beginImportOperation(PhotoImportSource source) {
+    final generation = ++_imageLoadGeneration;
+    _importStatus = PhotoImportStatus.loading(source: source);
+    return generation;
+  }
+
+  bool _isCurrentImport(int generation) =>
+      mounted && generation == _imageLoadGeneration;
+
+  void _setImportStatusIfCurrent(int generation, PhotoImportStatus status) {
+    if (!_isCurrentImport(generation)) return;
+    setState(() => _importStatus = status);
+  }
+
+  Future<void> _setImage(
+    Uint8List rawBytes, {
+    required PhotoImportSource source,
+    required int generation,
+  }) async {
     final rawReject = PhotoImportGate.rejectRawBytes(rawBytes);
     if (rawReject != null) {
-      setState(() => _status = _rejectionMessage(display, rawReject));
+      _setImportStatusIfCurrent(
+        generation,
+        PhotoImportStatus.failure(
+          reason: PhotoImportStatus.fromRejection(rawReject),
+          source: source,
+        ),
+      );
       return;
     }
-    final generation = ++_imageLoadGeneration;
-    setState(() {
-      _decoding = true;
-      _status = display.text('photoStudio.decoding');
-    });
+    if (!_isCurrentImport(generation)) return;
     try {
       PhotoImportRejection? decodeReject;
       final adapter = widget.imageDecodeAdapter ??
@@ -208,15 +233,17 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
         nativeDecodeAdapter: adapter,
         onRejected: (rejection) => decodeReject = rejection,
       );
-      if (!mounted || generation != _imageLoadGeneration) return;
+      if (!_isCurrentImport(generation)) return;
       if (validated == null) {
-        setState(() {
-          _decoding = false;
-          _status = _rejectionMessage(
-            display,
-            decodeReject ?? PhotoImportRejection.undecodable,
-          );
-        });
+        _setImportStatusIfCurrent(
+          generation,
+          PhotoImportStatus.failure(
+            reason: PhotoImportStatus.fromRejection(
+              decodeReject ?? PhotoImportRejection.undecodable,
+            ),
+            source: source,
+          ),
+        );
         return;
       }
       final compact = await Base64ImageBridge.downscaleToPng(
@@ -224,91 +251,129 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
         scale: PhotoImportLimits.defaultDownscale,
         maxLongEdge: PhotoImportLimits.maxDocumentLongEdge,
       );
-      if (!mounted || generation != _imageLoadGeneration) return;
-      // Require a non-empty PNG payload before treating load as success.
+      if (!_isCurrentImport(generation)) return;
       if (compact.bytes.isEmpty) {
-        setState(() {
-          _decoding = false;
-          _status = display.text('photoStudio.imageError');
-        });
-        return;
-      }
-      setState(() {
-        _decoding = false;
-        _mutateWithUndo(
-          (s) => s.copyWith(imageBytes: compact.bytes),
-        );
-        _status = display.text(
-          'photoStudio.imageLoaded',
-          arguments: {'bytes': compact.bytes.length},
-        );
-      });
-    } catch (_) {
-      if (!mounted || generation != _imageLoadGeneration) return;
-      setState(() {
-        _decoding = false;
-        _status = display.text('photoStudio.imageError');
-      });
-    }
-  }
-
-  String _rejectionMessage(
-    DisplayController display,
-    PhotoImportRejection rejection,
-  ) {
-    return switch (rejection) {
-      PhotoImportRejection.tooLargeBytes ||
-      PhotoImportRejection.tooManyPixels =>
-        display.text('photoStudio.imageTooLarge'),
-      PhotoImportRejection.heicConversionFailed =>
-        display.text('photoStudio.imageUnsupported'),
-      PhotoImportRejection.undecodable || PhotoImportRejection.empty =>
-        display.text(
-          rejection == PhotoImportRejection.undecodable
-              ? 'photoStudio.imageUnsupported'
-              : 'photoStudio.imageError',
-        ),
-    };
-  }
-
-  Future<void> _pickImage() async {
-    if (widget.imageBytesPicker != null) {
-      final bytes = await widget.imageBytesPicker!();
-      if (!mounted) return;
-      if (bytes == null || bytes.isEmpty) return;
-      await _setImage(bytes);
-      return;
-    }
-
-    final outcome = await pickLocalImageBytesDetailed();
-    if (!mounted) return;
-    switch (outcome.status) {
-      case PhotoPickStatus.cancelled:
-        return;
-      case PhotoPickStatus.unavailable:
-        setState(
-          () => _status = DisplayScope.of(context)
-              .text('photoStudio.pickImageUnavailable'),
-        );
-        return;
-      case PhotoPickStatus.failed:
-        setState(
-          () => _status =
-              DisplayScope.of(context).text('photoStudio.imageError'),
-        );
-        return;
-      case PhotoPickStatus.rejected:
-        setState(
-          () => _status = _rejectionMessage(
-            DisplayScope.of(context),
-            outcome.rejection ?? PhotoImportRejection.undecodable,
+        _setImportStatusIfCurrent(
+          generation,
+          PhotoImportStatus.failure(
+            reason: PhotoImportFailureReason.decodeFailed,
+            source: source,
           ),
         );
         return;
-      case PhotoPickStatus.success:
-        final bytes = outcome.bytes;
-        if (bytes == null || bytes.isEmpty) return;
-        await _setImage(bytes);
+      }
+      final size = _pngIhDrSize(compact.bytes);
+      if (!_isCurrentImport(generation)) return;
+      setState(() {
+        _mutateWithUndo(
+          (s) => s.copyWith(imageBytes: compact.bytes),
+        );
+        _importStatus = PhotoImportStatus.success(
+          source: source,
+          formatLabel: 'PNG',
+          width: size.$1,
+          height: size.$2,
+        );
+      });
+    } catch (_) {
+      _setImportStatusIfCurrent(
+        generation,
+        PhotoImportStatus.failure(
+          reason: PhotoImportFailureReason.decodeFailed,
+          source: source,
+        ),
+      );
+    }
+  }
+
+  Future<void> _pickImage() async {
+    late final int generation;
+    setState(() {
+      generation = _beginImportOperation(PhotoImportSource.pick);
+    });
+    try {
+      if (widget.imageBytesPicker != null) {
+        final bytes = await widget.imageBytesPicker!();
+        if (!_isCurrentImport(generation)) return;
+        if (bytes == null || bytes.isEmpty) {
+          _setImportStatusIfCurrent(
+            generation,
+            const PhotoImportStatus.cancelled(source: PhotoImportSource.pick),
+          );
+          return;
+        }
+        await _setImage(
+          bytes,
+          source: PhotoImportSource.pick,
+          generation: generation,
+        );
+        return;
+      }
+
+      final outcome = await pickLocalImageBytesDetailed();
+      if (!_isCurrentImport(generation)) return;
+      switch (outcome.status) {
+        case PhotoPickStatus.cancelled:
+          _setImportStatusIfCurrent(
+            generation,
+            const PhotoImportStatus.cancelled(source: PhotoImportSource.pick),
+          );
+          return;
+        case PhotoPickStatus.unavailable:
+          _setImportStatusIfCurrent(
+            generation,
+            const PhotoImportStatus.failure(
+              reason: PhotoImportFailureReason.pickUnavailable,
+              source: PhotoImportSource.pick,
+            ),
+          );
+          return;
+        case PhotoPickStatus.failed:
+          _setImportStatusIfCurrent(
+            generation,
+            const PhotoImportStatus.failure(
+              reason: PhotoImportFailureReason.pickFailed,
+              source: PhotoImportSource.pick,
+            ),
+          );
+          return;
+        case PhotoPickStatus.rejected:
+          _setImportStatusIfCurrent(
+            generation,
+            PhotoImportStatus.failure(
+              reason: PhotoImportStatus.fromRejection(
+                outcome.rejection ?? PhotoImportRejection.undecodable,
+              ),
+              source: PhotoImportSource.pick,
+            ),
+          );
+          return;
+        case PhotoPickStatus.success:
+          final bytes = outcome.bytes;
+          if (bytes == null || bytes.isEmpty) {
+            _setImportStatusIfCurrent(
+              generation,
+              const PhotoImportStatus.failure(
+                reason: PhotoImportFailureReason.decodeFailed,
+                source: PhotoImportSource.pick,
+              ),
+            );
+            return;
+          }
+          await _setImage(
+            bytes,
+            source: PhotoImportSource.pick,
+            generation: generation,
+          );
+      }
+    } catch (_) {
+      _setImportStatusIfCurrent(
+        generation,
+        const PhotoImportStatus.failure(
+          reason: PhotoImportFailureReason.pickFailed,
+          source: PhotoImportSource.pick,
+        ),
+      );
     }
   }
 
@@ -322,46 +387,146 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
   }
 
   Future<void> _pasteImage() async {
-    final display = DisplayScope.of(context);
-    final data = await Clipboard.getData(Clipboard.kTextPlain);
-    if (!mounted) return;
-    final text = data?.text?.trim() ?? '';
-    if (text.isNotEmpty) {
-      final imageCandidate =
-          text.startsWith('data:image/') || _looksLikeRawBase64(text);
-      // Oversized data:image / base64 text must not bypass the size cap.
-      if (imageCandidate && text.length <= _maxImageClipboardChars) {
-        try {
-          final payload = Base64ImageBridge.decodeText(text);
-          await _setImage(payload.bytes);
+    late final int generation;
+    setState(() {
+      generation = _beginImportOperation(PhotoImportSource.paste);
+    });
+    try {
+      var text = '';
+      try {
+        final data = await Clipboard.getData(Clipboard.kTextPlain);
+        if (!_isCurrentImport(generation)) return;
+        text = data?.text?.trim() ?? '';
+      } catch (_) {
+        if (!_isCurrentImport(generation)) return;
+      }
+
+      if (text.isNotEmpty) {
+        final imageCandidate =
+            text.startsWith('data:image/') || _looksLikeRawBase64(text);
+        if (imageCandidate && text.length <= _maxImageClipboardChars) {
+          try {
+            final payload = Base64ImageBridge.decodeText(text);
+            await _setImage(
+              payload.bytes,
+              source: PhotoImportSource.paste,
+              generation: generation,
+            );
+            return;
+          } catch (_) {
+            // Fall through to binary clipboard.
+          }
+        } else if (imageCandidate && text.length > _maxImageClipboardChars) {
+          _setImportStatusIfCurrent(
+            generation,
+            const PhotoImportStatus.failure(
+              reason: PhotoImportFailureReason.tooLarge,
+              source: PhotoImportSource.paste,
+            ),
+          );
           return;
-        } catch (_) {
-          // Fall through to binary clipboard / clear error.
         }
       }
-    }
 
-    final customReader = widget.clipboardImageReader;
-    final bytes = customReader != null
-        ? await customReader()
-        : await readWebClipboardImageBytes(maxBytes: _maxImageBytes);
-    if (!mounted) return;
-    if (bytes != null && bytes.isNotEmpty) {
-      await _setImage(bytes);
-      return;
+      final customReader = widget.clipboardImageReader;
+      final ClipboardImageRead read = customReader != null
+          ? await customReader()
+          : await readWebClipboardImage(maxBytes: _maxImageBytes);
+      if (!_isCurrentImport(generation)) return;
+      switch (read.kind) {
+        case ClipboardImageReadKind.bytes:
+          final bytes = read.bytes;
+          if (bytes != null && bytes.isNotEmpty) {
+            await _setImage(
+              bytes,
+              source: PhotoImportSource.paste,
+              generation: generation,
+            );
+            return;
+          }
+          _setImportStatusIfCurrent(
+            generation,
+            const PhotoImportStatus.failure(
+              reason: PhotoImportFailureReason.noClipboardImage,
+              source: PhotoImportSource.paste,
+            ),
+          );
+        case ClipboardImageReadKind.empty:
+        case ClipboardImageReadKind.denied:
+        case ClipboardImageReadKind.unavailable:
+        case ClipboardImageReadKind.tooLarge:
+        case ClipboardImageReadKind.readFailed:
+          _setImportStatusIfCurrent(
+            generation,
+            PhotoImportStatus.failure(
+              reason: PhotoImportStatus.fromClipboardRead(read.kind),
+              source: PhotoImportSource.paste,
+            ),
+          );
+      }
+    } catch (_) {
+      _setImportStatusIfCurrent(
+        generation,
+        const PhotoImportStatus.failure(
+          reason: PhotoImportFailureReason.clipboardUnavailable,
+          source: PhotoImportSource.paste,
+        ),
+      );
     }
-    setState(() => _status = display.text('photoStudio.noClipboardImage'));
   }
 
   void _handleInsertedContent(KeyboardInsertedContent content) {
+    late final int generation;
+    setState(() {
+      generation = _beginImportOperation(PhotoImportSource.insert);
+    });
     final bytes = content.data;
-    if (bytes == null ||
-        bytes.isEmpty ||
-        bytes.lengthInBytes > _maxImageBytes ||
-        !content.mimeType.startsWith('image/')) {
+    if (bytes == null || bytes.isEmpty) {
+      _setImportStatusIfCurrent(
+        generation,
+        const PhotoImportStatus.failure(
+          reason: PhotoImportFailureReason.decodeFailed,
+          source: PhotoImportSource.insert,
+        ),
+      );
       return;
     }
-    _setImage(bytes);
+    if (bytes.lengthInBytes > _maxImageBytes) {
+      _setImportStatusIfCurrent(
+        generation,
+        const PhotoImportStatus.failure(
+          reason: PhotoImportFailureReason.tooLarge,
+          source: PhotoImportSource.insert,
+        ),
+      );
+      return;
+    }
+    if (!content.mimeType.startsWith('image/')) {
+      _setImportStatusIfCurrent(
+        generation,
+        const PhotoImportStatus.failure(
+          reason: PhotoImportFailureReason.unsupportedFormat,
+          source: PhotoImportSource.insert,
+        ),
+      );
+      return;
+    }
+    _setImage(
+      bytes,
+      source: PhotoImportSource.insert,
+      generation: generation,
+    );
+  }
+
+  Future<void> _retryImport() async {
+    switch (_importStatus.source) {
+      case PhotoImportSource.paste:
+        await _pasteImage();
+      case PhotoImportSource.pick:
+      case PhotoImportSource.insert:
+      case null:
+        await _pickImage();
+    }
   }
 
   Future<void> _copyImage() async {
@@ -379,8 +544,13 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
 
   void _clearImage() {
     setState(() {
+      final wasBusy = _importStatus.isBusy;
       _invalidatePendingImageLoad();
       _mutateWithUndo((s) => s.copyWith(imageBytes: null));
+      // Keep superseded when an in-flight decode was discarded; otherwise idle.
+      if (!wasBusy) {
+        _importStatus = const PhotoImportStatus.idle();
+      }
       _status = DisplayScope.of(context).text('photoStudio.imageCleared');
     });
   }
@@ -565,6 +735,102 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     setState(() => _canvasSize = size);
   }
 
+  Widget _buildImportStatus(
+    BuildContext context,
+    String Function(String key, {Map<String, Object?> arguments}) t,
+  ) {
+    final status = _importStatus;
+    final primary = t(status.messageKey);
+    final metaKey = status.metaMessageKey;
+    final meta = metaKey == null
+        ? null
+        : t(metaKey, arguments: status.metaArguments);
+    final fileName = status.fileName;
+    final scheme = Theme.of(context).colorScheme;
+    final Color tone = switch (status.phase) {
+      PhotoImportPhase.failure => scheme.error,
+      PhotoImportPhase.success => scheme.primary,
+      PhotoImportPhase.loading => scheme.onSurfaceVariant,
+      _ => scheme.onSurface,
+    };
+
+    return Semantics(
+      liveRegion: true,
+      label: [
+        primary,
+        if (meta != null) meta,
+        if (fileName != null && fileName.isNotEmpty) fileName,
+      ].join(' '),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 720),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(color: tone, width: 3),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (status.isBusy)
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: tone,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          primary,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: tone),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  Text(
+                    primary,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: tone,
+                          fontWeight: status.phase == PhotoImportPhase.failure ||
+                                  status.phase == PhotoImportPhase.success
+                              ? FontWeight.w600
+                              : null,
+                        ),
+                  ),
+                if (meta != null) ...[
+                  const SizedBox(height: 2),
+                  Text(meta, style: Theme.of(context).textTheme.bodySmall),
+                ],
+                if (fileName != null && fileName.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(fileName, style: Theme.of(context).textTheme.bodySmall),
+                ],
+                if (status.canRetry) ...[
+                  const SizedBox(height: 4),
+                  TextButton(
+                    onPressed: _decoding ? null : _retryImport,
+                    child: Text(t('photoStudio.importRetry')),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   String _frameChipLabel(StudioFrame frame, int index) {
     final shapeKey = 'photoStudio.shape.${frame.shape.name}';
     final shape = DisplayScope.of(context).text(shapeKey);
@@ -727,13 +993,15 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                       children: [
                                         const CircularProgressIndicator(),
                                         const SizedBox(height: 12),
-                                        Text(t('photoStudio.decoding')),
+                                        Text(t('photoStudio.importLoading')),
                                       ],
                                     ),
                                   ),
                                 ),
                             ],
                           ),
+                          const SizedBox(height: 8),
+                          _buildImportStatus(context, t),
                           const SizedBox(height: 12),
                           Text(
                             t('photoStudio.frameTool'),
@@ -925,7 +1193,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                             runSpacing: 8,
                             children: [
                               FilledButton.tonalIcon(
-                                onPressed: _decoding ? null : _pickImage,
+                                onPressed: _pickImage,
                                 icon: const Icon(Icons.image_outlined),
                                 label: Text(
                                   _studio.imageBytes == null
@@ -934,7 +1202,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                 ),
                               ),
                               FilledButton.tonalIcon(
-                                onPressed: _decoding ? null : _pasteImage,
+                                onPressed: _pasteImage,
                                 icon: const Icon(Icons.content_paste),
                                 label: Text(t('photoStudio.pasteImage')),
                               ),
@@ -1036,6 +1304,12 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       ),
     );
   }
+}
+
+(int, int) _pngIhDrSize(Uint8List bytes) {
+  if (bytes.lengthInBytes < 24) return (0, 0);
+  final data = ByteData.sublistView(bytes);
+  return (data.getUint32(16), data.getUint32(20));
 }
 
 class _Section extends StatelessWidget {
