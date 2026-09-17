@@ -12,10 +12,24 @@ a compile step. Avoid new environment dependencies unless allowlisted.
 | --- | --- | --- |
 | **Dart / Flutter** | App runtime, widget/UI tests, repo toolkit (`tool/*.dart`) | App source of truth |
 | **Python stdlib** | Actions status (`actions_latest.py`), JSON/zip/http one-liners, timezone oracle (`tool/time/`) | No pip required |
-| **Python + allowlisted pip** | Pytest runner under `tool/python/requirements.txt` only (pytest; no pydantic) | Not for app runtime; Dart owns formula assertions |
+| **Python + allowlisted pip** | Pytest runner under `tool/python/requirements.txt` (`pytest`; optional `Pillow` for fixture regen only; no pydantic) | Not for app runtime; Dart owns formula assertions |
 | **Deno** (optional) | TS one-file fetch/CLI scripts with zero `node_modules` | OK when JS/TS + std fetch fits better than Python |
 
 Root-level / app-tree `requirements.txt` remains prohibited.
+
+## Photo Studio import-compat fixtures
+
+Synthetic (no personal photos / GPS) fixtures for format probing:
+
+```bash
+python3 -m pip install -r tool/python/requirements.txt  # Pillow for progressive JPEG
+# also needs ffmpeg + heif-enc (libheif-plugin-x265) on the host
+python3 tool/python/generate_photo_import_fixtures.py
+```
+
+Writes binaries + `cases.json` only. Measured outcomes live in
+`test/fixtures/photo_studio/import_compat/evidence/*.json` (never overwritten).
+Human matrix: `docs/photo-import-compatibility.md`.
 
 ## Setup (only needed for pytest oracles)
 

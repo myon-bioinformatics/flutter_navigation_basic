@@ -1180,7 +1180,38 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.textContaining('Loading image'), findsNothing);
-    expect(find.text('Could not load photo.'), findsOneWidget);
+    expect(find.text('Could not decode this image.'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
+  });
+
+  testWidgets('HEIC ftyp import shows typed HEIC unsupported status', (tester) async {
+    final heic = Uint8List.fromList([
+      0x00, 0x00, 0x00, 0x18,
+      0x66, 0x74, 0x79, 0x70,
+      0x68, 0x65, 0x69, 0x63,
+      0x00, 0x00, 0x00, 0x00,
+      0x68, 0x65, 0x69, 0x63,
+      0x6D, 0x69, 0x66, 0x31,
+    ]);
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(
+        imageBytesPicker: () async => heic,
+        imageDecodeAdapter: (_) async => null,
+      ),
+      surface: const Size(390, 2400),
+    );
+
+    await tester.runAsync(() async {
+      await tester.ensureVisible(find.text('Import image'));
+      await tester.tap(find.text('Import image'));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.textContaining('HEIC/HEIF'), findsOneWidget);
+    expect(find.text('Could not decode this image.'), findsNothing);
     expect(find.text('Retry'), findsOneWidget);
   });
 
@@ -1250,7 +1281,7 @@ void main() {
     await expectKind(const ClipboardImageRead.denied(), 'clipboard');
     await expectKind(const ClipboardImageRead.unavailable(), 'clipboard');
     await expectKind(const ClipboardImageRead.tooLarge(), 'too large');
-    await expectKind(const ClipboardImageRead.readFailed(), 'Could not load');
+    await expectKind(const ClipboardImageRead.readFailed(), 'Could not decode');
   });
 
   testWidgets('clear during first load keeps superseded status and empty canvas',

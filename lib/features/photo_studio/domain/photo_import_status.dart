@@ -13,14 +13,23 @@ enum PhotoImportPhase {
   cancelled,
 }
 
-/// Why an import failed (maps to user-facing copy, no raw bytes).
+/// Why an import failed (maps to user-facing copy, no raw bytes / EXIF / GPS).
 enum PhotoImportFailureReason {
   noClipboardImage,
   clipboardUnavailable,
   pickUnavailable,
   pickFailed,
+  /// Clipboard / generic size reject (bytes or pixels undifferentiated).
   tooLarge,
+  /// Raw input exceeded [PhotoImportLimits.maxInputBytes].
+  tooLargeBytes,
+  /// Decoded width×height exceeded [PhotoImportLimits.maxPixels].
+  tooManyPixels,
+  /// HEIC/HEIF container detected but this runtime could not convert it.
+  heicUnsupported,
+  /// Recognized or claimed image bytes the codec could not decode.
   unsupportedFormat,
+  /// Undetectable / generic decode failure (keep generic copy).
   decodeFailed,
 }
 
@@ -111,7 +120,13 @@ class PhotoImportStatus {
           PhotoImportFailureReason.pickUnavailable =>
             'photoStudio.pickImageUnavailable',
           PhotoImportFailureReason.pickFailed => 'photoStudio.imageError',
-          PhotoImportFailureReason.tooLarge => 'photoStudio.imageTooLarge',
+          PhotoImportFailureReason.tooLarge ||
+          PhotoImportFailureReason.tooLargeBytes =>
+            'photoStudio.imageTooLarge',
+          PhotoImportFailureReason.tooManyPixels =>
+            'photoStudio.imageTooManyPixels',
+          PhotoImportFailureReason.heicUnsupported =>
+            'photoStudio.imageHeicUnsupported',
           PhotoImportFailureReason.unsupportedFormat =>
             'photoStudio.imageUnsupported',
           PhotoImportFailureReason.decodeFailed || null =>
@@ -148,10 +163,10 @@ class PhotoImportStatus {
 
   static PhotoImportFailureReason fromRejection(PhotoImportRejection rejection) {
     return switch (rejection) {
-      PhotoImportRejection.tooLargeBytes ||
-      PhotoImportRejection.tooManyPixels =>
-        PhotoImportFailureReason.tooLarge,
-      PhotoImportRejection.heicConversionFailed ||
+      PhotoImportRejection.tooLargeBytes => PhotoImportFailureReason.tooLargeBytes,
+      PhotoImportRejection.tooManyPixels => PhotoImportFailureReason.tooManyPixels,
+      PhotoImportRejection.heicConversionFailed =>
+        PhotoImportFailureReason.heicUnsupported,
       PhotoImportRejection.undecodable =>
         PhotoImportFailureReason.unsupportedFormat,
       PhotoImportRejection.empty => PhotoImportFailureReason.decodeFailed,

@@ -468,7 +468,7 @@
       "photoStudio.rectLabel": "Normalized rectangle (left, top, right, bottom)",
       "photoStudio.imageLoaded": "Photo loaded ({bytes} bytes).",
       "photoStudio.imageCleared": "Photo cleared; frames kept.",
-      "photoStudio.imageError": "Could not load photo.",
+      "photoStudio.imageError": "Could not decode this image.",
       "photoStudio.pickImageUnavailable": "Photo library access is unavailable on this device. Check permissions, or paste a photo instead.",
       "photoStudio.copied": "Copied.",
       "home.action.photoStudio.subtitle": "Place frames and marks on photos.",
@@ -631,7 +631,9 @@
       "photoStudio.importCancelled": "No change.",
       "photoStudio.importSuperseded": "A newer import replaced this load.",
       "photoStudio.clipboardUnavailable": "This browser did not allow clipboard image access. Try Import, or paste again after allowing permission.",
-      "photoStudio.importRetry": "Retry"
+      "photoStudio.importRetry": "Retry",
+      "photoStudio.imageTooManyPixels": "That photo has too many pixels. Choose a smaller image or screenshot.",
+      "photoStudio.imageHeicUnsupported": "This HEIC/HEIF photo cannot be decoded here. Export as JPEG or PNG, or use a native build."
     },
     "jpn": {
       "common.copy": "コピー",
@@ -1101,7 +1103,7 @@
       "photoStudio.rectLabel": "正規化矩形（left, top, right, bottom）",
       "photoStudio.imageLoaded": "写真を読み込みました（{bytes} bytes）。",
       "photoStudio.imageCleared": "写真をクリアしました（枠は維持）。",
-      "photoStudio.imageError": "写真を読み込めませんでした。",
+      "photoStudio.imageError": "画像をデコードできません。",
       "photoStudio.pickImageUnavailable": "この端末では写真ライブラリにアクセスできません。権限を確認するか、写真を貼り付けてください。",
       "photoStudio.copied": "コピーしました。",
       "home.action.photoStudio.subtitle": "写真に枠や印を載せるコーナーです。",
@@ -1264,7 +1266,9 @@
       "photoStudio.importCancelled": "変更なし",
       "photoStudio.importSuperseded": "新しい読み込みにより、この結果は破棄されました。",
       "photoStudio.clipboardUnavailable": "ブラウザがクリップボード画像へのアクセスを許可しませんでした。読み込みを使うか、権限を許可してから再度貼り付けてください。",
-      "photoStudio.importRetry": "再試行"
+      "photoStudio.importRetry": "再試行",
+      "photoStudio.imageTooManyPixels": "ピクセル数が多すぎます。小さい画像かスクリーンショットを選んでください。",
+      "photoStudio.imageHeicUnsupported": "この HEIC/HEIF 写真はここではデコードできません。JPEG/PNG で書き出すか、ネイティブ版を使ってください。"
     },
     "fra": {
       "common.copy": "Copier",
@@ -1734,7 +1738,7 @@
       "photoStudio.rectLabel": "Rectangle normalisé (left, top, right, bottom)",
       "photoStudio.imageLoaded": "Photo chargée ({bytes} octets).",
       "photoStudio.imageCleared": "Photo effacée ; cadres conservés.",
-      "photoStudio.imageError": "Impossible de charger la photo.",
+      "photoStudio.imageError": "Impossible de décoder cette image.",
       "photoStudio.pickImageUnavailable": "Photo library access is unavailable on this device. Check permissions, or paste a photo instead.",
       "photoStudio.copied": "Copié.",
       "home.action.photoStudio.subtitle": "Placez des cadres et des marques sur des photos.",
@@ -1897,7 +1901,9 @@
       "photoStudio.importCancelled": "Aucun changement.",
       "photoStudio.importSuperseded": "Un import plus récent a remplacé ce chargement.",
       "photoStudio.clipboardUnavailable": "Ce navigateur n’a pas autorisé l’accès aux images du presse-papiers. Utilisez Importer, ou collez à nouveau après autorisation.",
-      "photoStudio.importRetry": "Réessayer"
+      "photoStudio.importRetry": "Réessayer",
+      "photoStudio.imageTooManyPixels": "Cette photo a trop de pixels. Choisissez une image plus petite ou une capture d’écran.",
+      "photoStudio.imageHeicUnsupported": "Cette photo HEIC/HEIF ne peut pas être décodée ici. Exportez en JPEG ou PNG, ou utilisez une version native."
     },
     "spa": {
       "common.copy": "Copiar",
@@ -2367,7 +2373,7 @@
       "photoStudio.rectLabel": "Rectángulo normalizado (left, top, right, bottom)",
       "photoStudio.imageLoaded": "Foto cargada ({bytes} bytes).",
       "photoStudio.imageCleared": "Foto eliminada; se mantienen los marcos.",
-      "photoStudio.imageError": "No se pudo cargar la foto.",
+      "photoStudio.imageError": "No se pudo decodificar esta imagen.",
       "photoStudio.pickImageUnavailable": "Photo library access is unavailable on this device. Check permissions, or paste a photo instead.",
       "photoStudio.copied": "Copiado.",
       "home.action.photoStudio.subtitle": "Coloca marcos y marcas en fotos.",
@@ -2530,7 +2536,9 @@
       "photoStudio.importCancelled": "Sin cambios.",
       "photoStudio.importSuperseded": "Una importación más reciente reemplazó esta carga.",
       "photoStudio.clipboardUnavailable": "Este navegador no permitió acceso a imágenes del portapapeles. Usa Importar, o pega de nuevo tras permitir el permiso.",
-      "photoStudio.importRetry": "Reintentar"
+      "photoStudio.importRetry": "Reintentar",
+      "photoStudio.imageTooManyPixels": "Esta foto tiene demasiados píxeles. Elige una imagen más pequeña o una captura de pantalla.",
+      "photoStudio.imageHeicUnsupported": "Esta foto HEIC/HEIF no se puede decodificar aquí. Expórtala como JPEG o PNG, o usa una compilación nativa."
     },
     "por": {
       "common.copy": "Copiar",
@@ -3000,7 +3008,7 @@
       "photoStudio.rectLabel": "Retângulo normalizado (left, top, right, bottom)",
       "photoStudio.imageLoaded": "Foto carregada ({bytes} bytes).",
       "photoStudio.imageCleared": "Foto removida; molduras mantidas.",
-      "photoStudio.imageError": "Não foi possível carregar a foto.",
+      "photoStudio.imageError": "Não foi possível decodificar esta imagem.",
       "photoStudio.pickImageUnavailable": "Photo library access is unavailable on this device. Check permissions, or paste a photo instead.",
       "photoStudio.copied": "Copiado.",
       "home.action.photoStudio.subtitle": "Coloque molduras e marcas em fotos.",
@@ -3163,7 +3171,9 @@
       "photoStudio.importCancelled": "Sem alteração.",
       "photoStudio.importSuperseded": "Uma importação mais recente substituiu este carregamento.",
       "photoStudio.clipboardUnavailable": "Este navegador não permitiu acesso a imagens da área de transferência. Use Importar, ou cole novamente após permitir.",
-      "photoStudio.importRetry": "Tentar de novo"
+      "photoStudio.importRetry": "Tentar de novo",
+      "photoStudio.imageTooManyPixels": "Esta foto tem pixels demais. Escolha uma imagem menor ou uma captura de tela.",
+      "photoStudio.imageHeicUnsupported": "Esta foto HEIC/HEIF não pode ser decodificada aqui. Exporte como JPEG ou PNG, ou use um build nativo."
     },
     "ara": {
       "common.copy": "نسخ",
@@ -3633,7 +3643,7 @@
       "photoStudio.rectLabel": "مستطيل مُطبَّع (left, top, right, bottom)",
       "photoStudio.imageLoaded": "تم تحميل الصورة ({bytes} بايت).",
       "photoStudio.imageCleared": "أُزيلت الصورة؛ بقيت الإطارات.",
-      "photoStudio.imageError": "تعذر تحميل الصورة.",
+      "photoStudio.imageError": "تعذر فك ترميز هذه الصورة.",
       "photoStudio.pickImageUnavailable": "Photo library access is unavailable on this device. Check permissions, or paste a photo instead.",
       "photoStudio.copied": "تم النسخ.",
       "home.action.photoStudio.subtitle": "ضع إطارات وعلامات على الصور.",
@@ -3796,7 +3806,9 @@
       "photoStudio.importCancelled": "لا تغيير.",
       "photoStudio.importSuperseded": "استبدال استيراد أحدث هذا التحميل.",
       "photoStudio.clipboardUnavailable": "لم يسمح هذا المتصفح بالوصول إلى صور الحافظة. جرّب الاستيراد، أو الصق مجددًا بعد السماح.",
-      "photoStudio.importRetry": "إعادة المحاولة"
+      "photoStudio.importRetry": "إعادة المحاولة",
+      "photoStudio.imageTooManyPixels": "تحتوي هذه الصورة على عدد كبير جدًا من البكسلات. اختر صورة أصغر أو لقطة شاشة.",
+      "photoStudio.imageHeicUnsupported": "لا يمكن فك ترميز صورة HEIC/HEIF هنا. صدّرها كـ JPEG أو PNG، أو استخدم إصدارًا أصليًا."
     },
     "zho": {
       "common.copy": "复制",
@@ -4266,7 +4278,7 @@
       "photoStudio.rectLabel": "归一化矩形（left, top, right, bottom）",
       "photoStudio.imageLoaded": "已加载照片（{bytes} bytes）。",
       "photoStudio.imageCleared": "已清除照片；保留画框。",
-      "photoStudio.imageError": "无法加载照片。",
+      "photoStudio.imageError": "无法解码此图像。",
       "photoStudio.pickImageUnavailable": "Photo library access is unavailable on this device. Check permissions, or paste a photo instead.",
       "photoStudio.copied": "已复制。",
       "home.action.photoStudio.subtitle": "给照片加框与标记。",
@@ -4429,7 +4441,9 @@
       "photoStudio.importCancelled": "无更改。",
       "photoStudio.importSuperseded": "较新的导入已替换此次加载。",
       "photoStudio.clipboardUnavailable": "浏览器未允许访问剪贴板图片。请使用导入，或在允许权限后再次粘贴。",
-      "photoStudio.importRetry": "重试"
+      "photoStudio.importRetry": "重试",
+      "photoStudio.imageTooManyPixels": "该照片像素过多。请选择较小的图像或截图。",
+      "photoStudio.imageHeicUnsupported": "此处无法解码此 HEIC/HEIF 照片。请导出为 JPEG 或 PNG，或使用原生版本。"
     },
     "rus": {
       "common.copy": "Копировать",
@@ -4899,7 +4913,7 @@
       "photoStudio.rectLabel": "Нормализованный прямоугольник (left, top, right, bottom)",
       "photoStudio.imageLoaded": "Фото загружено ({bytes} байт).",
       "photoStudio.imageCleared": "Фото очищено; рамки сохранены.",
-      "photoStudio.imageError": "Не удалось загрузить фото.",
+      "photoStudio.imageError": "Не удалось декодировать это изображение.",
       "photoStudio.pickImageUnavailable": "Photo library access is unavailable on this device. Check permissions, or paste a photo instead.",
       "photoStudio.copied": "Скопировано.",
       "home.action.photoStudio.subtitle": "Ставьте рамки и метки на фото.",
@@ -5062,7 +5076,9 @@
       "photoStudio.importCancelled": "Без изменений.",
       "photoStudio.importSuperseded": "Более новый импорт заменил эту загрузку.",
       "photoStudio.clipboardUnavailable": "Браузер не разрешил доступ к изображениям буфера. Используйте импорт или вставьте снова после разрешения.",
-      "photoStudio.importRetry": "Повторить"
+      "photoStudio.importRetry": "Повторить",
+      "photoStudio.imageTooManyPixels": "В этом фото слишком много пикселей. Выберите изображение меньшего размера или снимок экрана.",
+      "photoStudio.imageHeicUnsupported": "Это фото HEIC/HEIF здесь нельзя декодировать. Экспортируйте в JPEG или PNG либо используйте нативную сборку."
     },
     "ind": {
       "common.copy": "Salin",
@@ -5532,7 +5548,7 @@
       "photoStudio.rectLabel": "Persegi panjang ternormalisasi (kiri, atas, kanan, bawah)",
       "photoStudio.imageLoaded": "Foto dimuat ({bytes} byte).",
       "photoStudio.imageCleared": "Foto dihapus; bingkai tetap.",
-      "photoStudio.imageError": "Tidak dapat memuat foto.",
+      "photoStudio.imageError": "Tidak dapat mendekode gambar ini.",
       "photoStudio.pickImageUnavailable": "Photo library access is unavailable on this device. Check permissions, or paste a photo instead.",
       "photoStudio.copied": "Disalin.",
       "home.action.photoStudio.subtitle": "Tempatkan bingkai dan tanda pada foto.",
@@ -5695,7 +5711,9 @@
       "photoStudio.importCancelled": "Tidak ada perubahan.",
       "photoStudio.importSuperseded": "Impor yang lebih baru menggantikan muatan ini.",
       "photoStudio.clipboardUnavailable": "Browser ini tidak mengizinkan akses gambar clipboard. Gunakan Impor, atau tempel lagi setelah mengizinkan.",
-      "photoStudio.importRetry": "Coba lagi"
+      "photoStudio.importRetry": "Coba lagi",
+      "photoStudio.imageTooManyPixels": "Foto itu memiliki terlalu banyak piksel. Pilih gambar yang lebih kecil atau tangkapan layar.",
+      "photoStudio.imageHeicUnsupported": "Foto HEIC/HEIF ini tidak dapat didekode di sini. Ekspor sebagai JPEG atau PNG, atau gunakan build native."
     },
     "deu": {
       "common.copy": "Kopieren",
@@ -6165,7 +6183,7 @@
       "photoStudio.rectLabel": "Normalisiertes Rechteck (links, oben, rechts, unten)",
       "photoStudio.imageLoaded": "Foto geladen ({bytes} Bytes).",
       "photoStudio.imageCleared": "Foto gelöscht; Rahmen behalten.",
-      "photoStudio.imageError": "Foto konnte nicht geladen werden.",
+      "photoStudio.imageError": "Dieses Bild konnte nicht dekodiert werden.",
       "photoStudio.pickImageUnavailable": "Photo library access is unavailable on this device. Check permissions, or paste a photo instead.",
       "photoStudio.copied": "Kopiert.",
       "home.action.photoStudio.subtitle": "Rahmen und Markierungen auf Fotos setzen.",
@@ -6328,7 +6346,9 @@
       "photoStudio.importCancelled": "Keine Änderung.",
       "photoStudio.importSuperseded": "Ein neuerer Import hat diesen Ladevorgang ersetzt.",
       "photoStudio.clipboardUnavailable": "Dieser Browser hat keinen Zugriff auf Zwischenablage-Bilder erlaubt. Nutzen Sie Import oder fügen Sie nach Erlaubnis erneut ein.",
-      "photoStudio.importRetry": "Erneut versuchen"
+      "photoStudio.importRetry": "Erneut versuchen",
+      "photoStudio.imageTooManyPixels": "Dieses Foto hat zu viele Pixel. Wählen Sie ein kleineres Bild oder einen Screenshot.",
+      "photoStudio.imageHeicUnsupported": "Dieses HEIC/HEIF-Foto kann hier nicht dekodiert werden. Exportieren Sie als JPEG oder PNG oder nutzen Sie einen nativen Build."
     },
     "swa": {
       "common.copy": "Nakili",
@@ -6798,7 +6818,7 @@
       "photoStudio.rectLabel": "Mstatili uliorekebishwa (kushoto, juu, kulia, chini)",
       "photoStudio.imageLoaded": "Picha imepakiwa ({bytes} baiti).",
       "photoStudio.imageCleared": "Picha imeondolewa; fremu zimehifadhiwa.",
-      "photoStudio.imageError": "Haikuweza kupakia picha.",
+      "photoStudio.imageError": "Imeshindwa kuddecode picha hii.",
       "photoStudio.pickImageUnavailable": "Photo library access is unavailable on this device. Check permissions, or paste a photo instead.",
       "photoStudio.copied": "Imenakiliwa.",
       "home.action.photoStudio.subtitle": "Weka fremu na alama kwenye picha.",
@@ -6961,7 +6981,9 @@
       "photoStudio.importCancelled": "Hakuna mabadiliko.",
       "photoStudio.importSuperseded": "Uingizaji mpya zaidi umebadilisha upakiaji huu.",
       "photoStudio.clipboardUnavailable": "Kivinjari hiki hakikuruhusu ufikiaji wa picha za ubao wa kunakili. Tumia Ingiza, au bandika tena baada ya ruhusa.",
-      "photoStudio.importRetry": "Jaribu tena"
+      "photoStudio.importRetry": "Jaribu tena",
+      "photoStudio.imageTooManyPixels": "Picha hiyo ina pikseli nyingi mno. Chagua picha ndogo au skrini.",
+      "photoStudio.imageHeicUnsupported": "Picha hii ya HEIC/HEIF haiwezi kuddecode hapa. Hamisha kama JPEG au PNG, au tumia toleo asilia."
     }
   }
 }

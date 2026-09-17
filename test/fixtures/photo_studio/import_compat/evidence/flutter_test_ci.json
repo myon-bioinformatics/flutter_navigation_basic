@@ -1,0 +1,290 @@
+{
+  "schemaVersion": 2,
+  "environmentId": "flutter_test_ci",
+  "runtime": "flutter_test",
+  "os": "linux",
+  "browser": null,
+  "commit": "04edc3d",
+  "verifiedAt": "2026-09-17",
+  "notes": "Measured by test/photo_studio/photo_import_compat_probe_test.dart. EXIF orientations are visually sampled after Flutter codec apply. iOS Safari / Chrome Web / real native picker remain not_verified.",
+  "outcomes": {
+    "png_opaque_2x2": {
+      "loader_direct_flutter_codec": "supported",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "png_alpha_2x2": {
+      "loader_direct_flutter_codec": "supported",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "png_markers_64x32": {
+      "loader_direct_flutter_codec": "supported",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "jpeg_baseline_markers_64x32": {
+      "loader_direct_flutter_codec": "supported",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "jpeg_progressive_markers_64x32": {
+      "loader_direct_flutter_codec": "supported",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "jpeg_exif_orientation_1_markers_64x32": {
+      "loader_direct_flutter_codec": "supported",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "jpeg_exif_orientation_2_markers_64x32": {
+      "loader_direct_flutter_codec": "supported",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "jpeg_exif_orientation_3_markers_64x32": {
+      "loader_direct_flutter_codec": "supported",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "jpeg_exif_orientation_4_markers_64x32": {
+      "loader_direct_flutter_codec": "supported",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "jpeg_exif_orientation_5_markers_64x32": {
+      "loader_direct_flutter_codec": "supported",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "jpeg_exif_orientation_6_markers_64x32": {
+      "loader_direct_flutter_codec": "supported",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "jpeg_exif_orientation_7_markers_64x32": {
+      "loader_direct_flutter_codec": "supported",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "jpeg_exif_orientation_8_markers_64x32": {
+      "loader_direct_flutter_codec": "supported",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "webp_lossy_64x32": {
+      "loader_direct_flutter_codec": "supported",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "webp_lossless_64x32": {
+      "loader_direct_flutter_codec": "supported",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "webp_alpha_8x4": {
+      "loader_direct_flutter_codec": "supported",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "gif_still_1x1": {
+      "loader_direct_flutter_codec": "supported",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "avif_ftyp_only": {
+      "loader_direct_flutter_codec": "rejected:undecodable",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "heic_ftyp_heic": {
+      "loader_direct_flutter_codec": "rejected:heicConversionFailed",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "heic_ftyp_heif": {
+      "loader_direct_flutter_codec": "rejected:heicConversionFailed",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "heic_ftyp_mif1": {
+      "loader_direct_flutter_codec": "rejected:heicConversionFailed",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "heic_ftyp_msf1": {
+      "loader_direct_flutter_codec": "rejected:heicConversionFailed",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "heic_ftyp_heix": {
+      "loader_direct_flutter_codec": "rejected:heicConversionFailed",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "heic_synthetic_markers_64x32": {
+      "loader_direct_flutter_codec": "rejected:heicConversionFailed",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "png_truncated": {
+      "loader_direct_flutter_codec": "rejected:undecodable",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "empty": {
+      "loader_direct_flutter_codec": "rejected:empty",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "png_claim_10000x10000": {
+      "loader_direct_flutter_codec": "rejected:tooManyPixels",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    },
+    "oversize_bytes_runtime": {
+      "loader_direct_flutter_codec": "not_verified",
+      "loader_browser_canvas_adapter": "not_verified",
+      "loader_native_normalize_adapter": "not_verified",
+      "web_file_picker": "not_verified",
+      "web_clipboard": "not_verified",
+      "native_picker": "not_verified"
+    }
+  },
+  "exifOrientationVisual": {
+    "fixturePrefix": "jpeg_exif_orientation_{n}_markers_64x32.jpg",
+    "entryPoint": "loader_direct_flutter_codec",
+    "expectations": {
+      "1": {
+        "width": 64,
+        "height": 32,
+        "tlDominant": "red"
+      },
+      "2": {
+        "width": 64,
+        "height": 32,
+        "tlDominant": "lime"
+      },
+      "3": {
+        "width": 64,
+        "height": 32,
+        "tlDominant": "yellow"
+      },
+      "4": {
+        "width": 64,
+        "height": 32,
+        "tlDominant": "blue"
+      },
+      "5": {
+        "width": 32,
+        "height": 64,
+        "tlDominant": "red"
+      },
+      "6": {
+        "width": 32,
+        "height": 64,
+        "tlDominant": "blue"
+      },
+      "7": {
+        "width": 32,
+        "height": 64,
+        "tlDominant": "yellow"
+      },
+      "8": {
+        "width": 32,
+        "height": 64,
+        "tlDominant": "lime"
+      }
+    },
+    "status": "supported"
+  },
+  "webpAlphaVisual": {
+    "fixture": "webp_alpha_8x4.webp",
+    "entryPoint": "loader_direct_flutter_codec",
+    "expectTlAlphaMax": 200,
+    "expectTlAlphaMin": 1,
+    "status": "supported"
+  }
+}

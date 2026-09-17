@@ -1,0 +1,460 @@
+#!/usr/bin/env python3
+"""Generate synthetic Photo Studio import-compat fixtures.
+
+Stdlib + optional host tools (ffmpeg, heif-enc). Does **not** write measured
+outcomes — those live in evidence/*.json and are asserted by Dart tests.
+
+Regenerate fixtures (developer machine / agent VM with tools):
+
+  python3 tool/python/generate_photo_import_fixtures.py
+
+CI must not need these tools: committed fixtures + evidence are the source of
+truth. No personal photos, GPS, or network downloads.
+"""
+
+from __future__ import annotations
+
+import json
+import shutil
+import struct
+import subprocess
+import zlib
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+OUT = ROOT / "test" / "fixtures" / "photo_studio" / "import_compat"
+CASES = OUT / "cases.json"
+TMP = OUT / ".gen_tmp"
+
+
+def _require(cmd: str) -> str:
+    path = shutil.which(cmd)
+    if not path:
+        raise SystemExit(
+            f"Missing `{cmd}` on PATH. Install it to regenerate fixtures "
+            f"(CI uses committed binaries and does not run this script)."
+        )
+    return path
+
+
+def _run(args: list[str]) -> None:
+    subprocess.run(args, check=True, capture_output=True)
+
+
+def _png_chunk(tag: bytes, data: bytes) -> bytes:
+    return (
+        struct.pack(">I", len(data))
+        + tag
+        + data
+        + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
+    )
+
+
+def write_png_rgba(path: Path, width: int, height: int, rgba_rows: list[bytes]) -> None:
+    raw = b"".join(b"\x00" + row for row in rgba_rows)
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)
+    data = b"\x89PNG\r\n\x1a\n"
+    data += _png_chunk(b"IHDR", ihdr)
+    data += _png_chunk(b"IDAT", zlib.compress(raw, 9))
+    data += _png_chunk(b"IEND", b"")
+    path.write_bytes(data)
+
+
+def write_png_rgb(path: Path, width: int, height: int, rgb_rows: list[bytes]) -> None:
+    raw = b"".join(b"\x00" + row for row in rgb_rows)
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    data = b"\x89PNG\r\n\x1a\n"
+    data += _png_chunk(b"IHDR", ihdr)
+    data += _png_chunk(b"IDAT", zlib.compress(raw, 9))
+    data += _png_chunk(b"IEND", b"")
+    path.write_bytes(data)
+
+
+def write_png_ihdr_only(path: Path, width: int, height: int) -> None:
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    data = b"\x89PNG\r\n\x1a\n"
+    data += _png_chunk(b"IHDR", ihdr)
+    data += _png_chunk(b"IDAT", zlib.compress(b"\x00\x00\x00\x00", 9))
+    data += _png_chunk(b"IEND", b"")
+    path.write_bytes(data)
+
+
+def write_truncated_png(path: Path, full: Path) -> None:
+    path.write_bytes(full.read_bytes()[:24])
+
+
+def write_ftyp(path: Path, brand: str, compatible: list[str] | None = None) -> None:
+    brands = [brand] + (compatible or [])
+    body = b"ftyp" + brand.encode("ascii") + struct.pack(">I", 0)
+    for b in brands:
+        body += b.encode("ascii")[:4].ljust(4, b" ")
+    path.write_bytes(struct.pack(">I", 4 + len(body)) + body)
+
+
+def write_gif(path: Path) -> None:
+    path.write_bytes(
+        bytes.fromhex(
+            "47494638396101000100800000000000ffffff21f90401000001002c"
+            "000000000100010000020144003b"
+        )
+    )
+
+
+def _exif_app1(orientation: int) -> bytes:
+    tiff = bytearray()
+    tiff += b"II"
+    tiff += struct.pack("<H", 42)
+    tiff += struct.pack("<I", 8)
+    tiff += struct.pack("<H", 1)
+    tiff += struct.pack("<HHII", 0x0112, 3, 1, orientation)
+    tiff += struct.pack("<I", 0)
+    payload = b"Exif\x00\x00" + bytes(tiff)
+    return b"\xff\xe1" + struct.pack(">H", len(payload) + 2) + payload
+
+
+def inject_jpeg_orientation(src: Path, dest: Path, orientation: int) -> None:
+    jpg = src.read_bytes()
+    if jpg[0:2] != b"\xff\xd8":
+        raise ValueError("not jpeg")
+    # After SOI, skip/replace until SOS; insert APP1 after JFIF APP0 if present.
+    if jpg[2:4] == b"\xff\xe0":
+        app0_len = (jpg[4] << 8) | jpg[5]
+        insert_at = 2 + 2 + app0_len
+    else:
+        insert_at = 2
+    dest.write_bytes(jpg[:insert_at] + _exif_app1(orientation) + jpg[insert_at:])
+
+
+def marker_png_rgba(width: int = 64, height: int = 32) -> list[bytes]:
+    """TL red, TR lime, BL blue, BR yellow — asymmetric for orientation tests."""
+    rows: list[bytes] = []
+    mid_x, mid_y = width // 2, height // 2
+    for y in range(height):
+        row = bytearray()
+        for x in range(width):
+            if y < mid_y and x < mid_x:
+                row += bytes([255, 0, 0, 255])
+            elif y < mid_y and x >= mid_x:
+                row += bytes([0, 255, 0, 255])
+            elif y >= mid_y and x < mid_x:
+                row += bytes([0, 0, 255, 255])
+            else:
+                row += bytes([255, 255, 0, 255])
+        rows.append(bytes(row))
+    return rows
+
+
+def marker_png_rgb(width: int = 64, height: int = 32) -> list[bytes]:
+    rows: list[bytes] = []
+    mid_x, mid_y = width // 2, height // 2
+    for y in range(height):
+        row = bytearray()
+        for x in range(width):
+            if y < mid_y and x < mid_x:
+                row += bytes([255, 0, 0])
+            elif y < mid_y and x >= mid_x:
+                row += bytes([0, 255, 0])
+            elif y >= mid_y and x < mid_x:
+                row += bytes([0, 0, 255])
+            else:
+                row += bytes([255, 255, 0])
+        rows.append(bytes(row))
+    return rows
+
+
+def alpha_png_rows(width: int = 8, height: int = 4) -> list[bytes]:
+    """Left half alpha=128, right half opaque; RGB markers retained."""
+    rows: list[bytes] = []
+    mid_x, mid_y = width // 2, height // 2
+    for y in range(height):
+        row = bytearray()
+        for x in range(width):
+            a = 128 if x < mid_x else 255
+            if y < mid_y and x < mid_x:
+                row += bytes([255, 0, 0, a])
+            elif y < mid_y and x >= mid_x:
+                row += bytes([0, 255, 0, a])
+            elif y >= mid_y and x < mid_x:
+                row += bytes([0, 0, 255, a])
+            else:
+                row += bytes([255, 255, 0, a])
+        rows.append(bytes(row))
+    return rows
+
+
+def main() -> None:
+    ffmpeg = _require("ffmpeg")
+    heif_enc = _require("heif-enc")
+
+    if OUT.exists():
+        # Keep evidence/ and cases are rewritten; remove generated binaries we own.
+        pass
+    OUT.mkdir(parents=True, exist_ok=True)
+    TMP.mkdir(parents=True, exist_ok=True)
+
+    # --- PNG ---
+    write_png_rgb(OUT / "png_opaque_2x2.png", 2, 2, [
+        bytes([0, 0, 0, 255, 0, 0]),
+        bytes([0, 0, 255, 255, 255, 0]),
+    ])
+    write_png_rgba(OUT / "png_alpha_2x2.png", 2, 2, [
+        bytes([255, 0, 0, 128, 255, 0, 0, 128]),
+        bytes([255, 0, 0, 128, 255, 0, 0, 128]),
+    ])
+    markers = OUT / "png_markers_64x32.png"
+    write_png_rgb(markers, 64, 32, marker_png_rgb(64, 32))
+
+    # --- JPEG baseline / progressive / EXIF from markers ---
+    base_jpg = TMP / "markers_baseline.jpg"
+    _run([
+        ffmpeg, "-y", "-i", str(markers), "-q:v", "2", "-update", "1",
+        str(base_jpg),
+    ])
+    (OUT / "jpeg_baseline_markers_64x32.jpg").write_bytes(base_jpg.read_bytes())
+
+    prog_jpg = TMP / "markers_prog.jpg"
+    try:
+        from PIL import Image  # type: ignore
+    except ImportError as exc:  # pragma: no cover
+        raise SystemExit(
+            "Pillow is required to regenerate progressive JPEG fixtures. "
+            "Install via: python3 -m pip install -r tool/python/requirements.txt"
+        ) from exc
+    Image.open(markers).convert("RGB").save(
+        prog_jpg, format="JPEG", quality=90, progressive=True
+    )
+    (OUT / "jpeg_progressive_markers_64x32.jpg").write_bytes(prog_jpg.read_bytes())
+
+    for o in range(1, 9):
+        inject_jpeg_orientation(
+            base_jpg,
+            OUT / f"jpeg_exif_orientation_{o}_markers_64x32.jpg",
+            o,
+        )
+
+    # --- WebP lossy / lossless / real alpha ---
+    _run([
+        ffmpeg, "-y", "-i", str(markers), "-c:v", "libwebp", "-quality", "80",
+        "-update", "1", str(OUT / "webp_lossy_64x32.webp"),
+    ])
+    _run([
+        ffmpeg, "-y", "-i", str(markers), "-c:v", "libwebp", "-lossless", "1",
+        "-update", "1", str(OUT / "webp_lossless_64x32.webp"),
+    ])
+    alpha_src = TMP / "alpha_src.png"
+    write_png_rgba(alpha_src, 8, 4, alpha_png_rows(8, 4))
+    _run([
+        ffmpeg, "-y", "-i", str(alpha_src), "-c:v", "libwebp", "-lossless", "1",
+        "-update", "1", str(OUT / "webp_alpha_8x4.webp"),
+    ])
+
+    # --- GIF / AVIF ftyp-only / HEIC ftyp-only (container sniff) ---
+    write_gif(OUT / "gif_still_1x1.gif")
+    write_ftyp(OUT / "avif_ftyp_only.avif", "avif", ["avif", "mif1"])
+    for brand in ("heic", "heif", "mif1", "msf1", "heix"):
+        write_ftyp(OUT / f"heic_ftyp_{brand}.heic", brand, [brand, "mif1"])
+
+    # --- Real synthetic HEIC (decodable by libheif; Flutter may still reject) ---
+    heic_out = OUT / "heic_synthetic_markers_64x32.heic"
+    _run([heif_enc, "-o", str(heic_out), "-q", "40", str(markers)])
+
+    # --- Failure probes ---
+    write_truncated_png(OUT / "png_truncated.png", OUT / "png_opaque_2x2.png")
+    (OUT / "empty.bin").write_bytes(b"")
+    write_png_ihdr_only(OUT / "png_claim_10000x10000.png", 10000, 10000)
+    (OUT / "README_OVERSIZE.txt").write_text(
+        "Do not commit 32MiB blobs. Tests allocate maxInputBytes+1 at runtime.\n",
+        encoding="utf-8",
+    )
+
+    cases = [
+        _case("png_opaque_2x2", "png", "opaque", "png_opaque_2x2.png", "raster"),
+        _case("png_alpha_2x2", "png", "alpha", "png_alpha_2x2.png", "raster"),
+        _case(
+            "png_markers_64x32",
+            "png",
+            "markers",
+            "png_markers_64x32.png",
+            "raster",
+        ),
+        _case(
+            "jpeg_baseline_markers_64x32",
+            "jpeg",
+            "baseline_markers",
+            "jpeg_baseline_markers_64x32.jpg",
+            "raster",
+        ),
+        _case(
+            "jpeg_progressive_markers_64x32",
+            "jpeg",
+            "progressive_markers",
+            "jpeg_progressive_markers_64x32.jpg",
+            "raster",
+        ),
+        *[
+            _case(
+                f"jpeg_exif_orientation_{o}_markers_64x32",
+                "jpeg",
+                f"exif_orientation_{o}",
+                f"jpeg_exif_orientation_{o}_markers_64x32.jpg",
+                "raster",
+                notes=f"EXIF Orientation={o}; asymmetric markers; no GPS",
+            )
+            for o in range(1, 9)
+        ],
+        _case(
+            "webp_lossy_64x32",
+            "webp",
+            "lossy",
+            "webp_lossy_64x32.webp",
+            "raster",
+        ),
+        _case(
+            "webp_lossless_64x32",
+            "webp",
+            "lossless",
+            "webp_lossless_64x32.webp",
+            "raster",
+        ),
+        _case(
+            "webp_alpha_8x4",
+            "webp",
+            "alpha",
+            "webp_alpha_8x4.webp",
+            "raster",
+            notes="Left half alpha≈128; right opaque",
+        ),
+        _case("gif_still_1x1", "gif", "still", "gif_still_1x1.gif", "raster"),
+        _case(
+            "avif_ftyp_only",
+            "avif",
+            "ftyp_probe",
+            "avif_ftyp_only.avif",
+            "container_sniff",
+            notes="Intentionally invalid bitstream; sniff-only",
+        ),
+        *[
+            _case(
+                f"heic_ftyp_{b}",
+                "heic",
+                f"brand_{b}_ftyp_only",
+                f"heic_ftyp_{b}.heic",
+                "container_sniff",
+                notes="Intentionally invalid; brand sniff only",
+            )
+            for b in ("heic", "heif", "mif1", "msf1", "heix")
+        ],
+        _case(
+            "heic_synthetic_markers_64x32",
+            "heic",
+            "synthetic_hevc_still",
+            "heic_synthetic_markers_64x32.heic",
+            "raster",
+            notes="Synthetic HEIC via heif-enc/x265; no personal data",
+        ),
+        _case(
+            "png_truncated",
+            "png",
+            "truncated",
+            "png_truncated.png",
+            "intentionally_invalid",
+        ),
+        _case("empty", "empty", "empty", "empty.bin", "intentionally_invalid"),
+        _case(
+            "png_claim_10000x10000",
+            "png",
+            "oversize_pixels_claim",
+            "png_claim_10000x10000.png",
+            "intentionally_invalid",
+        ),
+        _case(
+            "oversize_bytes_runtime",
+            "unknown",
+            "oversize_bytes",
+            None,
+            "intentionally_invalid",
+            notes="Allocated at test runtime: maxInputBytes+1",
+        ),
+    ]
+
+    payload = {
+        "schemaVersion": 2,
+        "generator": "tool/python/generate_photo_import_fixtures.py",
+        "limits": {
+            "maxInputBytes": 32 * 1024 * 1024,
+            "maxPixels": 40_000_000,
+            "maxDocumentLongEdge": 4096,
+        },
+        "outcomeVocabulary": [
+            "supported",
+            "rejected:empty",
+            "rejected:tooLargeBytes",
+            "rejected:tooManyPixels",
+            "rejected:heicConversionFailed",
+            "rejected:undecodable",
+            "unsupported_by_runtime",
+            "not_verified",
+        ],
+        "entryPoints": [
+            "loader_direct_flutter_codec",
+            "loader_browser_canvas_adapter",
+            "loader_native_normalize_adapter",
+            "web_file_picker",
+            "web_clipboard",
+            "native_picker",
+        ],
+        "environments": [
+            {
+                "id": "flutter_test_ci",
+                "runtime": "flutter_test",
+                "notes": "Outcomes in evidence/flutter_test_ci.json",
+            },
+            {
+                "id": "web_chrome_ci",
+                "runtime": "chrome",
+                "notes": "not claimed without Web run",
+            },
+            {
+                "id": "ios_safari_iphone",
+                "runtime": "safari",
+                "notes": "Manual device QA only",
+            },
+            {
+                "id": "android_jvm_unit",
+                "runtime": "android_jvm",
+                "notes": "Channel stubs / JVM",
+            },
+        ],
+        "cases": cases,
+    }
+    CASES.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+    # Remove legacy monolithic manifest if present.
+    legacy = OUT / "manifest.json"
+    if legacy.exists():
+        legacy.unlink()
+
+    shutil.rmtree(TMP, ignore_errors=True)
+    print(f"Wrote fixtures + {CASES.relative_to(ROOT)}")
+
+
+def _case(
+    case_id: str,
+    fmt: str,
+    variant: str,
+    fixture: str | None,
+    kind: str,
+    notes: str | None = None,
+) -> dict:
+    return {
+        "id": case_id,
+        "format": fmt,
+        "variant": variant,
+        "fixture": fixture,
+        "kind": kind,
+        "notes": notes,
+    }
+
+
+if __name__ == "__main__":
+    main()
