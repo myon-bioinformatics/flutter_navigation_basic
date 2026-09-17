@@ -592,36 +592,99 @@ void main() {
     expect(body['message'], contains('unknown'));
   });
 
-  test('FoundationHandlerTransport rejected notification → 400', () async {
-    final transport = FoundationHandlerTransport(McpFoundationHandler());
-    // Modern initialized without session reaches handler sessionRequired,
-    // then maps to Mock-parity notification_rejected.
-    final response = await transport.post(
-      headers: mcpStreamableHeaders(
-        protocolVersion: McpProtocol.currentOfficialVersion,
-        method: 'notifications/initialized',
+  test('FoundationHandlerTransport notification status parity', () async {
+    Map<String, Object?> modernInitializedBody() => {
+          'jsonrpc': '2.0',
+          'method': 'notifications/initialized',
+          'params': {
+            '_meta': {
+              'io.modelcontextprotocol/protocolVersion':
+                  McpProtocol.currentOfficialVersion,
+              'io.modelcontextprotocol/clientInfo': {
+                'name': 't',
+                'version': '0',
+              },
+              'io.modelcontextprotocol/clientCapabilities': <String, Object?>{},
+            },
+          },
+        };
+
+    Future<McpTransportResponse> postNotification(
+      McpFoundationHandler handler,
+    ) {
+      return FoundationHandlerTransport(handler).post(
+        headers: mcpStreamableHeaders(
+          protocolVersion: McpProtocol.currentOfficialVersion,
+          method: 'notifications/initialized',
+        ),
+        body: jsonEncode(modernInitializedBody()),
+      );
+    }
+
+    // Unauthorized / forbidden must stay 401/403 (Mock maps auth before
+    // the notification_rejected branch). Force bearer via handler subclass.
+    final unauthorized = await postNotification(
+      _ForcedBearerHandler(
+        const BearerGate(
+          status: BearerGateStatus.unauthorized,
+          reason: 'expired',
+        ),
       ),
+    );
+    expect(unauthorized.statusCode, 401);
+    expect((unauthorized.body as Map)['error'], 'unauthorized');
+    expect((unauthorized.body as Map)['message'], isNotNull);
+    expect((unauthorized.body as Map)['reason'], isNotNull);
+
+    final forbidden = await postNotification(
+      _ForcedBearerHandler(
+        const BearerGate(
+          status: BearerGateStatus.forbidden,
+          reason: 'wrong_audience',
+        ),
+      ),
+    );
+    expect(forbidden.statusCode, 403);
+    expect((forbidden.body as Map)['error'], 'forbidden');
+    expect((forbidden.body as Map)['message'], isNotNull);
+    expect((forbidden.body as Map)['reason'], isNotNull);
+
+    // Non-auth rejection → 400 notification_rejected.
+    final rejected = await postNotification(McpFoundationHandler());
+    expect(rejected.statusCode, 400);
+    final rejectedBody = rejected.body as Map;
+    expect(rejectedBody['error'], 'notification_rejected');
+    expect(rejectedBody['message'], isNotNull);
+    expect(rejectedBody['code'], JsonRpcErrorCode.sessionRequired);
+
+    // Accepted notification → 202 empty body.
+    final acceptedTransport = FoundationHandlerTransport(
+      McpFoundationHandler(sessionIdFactory: () => 'sess-notif-ok'),
+    );
+    final init = await acceptedTransport.post(
+      headers: const {},
       body: jsonEncode({
         'jsonrpc': '2.0',
-        'method': 'notifications/initialized',
+        'id': 1,
+        'method': 'initialize',
         'params': {
-          '_meta': {
-            'io.modelcontextprotocol/protocolVersion':
-                McpProtocol.currentOfficialVersion,
-            'io.modelcontextprotocol/clientInfo': {
-              'name': 't',
-              'version': '0',
-            },
-            'io.modelcontextprotocol/clientCapabilities': <String, Object?>{},
-          },
+          'protocolVersion': McpProtocol.specificationVersion,
+          'capabilities': <String, Object?>{},
+          'clientInfo': {'name': 't', 'version': '1'},
         },
       }),
     );
-    expect(response.statusCode, 400);
-    final body = response.body as Map;
-    expect(body['error'], 'notification_rejected');
-    expect(body['message'], isNotNull);
-    expect(body['code'], JsonRpcErrorCode.sessionRequired);
+    expect(init.statusCode, 200);
+    final session = init.headers[McpProtocol.sessionIdHeader]!;
+    final accepted = await acceptedTransport.post(
+      headers: {McpProtocol.sessionIdHeader: session},
+      body: jsonEncode({
+        'jsonrpc': '2.0',
+        'method': 'notifications/initialized',
+      }),
+    );
+    expect(accepted.statusCode, 202);
+    expect(accepted.body, isNull);
   });
 
   test('FoundationHandlerTransport legacy unknown → HTTP 200', () async {
@@ -802,6 +865,27 @@ class _FailInitializeWithSessionTransport implements McpStreamableTransport {
         id: request?.id,
         result: {'protocolVersion': McpProtocol.specificationVersion},
       ).toJson(),
+    );
+  }
+}
+
+/// Forces [BearerGate] into [handleRpc] so Foundation transport auth mapping
+/// can be exercised without wiring HTTP Authorization headers.
+class _ForcedBearerHandler extends McpFoundationHandler {
+  _ForcedBearerHandler(this.bearer);
+
+  final BearerGate bearer;
+
+  @override
+  ({JsonRpcResponse response, String? sessionId}) handleRpc({
+    required JsonRpcRequest request,
+    String? sessionId,
+    BearerGate? bearer,
+  }) {
+    return super.handleRpc(
+      request: request,
+      sessionId: sessionId,
+      bearer: this.bearer,
     );
   }
 }
