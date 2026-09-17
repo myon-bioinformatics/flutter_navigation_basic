@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'json_rpc.dart';
 import 'mcp_foundation.dart';
+import 'mcp_modern_http.dart';
 import 'mcp_protocol.dart';
 
 /// Transport for one Streamable HTTP MCP POST.
@@ -444,22 +445,13 @@ class McpDemoRunResult {
 
 /// Transport that posts JSON-RPC directly into [McpFoundationHandler].
 ///
-/// Mirrors [MockMcpRoutes] HTTP status mapping for dual-era MCP: current-
-/// official unknown methods → HTTP 404; legacy unknown methods → HTTP 200
-/// with JSON-RPC `methodNotFound`. Keeps app UI free of `tool/` imports.
+/// Mirrors [MockMcpRoutes] dual-era HTTP status mapping: modern envelope
+/// validation failures → HTTP 400; valid current-official unknown methods →
+/// HTTP 404; legacy unknown methods → HTTP 200 + JSON-RPC `methodNotFound`.
 class FoundationHandlerTransport implements McpStreamableTransport {
   FoundationHandlerTransport(this.handler);
 
   final McpFoundationHandler handler;
-
-  static String? _metaProtocolVersion(JsonRpcRequest request) {
-    final params = request.params;
-    if (params is! Map) return null;
-    final meta = params['_meta'];
-    if (meta is! Map) return null;
-    final version = meta['io.modelcontextprotocol/protocolVersion'];
-    return version is String ? version : null;
-  }
 
   @override
   Future<McpTransportResponse> post({
@@ -491,10 +483,32 @@ class FoundationHandlerTransport implements McpStreamableTransport {
 
     final inbound = headerValue(McpProtocol.sessionIdHeader);
     final headerProtocol = headerValue(McpProtocol.protocolVersionHeader);
-    final metaVersion = _metaProtocolVersion(request);
-    final looksModern = request.method == 'server/discover' ||
-        metaVersion != null ||
-        headerProtocol == McpProtocol.currentOfficialVersion;
+    final metaVersion = mcpMetaProtocolVersion(request);
+    final looksModern = looksModernMcpRequest(
+      request: request,
+      headerProtocol: headerProtocol,
+      metaVersion: metaVersion,
+    );
+
+    if (looksModern) {
+      final modernError = validateModernMcpHttp(
+        request: request,
+        headerProtocol: headerProtocol,
+        metaVersion: metaVersion,
+        headerMethod: headerValue(McpProtocol.methodHeader),
+        headerName: headerValue(McpProtocol.nameHeader),
+      );
+      if (modernError != null) {
+        return McpTransportResponse(
+          statusCode: 400,
+          headers: {
+            McpProtocol.protocolVersionHeader:
+                McpProtocol.currentOfficialVersion,
+          },
+          body: modernError.toJson(),
+        );
+      }
+    }
 
     final outcome = handler.handleRpc(
       request: request,

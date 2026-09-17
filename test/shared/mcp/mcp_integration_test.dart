@@ -360,6 +360,147 @@ void main() {
     );
   });
 
+  test('FoundationHandlerTransport modern envelope failures → HTTP 400',
+      () async {
+    final transport = FoundationHandlerTransport(McpFoundationHandler());
+
+    Future<McpTransportResponse> post({
+      required Map<String, String> headers,
+      required Map<String, Object?> body,
+    }) {
+      return transport.post(headers: headers, body: jsonEncode(body));
+    }
+
+    // Header-only current-official + unknown method (no _meta).
+    final headerOnly = await post(
+      headers: {
+        McpProtocol.protocolVersionHeader: McpProtocol.currentOfficialVersion,
+        McpProtocol.methodHeader: 'totally/unknown',
+      },
+      body: {
+        'jsonrpc': '2.0',
+        'id': 10,
+        'method': 'totally/unknown',
+      },
+    );
+    expect(headerOnly.statusCode, 400);
+    expect(
+      ((headerOnly.body as Map)['error'] as Map)['code'],
+      JsonRpcErrorCode.headerMismatch,
+    );
+
+    // Matching legacy versions still trip modern marker via _meta presence.
+    final legacyVersions = await post(
+      headers: {
+        McpProtocol.protocolVersionHeader: McpProtocol.specificationVersion,
+        McpProtocol.methodHeader: 'totally/unknown',
+      },
+      body: {
+        'jsonrpc': '2.0',
+        'id': 11,
+        'method': 'totally/unknown',
+        'params': {
+          '_meta': {
+            'io.modelcontextprotocol/protocolVersion':
+                McpProtocol.specificationVersion,
+            'io.modelcontextprotocol/clientInfo': {
+              'name': 't',
+              'version': '0',
+            },
+            'io.modelcontextprotocol/clientCapabilities': <String, Object?>{},
+          },
+        },
+      },
+    );
+    expect(legacyVersions.statusCode, 400);
+    expect(
+      ((legacyVersions.body as Map)['error'] as Map)['code'],
+      JsonRpcErrorCode.unsupportedProtocolVersion,
+    );
+
+    // Header/meta mismatch.
+    final mismatch = await post(
+      headers: {
+        McpProtocol.protocolVersionHeader: McpProtocol.currentOfficialVersion,
+        McpProtocol.methodHeader: 'totally/unknown',
+      },
+      body: {
+        'jsonrpc': '2.0',
+        'id': 12,
+        'method': 'totally/unknown',
+        'params': {
+          '_meta': {
+            'io.modelcontextprotocol/protocolVersion':
+                McpProtocol.specificationVersion,
+            'io.modelcontextprotocol/clientInfo': {
+              'name': 't',
+              'version': '0',
+            },
+            'io.modelcontextprotocol/clientCapabilities': <String, Object?>{},
+          },
+        },
+      },
+    );
+    expect(mismatch.statusCode, 400);
+    expect(
+      ((mismatch.body as Map)['error'] as Map)['code'],
+      JsonRpcErrorCode.headerMismatch,
+    );
+
+    // Missing clientInfo.
+    final noClientInfo = await post(
+      headers: mcpStreamableHeaders(
+        protocolVersion: McpProtocol.currentOfficialVersion,
+        method: 'totally/unknown',
+      ),
+      body: {
+        'jsonrpc': '2.0',
+        'id': 13,
+        'method': 'totally/unknown',
+        'params': {
+          '_meta': {
+            'io.modelcontextprotocol/protocolVersion':
+                McpProtocol.currentOfficialVersion,
+          },
+        },
+      },
+    );
+    expect(noClientInfo.statusCode, 400);
+    expect(
+      ((noClientInfo.body as Map)['error'] as Map)['message'],
+      contains('clientInfo'),
+    );
+
+    // Mcp-Method mismatch.
+    final methodMismatch = await post(
+      headers: mcpStreamableHeaders(
+        protocolVersion: McpProtocol.currentOfficialVersion,
+        method: 'tools/list',
+      ),
+      body: {
+        'jsonrpc': '2.0',
+        'id': 14,
+        'method': 'totally/unknown',
+        'params': {
+          '_meta': {
+            'io.modelcontextprotocol/protocolVersion':
+                McpProtocol.currentOfficialVersion,
+            'io.modelcontextprotocol/clientInfo': {
+              'name': 't',
+              'version': '0',
+            },
+            'io.modelcontextprotocol/clientCapabilities': <String, Object?>{},
+          },
+        },
+      },
+    );
+    expect(methodMismatch.statusCode, 400);
+    expect(
+      ((methodMismatch.body as Map)['error'] as Map)['message'],
+      contains('Mcp-Method'),
+    );
+  });
+
   test('FoundationHandlerTransport legacy unknown → HTTP 200', () async {
     final transport = FoundationHandlerTransport(
       McpFoundationHandler(sessionIdFactory: () => 'sess-legacy-unknown'),
