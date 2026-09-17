@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_application_1/shared/http/auth_matrix.dart';
 import 'package:flutter_application_1/shared/http/request_draft.dart';
 import 'package:flutter_application_1/shared/http/request_field.dart';
@@ -322,6 +324,76 @@ void main() {
     expect(
       McpSupportMatrix.currentOfficialVersion,
       McpProtocol.currentOfficialVersion,
+    );
+  });
+
+  test('FoundationHandlerTransport modern unknown → HTTP 404', () async {
+    final transport = FoundationHandlerTransport(McpFoundationHandler());
+    final response = await transport.post(
+      headers: mcpStreamableHeaders(
+        protocolVersion: McpProtocol.currentOfficialVersion,
+        method: 'totally/unknown',
+      ),
+      body: jsonEncode({
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': 'totally/unknown',
+        'params': {
+          '_meta': {
+            'io.modelcontextprotocol/protocolVersion':
+                McpProtocol.currentOfficialVersion,
+            'io.modelcontextprotocol/clientInfo': {
+              'name': 't',
+              'version': '0',
+            },
+            'io.modelcontextprotocol/clientCapabilities': <String, Object?>{},
+          },
+        },
+      }),
+    );
+    expect(response.statusCode, 404);
+    final body = response.body as Map;
+    expect((body['error'] as Map)['code'], JsonRpcErrorCode.methodNotFound);
+    expect(
+      response.headers[McpProtocol.protocolVersionHeader],
+      McpProtocol.currentOfficialVersion,
+    );
+  });
+
+  test('FoundationHandlerTransport legacy unknown → HTTP 200', () async {
+    final transport = FoundationHandlerTransport(
+      McpFoundationHandler(sessionIdFactory: () => 'sess-legacy-unknown'),
+    );
+    final init = await transport.post(
+      headers: const {},
+      body: jsonEncode({
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': 'initialize',
+        'params': {
+          'protocolVersion': McpProtocol.specificationVersion,
+          'capabilities': <String, Object?>{},
+          'clientInfo': {'name': 't', 'version': '1'},
+        },
+      }),
+    );
+    expect(init.statusCode, 200);
+    final session = init.headers[McpProtocol.sessionIdHeader]!;
+
+    final response = await transport.post(
+      headers: {McpProtocol.sessionIdHeader: session},
+      body: jsonEncode({
+        'jsonrpc': '2.0',
+        'id': 2,
+        'method': 'totally/unknown',
+      }),
+    );
+    expect(response.statusCode, 200);
+    final body = response.body as Map;
+    expect((body['error'] as Map)['code'], JsonRpcErrorCode.methodNotFound);
+    expect(
+      response.headers[McpProtocol.protocolVersionHeader],
+      McpProtocol.specificationVersion,
     );
   });
 

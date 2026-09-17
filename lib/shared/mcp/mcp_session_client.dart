@@ -444,12 +444,22 @@ class McpDemoRunResult {
 
 /// Transport that posts JSON-RPC directly into [McpFoundationHandler].
 ///
-/// Keeps app UI free of `tool/` imports while still exercising the same
-/// foundation session / method surface the mock HTTP route uses.
+/// Mirrors [MockMcpRoutes] HTTP status mapping for dual-era MCP: current-
+/// official unknown methods → HTTP 404; legacy unknown methods → HTTP 200
+/// with JSON-RPC `methodNotFound`. Keeps app UI free of `tool/` imports.
 class FoundationHandlerTransport implements McpStreamableTransport {
   FoundationHandlerTransport(this.handler);
 
   final McpFoundationHandler handler;
+
+  static String? _metaProtocolVersion(JsonRpcRequest request) {
+    final params = request.params;
+    if (params is! Map) return null;
+    final meta = params['_meta'];
+    if (meta is! Map) return null;
+    final version = meta['io.modelcontextprotocol/protocolVersion'];
+    return version is String ? version : null;
+  }
 
   @override
   Future<McpTransportResponse> post({
@@ -480,15 +490,23 @@ class FoundationHandlerTransport implements McpStreamableTransport {
     }
 
     final inbound = headerValue(McpProtocol.sessionIdHeader);
+    final headerProtocol = headerValue(McpProtocol.protocolVersionHeader);
+    final metaVersion = _metaProtocolVersion(request);
+    final looksModern = request.method == 'server/discover' ||
+        metaVersion != null ||
+        headerProtocol == McpProtocol.currentOfficialVersion;
+
     final outcome = handler.handleRpc(
       request: request,
-      sessionId: inbound,
+      sessionId: looksModern ? null : inbound,
     );
 
     final outHeaders = <String, String>{
       if (outcome.sessionId != null)
         McpProtocol.sessionIdHeader: outcome.sessionId!,
-      McpProtocol.protocolVersionHeader: McpProtocol.specificationVersion,
+      McpProtocol.protocolVersionHeader: looksModern
+          ? McpProtocol.currentOfficialVersion
+          : McpProtocol.specificationVersion,
     };
 
     if (request.isNotification) {
@@ -518,6 +536,14 @@ class FoundationHandlerTransport implements McpStreamableTransport {
     }
 
     final err = outcome.response.error?.code;
+    // Current-official Streamable HTTP: unimplemented RPC → HTTP 404.
+    if (looksModern && err == JsonRpcErrorCode.methodNotFound) {
+      return McpTransportResponse(
+        statusCode: 404,
+        headers: outHeaders,
+        body: outcome.response.toJson(),
+      );
+    }
     final status = switch (err) {
       JsonRpcErrorCode.unauthorized => 401,
       JsonRpcErrorCode.forbidden => 403,
