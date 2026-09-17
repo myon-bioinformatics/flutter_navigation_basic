@@ -557,6 +557,36 @@ void main() {
     );
   });
 
+  test('FoundationHandlerTransport legacy unknown without session → 400',
+      () async {
+    final transport = FoundationHandlerTransport(McpFoundationHandler());
+    final response = await transport.post(
+      headers: const {},
+      body: jsonEncode({
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': 'totally/unknown',
+      }),
+    );
+    expect(response.statusCode, 400);
+    expect((response.body as Map)['error'], 'session_required');
+  });
+
+  test('FoundationHandlerTransport legacy unknown unknown session → 404',
+      () async {
+    final transport = FoundationHandlerTransport(McpFoundationHandler());
+    final response = await transport.post(
+      headers: {McpProtocol.sessionIdHeader: 'no-such-session'},
+      body: jsonEncode({
+        'jsonrpc': '2.0',
+        'id': 1,
+        'method': 'totally/unknown',
+      }),
+    );
+    expect(response.statusCode, 404);
+    expect((response.body as Map)['error'], 'session_not_found');
+  });
+
   test('FoundationHandlerTransport legacy unknown → HTTP 200', () async {
     final transport = FoundationHandlerTransport(
       McpFoundationHandler(sessionIdFactory: () => 'sess-legacy-unknown'),
