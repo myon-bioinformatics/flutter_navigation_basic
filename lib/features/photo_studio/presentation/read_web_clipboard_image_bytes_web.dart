@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:html' as html;
 import 'dart:typed_data';
 
+import '../data/clipboard_image_read.dart';
+
 /// Web-only: read the first image/* item from the system clipboard, if any.
 ///
 /// Uses the async Clipboard API. Callers should still accept Base64 text and
@@ -9,10 +11,10 @@ import 'dart:typed_data';
 ///
 /// When [maxBytes] is set, Blobs larger than that limit are skipped before
 /// allocating a FileReader buffer.
-Future<Uint8List?> readWebClipboardImageBytes({int? maxBytes}) async {
+Future<ClipboardImageRead> readWebClipboardImage({int? maxBytes}) async {
   try {
     final clipboard = html.window.navigator.clipboard;
-    if (clipboard == null) return null;
+    if (clipboard == null) return const ClipboardImageRead.empty();
     // Typed as dynamic: dart:html stubs differ across analyzer platforms.
     final dynamic items = await clipboard.read();
     final int length = items.length as int;
@@ -28,13 +30,21 @@ Future<Uint8List?> readWebClipboardImageBytes({int? maxBytes}) async {
           continue;
         }
         final bytes = await _readBlobAsBytes(blob);
-        if (bytes != null && bytes.isNotEmpty) return bytes;
+        if (bytes != null && bytes.isNotEmpty) {
+          return ClipboardImageRead.bytes(bytes);
+        }
       }
     }
-  } catch (_) {
-    return null;
+  } catch (error) {
+    final text = error.toString().toLowerCase();
+    if (text.contains('notallowed') ||
+        text.contains('denied') ||
+        text.contains('permission')) {
+      return const ClipboardImageRead.denied();
+    }
+    return const ClipboardImageRead.empty();
   }
-  return null;
+  return const ClipboardImageRead.empty();
 }
 
 Future<Uint8List?> _readBlobAsBytes(html.Blob blob) {

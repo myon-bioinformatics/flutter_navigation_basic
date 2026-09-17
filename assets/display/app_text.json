@@ -623,7 +623,15 @@
       "httpDraft.authScenario.digest": "Digest (challenge-response)",
       "httpDraft.authScenario.hmac": "HMAC-SHA256",
       "httpDraft.authScenario.rateLimited": "Rate limited (429)",
-      "photoStudio.imageTooLarge": "That photo is too large. Choose a smaller image or screenshot."
+      "photoStudio.imageTooLarge": "That photo is too large. Choose a smaller image or screenshot.",
+      "photoStudio.importIdle": "Select an image or paste here",
+      "photoStudio.importLoading": "Loading image…",
+      "photoStudio.importSuccess": "Image loaded",
+      "photoStudio.importSuccessMeta": "{format} · {width} × {height}",
+      "photoStudio.importCancelled": "No change.",
+      "photoStudio.importSuperseded": "A newer import replaced this load.",
+      "photoStudio.clipboardUnavailable": "This browser did not allow clipboard image access. Try Import, or paste again after allowing permission.",
+      "photoStudio.importRetry": "Retry"
     },
     "jpn": {
       "common.copy": "コピー",
@@ -1248,7 +1256,15 @@
       "httpDraft.authScenario.digest": "Digest（チャレンジ応答）",
       "httpDraft.authScenario.hmac": "HMAC-SHA256",
       "httpDraft.authScenario.rateLimited": "レート制限（429）",
-      "photoStudio.imageTooLarge": "写真が大きすぎます。小さい画像かスクリーンショットを選んでください。"
+      "photoStudio.imageTooLarge": "写真が大きすぎます。小さい画像かスクリーンショットを選んでください。",
+      "photoStudio.importIdle": "画像を選択するか、ここに貼り付け",
+      "photoStudio.importLoading": "画像を読み込み中…",
+      "photoStudio.importSuccess": "画像を読み込みました",
+      "photoStudio.importSuccessMeta": "{format} · {width} × {height}",
+      "photoStudio.importCancelled": "変更なし",
+      "photoStudio.importSuperseded": "新しい読み込みにより、この結果は破棄されました。",
+      "photoStudio.clipboardUnavailable": "ブラウザがクリップボード画像へのアクセスを許可しませんでした。読み込みを使うか、権限を許可してから再度貼り付けてください。",
+      "photoStudio.importRetry": "再試行"
     },
     "fra": {
       "common.copy": "Copier",
@@ -1873,7 +1889,15 @@
       "httpDraft.authScenario.digest": "Digest (challenge-response)",
       "httpDraft.authScenario.hmac": "HMAC-SHA256",
       "httpDraft.authScenario.rateLimited": "Rate limited (429)",
-      "photoStudio.imageTooLarge": "That photo is too large. Choose a smaller image or screenshot."
+      "photoStudio.imageTooLarge": "That photo is too large. Choose a smaller image or screenshot.",
+      "photoStudio.importIdle": "Sélectionnez une image ou collez-en une ici",
+      "photoStudio.importLoading": "Chargement de l’image…",
+      "photoStudio.importSuccess": "Image chargée",
+      "photoStudio.importSuccessMeta": "{format} · {width} × {height}",
+      "photoStudio.importCancelled": "Aucun changement.",
+      "photoStudio.importSuperseded": "Un import plus récent a remplacé ce chargement.",
+      "photoStudio.clipboardUnavailable": "Ce navigateur n’a pas autorisé l’accès aux images du presse-papiers. Utilisez Importer, ou collez à nouveau après autorisation.",
+      "photoStudio.importRetry": "Réessayer"
     },
     "spa": {
       "common.copy": "Copiar",
@@ -2498,7 +2522,15 @@
       "httpDraft.authScenario.digest": "Digest (challenge-response)",
       "httpDraft.authScenario.hmac": "HMAC-SHA256",
       "httpDraft.authScenario.rateLimited": "Rate limited (429)",
-      "photoStudio.imageTooLarge": "That photo is too large. Choose a smaller image or screenshot."
+      "photoStudio.imageTooLarge": "That photo is too large. Choose a smaller image or screenshot.",
+      "photoStudio.importIdle": "Selecciona una imagen o pégala aquí",
+      "photoStudio.importLoading": "Cargando imagen…",
+      "photoStudio.importSuccess": "Imagen cargada",
+      "photoStudio.importSuccessMeta": "{format} · {width} × {height}",
+      "photoStudio.importCancelled": "Sin cambios.",
+      "photoStudio.importSuperseded": "Una importación más reciente reemplazó esta carga.",
+      "photoStudio.clipboardUnavailable": "Este navegador no permitió acceso a imágenes del portapapeles. Usa Importar, o pega de nuevo tras permitir el permiso.",
+      "photoStudio.importRetry": "Reintentar"
     },
     "por": {
       "common.copy": "Copiar",
@@ -3123,7 +3155,15 @@
       "httpDraft.authScenario.digest": "Digest (challenge-response)",
       "httpDraft.authScenario.hmac": "HMAC-SHA256",
       "httpDraft.authScenario.rateLimited": "Rate limited (429)",
-      "photoStudio.imageTooLarge": "That photo is too large. Choose a smaller image or screenshot."
+      "photoStudio.imageTooLarge": "That photo is too large. Choose a smaller image or screenshot.",
+      "photoStudio.importIdle": "Selecione uma imagem ou cole aqui",
+      "photoStudio.importLoading": "Carregando imagem…",
+      "photoStudio.importSuccess": "Imagem carregada",
+      "photoStudio.importSuccessMeta": "{format} · {width} × {height}",
+      "photoStudio.importCancelled": "Sem alteração.",
+      "photoStudio.importSuperseded": "Uma importação mais recente substituiu este carregamento.",
+      "photoStudio.clipboardUnavailable": "Este navegador não permitiu acesso a imagens da área de transferência. Use Importar, ou cole novamente após permitir.",
+      "photoStudio.importRetry": "Tentar de novo"
     },
     "ara": {
       "common.copy": "نسخ",
@@ -3748,7 +3788,15 @@
       "httpDraft.authScenario.digest": "Digest (challenge-response)",
       "httpDraft.authScenario.hmac": "HMAC-SHA256",
       "httpDraft.authScenario.rateLimited": "Rate limited (429)",
-      "photoStudio.imageTooLarge": "That photo is too large. Choose a smaller image or screenshot."
+      "photoStudio.imageTooLarge": "That photo is too large. Choose a smaller image or screenshot.",
+      "photoStudio.importIdle": "اختر صورة أو الصقها هنا",
+      "photoStudio.importLoading": "جارٍ تحميل الصورة…",
+      "photoStudio.importSuccess": "تم تحميل الصورة",
+      "photoStudio.importSuccessMeta": "{format} · {width} × {height}",
+      "photoStudio.importCancelled": "لا تغيير.",
+      "photoStudio.importSuperseded": "استبدال استيراد أحدث هذا التحميل.",
+      "photoStudio.clipboardUnavailable": "لم يسمح هذا المتصفح بالوصول إلى صور الحافظة. جرّب الاستيراد، أو الصق مجددًا بعد السماح.",
+      "photoStudio.importRetry": "إعادة المحاولة"
     },
     "zho": {
       "common.copy": "复制",
@@ -4373,7 +4421,15 @@
       "httpDraft.authScenario.digest": "Digest (challenge-response)",
       "httpDraft.authScenario.hmac": "HMAC-SHA256",
       "httpDraft.authScenario.rateLimited": "Rate limited (429)",
-      "photoStudio.imageTooLarge": "That photo is too large. Choose a smaller image or screenshot."
+      "photoStudio.imageTooLarge": "That photo is too large. Choose a smaller image or screenshot.",
+      "photoStudio.importIdle": "选择图片或粘贴到此处",
+      "photoStudio.importLoading": "正在加载图片…",
+      "photoStudio.importSuccess": "已加载图片",
+      "photoStudio.importSuccessMeta": "{format} · {width} × {height}",
+      "photoStudio.importCancelled": "无更改。",
+      "photoStudio.importSuperseded": "较新的导入已替换此次加载。",
+      "photoStudio.clipboardUnavailable": "浏览器未允许访问剪贴板图片。请使用导入，或在允许权限后再次粘贴。",
+      "photoStudio.importRetry": "重试"
     },
     "rus": {
       "common.copy": "Копировать",
@@ -4998,7 +5054,15 @@
       "httpDraft.authScenario.digest": "Digest (challenge-response)",
       "httpDraft.authScenario.hmac": "HMAC-SHA256",
       "httpDraft.authScenario.rateLimited": "Rate limited (429)",
-      "photoStudio.imageTooLarge": "That photo is too large. Choose a smaller image or screenshot."
+      "photoStudio.imageTooLarge": "That photo is too large. Choose a smaller image or screenshot.",
+      "photoStudio.importIdle": "Выберите изображение или вставьте сюда",
+      "photoStudio.importLoading": "Загрузка изображения…",
+      "photoStudio.importSuccess": "Изображение загружено",
+      "photoStudio.importSuccessMeta": "{format} · {width} × {height}",
+      "photoStudio.importCancelled": "Без изменений.",
+      "photoStudio.importSuperseded": "Более новый импорт заменил эту загрузку.",
+      "photoStudio.clipboardUnavailable": "Браузер не разрешил доступ к изображениям буфера. Используйте импорт или вставьте снова после разрешения.",
+      "photoStudio.importRetry": "Повторить"
     },
     "ind": {
       "common.copy": "Salin",
@@ -5623,7 +5687,15 @@
       "httpDraft.authScenario.digest": "Digest (challenge-response)",
       "httpDraft.authScenario.hmac": "HMAC-SHA256",
       "httpDraft.authScenario.rateLimited": "Rate limited (429)",
-      "photoStudio.imageTooLarge": "That photo is too large. Choose a smaller image or screenshot."
+      "photoStudio.imageTooLarge": "That photo is too large. Choose a smaller image or screenshot.",
+      "photoStudio.importIdle": "Pilih gambar atau tempel di sini",
+      "photoStudio.importLoading": "Memuat gambar…",
+      "photoStudio.importSuccess": "Gambar dimuat",
+      "photoStudio.importSuccessMeta": "{format} · {width} × {height}",
+      "photoStudio.importCancelled": "Tidak ada perubahan.",
+      "photoStudio.importSuperseded": "Impor yang lebih baru menggantikan muatan ini.",
+      "photoStudio.clipboardUnavailable": "Browser ini tidak mengizinkan akses gambar clipboard. Gunakan Impor, atau tempel lagi setelah mengizinkan.",
+      "photoStudio.importRetry": "Coba lagi"
     },
     "deu": {
       "common.copy": "Kopieren",
@@ -6248,7 +6320,15 @@
       "httpDraft.authScenario.digest": "Digest (challenge-response)",
       "httpDraft.authScenario.hmac": "HMAC-SHA256",
       "httpDraft.authScenario.rateLimited": "Rate limited (429)",
-      "photoStudio.imageTooLarge": "That photo is too large. Choose a smaller image or screenshot."
+      "photoStudio.imageTooLarge": "That photo is too large. Choose a smaller image or screenshot.",
+      "photoStudio.importIdle": "Bild auswählen oder hier einfügen",
+      "photoStudio.importLoading": "Bild wird geladen…",
+      "photoStudio.importSuccess": "Bild geladen",
+      "photoStudio.importSuccessMeta": "{format} · {width} × {height}",
+      "photoStudio.importCancelled": "Keine Änderung.",
+      "photoStudio.importSuperseded": "Ein neuerer Import hat diesen Ladevorgang ersetzt.",
+      "photoStudio.clipboardUnavailable": "Dieser Browser hat keinen Zugriff auf Zwischenablage-Bilder erlaubt. Nutzen Sie Import oder fügen Sie nach Erlaubnis erneut ein.",
+      "photoStudio.importRetry": "Erneut versuchen"
     },
     "swa": {
       "common.copy": "Nakili",
@@ -6873,7 +6953,15 @@
       "httpDraft.authScenario.digest": "Digest (challenge-response)",
       "httpDraft.authScenario.hmac": "HMAC-SHA256",
       "httpDraft.authScenario.rateLimited": "Rate limited (429)",
-      "photoStudio.imageTooLarge": "That photo is too large. Choose a smaller image or screenshot."
+      "photoStudio.imageTooLarge": "That photo is too large. Choose a smaller image or screenshot.",
+      "photoStudio.importIdle": "Chagua picha au bandika hapa",
+      "photoStudio.importLoading": "Inapakia picha…",
+      "photoStudio.importSuccess": "Picha imepakiwa",
+      "photoStudio.importSuccessMeta": "{format} · {width} × {height}",
+      "photoStudio.importCancelled": "Hakuna mabadiliko.",
+      "photoStudio.importSuperseded": "Uingizaji mpya zaidi umebadilisha upakiaji huu.",
+      "photoStudio.clipboardUnavailable": "Kivinjari hiki hakikuruhusu ufikiaji wa picha za ubao wa kunakili. Tumia Ingiza, au bandika tena baada ya ruhusa.",
+      "photoStudio.importRetry": "Jaribu tena"
     }
   }
 }

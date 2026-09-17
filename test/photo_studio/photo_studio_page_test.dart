@@ -258,7 +258,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.textContaining('Photo loaded'), findsOneWidget);
+    expect(find.textContaining('Image loaded'), findsOneWidget);
     expect(find.text('No frame selected.'), findsWidgets);
 
     await tester.ensureVisible(find.text('Clear photo'));
@@ -284,7 +284,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.textContaining('Photo loaded'), findsOneWidget);
+    expect(find.textContaining('Image loaded'), findsOneWidget);
   });
 
   testWidgets('custom stamp text can be armed and placed', (tester) async {
@@ -408,8 +408,11 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.textContaining('Photo loaded'), findsNothing);
-    expect(find.text('Clipboard has no photo to paste.'), findsOneWidget);
+    expect(find.textContaining('Image loaded'), findsNothing);
+    expect(
+      find.textContaining('too large'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('paste rejects oversized binary clipboard bytes', (tester) async {
@@ -429,7 +432,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.textContaining('Photo loaded'), findsNothing);
+    expect(find.textContaining('Image loaded'), findsNothing);
   });
 
   testWidgets('bounded undo restores draft tool then disables when empty',
@@ -1057,9 +1060,115 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.textContaining('Photo loaded'), findsOneWidget);
+    expect(find.textContaining('Image loaded'), findsOneWidget);
     expect(find.byType(PhotoRectCanvas), findsOneWidget);
     expect(find.byIcon(Icons.circle), findsOneWidget);
+  });
+
+
+  testWidgets('import status shows idle then success metadata', (tester) async {
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(imageBytesPicker: () async => _tinyPng),
+      surface: const Size(390, 2400),
+    );
+
+    expect(find.text('Select an image or paste here'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('Select an image')), findsWidgets);
+
+    await tester.runAsync(() async {
+      await tester.ensureVisible(find.text('Import image'));
+      await tester.tap(find.text('Import image'));
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Image loaded'), findsOneWidget);
+    expect(find.textContaining('PNG ·'), findsOneWidget);
+    expect(find.text('Retry'), findsNothing);
+  });
+
+  testWidgets('picker cancel is cancelled not failure', (tester) async {
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(imageBytesPicker: () async => null),
+      surface: const Size(390, 2400),
+    );
+
+    await tester.runAsync(() async {
+      await tester.ensureVisible(find.text('Import image'));
+      await tester.tap(find.text('Import image'));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('No change.'), findsOneWidget);
+    expect(find.text('Retry'), findsNothing);
+  });
+
+  testWidgets('paste empty clipboard shows failure and retry', (tester) async {
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(clipboardImageReader: () async => null),
+      surface: const Size(390, 2400),
+    );
+
+    await tester.runAsync(() async {
+      await tester.ensureVisible(find.text('Paste photo'));
+      await tester.tap(find.text('Paste photo'));
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Clipboard has no photo to paste.'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
+  });
+
+  testWidgets('clear during first load keeps superseded status and empty canvas',
+      (tester) async {
+    final adapterEntered = Completer<void>();
+    final adapterGate = Completer<Uint8List>();
+
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(
+        imageBytesPicker: () async =>
+            Uint8List.fromList(const [0x00, 0x01, 0x02, 0x03]),
+        imageDecodeAdapter: (bytes) async {
+          if (!adapterEntered.isCompleted) adapterEntered.complete();
+          return adapterGate.future;
+        },
+      ),
+    );
+
+    await tester.ensureVisible(find.text('Import image'));
+    await tester.tap(find.text('Import image'));
+    await tester.pump();
+    await tester.runAsync(
+      () => adapterEntered.future.timeout(const Duration(seconds: 5)),
+    );
+    await tester.pump();
+    expect(find.textContaining('Loading image'), findsWidgets);
+
+    await tester.ensureVisible(find.text('Clear photo'));
+    await tester.tap(find.text('Clear photo'));
+    await tester.pump();
+    expect(
+      find.textContaining('newer import'),
+      findsOneWidget,
+    );
+
+    adapterGate.complete(_tinyPng);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(
+      tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas)).imageBytes,
+      isNull,
+    );
+    expect(find.textContaining('Image loaded'), findsNothing);
   });
 
   test('composeStudioPng encodes PNG for a narrow logical size', () async {
