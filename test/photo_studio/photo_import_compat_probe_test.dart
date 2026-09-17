@@ -113,7 +113,9 @@ void main() {
           PhotoImportGate.rejectRawBytes(oversize),
           PhotoImportRejection.tooLargeBytes,
         );
-        expect(expected, 'rejected:tooLargeBytes');
+        // The 32 MiB policy belongs to PhotoImportGate before the loader.
+        // Do not claim this as a loader-direct codec result.
+        expect(expected, 'not_verified');
         continue;
       }
 
@@ -137,15 +139,18 @@ void main() {
     );
   });
 
-  test('native adapter null on synthetic HEIC matches evidence', () async {
+  test('null native-adapter stub is not recorded as device evidence', () async {
     final evidence = loadJson(evidenceFile);
-    final expected = (evidence['outcomes']
+    final recorded = (evidence['outcomes']
             as Map)['heic_synthetic_markers_64x32']['loader_native_normalize_adapter'];
+    // A null injected adapter is only a deterministic unit-test double. It is
+    // not an iOS ImageIO or Android decoder result.
+    expect(recorded, 'not_verified');
     final actual = await probeDirect(
       loadFixture('heic_synthetic_markers_64x32.heic'),
       adapter: (_) async => null,
     );
-    expect(actual, expected);
+    expect(actual, 'rejected:heicConversionFailed');
     expect(
       PhotoImportStatus.fromRejection(
         PhotoImportRejection.heicConversionFailed,
