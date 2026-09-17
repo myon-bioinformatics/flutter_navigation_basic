@@ -65,7 +65,8 @@ Strictly asserted by `photo_import_compat_probe_test.dart`.
 | AVIF ftyp-only | `rejected:undecodable` |
 | HEIC ftyp-only brands | `rejected:heicConversionFailed` (sniff-only cases) |
 | HEIC synthetic 64×32 (heif-enc) | `rejected:heicConversionFailed` on Flutter codec (no HEIF in this runtime) |
-| Truncated / empty / >40MP / >32MiB | typed rejects |
+| Truncated / empty / >40MP (loader direct) | typed rejects |
+| >32 MiB raw input (PhotoImportGate, before loader) | `rejected:tooLargeBytes` |
 
 ### EXIF visual (direct Flutter codec)
 
@@ -82,7 +83,7 @@ Asymmetric 64×32 markers (TL red, TR lime, BL blue, BR yellow). After decode:
 | 7 | 32×64 | yellow |
 | 8 | 32×64 | lime |
 
-Native-adapter bake path is separately stubbed on CI (`not_verified` for real ImageIO devices).
+Native normalization is **not verified** on real iOS ImageIO or Android decoder hosts. Null-adapter unit tests validate only error mapping and do not fill native compatibility cells.
 
 ## Not verified
 
