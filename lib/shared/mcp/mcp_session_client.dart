@@ -551,20 +551,15 @@ class FoundationHandlerTransport implements McpStreamableTransport {
 
     if (request.isNotification) {
       if (outcome.response.isError) {
-        final code = outcome.response.error!.code;
-        final status = switch (code) {
-          JsonRpcErrorCode.unauthorized => 401,
-          JsonRpcErrorCode.forbidden => 403,
-          JsonRpcErrorCode.sessionRequired => 400,
-          JsonRpcErrorCode.sessionInvalid => 404,
-          _ => 400,
-        };
+        // Match MockMcpRoutes: rejected notifications → HTTP 400 with a
+        // stable non-JSON-RPC body (not a per-code status matrix).
         return McpTransportResponse(
-          statusCode: status,
+          statusCode: 400,
           headers: outHeaders,
           body: {
-            'error': outcome.response.error!.message,
-            'code': code,
+            'error': 'notification_rejected',
+            'message': outcome.response.error!.message,
+            'code': outcome.response.error!.code,
           },
         );
       }

@@ -569,10 +569,13 @@ void main() {
       }),
     );
     expect(response.statusCode, 400);
-    expect((response.body as Map)['error'], 'session_required');
+    final body = response.body as Map;
+    expect(body['error'], 'session_required');
+    expect(body['message'], contains('Mcp-Session-Id'));
   });
 
-  test('FoundationHandlerTransport legacy unknown unknown session → 404',
+  test(
+      'FoundationHandlerTransport legacy unknown method, unknown session → 404',
       () async {
     final transport = FoundationHandlerTransport(McpFoundationHandler());
     final response = await transport.post(
@@ -584,7 +587,41 @@ void main() {
       }),
     );
     expect(response.statusCode, 404);
-    expect((response.body as Map)['error'], 'session_not_found');
+    final body = response.body as Map;
+    expect(body['error'], 'session_not_found');
+    expect(body['message'], contains('unknown'));
+  });
+
+  test('FoundationHandlerTransport rejected notification → 400', () async {
+    final transport = FoundationHandlerTransport(McpFoundationHandler());
+    // Modern initialized without session reaches handler sessionRequired,
+    // then maps to Mock-parity notification_rejected.
+    final response = await transport.post(
+      headers: mcpStreamableHeaders(
+        protocolVersion: McpProtocol.currentOfficialVersion,
+        method: 'notifications/initialized',
+      ),
+      body: jsonEncode({
+        'jsonrpc': '2.0',
+        'method': 'notifications/initialized',
+        'params': {
+          '_meta': {
+            'io.modelcontextprotocol/protocolVersion':
+                McpProtocol.currentOfficialVersion,
+            'io.modelcontextprotocol/clientInfo': {
+              'name': 't',
+              'version': '0',
+            },
+            'io.modelcontextprotocol/clientCapabilities': <String, Object?>{},
+          },
+        },
+      }),
+    );
+    expect(response.statusCode, 400);
+    final body = response.body as Map;
+    expect(body['error'], 'notification_rejected');
+    expect(body['message'], isNotNull);
+    expect(body['code'], JsonRpcErrorCode.sessionRequired);
   });
 
   test('FoundationHandlerTransport legacy unknown → HTTP 200', () async {
