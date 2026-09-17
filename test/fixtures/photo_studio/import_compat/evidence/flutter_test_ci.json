@@ -155,7 +155,7 @@
     "heic_ftyp_heic": {
       "loader_direct_flutter_codec": "rejected:heicConversionFailed",
       "loader_browser_canvas_adapter": "not_verified",
-      "loader_native_normalize_adapter": "rejected:heicConversionFailed",
+      "loader_native_normalize_adapter": "not_verified",
       "web_file_picker": "not_verified",
       "web_clipboard": "not_verified",
       "native_picker": "not_verified"
@@ -163,7 +163,7 @@
     "heic_ftyp_heif": {
       "loader_direct_flutter_codec": "rejected:heicConversionFailed",
       "loader_browser_canvas_adapter": "not_verified",
-      "loader_native_normalize_adapter": "rejected:heicConversionFailed",
+      "loader_native_normalize_adapter": "not_verified",
       "web_file_picker": "not_verified",
       "web_clipboard": "not_verified",
       "native_picker": "not_verified"
@@ -171,7 +171,7 @@
     "heic_ftyp_mif1": {
       "loader_direct_flutter_codec": "rejected:heicConversionFailed",
       "loader_browser_canvas_adapter": "not_verified",
-      "loader_native_normalize_adapter": "rejected:heicConversionFailed",
+      "loader_native_normalize_adapter": "not_verified",
       "web_file_picker": "not_verified",
       "web_clipboard": "not_verified",
       "native_picker": "not_verified"
@@ -179,7 +179,7 @@
     "heic_ftyp_msf1": {
       "loader_direct_flutter_codec": "rejected:heicConversionFailed",
       "loader_browser_canvas_adapter": "not_verified",
-      "loader_native_normalize_adapter": "rejected:heicConversionFailed",
+      "loader_native_normalize_adapter": "not_verified",
       "web_file_picker": "not_verified",
       "web_clipboard": "not_verified",
       "native_picker": "not_verified"
@@ -187,7 +187,7 @@
     "heic_ftyp_heix": {
       "loader_direct_flutter_codec": "rejected:heicConversionFailed",
       "loader_browser_canvas_adapter": "not_verified",
-      "loader_native_normalize_adapter": "rejected:heicConversionFailed",
+      "loader_native_normalize_adapter": "not_verified",
       "web_file_picker": "not_verified",
       "web_clipboard": "not_verified",
       "native_picker": "not_verified"
@@ -195,7 +195,7 @@
     "heic_synthetic_markers_64x32": {
       "loader_direct_flutter_codec": "rejected:heicConversionFailed",
       "loader_browser_canvas_adapter": "not_verified",
-      "loader_native_normalize_adapter": "rejected:heicConversionFailed",
+      "loader_native_normalize_adapter": "not_verified",
       "web_file_picker": "not_verified",
       "web_clipboard": "not_verified",
       "native_picker": "not_verified"
@@ -225,7 +225,7 @@
       "native_picker": "not_verified"
     },
     "oversize_bytes_runtime": {
-      "loader_direct_flutter_codec": "rejected:tooLargeBytes",
+      "loader_direct_flutter_codec": "not_verified",
       "loader_browser_canvas_adapter": "not_verified",
       "loader_native_normalize_adapter": "not_verified",
       "web_file_picker": "not_verified",
