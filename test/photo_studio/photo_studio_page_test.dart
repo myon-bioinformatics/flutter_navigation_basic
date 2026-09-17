@@ -10,6 +10,7 @@ import 'package:flutter_application_1/features/photo_studio/domain/studio_frame.
 import 'package:flutter_application_1/features/photo_studio/domain/studio_frame_style.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/compose_studio_image.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/photo_rect_canvas.dart';
+import 'package:flutter_application_1/features/photo_studio/data/clipboard_image_read.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/photo_studio_page.dart';
 import 'package:flutter_application_1/core/navigation/route_names.dart';
 import 'package:flutter_application_1/shared/display/display_scope.dart';
@@ -272,7 +273,7 @@ void main() {
     await _pumpPage(
       tester,
       page: PhotoStudioPage(
-        clipboardImageReader: () async => _tinyPng,
+        clipboardImageReader: () async => ClipboardImageRead.bytes(_tinyPng),
       ),
     );
 
@@ -396,7 +397,7 @@ void main() {
     await _pumpPage(
       tester,
       page: PhotoStudioPage(
-        clipboardImageReader: () async => null,
+        clipboardImageReader: () async => const ClipboardImageRead.empty(),
       ),
     );
 
@@ -416,11 +417,10 @@ void main() {
   });
 
   testWidgets('paste rejects oversized binary clipboard bytes', (tester) async {
-    final oversized = Uint8List(32 * 1024 * 1024 + 1);
     await _pumpPage(
       tester,
       page: PhotoStudioPage(
-        clipboardImageReader: () async => oversized,
+        clipboardImageReader: () async => const ClipboardImageRead.tooLarge(),
       ),
     );
 
@@ -433,6 +433,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.textContaining('Image loaded'), findsNothing);
+    expect(find.textContaining('too large'), findsOneWidget);
   });
 
   testWidgets('bounded undo restores draft tool then disables when empty',
@@ -1111,7 +1112,7 @@ void main() {
   testWidgets('paste empty clipboard shows failure and retry', (tester) async {
     await _pumpPage(
       tester,
-      page: PhotoStudioPage(clipboardImageReader: () async => null),
+      page: PhotoStudioPage(clipboardImageReader: () async => const ClipboardImageRead.empty()),
       surface: const Size(390, 2400),
     );
 
@@ -1125,6 +1126,131 @@ void main() {
 
     expect(find.text('Clipboard has no photo to paste.'), findsOneWidget);
     expect(find.text('Retry'), findsOneWidget);
+  });
+
+
+  testWidgets('paste clipboard throw leaves failure not loading', (tester) async {
+    final messenger = tester.binding.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.getData') {
+        throw PlatformException(code: 'denied');
+      }
+      return null;
+    });
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+    );
+
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(
+        clipboardImageReader: () async => const ClipboardImageRead.denied(),
+      ),
+      surface: const Size(390, 2400),
+    );
+
+    await tester.runAsync(() async {
+      await tester.ensureVisible(find.text('Paste photo'));
+      await tester.tap(find.text('Paste photo'));
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.textContaining('Loading image'), findsNothing);
+    expect(find.textContaining('clipboard'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
+  });
+
+  testWidgets('picker throw leaves failure not loading', (tester) async {
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(
+        imageBytesPicker: () async => throw StateError('picker boom'),
+      ),
+      surface: const Size(390, 2400),
+    );
+
+    await tester.runAsync(() async {
+      await tester.ensureVisible(find.text('Import image'));
+      await tester.tap(find.text('Import image'));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.textContaining('Loading image'), findsNothing);
+    expect(find.text('Could not load photo.'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
+  });
+
+  testWidgets('slow import A cannot overwrite fast import B', (tester) async {
+    final slow = Completer<Uint8List?>();
+    var picks = 0;
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(
+        imageBytesPicker: () async {
+          picks += 1;
+          if (picks == 1) return slow.future;
+          return _tinyPng;
+        },
+      ),
+      surface: const Size(390, 2400),
+    );
+
+    await tester.tap(find.text('Import image'));
+    await tester.pump();
+    // Second import while first acquisition still pending.
+    await tester.tap(find.text('Import image'));
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Image loaded'), findsOneWidget);
+    final bytesAfterB =
+        tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas)).imageBytes;
+    expect(bytesAfterB, isNotNull);
+
+    slow.complete(Uint8List.fromList(const [0x00, 0x01, 0x02, 0x03]));
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Image loaded'), findsOneWidget);
+    expect(
+      tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas)).imageBytes,
+      bytesAfterB,
+    );
+  });
+
+  testWidgets('web clipboard kinds map to distinct failure copy', (tester) async {
+    Future<void> expectKind(ClipboardImageRead read, String needle) async {
+      await _pumpPage(
+        tester,
+        page: PhotoStudioPage(clipboardImageReader: () async => read),
+        surface: const Size(390, 2400),
+      );
+      await tester.runAsync(() async {
+        await tester.ensureVisible(find.text('Paste photo'));
+        await tester.tap(find.text('Paste photo'));
+        await Future<void>.delayed(const Duration(milliseconds: 150));
+      });
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.textContaining(needle), findsOneWidget);
+    }
+
+    await expectKind(const ClipboardImageRead.empty(), 'Clipboard has no photo');
+    await expectKind(const ClipboardImageRead.denied(), 'clipboard');
+    await expectKind(const ClipboardImageRead.unavailable(), 'clipboard');
+    await expectKind(const ClipboardImageRead.tooLarge(), 'too large');
+    await expectKind(const ClipboardImageRead.readFailed(), 'Could not load');
   });
 
   testWidgets('clear during first load keeps superseded status and empty canvas',

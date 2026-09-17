@@ -1,3 +1,4 @@
+import 'package:flutter_application_1/features/photo_studio/data/clipboard_image_read.dart';
 import 'package:flutter_application_1/features/photo_studio/data/photo_media_ports.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/photo_import_status.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -95,6 +96,29 @@ void main() {
         isFalse,
       );
       expect(const PhotoImportStatus.success(width: 1, height: 1).canRetry, isFalse);
+    });
+
+    test('fromClipboardRead maps web kinds', () {
+      expect(
+        PhotoImportStatus.fromClipboardRead(ClipboardImageReadKind.empty),
+        PhotoImportFailureReason.noClipboardImage,
+      );
+      expect(
+        PhotoImportStatus.fromClipboardRead(ClipboardImageReadKind.denied),
+        PhotoImportFailureReason.clipboardUnavailable,
+      );
+      expect(
+        PhotoImportStatus.fromClipboardRead(ClipboardImageReadKind.unavailable),
+        PhotoImportFailureReason.clipboardUnavailable,
+      );
+      expect(
+        PhotoImportStatus.fromClipboardRead(ClipboardImageReadKind.tooLarge),
+        PhotoImportFailureReason.tooLarge,
+      );
+      expect(
+        PhotoImportStatus.fromClipboardRead(ClipboardImageReadKind.readFailed),
+        PhotoImportFailureReason.decodeFailed,
+      );
     });
   });
 }

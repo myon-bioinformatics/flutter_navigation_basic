@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../data/clipboard_image_read.dart';
 import '../data/photo_media_ports.dart';
 
 /// Lifecycle of the latest Import / Paste / insert attempt.
@@ -129,6 +130,21 @@ class PhotoImportStatus {
         'height': height ?? 0,
         if (fileName != null && fileName!.isNotEmpty) 'fileName': fileName,
       };
+
+  static PhotoImportFailureReason fromClipboardRead(
+    ClipboardImageReadKind kind,
+  ) {
+    return switch (kind) {
+      ClipboardImageReadKind.empty => PhotoImportFailureReason.noClipboardImage,
+      ClipboardImageReadKind.denied ||
+      ClipboardImageReadKind.unavailable =>
+        PhotoImportFailureReason.clipboardUnavailable,
+      ClipboardImageReadKind.tooLarge => PhotoImportFailureReason.tooLarge,
+      ClipboardImageReadKind.readFailed ||
+      ClipboardImageReadKind.bytes =>
+        PhotoImportFailureReason.decodeFailed,
+    };
+  }
 
   static PhotoImportFailureReason fromRejection(PhotoImportRejection rejection) {
     return switch (rejection) {
