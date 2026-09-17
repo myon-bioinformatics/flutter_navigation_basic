@@ -90,6 +90,11 @@ abstract final class PhotoImportGate {
     return null;
   }
 
+  /// Known iPhone-relevant HEIC/HEIF major brands in the ISOBMFF `ftyp` box.
+  static const heicBrands = <String>{'heic', 'heif', 'mif1', 'msf1', 'heix'};
+
+  static bool isHeicBrand(String brand) => heicBrands.contains(brand);
+
   /// HEIC/HEIF brand in the ISOBMFF `ftyp` box (bytes 4..8 == 'ftyp').
   static bool looksLikeHeic(Uint8List bytes) {
     if (bytes.lengthInBytes < 12) return false;
@@ -99,12 +104,7 @@ abstract final class PhotoImportGate {
         bytes[7] != 0x70) {
       return false;
     }
-    // Brands: heic / heif / mif1 / msf1 are common.
     final brand = String.fromCharCodes(bytes.sublist(8, 12));
-    return brand == 'heic' ||
-        brand == 'heif' ||
-        brand == 'mif1' ||
-        brand == 'msf1' ||
-        brand == 'heix';
+    return isHeicBrand(brand);
   }
 }

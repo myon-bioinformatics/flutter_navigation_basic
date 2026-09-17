@@ -1,0 +1,1237 @@
+{
+  "schemaVersion": 1,
+  "generator": "tool/python/generate_photo_import_fixtures.py",
+  "limits": {
+    "maxInputBytes": 33554432,
+    "maxPixels": 40000000,
+    "maxDocumentLongEdge": 4096
+  },
+  "outcomeVocabulary": [
+    "supported",
+    "rejected:empty",
+    "rejected:tooLargeBytes",
+    "rejected:tooManyPixels",
+    "rejected:heicConversionFailed",
+    "rejected:undecodable",
+    "unsupported_by_runtime",
+    "not_verified"
+  ],
+  "environments": [
+    {
+      "id": "flutter_test_ci",
+      "runtime": "flutter_test",
+      "os": "ci_linux_or_runner",
+      "browser": null,
+      "notes": "Filled by local flutter_test probe on Linux CI-like host; see photo_import_compat_probe_test.dart",
+      "commit": "pending_pr_head",
+      "verifiedAt": "2026-09-17"
+    },
+    {
+      "id": "web_chrome_ci",
+      "runtime": "chrome",
+      "os": "ci_linux_or_runner",
+      "browser": "Chrome",
+      "notes": "Optional Flutter Web; do not claim iOS Safari parity",
+      "commit": null,
+      "verifiedAt": null
+    },
+    {
+      "id": "ios_safari_iphone",
+      "runtime": "safari",
+      "os": "ios",
+      "browser": "Safari",
+      "notes": "Manual device QA only; leave not_verified without a device",
+      "commit": null,
+      "verifiedAt": null
+    },
+    {
+      "id": "android_jvm_unit",
+      "runtime": "android_jvm",
+      "os": "android_emulator_or_jvm",
+      "browser": null,
+      "notes": "Native normalize MethodChannel paths; JVM unit may stub",
+      "commit": null,
+      "verifiedAt": null
+    }
+  ],
+  "entryPoints": [
+    "loader_direct_flutter_codec",
+    "loader_browser_canvas_adapter",
+    "loader_native_normalize_adapter",
+    "web_file_picker",
+    "web_clipboard",
+    "native_picker"
+  ],
+  "cases": [
+    {
+      "id": "png_opaque_2x2",
+      "format": "png",
+      "variant": "opaque",
+      "fixture": "png_opaque_2x2.png",
+      "notes": null,
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "supported",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "png_alpha_2x2",
+      "format": "png",
+      "variant": "alpha",
+      "fixture": "png_alpha_2x2.png",
+      "notes": null,
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "supported",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "jpeg_baseline_1x1",
+      "format": "jpeg",
+      "variant": "baseline",
+      "fixture": "jpeg_baseline_1x1.jpg",
+      "notes": null,
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "supported",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "jpeg_progressive_1x1",
+      "format": "jpeg",
+      "variant": "progressive",
+      "fixture": "jpeg_progressive_1x1.jpg",
+      "notes": null,
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "supported",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "jpeg_exif_orientation_1",
+      "format": "jpeg",
+      "variant": "exif_orientation_1",
+      "fixture": "jpeg_exif_orientation_1.jpg",
+      "notes": "EXIF Orientation=1; no GPS",
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "supported",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "jpeg_exif_orientation_2",
+      "format": "jpeg",
+      "variant": "exif_orientation_2",
+      "fixture": "jpeg_exif_orientation_2.jpg",
+      "notes": "EXIF Orientation=2; no GPS",
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "supported",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "jpeg_exif_orientation_3",
+      "format": "jpeg",
+      "variant": "exif_orientation_3",
+      "fixture": "jpeg_exif_orientation_3.jpg",
+      "notes": "EXIF Orientation=3; no GPS",
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "supported",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "jpeg_exif_orientation_4",
+      "format": "jpeg",
+      "variant": "exif_orientation_4",
+      "fixture": "jpeg_exif_orientation_4.jpg",
+      "notes": "EXIF Orientation=4; no GPS",
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "supported",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "jpeg_exif_orientation_5",
+      "format": "jpeg",
+      "variant": "exif_orientation_5",
+      "fixture": "jpeg_exif_orientation_5.jpg",
+      "notes": "EXIF Orientation=5; no GPS",
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "supported",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "jpeg_exif_orientation_6",
+      "format": "jpeg",
+      "variant": "exif_orientation_6",
+      "fixture": "jpeg_exif_orientation_6.jpg",
+      "notes": "EXIF Orientation=6; no GPS",
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "supported",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "jpeg_exif_orientation_7",
+      "format": "jpeg",
+      "variant": "exif_orientation_7",
+      "fixture": "jpeg_exif_orientation_7.jpg",
+      "notes": "EXIF Orientation=7; no GPS",
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "supported",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "jpeg_exif_orientation_8",
+      "format": "jpeg",
+      "variant": "exif_orientation_8",
+      "fixture": "jpeg_exif_orientation_8.jpg",
+      "notes": "EXIF Orientation=8; no GPS",
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "supported",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "webp_lossy_2x2",
+      "format": "webp",
+      "variant": "lossy",
+      "fixture": "webp_lossy_2x2.webp",
+      "notes": null,
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "supported",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "webp_lossless_1x1",
+      "format": "webp",
+      "variant": "lossless",
+      "fixture": "webp_lossless_1x1.webp",
+      "notes": null,
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "supported",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "webp_alpha_1x1",
+      "format": "webp",
+      "variant": "alpha",
+      "fixture": "webp_alpha_1x1.webp",
+      "notes": null,
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "supported",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "gif_still_1x1",
+      "format": "gif",
+      "variant": "still",
+      "fixture": "gif_still_1x1.gif",
+      "notes": null,
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "supported",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "avif_ftyp_only",
+      "format": "avif",
+      "variant": "ftyp_probe",
+      "fixture": "avif_ftyp_only.avif",
+      "notes": "ftyp-only probe; not a full AVIF bitstream",
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "rejected:undecodable",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "heic_ftyp_heic",
+      "format": "heic",
+      "variant": "brand_heic",
+      "fixture": "heic_ftyp_heic.heic",
+      "notes": "ftyp-only HEIC/HEIF brand probe; not a full bitstream",
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "rejected:heicConversionFailed",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "rejected:heicConversionFailed",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "heic_ftyp_heif",
+      "format": "heic",
+      "variant": "brand_heif",
+      "fixture": "heic_ftyp_heif.heic",
+      "notes": "ftyp-only HEIC/HEIF brand probe; not a full bitstream",
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "rejected:heicConversionFailed",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "rejected:heicConversionFailed",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "heic_ftyp_mif1",
+      "format": "heic",
+      "variant": "brand_mif1",
+      "fixture": "heic_ftyp_mif1.heic",
+      "notes": "ftyp-only HEIC/HEIF brand probe; not a full bitstream",
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "rejected:heicConversionFailed",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "rejected:heicConversionFailed",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "heic_ftyp_msf1",
+      "format": "heic",
+      "variant": "brand_msf1",
+      "fixture": "heic_ftyp_msf1.heic",
+      "notes": "ftyp-only HEIC/HEIF brand probe; not a full bitstream",
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "rejected:heicConversionFailed",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "rejected:heicConversionFailed",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "heic_ftyp_heix",
+      "format": "heic",
+      "variant": "brand_heix",
+      "fixture": "heic_ftyp_heix.heic",
+      "notes": "ftyp-only HEIC/HEIF brand probe; not a full bitstream",
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "rejected:heicConversionFailed",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "rejected:heicConversionFailed",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "png_truncated",
+      "format": "png",
+      "variant": "truncated",
+      "fixture": "png_truncated.png",
+      "notes": null,
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "rejected:undecodable",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "empty",
+      "format": "empty",
+      "variant": "empty",
+      "fixture": "empty.bin",
+      "notes": null,
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "rejected:empty",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "png_claim_10000x10000",
+      "format": "png",
+      "variant": "oversize_pixels_claim",
+      "fixture": "png_claim_10000x10000.png",
+      "notes": "IHDR claims 10000\u00d710000 (>40MP)",
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "rejected:tooManyPixels",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    },
+    {
+      "id": "oversize_bytes_runtime",
+      "format": "unknown",
+      "variant": "oversize_bytes",
+      "fixture": null,
+      "notes": "Allocated at test runtime: maxInputBytes+1",
+      "entryPoints": {
+        "loader_direct_flutter_codec": {
+          "flutter_test_ci": "rejected:tooLargeBytes",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_browser_canvas_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "loader_native_normalize_adapter": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_file_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "web_clipboard": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        },
+        "native_picker": {
+          "flutter_test_ci": "not_verified",
+          "web_chrome_ci": "not_verified",
+          "ios_safari_iphone": "not_verified",
+          "android_jvm_unit": "not_verified"
+        }
+      }
+    }
+  ]
+}

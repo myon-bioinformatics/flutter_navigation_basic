@@ -17,6 +17,17 @@ a compile step. Avoid new environment dependencies unless allowlisted.
 
 Root-level / app-tree `requirements.txt` remains prohibited.
 
+## Photo Studio import-compat fixtures
+
+Synthetic (no personal photos / GPS) fixtures for format probing:
+
+```bash
+python3 tool/python/generate_photo_import_fixtures.py
+```
+
+Writes `test/fixtures/photo_studio/import_compat/` + `manifest.json`.
+Human matrix: `docs/photo-import-compatibility.md`. Stdlib only.
+
 ## Setup (only needed for pytest oracles)
 
 ```bash

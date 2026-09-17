@@ -61,7 +61,17 @@ void main() {
     test('fromRejection covers gate outcomes', () {
       expect(
         PhotoImportStatus.fromRejection(PhotoImportRejection.tooLargeBytes),
-        PhotoImportFailureReason.tooLarge,
+        PhotoImportFailureReason.tooLargeBytes,
+      );
+      expect(
+        PhotoImportStatus.fromRejection(PhotoImportRejection.tooManyPixels),
+        PhotoImportFailureReason.tooManyPixels,
+      );
+      expect(
+        PhotoImportStatus.fromRejection(
+          PhotoImportRejection.heicConversionFailed,
+        ),
+        PhotoImportFailureReason.heicUnsupported,
       );
       expect(
         PhotoImportStatus.fromRejection(PhotoImportRejection.undecodable),

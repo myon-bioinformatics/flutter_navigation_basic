@@ -35,7 +35,30 @@ void main() {
 
     test('rejects corrupt bytes without adapter', () async {
       final junk = Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7]);
-      expect(await loadStudioImageBytes(junk), isNull);
+      PhotoImportRejection? rejection;
+      expect(
+        await loadStudioImageBytes(junk, onRejected: (r) => rejection = r),
+        isNull,
+      );
+      expect(rejection, PhotoImportRejection.undecodable);
+    });
+
+    test('HEIC ftyp without adapter reports heicConversionFailed', () async {
+      final heic = Uint8List.fromList([
+        0x00, 0x00, 0x00, 0x18, // size
+        0x66, 0x74, 0x79, 0x70, // ftyp
+        0x68, 0x65, 0x69, 0x63, // heic
+        0x00, 0x00, 0x00, 0x00,
+        0x68, 0x65, 0x69, 0x63,
+        0x6D, 0x69, 0x66, 0x31,
+      ]);
+      PhotoImportRejection? rejection;
+      expect(
+        await loadStudioImageBytes(heic, onRejected: (r) => rejection = r),
+        isNull,
+      );
+      expect(rejection, PhotoImportRejection.heicConversionFailed);
+      expect(PhotoImportGate.looksLikeHeic(heic), isTrue);
     });
 
     test('uses native adapter then validates PNG output', () async {
