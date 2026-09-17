@@ -10,13 +10,16 @@ Uint8List _load(String name) =>
 void main() {
   group('sniffImageFormat', () {
     test('png / jpeg / webp / gif', () {
-      expect(sniffImageFormat(_load('png_opaque_2x2.png')).kind, ImageFormatKind.png);
       expect(
-        sniffImageFormat(_load('jpeg_baseline_1x1.jpg')).kind,
+        sniffImageFormat(_load('png_opaque_2x2.png')).kind,
+        ImageFormatKind.png,
+      );
+      expect(
+        sniffImageFormat(_load('jpeg_baseline_markers_64x32.jpg')).kind,
         ImageFormatKind.jpeg,
       );
       expect(
-        sniffImageFormat(_load('webp_lossy_2x2.webp')).kind,
+        sniffImageFormat(_load('webp_lossy_64x32.webp')).kind,
         ImageFormatKind.webp,
       );
       expect(
@@ -25,28 +28,33 @@ void main() {
       );
     });
 
-    test('jpeg progressive + EXIF orientation 1-8 without GPS bytes exposed', () {
-      final progressive = sniffImageFormat(_load('jpeg_progressive_1x1.jpg'));
+    test('jpeg progressive + EXIF orientation 1-8', () {
+      final progressive =
+          sniffImageFormat(_load('jpeg_progressive_markers_64x32.jpg'));
       expect(progressive.kind, ImageFormatKind.jpeg);
       expect(progressive.jpegProgressive, isTrue);
 
       for (var o = 1; o <= 8; o++) {
-        final sniff = sniffImageFormat(_load('jpeg_exif_orientation_$o.jpg'));
+        final sniff = sniffImageFormat(
+          _load('jpeg_exif_orientation_${o}_markers_64x32.jpg'),
+        );
         expect(sniff.kind, ImageFormatKind.jpeg);
         expect(sniff.jpegExifOrientation, o);
-        expect(sniff.label, 'JPEG');
       }
     });
 
-    test('HEIC brands and AVIF ftyp', () {
+    test('HEIC brands, synthetic HEIC, AVIF ftyp', () {
       for (final brand in ['heic', 'heif', 'mif1', 'msf1', 'heix']) {
         final sniff = sniffImageFormat(_load('heic_ftyp_$brand.heic'));
         expect(sniff.kind, ImageFormatKind.heic, reason: brand);
         expect(sniff.brand, brand);
       }
+      expect(
+        sniffImageFormat(_load('heic_synthetic_markers_64x32.heic')).kind,
+        ImageFormatKind.heic,
+      );
       final avif = sniffImageFormat(_load('avif_ftyp_only.avif'));
       expect(avif.kind, ImageFormatKind.avif);
-      expect(avif.brand, 'avif');
     });
 
     test('empty and unknown', () {

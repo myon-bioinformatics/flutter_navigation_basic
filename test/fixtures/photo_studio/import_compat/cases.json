@@ -1,0 +1,275 @@
+{
+  "schemaVersion": 2,
+  "generator": "tool/python/generate_photo_import_fixtures.py",
+  "limits": {
+    "maxInputBytes": 33554432,
+    "maxPixels": 40000000,
+    "maxDocumentLongEdge": 4096
+  },
+  "outcomeVocabulary": [
+    "supported",
+    "rejected:empty",
+    "rejected:tooLargeBytes",
+    "rejected:tooManyPixels",
+    "rejected:heicConversionFailed",
+    "rejected:undecodable",
+    "unsupported_by_runtime",
+    "not_verified"
+  ],
+  "entryPoints": [
+    "loader_direct_flutter_codec",
+    "loader_browser_canvas_adapter",
+    "loader_native_normalize_adapter",
+    "web_file_picker",
+    "web_clipboard",
+    "native_picker"
+  ],
+  "environments": [
+    {
+      "id": "flutter_test_ci",
+      "runtime": "flutter_test",
+      "notes": "Outcomes in evidence/flutter_test_ci.json"
+    },
+    {
+      "id": "web_chrome_ci",
+      "runtime": "chrome",
+      "notes": "not claimed without Web run"
+    },
+    {
+      "id": "ios_safari_iphone",
+      "runtime": "safari",
+      "notes": "Manual device QA only"
+    },
+    {
+      "id": "android_jvm_unit",
+      "runtime": "android_jvm",
+      "notes": "Channel stubs / JVM"
+    }
+  ],
+  "cases": [
+    {
+      "id": "png_opaque_2x2",
+      "format": "png",
+      "variant": "opaque",
+      "fixture": "png_opaque_2x2.png",
+      "kind": "raster",
+      "notes": null
+    },
+    {
+      "id": "png_alpha_2x2",
+      "format": "png",
+      "variant": "alpha",
+      "fixture": "png_alpha_2x2.png",
+      "kind": "raster",
+      "notes": null
+    },
+    {
+      "id": "png_markers_64x32",
+      "format": "png",
+      "variant": "markers",
+      "fixture": "png_markers_64x32.png",
+      "kind": "raster",
+      "notes": null
+    },
+    {
+      "id": "jpeg_baseline_markers_64x32",
+      "format": "jpeg",
+      "variant": "baseline_markers",
+      "fixture": "jpeg_baseline_markers_64x32.jpg",
+      "kind": "raster",
+      "notes": null
+    },
+    {
+      "id": "jpeg_progressive_markers_64x32",
+      "format": "jpeg",
+      "variant": "progressive_markers",
+      "fixture": "jpeg_progressive_markers_64x32.jpg",
+      "kind": "raster",
+      "notes": null
+    },
+    {
+      "id": "jpeg_exif_orientation_1_markers_64x32",
+      "format": "jpeg",
+      "variant": "exif_orientation_1",
+      "fixture": "jpeg_exif_orientation_1_markers_64x32.jpg",
+      "kind": "raster",
+      "notes": "EXIF Orientation=1; asymmetric markers; no GPS"
+    },
+    {
+      "id": "jpeg_exif_orientation_2_markers_64x32",
+      "format": "jpeg",
+      "variant": "exif_orientation_2",
+      "fixture": "jpeg_exif_orientation_2_markers_64x32.jpg",
+      "kind": "raster",
+      "notes": "EXIF Orientation=2; asymmetric markers; no GPS"
+    },
+    {
+      "id": "jpeg_exif_orientation_3_markers_64x32",
+      "format": "jpeg",
+      "variant": "exif_orientation_3",
+      "fixture": "jpeg_exif_orientation_3_markers_64x32.jpg",
+      "kind": "raster",
+      "notes": "EXIF Orientation=3; asymmetric markers; no GPS"
+    },
+    {
+      "id": "jpeg_exif_orientation_4_markers_64x32",
+      "format": "jpeg",
+      "variant": "exif_orientation_4",
+      "fixture": "jpeg_exif_orientation_4_markers_64x32.jpg",
+      "kind": "raster",
+      "notes": "EXIF Orientation=4; asymmetric markers; no GPS"
+    },
+    {
+      "id": "jpeg_exif_orientation_5_markers_64x32",
+      "format": "jpeg",
+      "variant": "exif_orientation_5",
+      "fixture": "jpeg_exif_orientation_5_markers_64x32.jpg",
+      "kind": "raster",
+      "notes": "EXIF Orientation=5; asymmetric markers; no GPS"
+    },
+    {
+      "id": "jpeg_exif_orientation_6_markers_64x32",
+      "format": "jpeg",
+      "variant": "exif_orientation_6",
+      "fixture": "jpeg_exif_orientation_6_markers_64x32.jpg",
+      "kind": "raster",
+      "notes": "EXIF Orientation=6; asymmetric markers; no GPS"
+    },
+    {
+      "id": "jpeg_exif_orientation_7_markers_64x32",
+      "format": "jpeg",
+      "variant": "exif_orientation_7",
+      "fixture": "jpeg_exif_orientation_7_markers_64x32.jpg",
+      "kind": "raster",
+      "notes": "EXIF Orientation=7; asymmetric markers; no GPS"
+    },
+    {
+      "id": "jpeg_exif_orientation_8_markers_64x32",
+      "format": "jpeg",
+      "variant": "exif_orientation_8",
+      "fixture": "jpeg_exif_orientation_8_markers_64x32.jpg",
+      "kind": "raster",
+      "notes": "EXIF Orientation=8; asymmetric markers; no GPS"
+    },
+    {
+      "id": "webp_lossy_64x32",
+      "format": "webp",
+      "variant": "lossy",
+      "fixture": "webp_lossy_64x32.webp",
+      "kind": "raster",
+      "notes": null
+    },
+    {
+      "id": "webp_lossless_64x32",
+      "format": "webp",
+      "variant": "lossless",
+      "fixture": "webp_lossless_64x32.webp",
+      "kind": "raster",
+      "notes": null
+    },
+    {
+      "id": "webp_alpha_8x4",
+      "format": "webp",
+      "variant": "alpha",
+      "fixture": "webp_alpha_8x4.webp",
+      "kind": "raster",
+      "notes": "Left half alpha\u2248128; right opaque"
+    },
+    {
+      "id": "gif_still_1x1",
+      "format": "gif",
+      "variant": "still",
+      "fixture": "gif_still_1x1.gif",
+      "kind": "raster",
+      "notes": null
+    },
+    {
+      "id": "avif_ftyp_only",
+      "format": "avif",
+      "variant": "ftyp_probe",
+      "fixture": "avif_ftyp_only.avif",
+      "kind": "container_sniff",
+      "notes": "Intentionally invalid bitstream; sniff-only"
+    },
+    {
+      "id": "heic_ftyp_heic",
+      "format": "heic",
+      "variant": "brand_heic_ftyp_only",
+      "fixture": "heic_ftyp_heic.heic",
+      "kind": "container_sniff",
+      "notes": "Intentionally invalid; brand sniff only"
+    },
+    {
+      "id": "heic_ftyp_heif",
+      "format": "heic",
+      "variant": "brand_heif_ftyp_only",
+      "fixture": "heic_ftyp_heif.heic",
+      "kind": "container_sniff",
+      "notes": "Intentionally invalid; brand sniff only"
+    },
+    {
+      "id": "heic_ftyp_mif1",
+      "format": "heic",
+      "variant": "brand_mif1_ftyp_only",
+      "fixture": "heic_ftyp_mif1.heic",
+      "kind": "container_sniff",
+      "notes": "Intentionally invalid; brand sniff only"
+    },
+    {
+      "id": "heic_ftyp_msf1",
+      "format": "heic",
+      "variant": "brand_msf1_ftyp_only",
+      "fixture": "heic_ftyp_msf1.heic",
+      "kind": "container_sniff",
+      "notes": "Intentionally invalid; brand sniff only"
+    },
+    {
+      "id": "heic_ftyp_heix",
+      "format": "heic",
+      "variant": "brand_heix_ftyp_only",
+      "fixture": "heic_ftyp_heix.heic",
+      "kind": "container_sniff",
+      "notes": "Intentionally invalid; brand sniff only"
+    },
+    {
+      "id": "heic_synthetic_markers_64x32",
+      "format": "heic",
+      "variant": "synthetic_hevc_still",
+      "fixture": "heic_synthetic_markers_64x32.heic",
+      "kind": "raster",
+      "notes": "Synthetic HEIC via heif-enc/x265; no personal data"
+    },
+    {
+      "id": "png_truncated",
+      "format": "png",
+      "variant": "truncated",
+      "fixture": "png_truncated.png",
+      "kind": "intentionally_invalid",
+      "notes": null
+    },
+    {
+      "id": "empty",
+      "format": "empty",
+      "variant": "empty",
+      "fixture": "empty.bin",
+      "kind": "intentionally_invalid",
+      "notes": null
+    },
+    {
+      "id": "png_claim_10000x10000",
+      "format": "png",
+      "variant": "oversize_pixels_claim",
+      "fixture": "png_claim_10000x10000.png",
+      "kind": "intentionally_invalid",
+      "notes": null
+    },
+    {
+      "id": "oversize_bytes_runtime",
+      "format": "unknown",
+      "variant": "oversize_bytes",
+      "fixture": null,
+      "kind": "intentionally_invalid",
+      "notes": "Allocated at test runtime: maxInputBytes+1"
+    }
+  ]
+}

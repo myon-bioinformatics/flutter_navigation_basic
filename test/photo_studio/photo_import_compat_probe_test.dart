@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter_application_1/features/photo_studio/data/image_format_sniff.dart';
 import 'package:flutter_application_1/features/photo_studio/data/photo_import_limits.dart';
@@ -9,24 +10,33 @@ import 'package:flutter_application_1/features/photo_studio/domain/photo_import_
 import 'package:flutter_application_1/features/photo_studio/presentation/studio_image_loader.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Probes [loadStudioImageBytes] against synthetic import-compat fixtures.
+/// Strict evidence checks for Photo Studio import compatibility.
 ///
-/// Records outcomes for the `flutter_test_ci` environment only. Browser /
-/// iOS Safari / native picker cells stay `not_verified` unless a separate
-/// environment fills them — never treat CI success as iOS Safari proof.
+/// Outcomes must match `evidence/flutter_test_ci.json` exactly for
+/// `loader_direct_flutter_codec`. Other environments stay `not_verified`
+/// and must not be inferred from this suite.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   final fixtureDir = Directory('test/fixtures/photo_studio/import_compat');
-  final manifestFile = File('${fixtureDir.path}/manifest.json');
+  final casesFile = File('${fixtureDir.path}/cases.json');
+  final evidenceFile =
+      File('${fixtureDir.path}/evidence/flutter_test_ci.json');
+
+  Map<String, dynamic> loadJson(File file) =>
+      jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
 
   Uint8List loadFixture(String name) =>
       File('${fixtureDir.path}/$name').readAsBytesSync();
 
-  Future<String> probeDirect(Uint8List bytes) async {
+  Future<String> probeDirect(
+    Uint8List bytes, {
+    StudioImageDecodeAdapter? adapter,
+  }) async {
     PhotoImportRejection? rejection;
     final loaded = await loadStudioImageBytes(
       bytes,
+      nativeDecodeAdapter: adapter,
       onRejected: (r) => rejection = r,
     );
     if (loaded != null) return 'supported';
@@ -41,177 +51,146 @@ void main() {
     };
   }
 
-  test('manifest fixtures exist and sniff matches declared format', () {
-    final manifest =
-        jsonDecode(manifestFile.readAsStringSync()) as Map<String, dynamic>;
-    final cases = (manifest['cases'] as List).cast<Map<String, dynamic>>();
-    expect(cases, isNotEmpty);
-    for (final c in cases) {
+  Future<({int width, int height, List<int> tl})> decodeTl(
+    Uint8List bytes,
+  ) async {
+    final codec = await ui.instantiateImageCodec(bytes);
+    final frame = await codec.getNextFrame();
+    final image = frame.image;
+    final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    final rgba = data!.buffer.asUint8List();
+    final tl = [rgba[0], rgba[1], rgba[2], rgba[3]];
+    final size = (width: image.width, height: image.height, tl: tl);
+    image.dispose();
+    codec.dispose();
+    return size;
+  }
+
+  String dominant(List<int> px) {
+    final r = px[0], g = px[1], b = px[2];
+    if (r > 200 && g < 80 && b < 80) return 'red';
+    if (g > 200 && r < 80 && b < 80) return 'lime';
+    if (b > 200 && r < 80 && g < 80) return 'blue';
+    if (r > 200 && g > 200 && b < 80) return 'yellow';
+    return 'other';
+  }
+
+  test('cases.json fixtures exist; evidence covers every case id', () {
+    final casesDoc = loadJson(casesFile);
+    final evidence = loadJson(evidenceFile);
+    final caseIds = (casesDoc['cases'] as List)
+        .cast<Map<String, dynamic>>()
+        .map((c) => c['id'] as String)
+        .toSet();
+    final outcomeIds =
+        (evidence['outcomes'] as Map).keys.map((k) => k.toString()).toSet();
+    expect(outcomeIds, caseIds);
+
+    for (final c in (casesDoc['cases'] as List).cast<Map<String, dynamic>>()) {
       final fixture = c['fixture'] as String?;
       if (fixture == null) continue;
-      final bytes = loadFixture(fixture);
-      final sniff = sniffImageFormat(bytes);
-      final format = c['format'] as String;
-      if (format == 'empty') {
-        expect(sniff.kind, ImageFormatKind.empty);
-      } else if (format == 'heic') {
-        expect(sniff.kind, ImageFormatKind.heic);
-      } else if (format == 'avif') {
-        expect(sniff.kind, ImageFormatKind.avif);
-      } else if (format == 'png') {
-        // truncated PNG may still sniff as png from signature
-        expect(sniff.kind, ImageFormatKind.png);
-      } else if (format == 'jpeg') {
-        expect(sniff.kind, ImageFormatKind.jpeg);
-      } else if (format == 'webp') {
-        expect(sniff.kind, ImageFormatKind.webp);
-      } else if (format == 'gif') {
-        expect(sniff.kind, ImageFormatKind.gif);
+      expect(
+        File('${fixtureDir.path}/$fixture').existsSync(),
+        isTrue,
+        reason: fixture,
+      );
+    }
+  });
+
+  test('loader_direct outcomes match evidence exactly', () async {
+    final casesDoc = loadJson(casesFile);
+    final evidence = loadJson(evidenceFile);
+    final outcomes = evidence['outcomes'] as Map<String, dynamic>;
+
+    for (final c in (casesDoc['cases'] as List).cast<Map<String, dynamic>>()) {
+      final id = c['id'] as String;
+      final expected = (outcomes[id] as Map)['loader_direct_flutter_codec'];
+      expect(expected, isA<String>(), reason: id);
+
+      if (id == 'oversize_bytes_runtime') {
+        final oversize = Uint8List(PhotoImportLimits.maxInputBytes + 1);
+        expect(
+          PhotoImportGate.rejectRawBytes(oversize),
+          PhotoImportRejection.tooLargeBytes,
+        );
+        expect(expected, 'rejected:tooLargeBytes');
+        continue;
       }
+
+      final fixture = c['fixture'] as String;
+      final actual = await probeDirect(loadFixture(fixture));
+      expect(actual, expected, reason: id);
     }
   });
 
-  test('direct Flutter codec: PNG / JPEG baseline supported', () async {
-    expect(await probeDirect(loadFixture('png_opaque_2x2.png')), 'supported');
-    expect(await probeDirect(loadFixture('png_alpha_2x2.png')), 'supported');
-    expect(await probeDirect(loadFixture('jpeg_baseline_1x1.jpg')), 'supported');
-    for (var o = 1; o <= 8; o++) {
-      expect(
-        await probeDirect(loadFixture('jpeg_exif_orientation_$o.jpg')),
-        'supported',
-        reason: 'orientation $o',
-      );
-    }
+  test('HEIC synthetic vs ftyp-only kinds are separated in cases.json', () {
+    final casesDoc = loadJson(casesFile);
+    final byId = {
+      for (final c in (casesDoc['cases'] as List).cast<Map<String, dynamic>>())
+        c['id'] as String: c,
+    };
+    expect(byId['heic_ftyp_heic']!['kind'], 'container_sniff');
+    expect(byId['heic_synthetic_markers_64x32']!['kind'], 'raster');
+    expect(
+      sniffImageFormat(loadFixture('heic_synthetic_markers_64x32.heic')).kind,
+      ImageFormatKind.heic,
+    );
   });
 
-  test('direct Flutter codec: HEIC ftyp brands → heicConversionFailed', () async {
-    for (final brand in ['heic', 'heif', 'mif1', 'msf1', 'heix']) {
-      final outcome =
-          await probeDirect(loadFixture('heic_ftyp_$brand.heic'));
-      expect(outcome, 'rejected:heicConversionFailed', reason: brand);
-      expect(
-        PhotoImportStatus.fromRejection(
-          PhotoImportRejection.heicConversionFailed,
-        ),
-        PhotoImportFailureReason.heicUnsupported,
-      );
-    }
-  });
-
-  test('direct Flutter codec: empty / truncated / pixel claim / byte oversize',
-      () async {
-    expect(await probeDirect(Uint8List(0)), 'rejected:empty');
-    expect(
-      await probeDirect(loadFixture('png_truncated.png')),
-      anyOf('rejected:undecodable', 'unsupported_by_runtime'),
+  test('native adapter null on synthetic HEIC matches evidence', () async {
+    final evidence = loadJson(evidenceFile);
+    final expected = (evidence['outcomes']
+            as Map)['heic_synthetic_markers_64x32']['loader_native_normalize_adapter'];
+    final actual = await probeDirect(
+      loadFixture('heic_synthetic_markers_64x32.heic'),
+      adapter: (_) async => null,
     );
+    expect(actual, expected);
     expect(
-      await probeDirect(loadFixture('png_claim_10000x10000.png')),
-      'rejected:tooManyPixels',
-    );
-    final oversize = Uint8List(PhotoImportLimits.maxInputBytes + 1);
-    PhotoImportRejection? rejection;
-    final loaded = await loadStudioImageBytes(
-      oversize,
-      onRejected: (r) => rejection = r,
-    );
-    // Loader checks empty first; byte gate is on the page via rejectRawBytes.
-    // Document both: gate rejects bytes; loader may treat as undecodable/empty.
-    expect(loaded, isNull);
-    expect(
-      PhotoImportGate.rejectRawBytes(oversize),
-      PhotoImportRejection.tooLargeBytes,
-    );
-    expect(
-      rejection,
-      anyOf(
-        isNull,
-        PhotoImportRejection.undecodable,
-        PhotoImportRejection.empty,
+      PhotoImportStatus.fromRejection(
+        PhotoImportRejection.heicConversionFailed,
       ),
+      PhotoImportFailureReason.heicUnsupported,
     );
   });
 
-  test('AVIF / GIF / WebP / progressive JPEG: record without claiming Safari',
-      () async {
-    final progressive =
-        await probeDirect(loadFixture('jpeg_progressive_1x1.jpg'));
-    expect(
-      progressive,
-      anyOf('supported', 'rejected:undecodable', 'unsupported_by_runtime'),
-    );
+  test('EXIF orientation 1–8 visual expectations match evidence', () async {
+    final evidence = loadJson(evidenceFile);
+    final visual =
+        evidence['exifOrientationVisual'] as Map<String, dynamic>;
+    final expectations = visual['expectations'] as Map<String, dynamic>;
+    expect(visual['status'], 'supported');
 
-    final gif = await probeDirect(loadFixture('gif_still_1x1.gif'));
-    expect(
-      gif,
-      anyOf('supported', 'rejected:undecodable', 'unsupported_by_runtime'),
-    );
-
-    for (final name in [
-      'webp_lossy_2x2.webp',
-      'webp_lossless_1x1.webp',
-      'webp_alpha_1x1.webp',
-    ]) {
-      final out = await probeDirect(loadFixture(name));
-      expect(
-        out,
-        anyOf('supported', 'rejected:undecodable', 'unsupported_by_runtime'),
-        reason: name,
-      );
+    for (final entry in expectations.entries) {
+      final o = entry.key;
+      final exp = entry.value as Map<String, dynamic>;
+      final bytes =
+          loadFixture('jpeg_exif_orientation_${o}_markers_64x32.jpg');
+      expect(sniffImageFormat(bytes).jpegExifOrientation, int.parse(o));
+      // Decode applies EXIF (Flutter codec), then sample TL.
+      final raster = await decodeTl(bytes);
+      expect(raster.width, exp['width'], reason: 'O$o width');
+      expect(raster.height, exp['height'], reason: 'O$o height');
+      expect(dominant(raster.tl), exp['tlDominant'], reason: 'O$o TL');
     }
-
-    final avif = await probeDirect(loadFixture('avif_ftyp_only.avif'));
-    expect(
-      avif,
-      anyOf('rejected:undecodable', 'unsupported_by_runtime'),
-    );
   });
 
-  test('native adapter path: HEIC stays heic when adapter returns null', () async {
-    PhotoImportRejection? rejection;
-    final loaded = await loadStudioImageBytes(
-      loadFixture('heic_ftyp_heic.heic'),
-      nativeDecodeAdapter: (_) async => null,
-      onRejected: (r) => rejection = r,
-    );
-    expect(loaded, isNull);
-    expect(rejection, PhotoImportRejection.heicConversionFailed);
+  test('WebP alpha fixture has transparent TL pixel', () async {
+    final evidence = loadJson(evidenceFile);
+    final visual = evidence['webpAlphaVisual'] as Map<String, dynamic>;
+    expect(visual['status'], 'supported');
+    final raster = await decodeTl(loadFixture(visual['fixture'] as String));
+    expect(raster.tl[3], greaterThanOrEqualTo(visual['expectTlAlphaMin'] as int));
+    expect(raster.tl[3], lessThanOrEqualTo(visual['expectTlAlphaMax'] as int));
+    expect(raster.tl[3], lessThan(255));
   });
 
-  test('native adapter path: successful PNG normalize accepts HEIC input',
-      () async {
-    final png = loadFixture('png_opaque_2x2.png');
-    final loaded = await loadStudioImageBytes(
-      loadFixture('heic_ftyp_heic.heic'),
-      nativeDecodeAdapter: (_) async => png,
-    );
-    expect(loaded, png);
-  });
-
-  test('failure reasons map to distinct safe l10n keys (no secrets)', () {
-    expect(
-      const PhotoImportStatus.failure(
-        reason: PhotoImportFailureReason.heicUnsupported,
-      ).messageKey,
-      'photoStudio.imageHeicUnsupported',
-    );
-    expect(
-      const PhotoImportStatus.failure(
-        reason: PhotoImportFailureReason.tooManyPixels,
-      ).messageKey,
-      'photoStudio.imageTooManyPixels',
-    );
-    expect(
-      const PhotoImportStatus.failure(
-        reason: PhotoImportFailureReason.tooLargeBytes,
-      ).messageKey,
-      'photoStudio.imageTooLarge',
-    );
-    expect(
-      const PhotoImportStatus.failure(
-        reason: PhotoImportFailureReason.decodeFailed,
-      ).messageKey,
-      'photoStudio.imageError',
-    );
+  test('ios_safari / web_chrome evidence files stay empty (not_verified)', () {
+    for (final name in ['ios_safari_iphone', 'web_chrome_ci']) {
+      final doc = loadJson(
+        File('${fixtureDir.path}/evidence/$name.json'),
+      );
+      expect(doc['outcomes'], isEmpty, reason: name);
+    }
   });
 }

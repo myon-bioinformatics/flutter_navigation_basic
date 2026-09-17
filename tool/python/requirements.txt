@@ -1,4 +1,7 @@
 # Dev/test Python dependencies for repository tooling and light structural checks.
 # Runtime Flutter code must not depend on these packages.
-# Formula assertions live in Dart tests; keep this allowlist minimal (pytest only).
+# Formula assertions live in Dart tests; keep this allowlist minimal.
 pytest==8.4.2
+# Fixture regeneration only (`tool/python/generate_photo_import_fixtures.py`).
+# CI does not call the generator; committed fixtures + evidence/*.json are checked.
+Pillow==11.0.0

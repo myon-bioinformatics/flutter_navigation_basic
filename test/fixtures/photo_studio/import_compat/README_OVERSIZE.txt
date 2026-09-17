@@ -1,1 +1,1 @@
-Do not commit 32MiB blobs. Tests allocate PhotoImportLimits.maxInputBytes + 1 at runtime.
+Do not commit 32MiB blobs. Tests allocate maxInputBytes+1 at runtime.
