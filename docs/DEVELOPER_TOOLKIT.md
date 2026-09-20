@@ -94,10 +94,13 @@ Uses `dart pub outdated --json` and parses the result in Dart. Packages omitted 
 ## Network probe
 
 ```bash
-dart run tool/net_probe.dart https://example.com
+python3 tool/python/net_probe.py https://example.com
+# or: dart run tool/dev.dart net https://example.com
 ```
 
-Shows DNS resolution, TCP connection details, TLS peer-certificate metadata for HTTPS, HTTP status/headers/body-byte count, redirects, and timings. DNS, TCP, TLS, HTTP response-header wait, and response-stream inactivity are bounded so a stalled peer does not leave the probe hanging indefinitely. The `HttpClient` and sockets are closed on both success and exception paths.
+Shows DNS resolution, TCP connection details, TLS peer-certificate metadata for HTTPS, HTTP status/headers/body-byte count, redirects, and timings. DNS, TCP, TLS, and HTTP are all bounded by a timeout so a stalled peer does not leave the probe hanging indefinitely. Sockets are closed on both success and exception paths.
+
+Python stdlib, not Dart: this is a generic network diagnostic with no Flutter-specific dependency (unlike, say, `tool/mock_http_server.dart`, which reuses this app's own Dart HTTP mocking code and stays Dart for that reason).
 
 ## Local HTTP mock/stub
 

@@ -36,7 +36,10 @@ Future<void> main(List<String> args) async {
         exitCode = 64;
         return;
       }
-      exitCode = await _forward('dart', ['run', 'tool/net_probe.dart', ...rest]);
+      // Python stdlib port (tool/python/net_probe.py): DNS/TCP/TLS/HTTP
+      // probing has no Flutter-specific dependency, so it doesn't need to
+      // be Dart. See docs/DEVELOPER_TOOLKIT.md.
+      exitCode = await _forward('python3', ['tool/python/net_probe.py', ...rest]);
       return;
     case 'mock':
       exitCode = await _forward('dart', ['run', 'tool/mock_http_server.dart', ...rest]);
