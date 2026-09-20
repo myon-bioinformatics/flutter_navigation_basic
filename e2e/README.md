@@ -21,7 +21,36 @@ npm install
 flutter run -d web-server --web-port=8080
 ```
 
-## テスト実行
+## Python CLI（推奨）
+
+プロジェクトルートから Python のワンライナーで Playwright を呼び出せます。
+Python 側の追加依存はなく、stdlib の `subprocess` から既存の `e2e/package.json` / Playwright を利用します。
+
+```bash
+# 全テスト
+python tool/python/playwright.py test
+
+# Chromium のみ
+python tool/python/playwright.py test --project chromium
+
+# テスト一覧（CI smoke と同用途）
+python tool/python/playwright.py list
+
+# Visual snapshot 検証（既定は Chromium）
+python tool/python/playwright.py snapshot
+
+# Visual snapshot の基準画像を更新
+python tool/python/playwright.py snapshot --update
+
+# HTML report
+python tool/python/playwright.py report
+```
+
+Windows の cmd でも同じコマンドを利用できます。内部では Windows の場合 `npx.cmd` を自動選択します。
+
+Visual snapshot はブラウザ・OS・font差分の影響を受けやすいため、CLI の `snapshot` は既定で Chromium に固定しています。`--project` を指定すれば変更できます。
+
+## npm から直接実行
 
 ```bash
 cd e2e
@@ -52,11 +81,15 @@ e2e/
 ├── playwright.config.ts        # Playwright 設定
 ├── package.json
 ├── tests/
-│   ├── hub_navigation.spec.ts  # ハブ画面テスト
-│   └── screen_navigation.spec.ts  # 画面ナビゲーションテスト
+│   ├── hub_navigation.spec.ts
+│   ├── screen_navigation.spec.ts
+│   └── visual_snapshot.spec.ts # Visual regression baseline
 ├── fixtures/
-│   └── test_data.json          # テストデータ
+│   └── test_data.json
 └── utils/
-    ├── helpers.ts              # ヘルパー関数
-    └── constants.ts            # 定数
+    ├── helpers.ts
+    └── constants.ts
+
+tool/python/
+└── playwright.py               # stdlib-only Playwright CLI wrapper
 ```
