@@ -10,6 +10,8 @@ name: Docker E2E verify
 
 on:
   workflow_dispatch: {}
+  push:
+    branches: ["claude/e2e-docker-integration-check"]
 
 permissions:
   contents: read
