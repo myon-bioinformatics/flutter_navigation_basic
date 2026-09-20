@@ -286,3 +286,14 @@ jobs:
             sleep 1
           done
           npx playwright test tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts --project=chromium
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-e2e-report
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          retention-days: 14
+          if-no-files-found: ignore
