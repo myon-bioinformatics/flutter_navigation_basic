@@ -5,7 +5,7 @@ Web デバッグ対応 Playwright E2E テスト for flutter_navigation_basic。
 ## CI
 
 - PR で `e2e/` を触ると **Non-Dart** workflow が Playwright の install + `--list` smoke だけ回す（Flutter は起動しない）。
-- フル E2E（web build + Chromium）は GitHub Actions の **Non-Dart checks → Run workflow** で `run_playwright=true` のときだけ。Flutter/Pages の必須経路には載せない。
+- フル E2E（web build + Chromium）は GitHub Actions の **Non-Dart checks → Run workflow** で `run_playwright=true` のときだけ。Flutter/Pages の必須経路には載せない。visual snapshot spec は baseline 未登録の間は既存 Full E2E から分離し、`python tool/python/playwright.py snapshot --update` で明示的に生成する。
 
 ## セットアップ
 
@@ -46,9 +46,9 @@ python tool/python/playwright.py snapshot --update
 python tool/python/playwright.py report
 ```
 
-Windows の cmd でも同じコマンドを利用できます。内部では Windows の場合 `npx.cmd` を自動選択します。
+Windows の cmd でも同じコマンドを利用できます。Python wrapper は `npx.cmd` を直接起動せず、`node node_modules/@playwright/test/cli.js` を呼ぶため、Windows の `.cmd` 実行差異を避けます。
 
-Visual snapshot はブラウザ・OS・font差分の影響を受けやすいため、CLI の `snapshot` は既定で Chromium に固定しています。`--project` を指定すれば変更できます。
+Visual snapshot はブラウザ・OS・font差分の影響を受けやすいため、CLI の `snapshot` は既定で Chromium に固定しています。`--project` を指定すれば変更できます。baseline が未登録の環境ではまず `snapshot --update` を実行してください。passthrough 引数は `--project` / `--grep` / `--headed` など既知オプションの後ろに置いてください。
 
 ## npm から直接実行
 
