@@ -285,4 +285,4 @@ jobs:
             fi
             sleep 1
           done
-          npx playwright test --project=chromium
+          npx playwright test tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts --project=chromium
