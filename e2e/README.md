@@ -50,6 +50,33 @@ Windows の cmd でも同じコマンドを利用できます。Python wrapper �
 
 Visual snapshot はブラウザ・OS・font差分の影響を受けやすいため、CLI の `snapshot` は既定で Chromium に固定しています。`--project` を指定すれば変更できます。baseline が未登録の環境ではまず `snapshot --update` を実行してください。passthrough 引数は `--project` / `--grep` / `--headed` など既知オプションの後ろに置いてください。
 
+## Docker（Flutter/Node/Playwright を何もインストールしていない環境向け）
+
+`Dockerfile.e2e` は「Flutter web release ビルド → 配信 → `tool/python/playwright.py` 実行」を1イメージに固めたものです。CI の `playwright` ジョブ（`.github/workflows/non-dart.yml`）と同じ手順・同じ Flutter/Node バージョンをコンテナ内で再現するので、ホスト側に Flutter SDK も Node もなくても、`docker` さえあれば実行・再現できます。
+
+```bash
+# プロジェクトルートで（初回はFlutter/Node/Chromiumのダウンロードが入るため数分かかります）
+docker build -f Dockerfile.e2e -t flutter-nav-e2e .
+
+# デフォルト（hub_navigation + screen_navigation, Chromium）
+docker run --rm \
+  -v "$PWD/e2e/playwright-report:/repo/e2e/playwright-report" \
+  -v "$PWD/e2e/test-results:/repo/e2e/test-results" \
+  flutter-nav-e2e
+
+# Visual snapshot のスクショを撮りたいだけなら（コンテナ内の tool/python/playwright.py にそのまま引数が渡る）
+docker run --rm \
+  -v "$PWD/e2e/playwright-report:/repo/e2e/playwright-report" \
+  -v "$PWD/e2e/test-results:/repo/e2e/test-results" \
+  -v "$PWD/e2e/tests:/repo/e2e/tests" \
+  flutter-nav-e2e snapshot --update
+```
+
+- `-v .../playwright-report`, `-v .../test-results` を bind mount すると、HTML レポート・失敗時スクショ・trace・video がホスト側にそのまま残ります（現状 CI の手動 `playwright` ジョブは artifact upload していないため、CI 経由よりこちらの方が確実に手元でスクショを回収できます）。
+- `e2e/tests` も mount すると、`snapshot --update` で生成した `*-snapshots/*.png` baseline がホスト側のリポジトリにそのまま書き戻されます（コミットするかはレビューして判断してください）。
+- Flutter/Node のバージョンは `Dockerfile.e2e` の `ARG FLUTTER_VERSION` / `ARG NODE_MAJOR` で固定しています。CI 側（`non-dart.yml` の `playwright` ジョブ）を更新するときはこちらも合わせてください。
+- CI には現状組み込んでいません（このDockerfileはローカル/手元での再現用）。CIをDocker化するかどうかは別途判断が必要です。
+
 ## npm から直接実行
 
 ```bash
@@ -92,4 +119,9 @@ e2e/
 
 tool/python/
 └── playwright.py               # stdlib-only Playwright CLI wrapper
+
+tool/docker/
+└── e2e-entrypoint.sh           # Dockerfile.e2e's entrypoint (serve + run)
+
+Dockerfile.e2e                  # Flutter build + Playwright, containerized
 ```
