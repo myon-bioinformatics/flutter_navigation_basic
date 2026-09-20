@@ -42,11 +42,17 @@ def _playwright_test_args(
 ) -> list[str]:
     args = [*_playwright_prefix(), "test"]
     if project:
-        args.extend(["--project", project])
+        # A single "--project=value" token, not ["--project", value]: Playwright's
+        # CLI treats a space-separated --project as accepting multiple project
+        # names, so ["--project", "chromium", "tests/foo.spec.ts"] has it swallow
+        # the spec path as a second (invalid) project name instead of a test file
+        # ("Project(s) "tests/foo.spec.ts" not found"). --project=value is one
+        # token and can't absorb what follows, regardless of order.
+        args.append(f"--project={project}")
     if headed:
         args.append("--headed")
     if grep:
-        args.extend(["--grep", grep])
+        args.append(f"--grep={grep}")
     args.extend(extra)
     return args
 
