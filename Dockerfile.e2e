@@ -1,0 +1,59 @@
+# Reproducible container for the Playwright E2E suite.
+#
+# Builds the pinned Flutter web release and bundles Node + Playwright's
+# Chromium so `tool/python/playwright.py` can drive a real browser against
+# it without requiring Flutter/Node/Playwright on the host. See
+# e2e/README.md for usage (build args, volume mounts, examples).
+#
+# Flutter/Node versions match .github/workflows/non-dart.yml's `playwright`
+# job so local and CI runs stay in sync -- bump both together.
+
+FROM ubuntu:22.04
+
+ARG FLUTTER_VERSION=3.47.0
+ARG NODE_MAJOR=20
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PATH=/opt/flutter/bin:/opt/flutter/bin/cache/dart-sdk/bin:$PATH
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates curl git unzip xz-utils python3 \
+    && curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Flutter SDK: same tarball-download approach subosito/flutter-action uses
+# in CI, so this doesn't depend on an unofficial third-party base image.
+RUN curl -fsSL \
+        "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION}-stable.tar.xz" \
+        -o /tmp/flutter.tar.xz \
+    && tar -xJf /tmp/flutter.tar.xz -C /opt \
+    && rm /tmp/flutter.tar.xz \
+    && git config --global --add safe.directory /opt/flutter \
+    && flutter config --no-analytics --no-cli-animations \
+    && flutter precache --web
+
+WORKDIR /repo
+
+# Dart deps in their own layer: only re-runs when pubspec.* changes.
+COPY pubspec.yaml pubspec.lock ./
+RUN flutter pub get
+
+# Node/Playwright deps in their own layer: only re-runs when e2e/package.json
+# changes. No e2e/package-lock.json is committed (see e2e/package.json), so
+# this resolves whatever `^1.45.0` currently satisfies, same as CI.
+COPY e2e/package.json e2e/package.json
+RUN npm install --prefix e2e \
+    && npx --prefix e2e playwright install --with-deps chromium
+
+# Now the full source, and build the release web bundle.
+COPY . .
+RUN flutter pub get \
+    && flutter build web --release -t lib/main_prod.dart --base-href "/"
+
+# tool/docker/e2e-entrypoint.sh already arrived via `COPY . .` above and is
+# tracked with the executable bit set (`chmod +x` in git), so no extra
+# COPY/chmod is needed here.
+EXPOSE 8080
+ENTRYPOINT ["tool/docker/e2e-entrypoint.sh"]
+CMD ["test", "--project", "chromium", "tests/hub_navigation.spec.ts", "tests/screen_navigation.spec.ts"]

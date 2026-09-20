@@ -1,0 +1,12 @@
+.git
+.github
+.cursor
+.dart_tool/
+build/
+android/.gradle/
+ios/Pods/
+macos/Pods/
+e2e/node_modules/
+e2e/playwright-report/
+e2e/test-results/
+*.gif

@@ -1,0 +1,58 @@
+name: Docker E2E verify
+
+# Manual-only proof that Dockerfile.e2e actually builds and runs a real
+# Chromium against the Flutter web build (GPT's blocking review comment on
+# #83: CI never exercised the Dockerfile itself). Deliberately not on
+# pull_request/push -- this doesn't become part of the default pipeline,
+# it's a repeatable way to get that proof from a runner with normal
+# internet access whenever someone wants it (unlike a sandboxed agent
+# environment, which may not have unrestricted registry access).
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  docker-e2e:
+    name: Build and run Dockerfile.e2e (snapshot --update)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -f Dockerfile.e2e -t flutter-nav-e2e .
+
+      - name: Run snapshot --update in container
+        run: |
+          mkdir -p e2e/playwright-report e2e/test-results
+          docker run --rm \
+            -v "$PWD/e2e/playwright-report:/repo/e2e/playwright-report" \
+            -v "$PWD/e2e/test-results:/repo/e2e/test-results" \
+            -v "$PWD/e2e/tests:/repo/e2e/tests" \
+            flutter-nav-e2e snapshot --update
+
+      - name: Confirm a baseline PNG was written
+        run: |
+          set -euo pipefail
+          found="$(find e2e/tests -name '*.png' -newer Dockerfile.e2e -print)"
+          if [[ -z "$found" ]]; then
+            echo "::error::No snapshot PNG was written under e2e/tests/**-snapshots/"
+            exit 1
+          fi
+          echo "Baseline PNG(s) written:"
+          printf '%s\n' "$found"
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-e2e-verify
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+            e2e/tests/**/*-snapshots/*.png
+          if-no-files-found: warn
+          retention-days: 14
