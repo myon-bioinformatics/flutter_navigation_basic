@@ -11,10 +11,21 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 E2E_DIR = ROOT / "e2e"
+PLAYWRIGHT_CLI = E2E_DIR / "node_modules" / "@playwright" / "test" / "cli.js"
 
 
-def _npx() -> str:
-    return "npx.cmd" if os.name == "nt" else "npx"
+def _node() -> str:
+    return "node.exe" if os.name == "nt" else "node"
+
+
+def _playwright_prefix() -> list[str]:
+    if not PLAYWRIGHT_CLI.is_file():
+        print(
+            "error: Playwright is not installed. Run 'cd e2e && npm install' first.",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+    return [_node(), str(PLAYWRIGHT_CLI)]
 
 
 def _run(args: list[str]) -> int:
@@ -29,7 +40,7 @@ def _playwright_test_args(
     grep: str | None,
     extra: list[str],
 ) -> list[str]:
-    args = [_npx(), "playwright", "test"]
+    args = [*_playwright_prefix(), "test"]
     if project:
         args.extend(["--project", project])
     if headed:
@@ -93,7 +104,7 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     if args.command == "list":
-        return _run([_npx(), "playwright", "test", "--list", *args.extra])
+        return _run([*_playwright_prefix(), "test", "--list", *args.extra])
 
     if args.command == "snapshot":
         cmd = _playwright_test_args(
@@ -107,7 +118,7 @@ def main(argv: list[str] | None = None) -> int:
         return _run(cmd)
 
     if args.command == "report":
-        return _run([_npx(), "playwright", "show-report", *args.extra])
+        return _run([*_playwright_prefix(), "show-report", *args.extra])
 
     raise AssertionError(f"unhandled command: {args.command}")
 
