@@ -1,7 +1,7 @@
 # Reproducible container for the Playwright E2E suite.
 #
 # Builds the pinned Flutter web release and bundles Node + Playwright's
-# Chromium so `tool/python/playwright.py` can drive a real browser against
+# configured browser engines so `tool/python/playwright.py` can drive a real browser against
 # it without requiring Flutter/Node/Playwright on the host. See
 # e2e/README.md for usage (build args, volume mounts, examples).
 #
@@ -44,7 +44,7 @@ RUN flutter pub get
 # this resolves whatever `^1.45.0` currently satisfies, same as CI.
 COPY e2e/package.json e2e/package.json
 RUN npm install --prefix e2e \
-    && npx --prefix e2e playwright install --with-deps chromium
+    && npx --prefix e2e playwright install --with-deps chromium firefox webkit
 
 # Now the full source, and build the release web bundle.
 COPY . .
