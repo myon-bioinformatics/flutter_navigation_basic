@@ -48,14 +48,14 @@ python tool/python/playwright.py report
 
 Windows の cmd でも同じコマンドを利用できます。Python wrapper は `npx.cmd` を直接起動せず、`node node_modules/@playwright/test/cli.js` を呼ぶため、Windows の `.cmd` 実行差異を避けます。
 
-Visual snapshot はブラウザ・OS・font差分の影響を受けやすいため、CLI の `snapshot` は既定で Chromium に固定しています。`--project` を指定すれば変更できます。baseline が未登録の環境ではまず `snapshot --update` を実行してください。passthrough 引数は `--project` / `--grep` / `--headed` など既知オプションの後ろに置いてください。
+Playwright config は Chromium / Firefox / WebKit の3 projectを定義しており、CI/Dockerも3 engineをインストールします。Visual snapshot はブラウザ・OS・font差分の影響を受けやすいため、CLI の `snapshot` は既定で Chromium に固定しています。`--project` を指定すれば変更できます。baseline が未登録の環境ではまず `snapshot --update` を実行してください。passthrough 引数は `--project` / `--grep` / `--headed` など既知オプションの後ろに置いてください。
 
 ## Docker（Flutter/Node/Playwright を何もインストールしていない環境向け）
 
 `Dockerfile.e2e` は「Flutter web release ビルド → 配信 → `tool/python/playwright.py` 実行」を1イメージに固めたものです。CI の `playwright` ジョブ（`.github/workflows/non-dart.yml`）と同じ手順・同じ Flutter/Node バージョンをコンテナ内で再現するので、ホスト側に Flutter SDK も Node もなくても、`docker` さえあれば実行・再現できます。
 
 ```bash
-# プロジェクトルートで（初回はFlutter/Node/Chromiumのダウンロードが入るため数分かかります）
+# プロジェクトルートで（初回はFlutter/Node/Chromium/Firefox/WebKitのダウンロードが入るため数分かかります）
 docker build -f Dockerfile.e2e -t flutter-nav-e2e .
 
 # デフォルト（hub_navigation + screen_navigation, Chromium）
