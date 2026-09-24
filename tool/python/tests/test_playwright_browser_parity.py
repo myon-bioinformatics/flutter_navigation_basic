@@ -80,3 +80,45 @@ def test_ci_lists_every_exact_project() -> None:
         "--project=mobile-chromium --project=mobile-webkit"
     )
     assert list_command in workflow
+
+
+def test_manual_e2e_uses_python_cli_for_portable_five_project_allowlist() -> None:
+    workflow = (ROOT / ".github" / "workflows" / "non-dart.yml").read_text(encoding="utf-8")
+    command = next(
+        line.strip()
+        for line in workflow.splitlines()
+        if "python3 ../tool/python/playwright.py test" in line
+    )
+    for project in EXPECTED_PROJECTS:
+        assert f"--project {project}" in command
+    assert "--grep @portable" in command
+    for spec in (
+        "tests/hub_navigation.spec.ts",
+        "tests/screen_navigation.spec.ts",
+        "tests/photo_studio.spec.ts",
+    ):
+        assert spec in command
+
+
+def test_docker_default_cmd_keeps_portable_five_project_allowlist() -> None:
+    import json
+
+    dockerfile = (ROOT / "Dockerfile.e2e").read_text(encoding="utf-8")
+    cmd_line = next(line for line in dockerfile.splitlines() if line.startswith("CMD ["))
+    argv = json.loads(cmd_line.removeprefix("CMD "))
+
+    assert argv[0] == "test"
+    projects = {
+        argv[index + 1]
+        for index, token in enumerate(argv[:-1])
+        if token == "--project"
+    }
+    assert projects == EXPECTED_PROJECTS
+    grep_index = argv.index("--grep")
+    assert argv[grep_index + 1] == "@portable"
+    for spec in (
+        "tests/hub_navigation.spec.ts",
+        "tests/screen_navigation.spec.ts",
+        "tests/photo_studio.spec.ts",
+    ):
+        assert spec in argv

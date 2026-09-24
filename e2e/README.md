@@ -5,7 +5,7 @@ Web デバッグ対応 Playwright E2E テスト for flutter_navigation_basic。
 ## CI
 
 - PR で `e2e/` を触ると **Non-Dart** workflow が Playwright の install + `--list` smoke だけ回す（Flutter は起動しない）。
-- フル E2E（web build + Chromium）は GitHub Actions の **Non-Dart checks → Run workflow** で `run_playwright=true` のときだけ。Flutter/Pages の必須経路には載せない。visual snapshot spec は baseline 未登録の間は既存 Full E2E から分離し、`python tool/python/playwright.py snapshot --update` で明示的に生成する。
+- フル E2E（web build + Chromium / Firefox / WebKit + mobile emulation の portable matrix）は GitHub Actions の **Non-Dart checks → Run workflow** で `run_playwright=true` のときだけ。Flutter/Pages の必須経路には載せない。visual snapshot spec は baseline 未登録の間は既存 Full E2E から分離し、`python tool/python/playwright.py snapshot --update` で明示的に生成する。
 
 ## セットアップ
 
@@ -32,6 +32,13 @@ python tool/python/playwright.py test
 
 # Chromium のみ
 python tool/python/playwright.py test --project chromium
+
+# portable 5-project allowlist（Photo Studio を含む）
+python tool/python/playwright.py test \
+  --project chromium --project firefox --project webkit \
+  --project mobile-chromium --project mobile-webkit \
+  --grep @portable \
+  tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts
 
 # テスト一覧（CI smoke と同用途）
 python tool/python/playwright.py list
@@ -65,11 +72,15 @@ Playwright config は Chromium / Firefox / WebKit の3 projectを定義してお
 # プロジェクトルートで（初回はFlutter/Node/Chromium/Firefox/WebKitのダウンロードが入るため数分かかります）
 docker build -f Dockerfile.e2e -t flutter-nav-e2e .
 
-# デフォルト（hub_navigation + screen_navigation, Chromium）
+# デフォルト（hub + screen + Photo Studio の portable 5-project matrix）
 docker run --rm \
   -v "$PWD/e2e/playwright-report:/repo/e2e/playwright-report" \
   -v "$PWD/e2e/test-results:/repo/e2e/test-results" \
   flutter-nav-e2e
+
+# 高速なローカル確認: Chromium のみへ CMD を上書き
+docker run --rm flutter-nav-e2e test --project chromium --grep @portable \
+  tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts
 
 # Visual snapshot のスクショを撮りたいだけなら（コンテナ内の tool/python/playwright.py にそのまま引数が渡る）
 docker run --rm \
@@ -117,6 +128,7 @@ e2e/
 ├── tests/
 │   ├── hub_navigation.spec.ts
 │   ├── screen_navigation.spec.ts
+│   ├── photo_studio.spec.ts       # Photo Studio portable flow
 │   └── visual_snapshot.spec.ts # Visual regression baseline
 ├── fixtures/
 │   └── test_data.json
