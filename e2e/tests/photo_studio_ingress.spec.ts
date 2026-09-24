@@ -13,6 +13,8 @@ async function openPhotoStudio(page: Page) {
 }
 
 test.describe('Photo Studio ingress audit', () => {
+  // Picker/MIME checks are portable. Clipboard write permission is exercised only
+  // by Chromium projects; Firefox/WebKit skip before grantPermissions().
   test('picker accepts the committed PNG through the shared import pipeline @portable', async ({ page }) => {
     await openPhotoStudio(page);
     const chooserPromise = page.waitForEvent('filechooser');
@@ -22,7 +24,8 @@ test.describe('Photo Studio ingress audit', () => {
     await expect(page.getByText('Image loaded', { exact: true })).toBeVisible({ timeout: 15_000 });
   });
 
-  test('paste text data URL reaches the same success state @portable', async ({ page, context }) => {
+  test('paste text data URL reaches the same success state @portable @chromium-clipboard', async ({ page, context, browserName }) => {
+    test.skip(browserName !== 'chromium', 'Playwright clipboard permissions are Chromium-only in this lane');
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await openPhotoStudio(page);
     const base64 = fs.readFileSync(pngFixture).toString('base64');
