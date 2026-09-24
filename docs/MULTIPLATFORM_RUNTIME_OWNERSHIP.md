@@ -149,6 +149,84 @@ Potential follow-up targets include simple catalogue-like lists such as composit
 
 The goal is not a single language; it is fewer unnecessary layers.
 
+## JSON golden as the portable contract
+
+Prefer a language-neutral JSON golden when the same input/output contract should be understood by Dart, Python, TypeScript/Deno, documentation tooling, or future runtimes. The JSON is the authoritative **data/behavior example**, not generated Dart/Python/Markdown text.
+
+A useful per-case shape is:
+
+```json
+{
+  "schema_version": 1,
+  "id": "example_case",
+  "input": {"value": "example"},
+  "expected": {"value": "EXAMPLE"},
+  "metadata": {"source": "spec-or-known-value"}
+}
+```
+
+The exact schema is capability-specific; do not force every feature into one universal fixture. Prefer one case/file when independent provenance, review, or generation matters; prefer an array/index when many tiny cases are naturally one dataset.
+
+### Derive files from the golden, not the reverse
+
+A development-only generator may consume JSON golden data and deterministically emit:
+
+- Dart constants, typed fixture adapters, or generated test cases;
+- Markdown documentation/examples;
+- TypeScript/Deno fixtures;
+- static HTML/demo data;
+- other language-specific test adapters.
+
+Python stdlib is the preferred first generator when it gives the smallest readable implementation. Deno/TypeScript is equally valid when the output belongs naturally to a browser/TS boundary. Dart generation is also valid when Dart tooling already owns the schema.
+
+Generated code must be deliberately boring: a mechanical representation of the JSON contract, not a place where product algorithms are authored. **Do not use Python to generate arbitrary Dart business logic merely because it can.** If the generator must understand Flutter navigation/state/widget semantics, the boundary is probably wrong.
+
+The repository already has a partial precedent: `tool/time/generate_timezone_cases.py` generates deterministic reference cases for Dart tests, and the photo-import tooling generates binaries + `cases.json` while measured evidence remains separate. PR #89 generalizes that direction instead of inventing a new runtime dependency.
+
+### Generator contract
+
+For a JSON -> Dart/Markdown/TS generator:
+
+1. JSON schema/golden is reviewed and language-neutral.
+2. Generator is development/CI tooling only; shipped Flutter runtime does not require Python/Deno.
+3. Output has a generated-file header naming generator + source golden.
+4. Generation is deterministic: same JSON + generator version => byte-identical output.
+5. CI provides `--check`/equivalent regeneration drift detection rather than silently rewriting committed files.
+6. Generated output is never hand-edited.
+7. Validation happens **before** rendering/generation; malformed/unknown schema versions fail clearly.
+8. The generator contains formatting/typing projection only. Product algorithms remain in their true runtime owner.
+9. If Markdown is generated, Markdown is a view of the JSON contract, not a second source of truth.
+10. If generated Dart is only test data, keep it out of production runtime paths where possible.
+
+This lets Python reduce repetitive Dart maintenance without pretending Python is the application runtime.
+
+### JSON-to-Markdown and markdown.py
+
+The existing `markdown` repository's JSON/Markdown transformation work is a useful design precedent: one structured representation can have human-readable Markdown projections. For this repository, prefer a tiny local renderer or a pinned reusable helper only when the documentation need is real. Do not add a cross-repository runtime dependency just to render Markdown.
+
+A future shared contract can therefore look like:
+
+`JSON golden -> validate -> {Dart test adapter, Python oracle input, TS/Deno fixture, Markdown documentation}`
+
+All branches consume the same contract, while each language keeps only the code needed to execute in its own environment.
+
+### What Python may own
+
+Python can own more than tests without becoming product runtime:
+
+- golden validation and schema migration;
+- deterministic fixture/code/document generation;
+- reference calculations independently derived from a specification;
+- batch transforms and repository-wide migrations;
+- generated-output drift checks;
+- cross-language conformance reports.
+
+This is particularly attractive when the equivalent Dart implementation would add ceremony or SDK coupling. The decision remains boundary-first: a small existing Dart generator should not be rewritten solely to increase Python share.
+
+### What Deno/TypeScript may own
+
+Prefer Deno/TypeScript when the generated/validated contract is primarily browser-facing, uses Web APIs, or benefits from TypeScript types and Deno's built-in runner/formatter/tester without npm ceremony. It should replace complexity, not create a third duplicate implementation.
+
 ## Browser-first multi-platform verification
 
 The product's portability claim should be expressed as evidence tiers.
