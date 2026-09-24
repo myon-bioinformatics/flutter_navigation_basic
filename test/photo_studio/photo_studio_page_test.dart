@@ -340,38 +340,31 @@ void main() {
     expect(find.text('Retry'), findsOneWidget);
   });
 
-  testWidgets('empty inserted MIME is unknown and reaches decode', (tester) async {
-    final decodeStarted = Completer<void>();
-    final decodeRelease = Completer<void>();
+  testWidgets('empty inserted MIME is treated as unknown by shared ingress', (tester) async {
+    // ContentInsertionConfiguration advertises concrete image MIME types, so an
+    // empty MIME is not a realistic platform-delivered insertion event. Exercise
+    // the shared ingress contract through the structured picker seam instead:
+    // empty/unknown provenance must not cause an eager MIME rejection.
+    var decodeCalled = false;
     await _pumpPage(
       tester,
       page: PhotoStudioPage(
+        imagePickOutcomeProvider: () async => PhotoPickOutcome.success(
+          _tinyPng,
+          declaredMimeType: '',
+        ),
         imageDecodeAdapter: (bytes) async {
-          if (!decodeStarted.isCompleted) decodeStarted.complete();
-          await decodeRelease.future;
+          decodeCalled = true;
           return bytes;
         },
       ),
     );
 
-    final field = tester
-        .widgetList<TextField>(find.byType(TextField))
-        .firstWhere((widget) => widget.contentInsertionConfiguration != null);
-    field.contentInsertionConfiguration!.onContentInserted(
-      KeyboardInsertedContent(
-        mimeType: '',
-        uri: 'content://photo-studio-test/unknown-mime',
-        data: _tinyPng,
-      ),
-    );
-
-    // The callback is void, so synchronize on the injected decode boundary
-    // instead of guessing with timers or waiting for the page to settle.
-    await decodeStarted.future;
-    decodeRelease.complete();
+    await tester.tap(find.text('Import image'));
     await tester.pump();
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
+    expect(decodeCalled, isTrue);
     expect(find.textContaining('Image loaded'), findsOneWidget);
   });
 
