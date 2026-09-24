@@ -46,6 +46,9 @@ test.describe('Photo Studio ingress audit', () => {
       mimeType: 'text/plain',
       buffer: Buffer.from('not an image'),
     });
+    await expect(
+      page.getByText('That image format could not be decoded.', { exact: true }),
+    ).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText('Image loaded', { exact: true })).toHaveCount(0);
     await expect(page.getByText('Replace image', { exact: true })).toHaveCount(0);
   });
