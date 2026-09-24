@@ -1,11 +1,13 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { waitForFlutter } from '../utils/helpers';
 
 const photoStudioRoute = '/#/tools/media/photo-studio';
+const specDir = path.dirname(fileURLToPath(import.meta.url));
 const fixture = path.resolve(
-  process.cwd(),
-  '../test/fixtures/photo_studio/import_compat/png_opaque_2x2.png',
+  specDir,
+  '../../test/fixtures/photo_studio/import_compat/png_opaque_2x2.png',
 );
 
 test.describe('Photo Studio representative flow', () => {
@@ -16,9 +18,9 @@ test.describe('Photo Studio representative flow', () => {
 
   test('opens the canonical Photo Studio route @portable', async ({ page }) => {
     await expect(page).toHaveURL(/#\/tools\/media\/photo-studio$/);
-    await expect(page.getByText('Photo Studio', { exact: false })).toBeVisible();
-    await expect(page.getByText('Import image', { exact: false })).toBeVisible();
-    await expect(page.getByText('Paste image', { exact: false })).toBeVisible();
+    await expect(page.getByText('Photo Studio', { exact: true })).toBeVisible();
+    await expect(page.getByText('Import image', { exact: true })).toBeVisible();
+    await expect(page.getByText('Paste photo', { exact: true })).toBeVisible();
   });
 
   test('imports a committed PNG through the browser file picker @portable', async ({ page }) => {
@@ -30,6 +32,6 @@ test.describe('Photo Studio representative flow', () => {
     await expect(page.getByText('Image loaded', { exact: false })).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByText('Replace image', { exact: false })).toBeVisible();
+    await expect(page.getByText('Replace image', { exact: true })).toBeVisible();
   });
 });
