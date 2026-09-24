@@ -1,5 +1,9 @@
 # Multi-platform runtime ownership review
 
+> **Status:** Accepted doctrine and decision rubric; migration candidates/sequencing remain Proposed until implemented and measured.  
+> **Decided:** 2026-09, PR #89.  
+> **Revisit:** after the first runtime-ownership migration slice.
+
 ## Purpose
 
 This review asks a narrower question than “how should a Flutter app be written?”:
@@ -94,12 +98,12 @@ Deno is a good candidate for small TypeScript/JavaScript tooling when its built-
 | Repo inspector/check orchestration | Dart-heavy | **audit for Python ownership** | developer-only; current Dart-default policy needs justification capability by capability |
 | Network probe | Python stdlib | **keep Python** | already a clean non-Flutter boundary |
 | Artifact/Actions parsing | Python stdlib | **keep Python** | deterministic, portable tooling |
-| Formula/reference calculations | Dart-only by policy | **re-open decision** | allow Python oracle/reference when it improves clarity; keep one authoritative production implementation |
+| Formula/reference calculations | Dart-only by policy | **re-open decision** | prefer language-neutral golden fixtures; allow Python oracle only when independently derived; keep one authoritative production implementation |
 | Static data embedded as Dart lists | Dart | **JSON/data candidate** | data can be language-neutral when runtime behavior does not require Dart constants |
 | Mock/protocol server | Dart | **audit** | keep if it reuses product Dart contracts; otherwise Python/Deno may be lighter |
 | Browser E2E | Node/TS Playwright | **keep; expand matrix** | natural browser-test boundary |
 | Browser evidence validators/parity guards | Python | **expand** | cheap structural checks and browser-test-kit alignment |
-| Simple web-only surfaces | Flutter Web | **HTML/CSS/JS candidate** | use Flutter only when shared app state/UI provides value |
+| Simple web-only surfaces | Flutter Web | **HTML/CSS/JS candidate** | only for an independent URL that does not depend on Flutter routes/state; verify with the same Playwright project matrix |
 | Historical API pattern catalogue | Dart | **do not mechanically migrate** | reference material; first decide whether it belongs in shipped/runtime paths at all |
 
 ## First concrete candidates
@@ -114,6 +118,20 @@ The current documentation says Dart/Flutter APIs are the default for repository 
 - Small TS fetch/tool scripts: Deno may be preferable when it eliminates package setup.
 
 Do not translate working Dart tooling just to change language. Migrate only when a touched tool becomes materially simpler and tests can prove behavior parity.
+
+### Independent oracle rule
+
+A Python oracle is not automatically independent merely because it uses another language. The preferred order is:
+
+1. a language-neutral JSON golden derived from an external specification or known examples;
+2. an independently derived oracle using a different algorithm, invariant, or authoritative specification;
+3. only then a second-language implementation when independence can be explained.
+
+A line-for-line Dart-to-Python translation is not an oracle: it can reproduce the same bug and violates `DUPLICATE_RUNTIME_SOURCE`. Python remains valuable for readable verification, but independence matters more than language.
+
+### Browser-native surface boundary
+
+Plain HTML/CSS/JS/TS is a candidate only when the surface has an **independent URL**, does **not** read or duplicate Flutter route/state registries, and is exercised by the same Playwright project set used for the browser portability contract. If it needs Flutter navigation/theme/application state, keep it in Flutter or first create a language-neutral contract. This is the guard against `DUAL_ENTRYPOINT_DRIFT`.
 
 ### 2. Data vs code
 
@@ -145,6 +163,8 @@ Run routinely:
 - Android-oriented Chromium device profile;
 - iPhone/iOS-oriented WebKit device profile;
 - responsive/mobile layout assertions.
+
+Mobile Playwright projects are intentionally constrained to tests tagged `@portable`; adding mobile profiles must not multiply the entire catalogue/E2E suite. The parity regression checks this configuration contract.
 
 These are browser-engine/device-emulation claims only. Playwright WebKit is not branded Safari, and an iPhone descriptor is not a physical iPhone.
 
