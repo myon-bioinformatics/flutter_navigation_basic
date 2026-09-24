@@ -99,6 +99,7 @@ void main() {
       final outcome = await source.pickFromGallery();
       expect(outcome.status, PhotoPickStatus.success);
       expect(outcome.bytes, _tinyPng);
+      expect(outcome.declaredMimeType, 'image/png');
     });
 
     test('cancel returns cancelled', () async {
