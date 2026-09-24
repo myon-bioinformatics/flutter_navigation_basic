@@ -3,9 +3,10 @@ import path from 'node:path';
 import { waitForFlutter } from '../utils/helpers';
 
 const photoStudioRoute = '/#/tools/media/photo-studio';
+// Playwright commands in this repository run with e2e/ as the working directory.
 const fixture = path.resolve(
-  __dirname,
-  '../../test/fixtures/photo_studio/import_compat/png_opaque_2x2.png',
+  process.cwd(),
+  '../test/fixtures/photo_studio/import_compat/png_opaque_2x2.png',
 );
 
 test.describe('Photo Studio representative flow', () => {
