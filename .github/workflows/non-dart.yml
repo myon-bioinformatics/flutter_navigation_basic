@@ -290,7 +290,7 @@ jobs:
             fi
             sleep 1
           done
-          python3 ../tool/python/playwright.py test --project chromium --project firefox --project webkit --project mobile-chromium --project mobile-webkit --grep @portable tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts
+          python3 ../tool/python/playwright.py test --project chromium --project firefox --project webkit --project mobile-chromium --project mobile-webkit --grep @portable tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts tests/photo_studio_ingress.spec.ts
 
       - name: Upload Playwright report
         if: always()
