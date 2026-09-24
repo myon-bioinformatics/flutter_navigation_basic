@@ -317,6 +317,57 @@ void main() {
     expect(find.text('Retry'), findsOneWidget);
   });
 
+  testWidgets('pick carries non-image MIME into shared ingress', (tester) async {
+    var decodeCalled = false;
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(
+        imagePickOutcomeProvider: () async => PhotoPickOutcome.success(
+          _tinyPng,
+          declaredMimeType: 'text/plain',
+        ),
+        imageDecodeAdapter: (bytes) async {
+          decodeCalled = true;
+          return bytes;
+        },
+      ),
+    );
+
+    await tester.tap(find.text('Import image'));
+    await tester.pump();
+
+    expect(decodeCalled, isFalse);
+    expect(find.text('Retry'), findsOneWidget);
+  });
+
+  testWidgets('empty inserted MIME is unknown and reaches decode', (tester) async {
+    var decodeCalled = false;
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(
+        imageDecodeAdapter: (bytes) async {
+          decodeCalled = true;
+          return bytes;
+        },
+      ),
+    );
+
+    final field = tester
+        .widgetList<TextField>(find.byType(TextField))
+        .firstWhere((widget) => widget.contentInsertionConfiguration != null);
+    field.contentInsertionConfiguration!.onContentInserted(
+      KeyboardInsertedContent(
+        mimeType: '',
+        uri: 'content://photo-studio-test/unknown-mime',
+        data: _tinyPng,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(decodeCalled, isTrue);
+    expect(find.textContaining('Image loaded'), findsOneWidget);
+  });
+
   testWidgets('custom stamp text can be armed and placed', (tester) async {
     await _pumpPage(tester);
 
