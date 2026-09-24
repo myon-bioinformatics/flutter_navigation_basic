@@ -36,7 +36,7 @@ test.describe('Photo Studio ingress audit', () => {
     await expect(page.getByText('Image loaded', { exact: true })).toBeVisible({ timeout: 15_000 });
   });
 
-  test('picker rejects a declared non-image payload before decode @portable', async ({ page }) => {
+  test('picker rejects a declared non-image payload with unsupported-format state @portable', async ({ page }) => {
     await openPhotoStudio(page);
     const chooserPromise = page.waitForEvent('filechooser');
     await page.getByText('Import image', { exact: true }).click();
