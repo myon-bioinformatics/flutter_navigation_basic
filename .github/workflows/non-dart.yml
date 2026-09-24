@@ -154,6 +154,7 @@ jobs:
         run: |
           python tool/time/verify_timezone.py
           python tool/time/generate_timezone_cases.py --check
+          python tool/python/generate_photo_import_fixtures.py --check
 
   python-pytest:
     name: Python pytest oracles
