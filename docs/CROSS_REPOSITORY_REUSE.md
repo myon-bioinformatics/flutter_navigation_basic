@@ -1,125 +1,111 @@
 # Cross-repository reuse and import report
 
+> **Status:** Proposed candidates and sequence; no cross-repository runtime dependency is accepted by this document alone.  
+> **Decided:** 2026-09, PR #89.  
+> **Revisit:** after browser-test-kit reconciliation and the first proven two-repository reuse.
+
 ## Goal
 
-`flutter_navigation_basic` should both **consume reusable knowledge/components from sibling repositories** and **export useful, product-independent pieces back out**. Reuse is optional: do it only when it reduces duplicated maintenance, dependency weight, or inconsistent test semantics.
+`flutter_navigation_basic` should consume useful sibling knowledge and export product-independent contracts only when doing so reduces duplicated maintenance, dependency weight, or inconsistent semantics. “Shared because it might be useful” is not sufficient.
 
-The repository should not become a monorepo or a dependency hub. The preferred model is small contracts, fixtures, scripts, and documentation with explicit provenance.
+The repository should not become a monorepo/dependency hub. Prefer small contracts, fixtures, scripts, and documentation with pinned provenance.
 
-## Reuse directions
+## Verified sibling snapshot for this report
 
-### Import into flutter_navigation_basic
+The following repository descriptions were checked against these `main` SHAs while preparing PR #89; later changes require re-verification:
 
-| Source | Candidate | Use here | Coupling rule |
-| --- | --- | --- | --- |
-| `browser-test-kit` | browser matrix doctrine, evidence metadata, PNG/artifact validation, anti-pattern IDs | Playwright desktop/mobile parity, screenshot/trace evidence, emulation claim boundaries | Prefer copying/adapting a tiny stable script or consuming a versioned artifact later; do not make product CI depend on another repo's main branch |
-| `markdown` | stdlib text/HTML/Markdown helpers and browser-render testing lessons | documentation transforms, fixture/report rendering, static HTML probes | Use only if the capability is genuinely needed; avoid pulling a full app dependency for formatting |
-| `mcp-toolcall-lab` | MCP protocol fixtures, failure-layer taxonomy, browser `fetch` probes | MCP integration screen/mock server verification | Share protocol fixtures/contracts, not product UI assumptions |
-| `web-ui` | common CSS and visual-regression conventions | browser-native stub/demo surfaces | Prefer URL/static asset boundary where practical; Flutter UI should not import CSS merely for visual uniformity |
-| `Ironmate` | repository metadata/index contracts | searchable build/repo metadata or Pages integration | Exchange JSON contracts rather than application internals |
-| `ascii_artist` | small stdlib conversion patterns | only if an actual text/ASCII feature appears | No speculative dependency |
-| `search_seq_including_spaces` | fixture/data-processing patterns | only for generic parser/testing lessons | Domain logic does not belong in this app |
-
-### Export from flutter_navigation_basic
-
-| Candidate | Why portable | Possible destination |
+| Repository | Verified SHA | Relevant surface |
 | --- | --- | --- |
-| `tool/python/outcomes.py` outcome vocabulary | Normalizes pytest + Flutter-style receipts and rejects corrupt reporter data | browser-test-kit or a small shared CI/testing helper |
-| Playwright CLI argv regression | `--project=value` greediness is not Flutter-specific | browser-test-kit anti-pattern + executable example |
-| browser config/install parity guard | Generic protection against config/CI/Docker drift | browser-test-kit |
-| mobile/browser evidence doctrine | Distinguishes WebKit/iPhone emulation from physical-device proof | browser-test-kit and web-ui |
-| photo import fixture/evidence schema | Separates generated cases from measured environment outcomes | browser-test-kit media example or a future media-test kit |
-| stdlib artifact report | Generic file-tree size/count/gzip/delta reporting | Ironmate or shared repo-health tooling |
-| Actions freshness receipt | Exact-head validation is broadly useful before merge/reuse | shared GitHub/CI tooling |
-| timezone fixture/oracle pattern | Language-neutral JSON golden + independent verification | other multi-runtime repos |
-| GetX staged migration lessons | General framework-removal strategy: isolate responsibility, don't bulk rewrite | architecture docs/anti-pattern catalogue |
-| dependency audit rubric | “representative completeness” prevents dependency growth for demos | other catalogue/reference repos |
+| `browser-test-kit` | `7c53a4fcf8761b437e3177e0c12695ba42601698` | browser matrix/evidence/anti-pattern doctrine and executable examples |
+| `markdown` | `99b6a174a883f60a9c3ed01164a81fd7bd26ff76` | stdlib transformation + browser-render testing lessons |
+| `mcp-toolcall-lab` | `82f40d70ce965d6f1af45b2e96ade3aade9adfa3` | protocol/browser probe and failure-layer lessons |
+| `web-ui` | `e7d16a2ce0cee76b7744a4b6a8f8ce374491a4db` | CSS/visual-regression conventions |
+| `Ironmate` | `ed5cf73b5b5255d0eecc94cd505b853fad0e8b4e` | repository metadata/index contracts |
+| `ascii_artist` | `7c21bacfac7b60327b77f9b31a87869ef7838a7e` | small stdlib conversion patterns |
+| `search_seq_including_spaces` | `caa78196d1715c84b524701b8e7f7401c029909c` | parser/fixture/data-processing lessons |
+
+This is provenance for a design report, not a promise that every candidate should be imported.
+
+## Import candidates
+
+| Source | Candidate/use | Coupling rule | Status |
+| --- | --- | --- | --- |
+| browser-test-kit | browser matrix/evidence metadata/PNG validation/stable browser IDs | Prefer shared vocabulary or a pinned tiny artifact; never depend on sibling `main` at PR runtime | **qualified:** same browser evidence contract already exists here |
+| markdown | text/HTML/Markdown helpers, static render lessons | Import only for a concrete feature; no formatting dependency merely for reuse | local/documented until duplicate need appears |
+| mcp-toolcall-lab | MCP protocol fixtures, failure-layer taxonomy, browser `fetch` probes | Share protocol contracts, not product UI assumptions | qualified when MCP integration work would otherwise duplicate it |
+| web-ui | visual-regression conventions; browser-native stub styling | URL/static boundary; if tokens are shared, limit to small CSS custom-property tokens; Flutter theme remains local | local/documented pending concrete browser-native surface |
+| Ironmate | repository metadata/index JSON contracts | Exchange versioned JSON, not application internals | local/documented pending concrete consumer |
+| ascii_artist | small conversion patterns | no speculative dependency | local/documented |
+| search_seq_including_spaces | generic parser/fixture lessons only | domain logic remains outside this app | local/documented |
+
+## Export candidates and the decision test
+
+A candidate is exportable only when it satisfies at least one decision condition: **D1** two repos already implement the same contract; **D2** another repo is about to duplicate a tested implementation; **D3** shared vocabulary prevents misleading compatibility/evidence claims; **D4** central fixture/schema ownership materially reduces drift.
+
+| Candidate | Condition now | Disposition |
+| --- | --- | --- |
+| browser evidence vocabulary / mobile claim boundaries | D1 + D3: browser-test-kit and this repo | reconcile with browser-test-kit now; consume its stable IDs |
+| Playwright CLI argv regression | D2: browser-test-kit executable-kit goal and tested local incident | propose upstream executable regression; keep local conformance test |
+| browser config/install parity guard | D1/D2: both repos protect matrix parity | propose shared contract/example, not a package dependency |
+| `outcomes.py` six-state vocabulary | no second active implementation verified yet | **local, documented**; propose schema only when a second consumer appears |
+| photo fixture/evidence split | D3 is plausible, no second active media consumer verified | **local, documented** |
+| stdlib artifact report | no condition verified | **local, documented** |
+| Actions freshness receipt | cross-repo utility is plausible, no second implementation verified in this report | **local, documented** |
+| timezone golden/oracle pattern | language-neutral pattern but no second active consumer verified | **local, documented** |
+| GetX staged migration lesson | documentation reuse only | keep as architecture lesson, not shared code |
+| dependency-audit rubric | documentation reuse only | keep as architecture lesson, not shared code |
+
+This prevents “sharing for sharing's sake,” the cross-repository form of `DEPENDENCY_FOR_CATALOGUE_COMPLETENESS`.
 
 ## Reuse mechanisms, lightest first
 
-1. **Documentation / stable anti-pattern IDs** — cheapest and often enough.
-2. **Language-neutral JSON fixtures/schemas** — good for independent Dart/Python/TS implementations.
-3. **Single-file stdlib script copied with provenance** — acceptable when tiny and stable; include upstream path/commit and a parity/update check if drift matters.
-4. **Generated artifact consumed at build/test time** — useful for indexes/evidence, pin to a release/SHA and cache it.
-5. **Git submodule/package dependency** — use only when independent versioning and direct runtime reuse justify the operational cost.
-6. **Network/runtime dependency on sibling repo** — last choice for tests; deterministic local fixtures should remain available.
+1. **Documentation / stable IDs.**
+2. **Language-neutral JSON fixtures/schemas.**
+3. **Single-file stdlib copy with pinned provenance.** Put an upstream header in the copy, for example:
+   `# upstream: myon-bioinformatics/browser-test-kit@<sha>:path/to/file.py`
+   If drift matters, an **opt-in, non-PR-gating** pytest may fetch that exact upstream SHA and report divergence. Never compare against moving `main`.
+4. **Generated/versioned artifact**, pinned to release/SHA and cached.
+5. **Package/submodule**, only when independent versioning and direct reuse justify the operational cost.
+6. **Sibling network/runtime dependency**, last choice; deterministic local fixtures remain available.
 
-Cross-repo reuse must not mean “curl sibling main during every PR”. That makes unrelated repository availability part of the product gate.
+Cross-repo reuse must never mean “curl sibling main during every PR.”
 
 ## Shared-contract candidates
 
 ### Browser evidence receipt
 
-A portable JSON record can include:
+browser-test-kit is the preferred owner. A portable JSON record can include schema version, repository/commit SHA, runtime, browser engine/project, device/profile + emulation flag, viewport, failure stage, result, screenshot/trace/video paths, optional PNG/dimension validation, and explicit claim level (engine/profile vs physical device).
 
-- schema version;
-- repository + commit SHA;
-- runtime;
-- browser engine/project;
-- device/profile and whether it is emulated;
-- viewport;
-- stage (`install/launch/navigate/interact/assert/screenshot/artifact/cleanup`);
-- result;
-- screenshot/trace/video paths;
-- optional dimensions/PNG validation;
-- explicit claim level: engine/profile vs real device.
-
-`browser-test-kit` is the natural owner. Flutter Navigation Basic should consume the contract rather than fork its own vocabulary.
+Flutter Navigation Basic should conform to a versioned contract once one exists rather than fork the vocabulary.
 
 ### Test outcome receipt
 
-The existing six-state vocabulary is portable:
+The local prototype uses:
 
 `passed / failed / skipped / xfailed / xpassed / error`
 
-A future shared schema could let Dart/Flutter, pytest, Playwright and other repositories emit comparable CI summaries. The current `outcomes.py` is a useful prototype, but extraction should preserve Flutter-specific parsing either as an adapter or in this repository.
+Keep the implementation local until a second active consumer justifies a shared schema. Flutter reporter parsing remains a Flutter adapter even if the vocabulary becomes shared.
 
 ### Fixture + measured evidence split
 
-Photo import already demonstrates a strong cross-repo model:
+Photo import separates generator-owned cases/binaries from environment-specific measured evidence. The generator never overwrites measured outcomes, and synthetic evidence cannot upgrade itself into physical-device compatibility. This is a portable lesson; extraction waits for a second consumer.
 
-- generator-owned fixture definitions/binaries;
-- environment-specific measured evidence stored separately;
-- generator never overwrites measured outcomes;
-- synthetic evidence never upgrades itself into physical-device compatibility.
+## What stays local
 
-This pattern is reusable for browser compatibility, protocol fixtures, media codecs, and external-site probes.
-
-## What should remain local
-
-Do not export product-specific widgets, route tables, screen controllers, platform channel implementations, app localization copy, or catalogue examples merely to increase reuse. Shared code that needs frequent knowledge of Flutter Navigation Basic's product structure is not actually shared.
-
-Similarly, importing another repository is a poor trade if a 20-line stdlib implementation is clearer and more stable locally.
+Product widgets, route tables, screen controllers, platform channels, localization copy, and catalogue examples stay local. Shared code that frequently needs Flutter Navigation Basic product structure is not shared. Likewise, a clear 20-line stdlib implementation can be preferable to a cross-repo dependency.
 
 ## Provenance policy
 
-When code or fixtures are adapted from a sibling repository, record:
-
-- source repository/path;
-- source commit or release;
-- what was copied vs modified;
-- local regression test;
-- update policy.
-
-For documentation-only lessons, a source link/path and stable anti-pattern ID are sufficient.
+Adapted code/fixtures record source repo/path, exact source commit/release, copied-vs-modified notes, local regression test, and update policy. Documentation lessons record repo@SHA plus stable ID where applicable. This document follows its own policy in the verified snapshot table above.
 
 ## Proposed sequence
 
-1. Finish the current runtime-ownership/browser-matrix PR without adding cross-repo runtime dependencies.
-2. Compare this repository's anti-pattern IDs with `browser-test-kit`; promote generic browser IDs upstream and keep Flutter-specific IDs local.
-3. Propose `outcomes.py`'s schema/vocabulary to browser-test-kit as a cross-runtime receipt, without moving Flutter-specific parser behavior prematurely.
-4. Move or mirror the exact Playwright argv and browser parity regressions into browser-test-kit, then keep a small downstream conformance test here.
-5. Define a versioned browser evidence JSON schema in browser-test-kit and have this repository emit it.
-6. Evaluate generic artifact-report/Actions-freshness helpers for Ironmate or a future small shared tooling package only if at least two repositories actively need the same behavior.
-7. Keep product code independent: cross-repo failures should not block the app unless the dependency is intentionally versioned and required.
+1. Merge runtime-ownership/browser-matrix policy without adding runtime sibling dependencies.
+2. Keep generic browser IDs reconciled to browser-test-kit stable vocabulary.
+3. Upstream the exact Playwright argv/parity regression examples where browser-test-kit would otherwise duplicate them.
+4. Define/consume a versioned browser evidence JSON contract when browser-test-kit adopts one.
+5. Re-evaluate local-only candidates only when a second repository demonstrates an active need.
 
 ## Decision test
 
-A cross-repository extraction/import is useful when at least one is true:
-
-- two or more repositories already implement the same contract;
-- one repository has a tested implementation and another is about to duplicate it;
-- shared vocabulary prevents misleading compatibility/evidence claims;
-- centralizing the fixture/schema materially reduces drift.
-
-If none applies, keep it local and document the lesson instead.
+Export/import only when D1, D2, D3, or D4 is actually evidenced. Otherwise keep the capability **local, documented**.
