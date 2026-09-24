@@ -10,9 +10,9 @@ a compile step. Avoid new environment dependencies unless allowlisted.
 
 | Language | Prefer for | Notes |
 | --- | --- | --- |
-| **Dart / Flutter** | App runtime, widget/UI tests, repo toolkit (`tool/*.dart`) | App source of truth |
-| **Python stdlib** | Actions status (`actions_latest.py`), JSON/zip/http one-liners, timezone oracle (`tool/time/`) | No pip required |
-| **Python + allowlisted pip** | Pytest runner under `tool/python/requirements.txt` (`pytest`; optional `Pillow` for fixture regen only; no pydantic) | Not for app runtime; Dart owns formula assertions |
+| **Dart / Flutter** | Shipped Flutter runtime, widgets/navigation, Flutter-aware tooling | Production app source of truth where Flutter owns the capability |
+| **Python stdlib** | Generic dev/test tooling: Actions, JSON/zip/filesystem/network, fixtures, reports, reference oracles | No pip required; may take ownership from Dart tooling when it materially simplifies maintenance |
+| **Python + allowlisted pip** | Pytest/browser/oracle tooling under `tool/python/requirements.txt` | Not ordinary client runtime; one production source of truth remains mandatory |
 | **Deno** (optional) | TS one-file fetch/CLI scripts with zero `node_modules` | OK when JS/TS + std fetch fits better than Python |
 
 Root-level / app-tree `requirements.txt` remains prohibited.
