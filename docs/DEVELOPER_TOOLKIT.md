@@ -4,14 +4,13 @@ This repository keeps repeatable diagnostics in Dart so local development, CI, a
 
 ## Policy
 
-- Dart / Flutter SDK APIs are the default for repository tooling and app runtime.
-- Prefer **stdlib-first** scripts for non-compiled helpers: Python stdlib, Dart
-  toolkit, and optional Deno one-file CLIs when that fits better than pip/npm.
+- Flutter/Dart remains the default for **shipped Flutter runtime behavior**, not automatically for repository tooling.
+- Choose developer-tool ownership by boundary and total maintenance cost: prefer Python stdlib for generic filesystem/JSON/Git/Actions/archive/network/oracle work; Dart for Flutter/app-aware behavior; Playwright Node/Python for browser evidence; and optional Deno one-file CLIs when TypeScript + built-in web APIs materially reduce setup.
+- Prefer **stdlib-first** scripts for non-compiled helpers and avoid adding a second implementation merely to change language.
 - Python stdlib / `python -m` remain preferred for simple OS/network/packaging/Actions tasks.
 - **Pip dependencies are allowlisted only at `tool/python/requirements.txt`** for
   dev/test tooling (**pytest only**; no pydantic). Root-level or app-tree
-  `requirements.txt` files remain prohibited. App formula assertions stay in
-  Dart; Python may keep stdlib structural checks on shared JSON fixtures.
+  `requirements.txt` files remain prohibited. Production formulas keep one authoritative runtime implementation. Python may provide readable stdlib/pytest reference oracles when that improves verification, provided the oracle does not become a second production source of truth.
 - Runtime Flutter dependencies must never be added merely to support developer diagnostics.
 - Network probes and mocks are developer/test utilities; they are not shipped as application runtime features.
 - Generated diagnostics live under `build/` and are git-ignored.
@@ -205,4 +204,9 @@ python3 -m http.server 8080
 python3 -m zipfile -l build/diagnostics.zip
 ```
 
-These commands require no repository Python package setup. If a proposed tool needs a `requirements.txt`, implement it in Dart first or make a separate explicit tooling decision instead of quietly introducing pip dependencies.
+These commands require no repository Python package setup. If a proposed tool needs additional packages, make an explicit ownership/dependency decision instead of assuming Dart or Python wins by default. Prefer the smallest existing runtime and stdlib surface that proves the contract.
+
+
+## Runtime ownership review
+
+See [`MULTIPLATFORM_RUNTIME_OWNERSHIP.md`](./MULTIPLATFORM_RUNTIME_OWNERSHIP.md) for the current Dart/Python/browser-native/Deno decision rubric and the browser-first multi-platform verification plan. The invariant is platform reach and maintainability, not language preservation.
