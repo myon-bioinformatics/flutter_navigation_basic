@@ -43,7 +43,7 @@ def _stub_playwright_cli(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_project_flag_is_a_single_equals_joined_token() -> None:
     args = playwright._playwright_test_args(
-        project="chromium",
+        projects=["chromium"],
         headed=False,
         grep=None,
         extra=["tests/visual_snapshot.spec.ts"],
@@ -60,7 +60,7 @@ def test_project_flag_is_a_single_equals_joined_token() -> None:
 
 def test_grep_flag_is_a_single_equals_joined_token() -> None:
     args = playwright._playwright_test_args(
-        project=None,
+        projects=None,
         headed=False,
         grep="home page",
         extra=["tests/hub_navigation.spec.ts"],
@@ -90,7 +90,7 @@ def test_snapshot_command_builds_the_exact_argv_that_failed_under_docker() -> No
     assert parsed.project == "chromium"
 
     cmd = playwright._playwright_test_args(
-        project=parsed.project,
+        projects=[parsed.project],
         headed=parsed.headed,
         grep=parsed.grep,
         extra=["tests/visual_snapshot.spec.ts", *parsed.extra],
@@ -106,3 +106,27 @@ def test_snapshot_command_builds_the_exact_argv_that_failed_under_docker() -> No
         "tests/visual_snapshot.spec.ts",
         "--update-snapshots",
     ]
+
+
+def test_multiple_project_flags_are_repeatable_equals_joined_tokens() -> None:
+    parsed = playwright.build_parser().parse_args([
+        "test",
+        "--project", "chromium",
+        "--project", "firefox",
+        "--project", "webkit",
+        "tests/photo_studio.spec.ts",
+    ])
+    args = playwright._playwright_test_args(
+        projects=parsed.projects,
+        headed=parsed.headed,
+        grep=parsed.grep,
+        extra=parsed.extra,
+    )
+    assert args == [
+        "node", "cli.js", "test",
+        "--project=chromium",
+        "--project=firefox",
+        "--project=webkit",
+        "tests/photo_studio.spec.ts",
+    ]
+    assert "--project" not in args
