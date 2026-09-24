@@ -38,7 +38,8 @@ python tool/python/playwright.py test \
   --project chromium --project firefox --project webkit \
   --project mobile-chromium --project mobile-webkit \
   --grep @portable \
-  tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts
+  tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts \
+  tests/photo_studio_ingress.spec.ts
 
 # テスト一覧（CI smoke と同用途）
 python tool/python/playwright.py list
@@ -80,7 +81,8 @@ docker run --rm \
 
 # 高速なローカル確認: Chromium のみへ CMD を上書き
 docker run --rm flutter-nav-e2e test --project chromium --grep @portable \
-  tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts
+  tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts \
+  tests/photo_studio_ingress.spec.ts
 
 # Visual snapshot のスクショを撮りたいだけなら（コンテナ内の tool/python/playwright.py にそのまま引数が渡る）
 docker run --rm \
