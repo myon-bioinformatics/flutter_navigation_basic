@@ -22,7 +22,7 @@ page.on('console', (msg) => console.log(`[browser:${msg.type()}] ${msg.text()}`)
 page.on('pageerror', (err) => console.error(`[browser:error] ${err.message}`));
 try {
   console.log(JSON.stringify({ event: 'start', browser: browserName, baseURL, fixture, output, timeout }));
-  await page.goto(baseURL, { waitUntil: 'networkidle', timeout });
+  await page.goto(`${baseURL.replace(/\/$/, '')}/#/tools/media/photo-studio`, { waitUntil: 'networkidle', timeout });
   const importButton = page.getByText('Import image', { exact: true });
   await importButton.waitFor({ state: 'visible' });
   const chooserPromise = page.waitForEvent('filechooser', { timeout });
