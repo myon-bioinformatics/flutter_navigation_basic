@@ -130,8 +130,6 @@ e2e/
 │   ├── screen_navigation.spec.ts
 │   ├── photo_studio.spec.ts       # Photo Studio representative portable flow
 │   ├── photo_studio_ingress.spec.ts # ingress audit; clipboard case is Chromium-scoped
-
-`photo_studio.spec.ts` owns the shortest representative picker happy path. `photo_studio_ingress.spec.ts` intentionally audits ingress boundaries (portable picker/MIME rejection plus Chromium-scoped clipboard) and should not grow into a second copy of the full representative flow.
 │   └── visual_snapshot.spec.ts # Visual regression baseline
 ├── fixtures/
 │   └── test_data.json
@@ -147,3 +145,5 @@ tool/docker/
 
 Dockerfile.e2e                  # Flutter build + Playwright, containerized
 ```
+
+`photo_studio.spec.ts` owns the shortest representative picker happy path. `photo_studio_ingress.spec.ts` intentionally audits ingress boundaries (portable picker/MIME rejection plus Chromium-scoped clipboard) and should not grow into a second copy of the full representative flow.
