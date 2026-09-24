@@ -35,19 +35,15 @@ def _run(args: list[str]) -> int:
 
 def _playwright_test_args(
     *,
-    project: str | None,
+    projects: list[str] | None,
     headed: bool,
     grep: str | None,
     extra: list[str],
 ) -> list[str]:
     args = [*_playwright_prefix(), "test"]
-    if project:
-        # A single "--project=value" token, not ["--project", value]: Playwright's
-        # CLI treats a space-separated --project as accepting multiple project
-        # names, so ["--project", "chromium", "tests/foo.spec.ts"] has it swallow
-        # the spec path as a second (invalid) project name instead of a test file
-        # ("Project(s) "tests/foo.spec.ts" not found"). --project=value is one
-        # token and can't absorb what follows, regardless of order.
+    for project in projects or []:
+        # Keep every project as one --project=value token. Playwright's
+        # space-separated form can greedily consume a following spec path.
         args.append(f"--project={project}")
     if headed:
         args.append("--headed")
@@ -64,7 +60,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     test = sub.add_parser("test", help="Run Playwright tests.")
-    test.add_argument("--project")
+    test.add_argument("--project", action="append", dest="projects")
     test.add_argument("--headed", action="store_true")
     test.add_argument("--grep")
     test.add_argument("extra", nargs=argparse.REMAINDER)
@@ -112,7 +108,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "test":
         return _run(
             _playwright_test_args(
-                project=args.project,
+                projects=args.projects,
                 headed=args.headed,
                 grep=args.grep,
                 extra=args.extra,
@@ -124,7 +120,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "snapshot":
         cmd = _playwright_test_args(
-            project=args.project,
+            projects=[args.project],
             headed=args.headed,
             grep=args.grep,
             extra=["tests/visual_snapshot.spec.ts", *args.extra],
