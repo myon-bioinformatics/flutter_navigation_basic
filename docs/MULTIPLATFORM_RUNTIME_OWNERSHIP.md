@@ -127,7 +127,7 @@ A Python oracle is not automatically independent merely because it uses another 
 2. an independently derived oracle using a different algorithm, invariant, or authoritative specification;
 3. only then a second-language implementation when independence can be explained.
 
-A line-for-line Dart-to-Python translation is not an oracle: it can reproduce the same bug and violates `DUPLICATE_RUNTIME_SOURCE`. Python remains valuable for readable verification, but independence matters more than language.
+A line-for-line Dart-to-Python translation is not an oracle: it can reproduce the same bug and violates `DUPLICATE_RUNTIME_SOURCE`. Python remains valuable for readable verification, but independence matters more than language. The canonical existing example is `tool/time/generate_timezone_cases.py`: its golden records `Python stdlib zoneinfo / system IANA tzdata` as provenance, independently of the Dart implementation under test.
 
 ### Browser-native surface boundary
 
@@ -169,6 +169,8 @@ The exact schema is capability-specific; do not force every feature into one uni
 
 ### Derive files from the golden, not the reverse
 
+**Prefer not to generate source when consuming the JSON directly is sufficient.** Runtime/test JSON consumption has fewer layers and less drift. Generate Dart/TS source only when compile-time constants, typed accessors, packaging constraints, or another concrete boundary provide enough value to justify an additional generated layer.
+
 A development-only generator may consume JSON golden data and deterministically emit:
 
 - Dart constants, typed fixture adapters, or generated test cases;
@@ -181,7 +183,7 @@ Python stdlib is the preferred first generator when it gives the smallest readab
 
 Generated code must be deliberately boring: a mechanical representation of the JSON contract, not a place where product algorithms are authored. **Do not use Python to generate arbitrary Dart business logic merely because it can.** If the generator must understand Flutter navigation/state/widget semantics, the boundary is probably wrong.
 
-The repository already has a partial precedent: `tool/time/generate_timezone_cases.py` generates deterministic reference cases for Dart tests, and the photo-import tooling generates binaries + `cases.json` while measured evidence remains separate. PR #89 generalizes that direction instead of inventing a new runtime dependency.
+The repository already proves the **JSON-golden generation** half of this pattern: `tool/time/generate_timezone_cases.py` deterministically generates reference JSON for Dart tests and CI enforces its `--check` drift check. Its `source: Python stdlib zoneinfo / system IANA tzdata` provenance is the canonical in-repo example of an independently derived golden. The photo-import tooling also generates binaries + `cases.json` while measured evidence remains separate, but it is a local/manual regeneration tool and CI consumes committed binaries rather than enforcing the generator. **Generating Dart/Markdown/TS source from a golden is a new, not-yet-implemented extension in this repository**, not an already-proven precedent.
 
 ### Generator contract
 
@@ -233,7 +235,9 @@ The product's portability claim should be expressed as evidence tiers.
 
 ### Deterministic core matrix
 
-Run routinely:
+**Enforced today:** config/install parity and `--list` presence for all five projects. **Executed today:** the manual E2E dispatch executes Chromium only. **Target:** routine execution of the `@portable` representative subset across all five projects.
+
+Configured target matrix:
 
 - desktop Chromium;
 - desktop Firefox;
