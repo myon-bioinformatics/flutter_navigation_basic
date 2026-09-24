@@ -9,6 +9,7 @@ on:
     paths:
       - "tool/python/**"
       - "tool/time/**"
+      - "test/fixtures/photo_studio/import_compat/**"
       - "e2e/**"
       - "**/requirements.txt"
       - ".github/workflows/non-dart.yml"
@@ -17,6 +18,7 @@ on:
     paths:
       - "tool/python/**"
       - "tool/time/**"
+      - "test/fixtures/photo_studio/import_compat/**"
       - "e2e/**"
       - "**/requirements.txt"
       - ".github/workflows/non-dart.yml"
@@ -84,7 +86,7 @@ jobs:
           workflow=false
           for f in "${files[@]}"; do
             case "$f" in
-              tool/python/*|tool/time/*)
+              tool/python/*|tool/time/*|test/fixtures/photo_studio/import_compat/*)
                 python=true
                 ;;
               e2e/*)
@@ -154,6 +156,9 @@ jobs:
         run: |
           python tool/time/verify_timezone.py
           python tool/time/generate_timezone_cases.py --check
+
+      - name: Verify photo fixture drift
+        run: python tool/python/generate_photo_import_fixtures.py --check
 
   python-pytest:
     name: Python pytest oracles

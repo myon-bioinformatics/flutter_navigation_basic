@@ -8,16 +8,20 @@ Regenerate fixtures (developer machine / agent VM with tools):
 
   python3 tool/python/generate_photo_import_fixtures.py
 
-CI must not need these tools: committed fixtures + evidence are the source of
-truth. No personal photos, GPS, or network downloads.
+CI runs `--check`, which is stdlib-only. Full regeneration needs the optional
+host encoders; committed fixtures + evidence remain the source of truth. No
+personal photos, GPS, or network downloads.
 """
 
 from __future__ import annotations
 
+import argparse
+import hashlib
 import json
 import shutil
 import struct
 import subprocess
+import tempfile
 import zlib
 from pathlib import Path
 
@@ -26,13 +30,34 @@ OUT = ROOT / "test" / "fixtures" / "photo_studio" / "import_compat"
 CASES = OUT / "cases.json"
 TMP = OUT / ".gen_tmp"
 
+# Fixtures owned by the stdlib generator. PNG compression bytes are explicitly
+# not treated as portable: --check compares decoded scanlines plus non-IDAT
+# chunks. Encoder-backed JPEG/WebP/HEIC are structurally validated instead.
+CASE_DECLARED_DETERMINISTIC_FILES = (
+    "png_opaque_2x2.png",
+    "png_alpha_2x2.png",
+    "png_markers_64x32.png",
+    "gif_still_1x1.gif",
+    "avif_ftyp_only.avif",
+    "heic_ftyp_heic.heic",
+    "heic_ftyp_heif.heic",
+    "heic_ftyp_mif1.heic",
+    "heic_ftyp_msf1.heic",
+    "heic_ftyp_heix.heic",
+    "png_truncated.png",
+    "empty.bin",
+    "png_claim_10000x10000.png",
+)
+AUXILIARY_DETERMINISTIC_FILES = ("README_OVERSIZE.txt",)
+DETERMINISTIC_FILES = CASE_DECLARED_DETERMINISTIC_FILES + AUXILIARY_DETERMINISTIC_FILES
+
 
 def _require(cmd: str) -> str:
     path = shutil.which(cmd)
     if not path:
         raise SystemExit(
             f"Missing `{cmd}` on PATH. Install it to regenerate fixtures "
-            f"(CI uses committed binaries and does not run this script)."
+            f"(CI only runs this script with --check)."
         )
     return path
 
@@ -182,27 +207,173 @@ def alpha_png_rows(width: int = 8, height: int = 4) -> list[bytes]:
     return rows
 
 
-def main() -> None:
-    ffmpeg = _require("ffmpeg")
-    heif_enc = _require("heif-enc")
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
-    if OUT.exists():
-        # Keep evidence/ and cases are rewritten; remove generated binaries we own.
-        pass
-    OUT.mkdir(parents=True, exist_ok=True)
-    TMP.mkdir(parents=True, exist_ok=True)
 
-    # --- PNG ---
-    write_png_rgb(OUT / "png_opaque_2x2.png", 2, 2, [
+def write_deterministic_fixtures(out_dir: Path) -> None:
+    """Write every fixture in DETERMINISTIC_FILES using stdlib only.
+
+    Shared by `main()` and `_check_committed()` so the drift check compares
+    against the exact same code path that produces the committed fixtures.
+    """
+    write_png_rgb(out_dir / "png_opaque_2x2.png", 2, 2, [
         bytes([0, 0, 0, 255, 0, 0]),
         bytes([0, 0, 255, 255, 255, 0]),
     ])
-    write_png_rgba(OUT / "png_alpha_2x2.png", 2, 2, [
+    write_png_rgba(out_dir / "png_alpha_2x2.png", 2, 2, [
         bytes([255, 0, 0, 128, 255, 0, 0, 128]),
         bytes([255, 0, 0, 128, 255, 0, 0, 128]),
     ])
+    write_png_rgb(out_dir / "png_markers_64x32.png", 64, 32, marker_png_rgb(64, 32))
+    write_gif(out_dir / "gif_still_1x1.gif")
+    write_ftyp(out_dir / "avif_ftyp_only.avif", "avif", ["avif", "mif1"])
+    for brand in ("heic", "heif", "mif1", "msf1", "heix"):
+        write_ftyp(out_dir / f"heic_ftyp_{brand}.heic", brand, [brand, "mif1"])
+    write_truncated_png(out_dir / "png_truncated.png", out_dir / "png_opaque_2x2.png")
+    (out_dir / "empty.bin").write_bytes(b"")
+    write_png_ihdr_only(out_dir / "png_claim_10000x10000.png", 10000, 10000)
+    (out_dir / "README_OVERSIZE.txt").write_text(
+        "Do not commit 32MiB blobs. Tests allocate maxInputBytes+1 at runtime.\n",
+        encoding="utf-8",
+    )
+
+
+def _png_semantics(path: Path) -> tuple[tuple[tuple[bytes, bytes], ...], bytes]:
+    data = path.read_bytes()
+    if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise ValueError("bad PNG signature")
+    pos = 8
+    structural: list[tuple[bytes, bytes]] = []
+    idat = bytearray()
+    while pos + 12 <= len(data):
+        length = struct.unpack(">I", data[pos:pos + 4])[0]
+        tag = data[pos + 4:pos + 8]
+        chunk = data[pos + 8:pos + 8 + length]
+        crc_at = pos + 8 + length
+        if crc_at + 4 > len(data):
+            raise ValueError("truncated PNG chunk")
+        expected_crc = struct.unpack(">I", data[crc_at:crc_at + 4])[0]
+        actual_crc = zlib.crc32(tag + chunk) & 0xFFFFFFFF
+        if expected_crc != actual_crc:
+            raise ValueError(f"bad PNG CRC for {tag!r}")
+        if tag == b"IDAT":
+            idat.extend(chunk)
+        else:
+            structural.append((tag, chunk))
+        pos = crc_at + 4
+        if tag == b"IEND":
+            break
+    if not idat:
+        raise ValueError("PNG has no IDAT")
+    return tuple(structural), zlib.decompress(bytes(idat))
+
+
+def _same_generated_fixture(name: str, committed: Path, generated: Path) -> bool:
+    # Compression bytes are not a portable contract: compare decoded PNG scanlines
+    # plus non-IDAT chunks instead. Other stdlib fixtures are byte deterministic.
+    if name.endswith(".png") and name != "png_truncated.png":
+        return _png_semantics(committed) == _png_semantics(generated)
+    return committed.read_bytes() == generated.read_bytes()
+
+
+def _validate_magic(path: Path, fmt: str, kind: str) -> None:
+    data = path.read_bytes()
+    if fmt == "empty":
+        if data:
+            raise ValueError("empty fixture is not empty")
+    elif fmt == "jpeg" and not data.startswith(b"\xff\xd8"):
+        raise ValueError("missing JPEG SOI")
+    elif fmt == "webp" and not (len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP"):
+        raise ValueError("missing RIFF/WEBP signature")
+    elif fmt == "gif" and not data.startswith((b"GIF87a", b"GIF89a")):
+        raise ValueError("missing GIF signature")
+    elif fmt == "png":
+        if kind == "intentionally_invalid" and path.name == "png_truncated.png":
+            if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+                raise ValueError("missing truncated PNG signature")
+        elif not data.startswith(b"\x89PNG\r\n\x1a\n"):
+            raise ValueError("missing PNG signature")
+    elif fmt in {"avif", "heic"}:
+        if len(data) < 12 or data[4:8] != b"ftyp":
+            raise ValueError("missing ISO-BMFF ftyp box")
+        brand = data[8:12]
+        allowed = {b"avif", b"avis"} if fmt == "avif" else {b"heic", b"heix", b"hevc", b"hevx", b"heim", b"heis", b"hevm", b"hevs", b"mif1", b"msf1", b"heif"}
+        if brand not in allowed:
+            raise ValueError(f"unexpected {fmt} major brand {brand!r}")
+
+
+def _check_committed() -> int:
+    """Verify committed fixture contracts without encoder dependencies."""
+    try:
+        committed_payload = json.loads(CASES.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"invalid cases.json: {exc}")
+        return 1
+    expected_payload = build_cases_payload()
+    if committed_payload != expected_payload:
+        print("cases.json drift: regenerate it with generate_photo_import_fixtures.py")
+        return 1
+
+    declared = {case["fixture"] for case in committed_payload["cases"] if case.get("fixture")}
+    undeclared = [name for name in CASE_DECLARED_DETERMINISTIC_FILES if name not in declared]
+    if undeclared:
+        for name in undeclared:
+            print(f"deterministic fixture absent from cases.json: {name}")
+        return 1
+
+    for case in committed_payload["cases"]:
+        name = case.get("fixture")
+        if not name:
+            continue
+        path = OUT / name
+        if not path.is_file():
+            print(f"missing declared fixture: {name}")
+            return 1
+        try:
+            _validate_magic(path, case["format"], case["kind"])
+        except ValueError as exc:
+            print(f"fixture structure mismatch: {name}: {exc}")
+            return 1
+
+    missing_aux = [name for name in AUXILIARY_DETERMINISTIC_FILES if not (OUT / name).is_file()]
+    if missing_aux:
+        for name in missing_aux:
+            print(f"missing auxiliary fixture: {name}")
+        return 1
+
+    with tempfile.TemporaryDirectory(prefix="photo-fixture-check-") as tmp:
+        check_dir = Path(tmp)
+        write_deterministic_fixtures(check_dir)
+        for name in DETERMINISTIC_FILES:
+            try:
+                same = _same_generated_fixture(name, OUT / name, check_dir / name)
+            except (OSError, ValueError, zlib.error) as exc:
+                print(f"fixture validation failed: {name}: {exc}")
+                return 1
+            if not same:
+                print(f"fixture drift: {name}")
+                return 1
+    print(f"photo fixture check ok: {len(declared)} declared fixtures; {len(DETERMINISTIC_FILES)} stdlib-owned fixtures")
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--check", action="store_true", help="verify stdlib-owned committed fixtures without external encoders")
+    args = parser.parse_args(argv)
+    if args.check:
+        return _check_committed()
+
+    ffmpeg = _require("ffmpeg")
+    heif_enc = _require("heif-enc")
+
+    OUT.mkdir(parents=True, exist_ok=True)
+    TMP.mkdir(parents=True, exist_ok=True)
+
+    # --- Deterministic (stdlib-only) fixtures; see write_deterministic_fixtures ---
+    write_deterministic_fixtures(OUT)
     markers = OUT / "png_markers_64x32.png"
-    write_png_rgb(markers, 64, 32, marker_png_rgb(64, 32))
 
     # --- JPEG baseline / progressive / EXIF from markers ---
     base_jpg = TMP / "markers_baseline.jpg"
@@ -248,25 +419,25 @@ def main() -> None:
         "-update", "1", str(OUT / "webp_alpha_8x4.webp"),
     ])
 
-    # --- GIF / AVIF ftyp-only / HEIC ftyp-only (container sniff) ---
-    write_gif(OUT / "gif_still_1x1.gif")
-    write_ftyp(OUT / "avif_ftyp_only.avif", "avif", ["avif", "mif1"])
-    for brand in ("heic", "heif", "mif1", "msf1", "heix"):
-        write_ftyp(OUT / f"heic_ftyp_{brand}.heic", brand, [brand, "mif1"])
-
     # --- Real synthetic HEIC (decodable by libheif; Flutter may still reject) ---
     heic_out = OUT / "heic_synthetic_markers_64x32.heic"
     _run([heif_enc, "-o", str(heic_out), "-q", "40", str(markers)])
 
-    # --- Failure probes ---
-    write_truncated_png(OUT / "png_truncated.png", OUT / "png_opaque_2x2.png")
-    (OUT / "empty.bin").write_bytes(b"")
-    write_png_ihdr_only(OUT / "png_claim_10000x10000.png", 10000, 10000)
-    (OUT / "README_OVERSIZE.txt").write_text(
-        "Do not commit 32MiB blobs. Tests allocate maxInputBytes+1 at runtime.\n",
-        encoding="utf-8",
-    )
+    payload = build_cases_payload()
+    CASES.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
+    # Remove legacy monolithic manifest if present.
+    legacy = OUT / "manifest.json"
+    if legacy.exists():
+        legacy.unlink()
+
+    shutil.rmtree(TMP, ignore_errors=True)
+    print(f"Wrote fixtures + {CASES.relative_to(ROOT)}")
+    return 0
+
+
+def build_cases_payload() -> dict:
+    """Return the language-neutral fixture contract without touching encoders."""
     cases = [
         _case("png_opaque_2x2", "png", "opaque", "png_opaque_2x2.png", "raster"),
         _case("png_alpha_2x2", "png", "alpha", "png_alpha_2x2.png", "raster"),
@@ -376,7 +547,7 @@ def main() -> None:
             notes="Allocated at test runtime: maxInputBytes+1",
         ),
     ]
-
+    
     payload = {
         "schemaVersion": 2,
         "generator": "tool/python/generate_photo_import_fixtures.py",
@@ -427,15 +598,8 @@ def main() -> None:
         ],
         "cases": cases,
     }
-    CASES.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-
-    # Remove legacy monolithic manifest if present.
-    legacy = OUT / "manifest.json"
-    if legacy.exists():
-        legacy.unlink()
-
-    shutil.rmtree(TMP, ignore_errors=True)
-    print(f"Wrote fixtures + {CASES.relative_to(ROOT)}")
+    
+    return payload
 
 
 def _case(
@@ -457,4 +621,4 @@ def _case(
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

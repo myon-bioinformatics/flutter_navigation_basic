@@ -17,7 +17,10 @@ python3 -m pip install -r tool/python/requirements.txt
 python3 tool/python/generate_photo_import_fixtures.py
 ```
 
-CI does **not** run the generator. It asserts committed fixtures against
+CI runs the generator in stdlib-only `--check` mode: it verifies `cases.json`,
+fixture presence/signatures, and stdlib-owned fixture drift without invoking
+ffmpeg, Pillow, or heif-enc. Full regeneration remains developer/agent-only.
+Flutter tests separately assert committed fixtures against
 `evidence/flutter_test_ci.json`.
 
 Outcome vocabulary: `supported` | `rejected:<reason>` | `unsupported_by_runtime` | `not_verified`.
