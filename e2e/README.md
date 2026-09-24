@@ -78,6 +78,10 @@ docker run --rm \
   -v "$PWD/e2e/test-results:/repo/e2e/test-results" \
   flutter-nav-e2e
 
+# 高速なローカル確認: Chromium のみへ CMD を上書き
+docker run --rm flutter-nav-e2e test --project chromium --grep @portable \
+  tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts
+
 # Visual snapshot のスクショを撮りたいだけなら（コンテナ内の tool/python/playwright.py にそのまま引数が渡る）
 docker run --rm \
   -v "$PWD/e2e/playwright-report:/repo/e2e/playwright-report" \
