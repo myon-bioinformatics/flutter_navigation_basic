@@ -77,7 +77,7 @@ def test_grep_flag_is_a_single_equals_joined_token() -> None:
 
 def test_headed_flag_unaffected() -> None:
     args = playwright._playwright_test_args(
-        project="chromium",
+        projects=["chromium"],
         headed=True,
         grep=None,
         extra=[],
