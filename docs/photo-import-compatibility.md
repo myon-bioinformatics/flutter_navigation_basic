@@ -97,6 +97,46 @@ Native normalization is **not verified** on real iOS ImageIO or Android decoder 
 | `web_file_picker` / `web_clipboard` / `native_picker` | `not_verified` |
 | Real iPhone camera HEIC on Safari | **`not_verified`** (synthetic HEIC proves detection + Flutter reject only) |
 
+## Ingress capability / decision matrix
+
+| Ingress | Acquisition boundary | MIME evidence | Shared byte pipeline | Decision for this slice |
+| --- | --- | --- | --- | --- |
+| Pick (Web) | browser file input | `html.File.type`; `accept` is only a chooser hint | yes | Preserve optional MIME provenance; non-empty non-image declarations reject early, bytes/decode remain authoritative for image/unknown MIME. |
+| Pick (native) | `image_picker` / `XFile` | `XFile.mimeType` when supplied | yes | Same contract as Web pick; structured outcome is injectable for contract tests. |
+| Paste (text) | Flutter Clipboard text + data URL/base64 parser | data URL parser validates supported image MIME when present; raw base64 has no MIME | yes | Keep parser-specific validation at acquisition boundary; do not invent MIME for raw base64. |
+| Paste (binary Web) | Async Clipboard API | Clipboard item `type`; reader selects `image/*` before Blob read | yes | Keep browser-native filtering in the reader. Do not duplicate it merely to make adapters look identical; document the boundary. |
+| Insert | Flutter `ContentInsertionConfiguration` | `KeyboardInsertedContent.mimeType` | yes | Non-empty non-image declaration rejects before decode; empty MIME is unknown and proceeds to byte/decode validation. |
+| Drop | no current Photo Studio surface | not yet proven | not yet | Defer UI and implementation until a focused Web-standard vs Flutter spike demonstrates reach, maintenance cost and deterministic testability. |
+
+The convergence target is the byte-oriented validation/normalize/decode pipeline, not identical acquisition APIs. MIME is optional provenance whose trust boundary depends on the acquisition mechanism. A declared `image/*` value never replaces byte-size, pixel-budget, format sniffing or decode validation.
+
+### API choice rubric
+
+For a future ingress or replacement adapter, prefer the least complex option that preserves desktop/mobile Web plus iOS/Android reach and deterministic tests:
+
+1. Use a browser-standard API when the capability is Web-specific and avoids a package dependency without reducing required reach.
+2. Use a Flutter API when it provides the same contract across relevant targets with less platform glue.
+3. Use a platform plugin/native adapter only where browser/Flutter primitives cannot provide the required capability (for example native gallery/HEIC normalization).
+4. Keep permission handling and platform availability at the acquisition boundary; converge successful bytes on the shared import gate/decoder.
+5. Do not add a new UI surface (including drop) until the chosen mechanism has contract-test evidence and a clear UX/maintenance benefit.
+
+## Reproducible Web evidence (Playwright CLI)
+
+For Web ingress investigations, prefer reproducible Playwright CLI/test runs over hand-captured screenshots. Evidence should be tied to the PR commit and keep the machine-verifiable result separate from the human-readable image.
+
+A useful evidence bundle contains the Playwright command/test result and exit status; browser/project and runtime/version; committed fixture/case identifier and ingress path (pick, paste, insert; future drop only after its contract is designed); assertions for the resulting Photo Studio state/failure reason; and a PNG screenshot saved by Playwright with logs/traces uploaded as CI artifacts when practical.
+
+A screenshot is supporting evidence, not the pass condition. Validate the command/assertions independently; for retained PNG evidence also verify that the artifact exists and has a valid PNG signature (and dimensions where useful). Do not infer Safari/iOS-native compatibility from Playwright WebKit or from a mobile device descriptor: those are Web browser/emulation evidence only.
+
+Recommended flow:
+
+```text
+fixture -> Playwright ingress action -> state assertion -> screenshot
+        -> evidence validation -> CI artifact (PNG + log/trace)
+```
+
+The existing five-project Playwright matrix (Chromium, Firefox, WebKit, mobile-Chromium, mobile-WebKit) is the preferred Web coverage where the ingress operation is deterministic. Browser permission-dependent operations may instead use a deterministic local adapter/fixture contract test and record the real browser/device cell as `not_verified` rather than making CI flaky.
+
 ## Manual iOS Safari (optional)
 
 1. Serve Web build for the PR commit.

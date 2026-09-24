@@ -63,7 +63,7 @@ Future<PhotoPickOutcome> pickLocalImageBytesDetailed() {
         if (bytes.isEmpty) {
           finish(const PhotoPickOutcome.failed());
         } else {
-          finish(PhotoPickOutcome.success(bytes));
+          finish(PhotoPickOutcome.success(bytes, declaredMimeType: file.type));
         }
       } else {
         finish(const PhotoPickOutcome.failed());

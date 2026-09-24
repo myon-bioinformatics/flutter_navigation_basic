@@ -61,7 +61,7 @@ class ImagePickerPhotoSource {
           PhotoImportRejection.tooLargeBytes,
         );
       }
-      return PhotoPickOutcome.success(bytes);
+      return PhotoPickOutcome.success(bytes, declaredMimeType: file.mimeType);
     } on MissingPluginException {
       return const PhotoPickOutcome.unavailable();
     } on PlatformException catch (error) {

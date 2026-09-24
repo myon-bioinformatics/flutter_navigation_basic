@@ -33,10 +33,21 @@ enum PhotoPickStatus {
 
 /// Structured pick outcome so cancel ≠ unavailable ≠ failure ≠ policy reject.
 class PhotoPickOutcome {
-  const PhotoPickOutcome._(this.status, {this.bytes, this.rejection});
+  const PhotoPickOutcome._(
+    this.status, {
+    this.bytes,
+    this.rejection,
+    this.declaredMimeType,
+  });
 
-  const PhotoPickOutcome.success(Uint8List bytes)
-      : this._(PhotoPickStatus.success, bytes: bytes);
+  const PhotoPickOutcome.success(
+    Uint8List bytes, {
+    String? declaredMimeType,
+  }) : this._(
+          PhotoPickStatus.success,
+          bytes: bytes,
+          declaredMimeType: declaredMimeType,
+        );
 
   const PhotoPickOutcome.cancelled() : this._(PhotoPickStatus.cancelled);
 
@@ -50,6 +61,10 @@ class PhotoPickOutcome {
   final PhotoPickStatus status;
   final Uint8List? bytes;
   final PhotoImportRejection? rejection;
+
+  /// MIME reported by the acquisition boundary, when the platform exposes one.
+  /// It is provenance metadata, not a substitute for validating/decoding bytes.
+  final String? declaredMimeType;
 }
 
 /// Status of a PNG save attempt.

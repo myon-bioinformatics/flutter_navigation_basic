@@ -38,6 +38,7 @@ class PhotoStudioPage extends StatefulWidget {
   const PhotoStudioPage({
     super.key,
     this.imageBytesPicker,
+    this.imagePickOutcomeProvider,
     this.imageSaver,
     this.clipboardImageReader,
     this.imageDecodeAdapter,
@@ -45,6 +46,10 @@ class PhotoStudioPage extends StatefulWidget {
 
   /// Optional override for tests / non-web hosts.
   final Future<Uint8List?> Function()? imageBytesPicker;
+
+  /// Optional structured picker seam for contract tests / alternate hosts.
+  /// Prefer this when MIME provenance or typed pick outcomes must be preserved.
+  final Future<PhotoPickOutcome> Function()? imagePickOutcomeProvider;
 
   /// Optional override for save/download (tests inject a fake saver).
   final StudioImageSaver? imageSaver;
@@ -207,11 +212,27 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     setState(() => _importStatus = status);
   }
 
-  Future<void> _setImage(
+  Future<void> _importImageBytes(
     Uint8List rawBytes, {
     required PhotoImportSource source,
     required int generation,
+    String? declaredMimeType,
   }) async {
+    // All ingress adapters converge here. When an acquisition boundary reports
+    // a non-empty MIME type, reject a non-image declaration before decoding.
+    // Image MIME remains provenance only: byte/decode validation is authoritative.
+    if (declaredMimeType != null &&
+        declaredMimeType.isNotEmpty &&
+        !declaredMimeType.startsWith('image/')) {
+      _setImportStatusIfCurrent(
+        generation,
+        PhotoImportStatus.failure(
+          reason: PhotoImportFailureReason.unsupportedFormat,
+          source: source,
+        ),
+      );
+      return;
+    }
     final rawReject = PhotoImportGate.rejectRawBytes(rawBytes);
     if (rawReject != null) {
       _setImportStatusIfCurrent(
@@ -302,7 +323,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
           );
           return;
         }
-        await _setImage(
+        await _importImageBytes(
           bytes,
           source: PhotoImportSource.pick,
           generation: generation,
@@ -310,7 +331,9 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
         return;
       }
 
-      final outcome = await pickLocalImageBytesDetailed();
+      final outcome = await (widget.imagePickOutcomeProvider != null
+          ? widget.imagePickOutcomeProvider!()
+          : pickLocalImageBytesDetailed());
       if (!_isCurrentImport(generation)) return;
       switch (outcome.status) {
         case PhotoPickStatus.cancelled:
@@ -360,10 +383,11 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
             );
             return;
           }
-          await _setImage(
+          await _importImageBytes(
             bytes,
             source: PhotoImportSource.pick,
             generation: generation,
+            declaredMimeType: outcome.declaredMimeType,
           );
       }
     } catch (_) {
@@ -407,7 +431,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
         if (imageCandidate && text.length <= _maxImageClipboardChars) {
           try {
             final payload = Base64ImageBridge.decodeText(text);
-            await _setImage(
+            await _importImageBytes(
               payload.bytes,
               source: PhotoImportSource.paste,
               generation: generation,
@@ -437,7 +461,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
         case ClipboardImageReadKind.bytes:
           final bytes = read.bytes;
           if (bytes != null && bytes.isNotEmpty) {
-            await _setImage(
+            await _importImageBytes(
               bytes,
               source: PhotoImportSource.paste,
               generation: generation,
@@ -501,20 +525,11 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       );
       return;
     }
-    if (!content.mimeType.startsWith('image/')) {
-      _setImportStatusIfCurrent(
-        generation,
-        const PhotoImportStatus.failure(
-          reason: PhotoImportFailureReason.unsupportedFormat,
-          source: PhotoImportSource.insert,
-        ),
-      );
-      return;
-    }
-    _setImage(
+    _importImageBytes(
       bytes,
       source: PhotoImportSource.insert,
       generation: generation,
+      declaredMimeType: content.mimeType,
     );
   }
 

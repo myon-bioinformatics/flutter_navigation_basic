@@ -319,3 +319,14 @@ The repository succeeds when a maintainer can add a feature by asking “what is
 - [CROSS_REPOSITORY_REUSE.md](./CROSS_REPOSITORY_REUSE.md) evaluates what this repository can consume from sibling projects and what should be promoted outward, with lightweight provenance/versioning rules.
 
 The intended direction is two-way reuse without turning sibling repositories into unpinned runtime or CI dependencies.
+
+
+## Planned follow-up: Photo Import ingress audit
+
+The next Photo Studio slice should audit image ingress before changing decoders or UI. Treat `pick`, `paste`, `drop`, and Flutter `KeyboardInsertedContent` as adapters into one byte-oriented import pipeline rather than independent feature implementations.
+
+The audit should distinguish browser-standard capabilities (file input/picker, Clipboard API, drag/drop) from Flutter/native responsibilities (OS photo picker and platform normalization). Prefer standards at the web boundary when they reduce code, but keep a single downstream `PhotoImportGate -> normalize/decode -> Photo Studio` contract.
+
+Unsupported formats are an adapter/normalization problem, not a reason for each ingress path to invent its own decoder. Record MIME/magic sniffing, HEIC/HEIF conversion, AVIF/WebP runtime support, malformed input and size/pixel limits in one capability matrix. Prove representative file upload and paste flows in the existing five-project Playwright matrix; add drop when the browser surface exposes it reliably. Screenshots/traces are evidence, while locators/DOM remain the interaction mechanism.
+
+Do not add nginx or another static server unless HTTP delivery itself becomes part of the test contract. Likewise, keep URL configuration language-neutral only when there is enough URL data to justify a separate source of truth.

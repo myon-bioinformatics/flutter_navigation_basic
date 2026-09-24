@@ -42,6 +42,13 @@ python tool/python/playwright.py snapshot
 # Visual snapshot の基準画像を更新
 python tool/python/playwright.py snapshot --update
 
+# Photo Studio smoke/evidence (Flutter Web must already be on :8080)
+python tool/python/playwright.py photo-evidence \
+  --browser chromium \
+  --fixture test/fixtures/photo_studio/import_compat/png_opaque_2x2.png \
+  --output test-results/photo-studio-evidence.png \
+  --timeout-ms 30000
+
 # HTML report
 python tool/python/playwright.py report
 ```

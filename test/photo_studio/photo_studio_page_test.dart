@@ -11,6 +11,7 @@ import 'package:flutter_application_1/features/photo_studio/domain/studio_frame_
 import 'package:flutter_application_1/features/photo_studio/presentation/compose_studio_image.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/photo_rect_canvas.dart';
 import 'package:flutter_application_1/features/photo_studio/data/clipboard_image_read.dart';
+import 'package:flutter_application_1/features/photo_studio/data/photo_media_ports.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/photo_studio_page.dart';
 import 'package:flutter_application_1/core/navigation/route_names.dart';
 import 'package:flutter_application_1/shared/display/display_scope.dart';
@@ -280,6 +281,84 @@ void main() {
     await tester.runAsync(() async {
       await tester.ensureVisible(find.text('Paste photo'));
       await tester.tap(find.text('Paste photo'));
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.textContaining('Image loaded'), findsOneWidget);
+  });
+
+  testWidgets('insert rejects non-image MIME before decode', (tester) async {
+    var decodeCalled = false;
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(
+        imageDecodeAdapter: (bytes) async {
+          decodeCalled = true;
+          return bytes;
+        },
+      ),
+    );
+
+    final field = tester
+        .widgetList<TextField>(find.byType(TextField))
+        .firstWhere((widget) => widget.contentInsertionConfiguration != null);
+    field.contentInsertionConfiguration!.onContentInserted(
+      KeyboardInsertedContent(
+        mimeType: 'text/plain',
+        uri: 'content://photo-studio-test/non-image',
+        data: _tinyPng,
+      ),
+    );
+    await tester.pump();
+
+    expect(decodeCalled, isFalse);
+    expect(find.textContaining('Image loaded'), findsNothing);
+    // Insert never offers Retry: PhotoImportStatus.canRetry excludes
+    // PhotoImportSource.insert by design.
+    expect(find.text('Retry'), findsNothing);
+  });
+
+  testWidgets('pick carries non-image MIME into shared ingress', (tester) async {
+    var decodeCalled = false;
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(
+        imagePickOutcomeProvider: () async => PhotoPickOutcome.success(
+          _tinyPng,
+          declaredMimeType: 'text/plain',
+        ),
+        imageDecodeAdapter: (bytes) async {
+          decodeCalled = true;
+          return bytes;
+        },
+      ),
+    );
+
+    await tester.tap(find.text('Import image'));
+    await tester.pump();
+
+    expect(decodeCalled, isFalse);
+    expect(find.text('Retry'), findsOneWidget);
+  });
+
+  testWidgets('empty MIME is validated as image bytes', (tester) async {
+    // Empty/unknown MIME must not cause an eager rejection. The valid PNG
+    // intentionally exercises the direct encoded-image validation path;
+    // fallback adapter invocation is covered by loader-level tests.
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(
+        imagePickOutcomeProvider: () async => PhotoPickOutcome.success(
+          _tinyPng,
+          declaredMimeType: '',
+        ),
+      ),
+    );
+
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Import image'));
       await Future<void>.delayed(const Duration(milliseconds: 250));
     });
     await tester.pump();
