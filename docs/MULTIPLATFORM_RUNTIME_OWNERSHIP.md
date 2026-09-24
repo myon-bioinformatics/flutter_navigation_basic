@@ -1,0 +1,211 @@
+# Multi-platform runtime ownership review
+
+## Purpose
+
+This review asks a narrower question than “how should a Flutter app be written?”:
+
+> For each capability in this repository, does Dart/Flutter still give the lowest total implementation, dependency, maintenance, test, and operational cost while preserving multi-platform reach?
+
+The invariant is **multi-platform capability**, not Dart ownership. The desired product remains reachable and stable on desktop web, mobile web, Android-oriented browsers, and iPhone/iOS-oriented browsers. Native Flutter surfaces remain valid where they are the lightest or most capable owner.
+
+This is an audit and migration rubric, not a request for a wholesale rewrite.
+
+## Current repository signal
+
+The repository is strongly Dart-shaped: the current tree contains thousands of `.dart` files, including a large historical API-pattern catalogue, while Python is already established under `tool/python/` for stdlib diagnostics, pytest/oracles, artifact inspection, network probing, fixture generation, and Playwright wrapping. Browser E2E already uses TypeScript/Node Playwright.
+
+That means “Dart by default everywhere” is no longer an accurate description of the actual architecture. The project is already multi-runtime; the next step is to make ownership intentional.
+
+## Decision rule
+
+For every capability, score the boundary qualitatively against:
+
+1. **User reach** — desktop web, mobile web, Android-oriented browser, iPhone/iOS-oriented browser, and native app only where required.
+2. **Readability** — can a maintainer understand the implementation without framework-specific ceremony?
+3. **Maintenance knowledge** — is the ecosystem/tooling broadly understood and easy to repair?
+4. **Dependency weight** — runtime packages, package managers, generated files, SDK/bootstrap cost.
+5. **Operational cost** — CI time, local setup, packaging, release/debug complexity.
+6. **Deterministic testability** — can the behavior be proven cheaply without booting the whole Flutter application?
+7. **Single source of truth** — does moving it remove duplication rather than create Dart + Python/JS copies?
+8. **Platform value** — does Flutter/native integration materially help this capability?
+
+Prefer the smallest owner that satisfies the contract. A migration that merely adds another implementation is a regression.
+
+## Ownership classes
+
+### Keep in Dart/Flutter
+
+Keep code in Dart when it is part of the shipped Flutter runtime or benefits materially from Flutter:
+
+- widgets, navigation state and application lifecycle;
+- platform/plugin boundaries such as image picking, native storage and app permissions;
+- UI state whose source of truth is consumed directly by widgets;
+- behavior that must run offline inside the compiled application;
+- native/mobile integration where a browser API cannot provide the required fidelity;
+- small pure helpers already colocated with their only Dart caller when extraction would add IPC/build/runtime complexity.
+
+Examples such as `AppNavigation`, route builders, widget controllers, and Flutter plugin integration are not Python candidates merely because Python is easier to read.
+
+### Prefer Python for dev/test/oracle/transform work
+
+Python may take more ownership than the old policy allowed when the capability is **not shipped as browser/client runtime** and Python makes the contract simpler:
+
+- repository inspection and health reports;
+- CI/result/artifact parsing;
+- fixture generation and validation;
+- filesystem/archive/JSON/text transformations;
+- network diagnostics and protocol probes;
+- deterministic reference/oracle calculations;
+- migration/audit scripts;
+- test data generation;
+- browser evidence validation;
+- pytest-based structural/contract tests.
+
+Prefer stdlib first. A small, justified test dependency is acceptable when it removes substantial custom infrastructure.
+
+Important boundary: ordinary Python does not execute directly in iOS/Android browsers. Moving browser runtime logic to Python would require a server, WASM/Pyodide-style runtime, or another bridge and is normally **heavier**, not lighter. Python should win tooling and oracle ownership without pretending to be the client UI runtime.
+
+### Prefer browser-native HTML/CSS/JS/TS
+
+For functionality whose contract is inherently “available from any browser”, consider web standards before adding Flutter-specific machinery:
+
+- small static/informational surfaces;
+- browser-only input/output transforms;
+- URL/deep-link parsing that can be shared at the web boundary;
+- clipboard/download/share/file APIs where standards provide sufficient capability;
+- lightweight navigation or pages that do not need Flutter application state;
+- protocol demonstrations/stubs;
+- progressive enhancement and responsive layout checks.
+
+Use TypeScript/Node where the existing ecosystem materially helps. Plain HTML/CSS/JS is valid when it is smaller.
+
+### Deno is an evaluated option, not a quota
+
+Deno is a good candidate for small TypeScript/JavaScript tooling when its built-in fetch, TypeScript execution, permissions, formatter/tester, or single-file distribution removes Node/npm ceremony. Do not add Deno beside Node merely for preference: it should replace complexity or own a distinct boundary.
+
+## Initial repository classification
+
+| Area | Current owner | Review direction | Reason |
+| --- | --- | --- | --- |
+| Flutter widgets / presentation | Dart/Flutter | **keep** | shipped client UI and Flutter state |
+| Navigator / route builders | Dart/Flutter | **keep for now** | directly coupled to Flutter Navigator/widgets |
+| Native photo/image picker/storage | Dart + plugins | **keep**, add browser evidence | platform integration is real; browser support must be measured separately |
+| Pure text/JSON/file transforms in developer tooling | mixed/Dart | **Python candidate** | stdlib readability and lower bootstrap cost can win |
+| Repo inspector/check orchestration | Dart-heavy | **audit for Python ownership** | developer-only; current Dart-default policy needs justification capability by capability |
+| Network probe | Python stdlib | **keep Python** | already a clean non-Flutter boundary |
+| Artifact/Actions parsing | Python stdlib | **keep Python** | deterministic, portable tooling |
+| Formula/reference calculations | Dart-only by policy | **re-open decision** | allow Python oracle/reference when it improves clarity; keep one authoritative production implementation |
+| Static data embedded as Dart lists | Dart | **JSON/data candidate** | data can be language-neutral when runtime behavior does not require Dart constants |
+| Mock/protocol server | Dart | **audit** | keep if it reuses product Dart contracts; otherwise Python/Deno may be lighter |
+| Browser E2E | Node/TS Playwright | **keep; expand matrix** | natural browser-test boundary |
+| Browser evidence validators/parity guards | Python | **expand** | cheap structural checks and browser-test-kit alignment |
+| Simple web-only surfaces | Flutter Web | **HTML/CSS/JS candidate** | use Flutter only when shared app state/UI provides value |
+| Historical API pattern catalogue | Dart | **do not mechanically migrate** | reference material; first decide whether it belongs in shipped/runtime paths at all |
+
+## First concrete candidates
+
+### 1. Developer toolkit ownership
+
+The current documentation says Dart/Flutter APIs are the default for repository tooling. Replace that rule with **boundary-first ownership**:
+
+- Flutter/app-aware inspection: Dart is natural.
+- Generic filesystem/JSON/Git/Actions/archive/network work: Python stdlib is natural.
+- Browser/E2E: Playwright Node/Python according to the smallest proof.
+- Small TS fetch/tool scripts: Deno may be preferable when it eliminates package setup.
+
+Do not translate working Dart tooling just to change language. Migrate only when a touched tool becomes materially simpler and tests can prove behavior parity.
+
+### 2. Data vs code
+
+Review Dart files that are primarily static data. If they do not need compile-time Dart semantics, language-neutral JSON can reduce code volume and allow Python/browser tooling to validate the same source. `assets/screens.json`, `assets/ui_showcase.json`, and `assets/display/app_text.json` already demonstrate this pattern.
+
+Potential follow-up targets include simple catalogue-like lists such as composition/irony content. Migration requires runtime loading/error behavior and tests; do not duplicate the data in both places.
+
+### 3. Mock/protocol infrastructure
+
+`tool/mock_http_server.dart` is substantial and currently has a reason to remain Dart where it reuses app-side protocol behavior. Split the question:
+
+- contracts that intentionally prove the Dart implementation stay Dart;
+- generic fixture serving/protocol probes may move to Python stdlib or Deno if doing so removes custom code;
+- browser-facing fixture pages can be plain HTML/JS.
+
+The goal is not a single language; it is fewer unnecessary layers.
+
+## Browser-first multi-platform verification
+
+The product's portability claim should be expressed as evidence tiers.
+
+### Deterministic core matrix
+
+Run routinely:
+
+- desktop Chromium;
+- desktop Firefox;
+- desktop WebKit;
+- Android-oriented Chromium device profile;
+- iPhone/iOS-oriented WebKit device profile;
+- responsive/mobile layout assertions.
+
+These are browser-engine/device-emulation claims only. Playwright WebKit is not branded Safari, and an iPhone descriptor is not a physical iPhone.
+
+### Product integration
+
+Against the real Flutter Web build, verify representative user paths rather than every historical screen:
+
+- hub/tool navigation and back/deep-link behavior;
+- input and output;
+- responsive reachability;
+- clipboard/file/photo paths where browser support exists;
+- no hover-only essential control;
+- overflow/long content;
+- Unicode/IME-sensitive input;
+- failure screenshot/trace/video artifacts.
+
+### Real-device/platform tail
+
+Target separately when a feature crosses an OS boundary:
+
+- physical iPhone/iOS Safari;
+- physical Android/Chrome;
+- photo library/camera;
+- HEIC/EXIF;
+- permissions;
+- share sheet/download/file picker;
+- PWA/install behavior.
+
+Passing emulation must never be recorded as physical-device proof.
+
+## Layout philosophy
+
+The design target is not visual novelty. Prefer a boring, reachable, testable layout over a modern-looking layout with fragile interaction.
+
+A feature is portable only when its primary action remains reachable on desktop and mobile; touch interaction does not depend on hover; narrow layouts do not hide required controls; long content can scroll without trapping controls; and browser tests can locate important actions through stable DOM/accessibility semantics.
+
+## Migration safety
+
+For each proposed Dart -> Python/data/web/Deno migration:
+
+1. name the current owner and caller;
+2. state whether the code ships to the client;
+3. define the platform contract;
+4. show the dependency/setup delta;
+5. keep one source of truth;
+6. add behavior-parity tests before deleting the old owner;
+7. measure CI/build/runtime impact when meaningful;
+8. delete the displaced implementation in the same or immediately linked change;
+9. preserve a rollback point;
+10. never call an emulated browser result real-device compatibility.
+
+## Suggested follow-up slices
+
+1. **Tooling audit:** inventory `tool/*.dart` and classify keep-Dart / Python-stdlib / Deno / delete-or-merge. No migrations yet.
+2. **Data audit:** identify static Dart catalogues that can become language-neutral assets without runtime duplication.
+3. **Browser matrix:** add Android-oriented Chromium and iPhone/iOS-oriented WebKit projects to E2E and exact parity/evidence checks.
+4. **Representative product paths:** choose a small set of real user flows for all browser projects; do not multiply thousands of catalogue tests by five projects.
+5. **OS-boundary matrix:** photo/file/share/clipboard/location/storage capability table, with emulation vs real-device evidence separated.
+6. **First migration:** choose one low-risk developer-only Dart tool where Python demonstrably reduces code/setup while preserving output contract.
+7. **Reassess:** only then decide whether a browser-native HTML/JS or Deno slice should replace a heavier Flutter/Dart boundary.
+
+## Success criterion
+
+The repository succeeds when a maintainer can add a feature by asking “what is the lightest portable owner?” rather than “how do I implement this in Dart?”, while users retain stable access from desktop web, mobile web, Android-oriented browsers, iPhone/iOS-oriented browsers, and native Flutter surfaces where those surfaces provide real value.
