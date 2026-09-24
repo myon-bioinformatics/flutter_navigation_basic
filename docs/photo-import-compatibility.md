@@ -94,6 +94,23 @@ Native normalization is **not verified** on real iOS ImageIO or Android decoder 
 | `web_file_picker` / `web_clipboard` / `native_picker` | `not_verified` |
 | Real iPhone camera HEIC on Safari | **`not_verified`** (synthetic HEIC proves detection + Flutter reject only) |
 
+## Reproducible Web evidence (Playwright CLI)
+
+For Web ingress investigations, prefer reproducible Playwright CLI/test runs over hand-captured screenshots. Evidence should be tied to the PR commit and keep the machine-verifiable result separate from the human-readable image.
+
+A useful evidence bundle contains the Playwright command/test result and exit status; browser/project and runtime/version; committed fixture/case identifier and ingress path (pick, paste, insert; future drop only after its contract is designed); assertions for the resulting Photo Studio state/failure reason; and a PNG screenshot saved by Playwright with logs/traces uploaded as CI artifacts when practical.
+
+A screenshot is supporting evidence, not the pass condition. Validate the command/assertions independently; for retained PNG evidence also verify that the artifact exists and has a valid PNG signature (and dimensions where useful). Do not infer Safari/iOS-native compatibility from Playwright WebKit or from a mobile device descriptor: those are Web browser/emulation evidence only.
+
+Recommended flow:
+
+```text
+fixture -> Playwright ingress action -> state assertion -> screenshot
+        -> evidence validation -> CI artifact (PNG + log/trace)
+```
+
+The existing five-project Playwright matrix (Chromium, Firefox, WebKit, mobile-Chromium, mobile-WebKit) is the preferred Web coverage where the ingress operation is deterministic. Browser permission-dependent operations may instead use a deterministic local adapter/fixture contract test and record the real browser/device cell as `not_verified` rather than making CI flaky.
+
 ## Manual iOS Safari (optional)
 
 1. Serve Web build for the PR commit.
