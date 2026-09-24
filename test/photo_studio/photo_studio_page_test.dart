@@ -315,6 +315,7 @@ void main() {
 
     expect(decodeCalled, isFalse);
     expect(find.textContaining('Image loaded'), findsNothing);
+    expect(find.text('Retry'), findsOneWidget);
   });
 
   testWidgets('pick carries non-image MIME into shared ingress', (tester) async {
