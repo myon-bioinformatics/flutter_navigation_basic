@@ -14,6 +14,8 @@ truth. No personal photos, GPS, or network downloads.
 
 from __future__ import annotations
 
+import argparse
+import hashlib
 import json
 import shutil
 import struct
@@ -25,6 +27,27 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "test" / "fixtures" / "photo_studio" / "import_compat"
 CASES = OUT / "cases.json"
 TMP = OUT / ".gen_tmp"
+
+# Files whose bytes are produced entirely by this script/stdlib and are therefore
+# safe to compare byte-for-byte in every CI environment. Encoder-backed JPEG,
+# WebP and HEIC fixtures are intentionally excluded: their bytes can vary with
+# ffmpeg/Pillow/libheif versions and are validated structurally by consumers.
+DETERMINISTIC_FILES = (
+    "png_opaque_2x2.png",
+    "png_alpha_2x2.png",
+    "png_markers_64x32.png",
+    "gif_still_1x1.gif",
+    "avif_ftyp_only.avif",
+    "heic_ftyp_heic.heic",
+    "heic_ftyp_heif.heic",
+    "heic_ftyp_mif1.heic",
+    "heic_ftyp_msf1.heic",
+    "heic_ftyp_heix.heic",
+    "png_truncated.png",
+    "empty.bin",
+    "png_claim_10000x10000.png",
+    "README_OVERSIZE.txt",
+)
 
 
 def _require(cmd: str) -> str:
@@ -182,7 +205,69 @@ def alpha_png_rows(width: int = 8, height: int = 4) -> list[bytes]:
     return rows
 
 
-def main() -> None:
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _check_committed() -> int:
+    """Verify the deterministic fixture contract without encoder dependencies."""
+    missing = [name for name in DETERMINISTIC_FILES if not (OUT / name).is_file()]
+    if missing:
+        for name in missing:
+            print(f"missing deterministic fixture: {name}")
+        return 1
+
+    cases = json.loads(CASES.read_text(encoding="utf-8"))
+    declared = {case.get("fixture") for case in cases.get("cases", [])}
+    undeclared = [name for name in DETERMINISTIC_FILES if name != "README_OVERSIZE.txt" and name not in declared]
+    if undeclared:
+        for name in undeclared:
+            print(f"deterministic fixture absent from cases.json: {name}")
+        return 1
+
+    # Recreate only stdlib-owned fixtures in a temporary sibling directory, then
+    # compare hashes. Do not require ffmpeg, Pillow, heif-enc, Docker, or nginx.
+    check_dir = OUT / ".check_tmp"
+    shutil.rmtree(check_dir, ignore_errors=True)
+    check_dir.mkdir(parents=True)
+    try:
+        write_png_rgb(check_dir / "png_opaque_2x2.png", 2, 2, [
+            bytes([0, 0, 0, 255, 0, 0]), bytes([0, 0, 255, 255, 255, 0])])
+        write_png_rgba(check_dir / "png_alpha_2x2.png", 2, 2, [
+            bytes([255, 0, 0, 128, 255, 0, 0, 128]),
+            bytes([255, 0, 0, 128, 255, 0, 0, 128])])
+        write_png_rgb(check_dir / "png_markers_64x32.png", 64, 32, marker_png_rgb(64, 32))
+        write_gif(check_dir / "gif_still_1x1.gif")
+        write_ftyp(check_dir / "avif_ftyp_only.avif", "avif", ["avif", "mif1"])
+        for brand in ("heic", "heif", "mif1", "msf1", "heix"):
+            write_ftyp(check_dir / f"heic_ftyp_{brand}.heic", brand, [brand, "mif1"])
+        write_truncated_png(check_dir / "png_truncated.png", check_dir / "png_opaque_2x2.png")
+        (check_dir / "empty.bin").write_bytes(b"")
+        write_png_ihdr_only(check_dir / "png_claim_10000x10000.png", 10000, 10000)
+        (check_dir / "README_OVERSIZE.txt").write_text(
+            "Do not commit 32MiB blobs. Tests allocate maxInputBytes+1 at runtime.\n", encoding="utf-8")
+        drift = []
+        for name in DETERMINISTIC_FILES:
+            expected, actual = _sha256(OUT / name), _sha256(check_dir / name)
+            if expected != actual:
+                drift.append((name, expected, actual))
+        for name, expected, actual in drift:
+            print(f"fixture drift: {name}\n  committed={expected}\n  generated={actual}")
+        if drift:
+            return 1
+    finally:
+        shutil.rmtree(check_dir, ignore_errors=True)
+    print(f"photo fixture check ok: {len(DETERMINISTIC_FILES)} deterministic files")
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--check", action="store_true", help="verify stdlib-owned committed fixtures without external encoders")
+    args = parser.parse_args(argv)
+    if args.check:
+        return _check_committed()
+
     ffmpeg = _require("ffmpeg")
     heif_enc = _require("heif-enc")
 
@@ -436,6 +521,7 @@ def main() -> None:
 
     shutil.rmtree(TMP, ignore_errors=True)
     print(f"Wrote fixtures + {CASES.relative_to(ROOT)}")
+    return 0
 
 
 def _case(
@@ -457,4 +543,4 @@ def _case(
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
