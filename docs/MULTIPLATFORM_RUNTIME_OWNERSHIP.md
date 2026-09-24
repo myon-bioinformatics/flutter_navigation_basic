@@ -235,7 +235,7 @@ The product's portability claim should be expressed as evidence tiers.
 
 ### Deterministic core matrix
 
-**Enforced today:** config/install parity and `--list` presence for all five projects. **Executed today:** the manual E2E dispatch executes Chromium only. **Target:** routine execution of the `@portable` representative subset across all five projects.
+**Enforced today:** config/install parity and `--list` presence for all five projects. **Executed today (manual E2E dispatch):** the representative `@portable` subset runs across all five configured projects. The exact project/device mapping remains defined in `e2e/playwright.config.ts`; this is browser-engine/device-emulation evidence, not physical-device proof.
 
 Configured target matrix:
 

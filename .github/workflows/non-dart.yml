@@ -285,7 +285,7 @@ jobs:
             fi
             sleep 1
           done
-          npx playwright test tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts --project=chromium
+          npx playwright test tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts --grep @portable --project=chromium --project=firefox --project=webkit --project=mobile-chromium --project=mobile-webkit
 
       - name: Upload Playwright report
         if: always()
