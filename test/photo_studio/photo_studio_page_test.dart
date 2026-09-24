@@ -341,12 +341,14 @@ void main() {
   });
 
   testWidgets('empty inserted MIME is unknown and reaches decode', (tester) async {
-    var decodeCalled = false;
+    final decodeStarted = Completer<void>();
+    final decodeRelease = Completer<void>();
     await _pumpPage(
       tester,
       page: PhotoStudioPage(
         imageDecodeAdapter: (bytes) async {
-          decodeCalled = true;
+          if (!decodeStarted.isCompleted) decodeStarted.complete();
+          await decodeRelease.future;
           return bytes;
         },
       ),
@@ -362,17 +364,14 @@ void main() {
         data: _tinyPng,
       ),
     );
-    // onContentInserted is a void callback that starts async import work. Let the
-    // microtask complete explicitly; pumpAndSettle is unsuitable because this
-    // page can keep scheduling frames.
-    await tester.runAsync(() async {
-      for (var i = 0; i < 20 && !decodeCalled; i++) {
-        await Future<void>.delayed(const Duration(milliseconds: 10));
-      }
-    });
+
+    // The callback is void, so synchronize on the injected decode boundary
+    // instead of guessing with timers or waiting for the page to settle.
+    await decodeStarted.future;
+    decodeRelease.complete();
+    await tester.pump();
     await tester.pump();
 
-    expect(decodeCalled, isTrue);
     expect(find.textContaining('Image loaded'), findsOneWidget);
   });
 
