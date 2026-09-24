@@ -345,7 +345,8 @@ void main() {
     // empty MIME is not a realistic platform-delivered insertion event. Exercise
     // the shared ingress contract through the structured picker seam instead:
     // empty/unknown provenance must not cause an eager MIME rejection.
-    var decodeCalled = false;
+    final decodeStarted = Completer<void>();
+    final decodeRelease = Completer<void>();
     await _pumpPage(
       tester,
       page: PhotoStudioPage(
@@ -354,7 +355,8 @@ void main() {
           declaredMimeType: '',
         ),
         imageDecodeAdapter: (bytes) async {
-          decodeCalled = true;
+          if (!decodeStarted.isCompleted) decodeStarted.complete();
+          await decodeRelease.future;
           return bytes;
         },
       ),
@@ -362,9 +364,14 @@ void main() {
 
     await tester.tap(find.text('Import image'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
 
-    expect(decodeCalled, isTrue);
+    // Synchronize on the injected decode boundary. Guard the wait so a future
+    // regression fails quickly instead of consuming the suite's 10-minute cap.
+    await decodeStarted.future.timeout(const Duration(seconds: 2));
+    decodeRelease.complete();
+    await tester.pump();
+    await tester.pump();
+
     expect(find.textContaining('Image loaded'), findsOneWidget);
   });
 
