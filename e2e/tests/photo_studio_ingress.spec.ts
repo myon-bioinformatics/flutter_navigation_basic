@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import path from 'node:path';
 import fs from 'node:fs';
 import { waitForFlutter } from '../utils/helpers';
@@ -7,7 +7,7 @@ const route = '/#/tools/media/photo-studio';
 const fixtureDir = path.resolve(process.cwd(), '../test/fixtures/photo_studio/import_compat');
 const pngFixture = path.join(fixtureDir, 'png_opaque_2x2.png');
 
-async function openPhotoStudio(page: Parameters<typeof test>[0] extends never ? never : any) {
+async function openPhotoStudio(page: Page) {
   await page.goto(route);
   await waitForFlutter(page);
 }
