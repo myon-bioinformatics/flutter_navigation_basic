@@ -38,6 +38,7 @@ class PhotoStudioPage extends StatefulWidget {
   const PhotoStudioPage({
     super.key,
     this.imageBytesPicker,
+    this.imagePickOutcomeProvider,
     this.imageSaver,
     this.clipboardImageReader,
     this.imageDecodeAdapter,
@@ -45,6 +46,10 @@ class PhotoStudioPage extends StatefulWidget {
 
   /// Optional override for tests / non-web hosts.
   final Future<Uint8List?> Function()? imageBytesPicker;
+
+  /// Optional structured picker seam for contract tests / alternate hosts.
+  /// Prefer this when MIME provenance or typed pick outcomes must be preserved.
+  final Future<PhotoPickOutcome> Function()? imagePickOutcomeProvider;
 
   /// Optional override for save/download (tests inject a fake saver).
   final StudioImageSaver? imageSaver;
@@ -326,7 +331,9 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
         return;
       }
 
-      final outcome = await pickLocalImageBytesDetailed();
+      final outcome = await (widget.imagePickOutcomeProvider != null
+          ? widget.imagePickOutcomeProvider!()
+          : pickLocalImageBytesDetailed());
       if (!_isCurrentImport(generation)) return;
       switch (outcome.status) {
         case PhotoPickStatus.cancelled:
