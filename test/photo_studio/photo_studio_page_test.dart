@@ -315,6 +315,9 @@ void main() {
 
     expect(decodeCalled, isFalse);
     expect(find.textContaining('Image loaded'), findsNothing);
+    // Insert never offers Retry: PhotoImportStatus.canRetry excludes
+    // PhotoImportSource.insert by design.
+    expect(find.text('Retry'), findsNothing);
   });
 
   testWidgets('pick carries non-image MIME into shared ingress', (tester) async {
