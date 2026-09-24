@@ -8,7 +8,8 @@ from pathlib import Path
 import re
 
 ROOT = Path(__file__).resolve().parents[3]
-EXPECTED = {"chromium", "firefox", "webkit"}
+EXPECTED_ENGINES = {"chromium", "firefox", "webkit"}
+EXPECTED_PROJECTS = EXPECTED_ENGINES | {"mobile-chromium", "mobile-webkit"}
 
 
 def _configured_projects() -> set[str]:
@@ -17,7 +18,7 @@ def _configured_projects() -> set[str]:
 
 
 def test_playwright_projects_are_the_expected_browser_set() -> None:
-    assert _configured_projects() == EXPECTED
+    assert _configured_projects() == EXPECTED_PROJECTS
 
 
 def test_ci_and_docker_install_every_configured_browser() -> None:
@@ -27,9 +28,12 @@ def test_ci_and_docker_install_every_configured_browser() -> None:
     install = "playwright install --with-deps chromium firefox webkit"
     assert workflow.count(install) == 2
     assert install in dockerfile
+    # Mobile projects reuse Chromium/WebKit binaries with device descriptors.
+    assert EXPECTED_ENGINES <= EXPECTED_PROJECTS
 
     list_command = (
         "playwright test --list "
-        "--project=chromium --project=firefox --project=webkit"
+        "--project=chromium --project=firefox --project=webkit "
+        "--project=mobile-chromium --project=mobile-webkit"
     )
     assert list_command in workflow
