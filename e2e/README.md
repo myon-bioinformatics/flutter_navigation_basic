@@ -128,7 +128,8 @@ e2e/
 ├── tests/
 │   ├── hub_navigation.spec.ts
 │   ├── screen_navigation.spec.ts
-│   ├── photo_studio.spec.ts       # Photo Studio portable flow
+│   ├── photo_studio.spec.ts       # Photo Studio representative portable flow
+│   ├── photo_studio_ingress.spec.ts # ingress audit; clipboard case is Chromium-scoped
 │   └── visual_snapshot.spec.ts # Visual regression baseline
 ├── fixtures/
 │   └── test_data.json
