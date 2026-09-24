@@ -241,7 +241,7 @@ def write_deterministic_fixtures(out_dir: Path) -> None:
 
 def _png_semantics(path: Path) -> tuple[tuple[tuple[bytes, bytes], ...], bytes]:
     data = path.read_bytes()
-    if not data.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
+    if not data.startswith(b"\x89PNG\r\n\x1a\n"):
         raise ValueError("bad PNG signature")
     pos = 8
     structural: list[tuple[bytes, bytes]] = []
@@ -282,7 +282,7 @@ def _validate_magic(path: Path, fmt: str, kind: str) -> None:
     if fmt == "empty":
         if data:
             raise ValueError("empty fixture is not empty")
-    elif fmt == "jpeg" and not data.startswith(b"\\xff\\xd8"):
+    elif fmt == "jpeg" and not data.startswith(b"\xff\xd8"):
         raise ValueError("missing JPEG SOI")
     elif fmt == "webp" and not (len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP"):
         raise ValueError("missing RIFF/WEBP signature")
@@ -290,9 +290,9 @@ def _validate_magic(path: Path, fmt: str, kind: str) -> None:
         raise ValueError("missing GIF signature")
     elif fmt == "png":
         if kind == "intentionally_invalid" and path.name == "png_truncated.png":
-            if not data.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
+            if not data.startswith(b"\x89PNG\r\n\x1a\n"):
                 raise ValueError("missing truncated PNG signature")
-        elif not data.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
+        elif not data.startswith(b"\x89PNG\r\n\x1a\n"):
             raise ValueError("missing PNG signature")
     elif fmt in {"avif", "heic"}:
         if len(data) < 12 or data[4:8] != b"ftyp":
