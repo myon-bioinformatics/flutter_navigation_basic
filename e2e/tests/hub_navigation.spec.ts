@@ -12,7 +12,7 @@ test.describe('Hub Screen Navigation', () => {
     await expect(page.getByText('Navigation Hub', { exact: false })).toBeVisible();
   });
 
-  test('navigates to hub from home', async ({ page }) => {
+  test('navigates to hub from home @portable', async ({ page }) => {
     await navigateToHub(page);
     await expect(page.getByText('Navigation Hub', { exact: false })).toBeVisible();
   });

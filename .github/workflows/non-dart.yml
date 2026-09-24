@@ -239,7 +239,7 @@ jobs:
         run: |
           npm install
           npx playwright install --with-deps chromium firefox webkit
-          npx playwright test --list --project=chromium --project=firefox --project=webkit
+          npx playwright test --list --project=chromium --project=firefox --project=webkit --project=mobile-chromium --project=mobile-webkit
 
   # Full E2E is opt-in (workflow_dispatch) so it stays off PR / Pages critical path.
   playwright:

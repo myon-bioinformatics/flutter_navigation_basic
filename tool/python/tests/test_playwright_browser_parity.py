@@ -1,35 +1,82 @@
 """Regression guard for Playwright config/install browser parity.
 
-PR #87 aligned the configured projects with CI/Docker. Keep that contract
-explicit so a future project addition cannot silently return to the same drift.
+PR #87 aligned configured engines with CI/Docker. PR #89 adds mobile projects
+that reuse installed Chromium/WebKit binaries and intentionally run only the
+small @portable representative-flow subset.
 """
 
 from pathlib import Path
 import re
 
 ROOT = Path(__file__).resolve().parents[3]
-EXPECTED = {"chromium", "firefox", "webkit"}
+EXPECTED_ENGINES = {"chromium", "firefox", "webkit"}
+EXPECTED_PROJECTS = EXPECTED_ENGINES | {"mobile-chromium", "mobile-webkit"}
+MOBILE_PROJECTS = {"mobile-chromium", "mobile-webkit"}
 
 
 def _configured_projects() -> set[str]:
     source = (ROOT / "e2e" / "playwright.config.ts").read_text(encoding="utf-8")
-    return set(re.findall(r"name:\s*['\"](chromium|firefox|webkit)['\"]", source))
+    return set(re.findall(r"name:\s*['\"]([^'\"]+)['\"]", source))
+
+
+def _install_lines(text: str) -> list[str]:
+    return [
+        line.strip()
+        for line in text.splitlines()
+        if "playwright install --with-deps" in line
+    ]
 
 
 def test_playwright_projects_are_the_expected_browser_set() -> None:
-    assert _configured_projects() == EXPECTED
+    assert _configured_projects() == EXPECTED_PROJECTS
 
 
-def test_ci_and_docker_install_every_configured_browser() -> None:
+def test_ci_and_docker_install_only_browser_engines() -> None:
     workflow = (ROOT / ".github" / "workflows" / "non-dart.yml").read_text(encoding="utf-8")
     dockerfile = (ROOT / "Dockerfile.e2e").read_text(encoding="utf-8")
 
-    install = "playwright install --with-deps chromium firefox webkit"
-    assert workflow.count(install) == 2
-    assert install in dockerfile
+    expected_install = "playwright install --with-deps chromium firefox webkit"
+    workflow_installs = _install_lines(workflow)
+    docker_installs = _install_lines(dockerfile)
 
+    assert workflow_installs == [
+        f"npx {expected_install}",
+        f"npx {expected_install}",
+    ]
+    assert docker_installs == [f"&& npx --prefix e2e {expected_install}"]
+
+    # Project/profile names are not Playwright browser-install targets.
+    for line in [*workflow_installs, *docker_installs]:
+        assert not any(project in line for project in MOBILE_PROJECTS)
+
+
+def test_mobile_projects_reuse_the_expected_installed_engines_and_portable_subset() -> None:
+    source = (ROOT / "e2e" / "playwright.config.ts").read_text(encoding="utf-8")
+
+    # Device descriptors carry the engine choice used by these projects:
+    # Pixel -> Chromium-oriented, iPhone -> WebKit-oriented. These are emulation,
+    # not physical-device/Safari compatibility claims.
+    assert re.search(
+        r"name:\s*['\"]mobile-chromium['\"].*?"
+        r"grep:\s*/@portable/.*?"
+        r"devices\[['\"]Pixel 7['\"]\]",
+        source,
+        re.DOTALL,
+    )
+    assert re.search(
+        r"name:\s*['\"]mobile-webkit['\"].*?"
+        r"grep:\s*/@portable/.*?"
+        r"devices\[['\"]iPhone 13['\"]\]",
+        source,
+        re.DOTALL,
+    )
+
+
+def test_ci_lists_every_exact_project() -> None:
+    workflow = (ROOT / ".github" / "workflows" / "non-dart.yml").read_text(encoding="utf-8")
     list_command = (
         "playwright test --list "
-        "--project=chromium --project=firefox --project=webkit"
+        "--project=chromium --project=firefox --project=webkit "
+        "--project=mobile-chromium --project=mobile-webkit"
     )
     assert list_command in workflow
