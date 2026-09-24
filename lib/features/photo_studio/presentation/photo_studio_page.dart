@@ -213,9 +213,12 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     required int generation,
     String? declaredMimeType,
   }) async {
-    // All ingress adapters converge here. MIME is advisory; the shared gate and
-    // decode/normalization pipeline decide whether the bytes are actually usable.
-    if (declaredMimeType != null && !declaredMimeType.startsWith('image/')) {
+    // All ingress adapters converge here. When an acquisition boundary reports
+    // a non-empty MIME type, reject a non-image declaration before decoding.
+    // Image MIME remains provenance only: byte/decode validation is authoritative.
+    if (declaredMimeType != null &&
+        declaredMimeType.isNotEmpty &&
+        !declaredMimeType.startsWith('image/')) {
       _setImportStatusIfCurrent(
         generation,
         PhotoImportStatus.failure(
@@ -377,6 +380,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
             bytes,
             source: PhotoImportSource.pick,
             generation: generation,
+            declaredMimeType: outcome.declaredMimeType,
           );
       }
     } catch (_) {
