@@ -11,6 +11,7 @@ import 'package:flutter_application_1/features/photo_studio/domain/studio_frame_
 import 'package:flutter_application_1/features/photo_studio/presentation/compose_studio_image.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/photo_rect_canvas.dart';
 import 'package:flutter_application_1/features/photo_studio/data/clipboard_image_read.dart';
+import 'package:flutter_application_1/features/photo_studio/data/photo_media_ports.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/photo_studio_page.dart';
 import 'package:flutter_application_1/core/navigation/route_names.dart';
 import 'package:flutter_application_1/shared/display/display_scope.dart';
