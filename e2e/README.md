@@ -38,7 +38,8 @@ python tool/python/playwright.py test \
   --project chromium --project firefox --project webkit \
   --project mobile-chromium --project mobile-webkit \
   --grep @portable \
-  tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts
+  tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts \
+  tests/photo_studio_ingress.spec.ts
 
 # テスト一覧（CI smoke と同用途）
 python tool/python/playwright.py list
@@ -80,7 +81,8 @@ docker run --rm \
 
 # 高速なローカル確認: Chromium のみへ CMD を上書き
 docker run --rm flutter-nav-e2e test --project chromium --grep @portable \
-  tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts
+  tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts \
+  tests/photo_studio_ingress.spec.ts
 
 # Visual snapshot のスクショを撮りたいだけなら（コンテナ内の tool/python/playwright.py にそのまま引数が渡る）
 docker run --rm \
@@ -128,7 +130,8 @@ e2e/
 ├── tests/
 │   ├── hub_navigation.spec.ts
 │   ├── screen_navigation.spec.ts
-│   ├── photo_studio.spec.ts       # Photo Studio portable flow
+│   ├── photo_studio.spec.ts       # Photo Studio representative portable flow
+│   ├── photo_studio_ingress.spec.ts # ingress audit; clipboard case is Chromium-scoped
 │   └── visual_snapshot.spec.ts # Visual regression baseline
 ├── fixtures/
 │   └── test_data.json
@@ -144,3 +147,5 @@ tool/docker/
 
 Dockerfile.e2e                  # Flutter build + Playwright, containerized
 ```
+
+`photo_studio.spec.ts` owns the shortest representative picker happy path. `photo_studio_ingress.spec.ts` intentionally audits ingress boundaries (portable picker/MIME rejection plus Chromium-scoped clipboard) and should not grow into a second copy of the full representative flow.
