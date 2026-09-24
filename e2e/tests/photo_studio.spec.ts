@@ -1,12 +1,10 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { waitForFlutter } from '../utils/helpers';
 
 const photoStudioRoute = '/#/tools/media/photo-studio';
-const specDir = path.dirname(fileURLToPath(import.meta.url));
 const fixture = path.resolve(
-  specDir,
+  __dirname,
   '../../test/fixtures/photo_studio/import_compat/png_opaque_2x2.png',
 );
 
@@ -25,11 +23,11 @@ test.describe('Photo Studio representative flow', () => {
 
   test('imports a committed PNG through the browser file picker @portable', async ({ page }) => {
     const chooserPromise = page.waitForEvent('filechooser');
-    await page.getByText('Import image', { exact: false }).click();
+    await page.getByText('Import image', { exact: true }).click();
     const chooser = await chooserPromise;
     await chooser.setFiles(fixture);
 
-    await expect(page.getByText('Image loaded', { exact: false })).toBeVisible({
+    await expect(page.getByText('Image loaded', { exact: true })).toBeVisible({
       timeout: 15_000,
     });
     await expect(page.getByText('Replace image', { exact: true })).toBeVisible();
