@@ -288,6 +288,35 @@ void main() {
     expect(find.textContaining('Image loaded'), findsOneWidget);
   });
 
+  testWidgets('insert rejects non-image MIME before decode', (tester) async {
+    var decodeCalled = false;
+    await _pumpPage(
+      tester,
+      page: PhotoStudioPage(
+        imageDecodeAdapter: (bytes) async {
+          decodeCalled = true;
+          return bytes;
+        },
+      ),
+    );
+
+    final field = tester
+        .widgetList<TextField>(find.byType(TextField))
+        .firstWhere((widget) => widget.contentInsertionConfiguration != null);
+    field.contentInsertionConfiguration!.onContentInserted(
+      KeyboardInsertedContent(
+        mimeType: 'text/plain',
+        uri: 'content://photo-studio-test/non-image',
+        data: _tinyPng,
+      ),
+    );
+    await tester.pump();
+
+    expect(decodeCalled, isFalse);
+    expect(find.textContaining('Image loaded'), findsNothing);
+    expect(find.text('Retry'), findsOneWidget);
+  });
+
   testWidgets('custom stamp text can be armed and placed', (tester) async {
     await _pumpPage(tester);
 
