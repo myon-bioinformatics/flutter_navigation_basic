@@ -29,11 +29,13 @@ export default defineConfig({
     {
       // Android-oriented browser emulation; not physical-device evidence.
       name: 'mobile-chromium',
+      grep: /@portable/,
       use: { ...devices['Pixel 7'] },
     },
     {
       // iPhone/iOS-oriented WebKit emulation; do not label this real Safari proof.
       name: 'mobile-webkit',
+      grep: /@portable/,
       use: { ...devices['iPhone 13'] },
     },
   ],
