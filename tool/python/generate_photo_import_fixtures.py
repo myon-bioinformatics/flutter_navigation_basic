@@ -28,10 +28,7 @@ OUT = ROOT / "test" / "fixtures" / "photo_studio" / "import_compat"
 CASES = OUT / "cases.json"
 TMP = OUT / ".gen_tmp"
 
-# Files whose bytes are produced entirely by this script/stdlib and are therefore
-# safe to compare byte-for-byte in every CI environment. Encoder-backed JPEG,
-# WebP and HEIC fixtures are intentionally excluded: their bytes can vary with
-# ffmpeg/Pillow/libheif versions and are validated structurally by consumers.
+# Fixtures owned by the stdlib generator. PNG compression bytes are explicitly\n# not treated as portable: --check compares decoded scanlines plus non-IDAT\n# chunks. Encoder-backed JPEG/WebP/HEIC are structurally validated instead.
 CASE_DECLARED_DETERMINISTIC_FILES = (
     "png_opaque_2x2.png",
     "png_alpha_2x2.png",
