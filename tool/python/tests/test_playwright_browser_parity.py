@@ -14,7 +14,7 @@ EXPECTED_PROJECTS = EXPECTED_ENGINES | {"mobile-chromium", "mobile-webkit"}
 
 def _configured_projects() -> set[str]:
     source = (ROOT / "e2e" / "playwright.config.ts").read_text(encoding="utf-8")
-    return set(re.findall(r"name:\\s*['\"]([^'\"]+)['\"]", source))
+    return set(re.findall(r"name:\s*['\"]([^'\"]+)['\"]", source))
 
 
 def test_playwright_projects_are_the_expected_browser_set() -> None:
