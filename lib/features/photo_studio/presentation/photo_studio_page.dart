@@ -207,11 +207,24 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     setState(() => _importStatus = status);
   }
 
-  Future<void> _setImage(
+  Future<void> _importImageBytes(
     Uint8List rawBytes, {
     required PhotoImportSource source,
     required int generation,
+    String? declaredMimeType,
   }) async {
+    // All ingress adapters converge here. MIME is advisory; the shared gate and
+    // decode/normalization pipeline decide whether the bytes are actually usable.
+    if (declaredMimeType != null && !declaredMimeType.startsWith('image/')) {
+      _setImportStatusIfCurrent(
+        generation,
+        PhotoImportStatus.failure(
+          reason: PhotoImportFailureReason.unsupportedFormat,
+          source: source,
+        ),
+      );
+      return;
+    }
     final rawReject = PhotoImportGate.rejectRawBytes(rawBytes);
     if (rawReject != null) {
       _setImportStatusIfCurrent(
@@ -302,7 +315,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
           );
           return;
         }
-        await _setImage(
+        await _importImageBytes(
           bytes,
           source: PhotoImportSource.pick,
           generation: generation,
@@ -360,7 +373,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
             );
             return;
           }
-          await _setImage(
+          await _importImageBytes(
             bytes,
             source: PhotoImportSource.pick,
             generation: generation,
@@ -407,7 +420,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
         if (imageCandidate && text.length <= _maxImageClipboardChars) {
           try {
             final payload = Base64ImageBridge.decodeText(text);
-            await _setImage(
+            await _importImageBytes(
               payload.bytes,
               source: PhotoImportSource.paste,
               generation: generation,
@@ -437,7 +450,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
         case ClipboardImageReadKind.bytes:
           final bytes = read.bytes;
           if (bytes != null && bytes.isNotEmpty) {
-            await _setImage(
+            await _importImageBytes(
               bytes,
               source: PhotoImportSource.paste,
               generation: generation,
@@ -501,20 +514,11 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       );
       return;
     }
-    if (!content.mimeType.startsWith('image/')) {
-      _setImportStatusIfCurrent(
-        generation,
-        const PhotoImportStatus.failure(
-          reason: PhotoImportFailureReason.unsupportedFormat,
-          source: PhotoImportSource.insert,
-        ),
-      );
-      return;
-    }
-    _setImage(
+    _importImageBytes(
       bytes,
       source: PhotoImportSource.insert,
       generation: generation,
+      declaredMimeType: content.mimeType,
     );
   }
 
