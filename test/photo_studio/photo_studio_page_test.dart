@@ -362,11 +362,15 @@ void main() {
         data: _tinyPng,
       ),
     );
-    // The page has ongoing animation, so bounded pumps are more deterministic
-    // than pumpAndSettle while still allowing the async decode/import to finish.
+    // onContentInserted is a void callback that starts async import work. Let the
+    // microtask complete explicitly; pumpAndSettle is unsuitable because this
+    // page can keep scheduling frames.
+    await tester.runAsync(() async {
+      for (var i = 0; i < 20 && !decodeCalled; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+    });
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-    await tester.pump(const Duration(milliseconds: 100));
 
     expect(decodeCalled, isTrue);
     expect(find.textContaining('Image loaded'), findsOneWidget);
