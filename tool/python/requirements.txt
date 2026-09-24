@@ -3,5 +3,6 @@
 # Formula assertions live in Dart tests; keep this allowlist minimal.
 pytest==8.4.2
 # Fixture regeneration only (`tool/python/generate_photo_import_fixtures.py`).
-# CI calls the generator only with --check; that path is stdlib-only and does not regenerate encoder-backed fixtures.\n# Full regeneration still needs Pillow plus host ffmpeg/heif-enc.
+# CI calls the generator only with --check; that path is stdlib-only and does not regenerate encoder-backed fixtures.
+# Full regeneration still needs Pillow plus host ffmpeg/heif-enc.
 Pillow==11.0.0

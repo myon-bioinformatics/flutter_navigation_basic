@@ -209,6 +209,34 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def write_deterministic_fixtures(out_dir: Path) -> None:
+    """Write every fixture in DETERMINISTIC_FILES using stdlib only.
+
+    Shared by `main()` and `_check_committed()` so the drift check compares
+    against the exact same code path that produces the committed fixtures.
+    """
+    write_png_rgb(out_dir / "png_opaque_2x2.png", 2, 2, [
+        bytes([0, 0, 0, 255, 0, 0]),
+        bytes([0, 0, 255, 255, 255, 0]),
+    ])
+    write_png_rgba(out_dir / "png_alpha_2x2.png", 2, 2, [
+        bytes([255, 0, 0, 128, 255, 0, 0, 128]),
+        bytes([255, 0, 0, 128, 255, 0, 0, 128]),
+    ])
+    write_png_rgb(out_dir / "png_markers_64x32.png", 64, 32, marker_png_rgb(64, 32))
+    write_gif(out_dir / "gif_still_1x1.gif")
+    write_ftyp(out_dir / "avif_ftyp_only.avif", "avif", ["avif", "mif1"])
+    for brand in ("heic", "heif", "mif1", "msf1", "heix"):
+        write_ftyp(out_dir / f"heic_ftyp_{brand}.heic", brand, [brand, "mif1"])
+    write_truncated_png(out_dir / "png_truncated.png", out_dir / "png_opaque_2x2.png")
+    (out_dir / "empty.bin").write_bytes(b"")
+    write_png_ihdr_only(out_dir / "png_claim_10000x10000.png", 10000, 10000)
+    (out_dir / "README_OVERSIZE.txt").write_text(
+        "Do not commit 32MiB blobs. Tests allocate maxInputBytes+1 at runtime.\n",
+        encoding="utf-8",
+    )
+
+
 def _check_committed() -> int:
     """Verify the deterministic fixture contract without encoder dependencies."""
     missing = [name for name in DETERMINISTIC_FILES if not (OUT / name).is_file()]
@@ -231,21 +259,7 @@ def _check_committed() -> int:
     shutil.rmtree(check_dir, ignore_errors=True)
     check_dir.mkdir(parents=True)
     try:
-        write_png_rgb(check_dir / "png_opaque_2x2.png", 2, 2, [
-            bytes([0, 0, 0, 255, 0, 0]), bytes([0, 0, 255, 255, 255, 0])])
-        write_png_rgba(check_dir / "png_alpha_2x2.png", 2, 2, [
-            bytes([255, 0, 0, 128, 255, 0, 0, 128]),
-            bytes([255, 0, 0, 128, 255, 0, 0, 128])])
-        write_png_rgb(check_dir / "png_markers_64x32.png", 64, 32, marker_png_rgb(64, 32))
-        write_gif(check_dir / "gif_still_1x1.gif")
-        write_ftyp(check_dir / "avif_ftyp_only.avif", "avif", ["avif", "mif1"])
-        for brand in ("heic", "heif", "mif1", "msf1", "heix"):
-            write_ftyp(check_dir / f"heic_ftyp_{brand}.heic", brand, [brand, "mif1"])
-        write_truncated_png(check_dir / "png_truncated.png", check_dir / "png_opaque_2x2.png")
-        (check_dir / "empty.bin").write_bytes(b"")
-        write_png_ihdr_only(check_dir / "png_claim_10000x10000.png", 10000, 10000)
-        (check_dir / "README_OVERSIZE.txt").write_text(
-            "Do not commit 32MiB blobs. Tests allocate maxInputBytes+1 at runtime.\n", encoding="utf-8")
+        write_deterministic_fixtures(check_dir)
         drift = []
         for name in DETERMINISTIC_FILES:
             expected, actual = _sha256(OUT / name), _sha256(check_dir / name)
@@ -277,17 +291,9 @@ def main(argv: list[str] | None = None) -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     TMP.mkdir(parents=True, exist_ok=True)
 
-    # --- PNG ---
-    write_png_rgb(OUT / "png_opaque_2x2.png", 2, 2, [
-        bytes([0, 0, 0, 255, 0, 0]),
-        bytes([0, 0, 255, 255, 255, 0]),
-    ])
-    write_png_rgba(OUT / "png_alpha_2x2.png", 2, 2, [
-        bytes([255, 0, 0, 128, 255, 0, 0, 128]),
-        bytes([255, 0, 0, 128, 255, 0, 0, 128]),
-    ])
+    # --- Deterministic (stdlib-only) fixtures; see write_deterministic_fixtures ---
+    write_deterministic_fixtures(OUT)
     markers = OUT / "png_markers_64x32.png"
-    write_png_rgb(markers, 64, 32, marker_png_rgb(64, 32))
 
     # --- JPEG baseline / progressive / EXIF from markers ---
     base_jpg = TMP / "markers_baseline.jpg"
@@ -333,24 +339,9 @@ def main(argv: list[str] | None = None) -> int:
         "-update", "1", str(OUT / "webp_alpha_8x4.webp"),
     ])
 
-    # --- GIF / AVIF ftyp-only / HEIC ftyp-only (container sniff) ---
-    write_gif(OUT / "gif_still_1x1.gif")
-    write_ftyp(OUT / "avif_ftyp_only.avif", "avif", ["avif", "mif1"])
-    for brand in ("heic", "heif", "mif1", "msf1", "heix"):
-        write_ftyp(OUT / f"heic_ftyp_{brand}.heic", brand, [brand, "mif1"])
-
     # --- Real synthetic HEIC (decodable by libheif; Flutter may still reject) ---
     heic_out = OUT / "heic_synthetic_markers_64x32.heic"
     _run([heif_enc, "-o", str(heic_out), "-q", "40", str(markers)])
-
-    # --- Failure probes ---
-    write_truncated_png(OUT / "png_truncated.png", OUT / "png_opaque_2x2.png")
-    (OUT / "empty.bin").write_bytes(b"")
-    write_png_ihdr_only(OUT / "png_claim_10000x10000.png", 10000, 10000)
-    (OUT / "README_OVERSIZE.txt").write_text(
-        "Do not commit 32MiB blobs. Tests allocate maxInputBytes+1 at runtime.\n",
-        encoding="utf-8",
-    )
 
     cases = [
         _case("png_opaque_2x2", "png", "opaque", "png_opaque_2x2.png", "raster"),
