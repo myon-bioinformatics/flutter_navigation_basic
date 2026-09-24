@@ -8,7 +8,9 @@ Regenerate fixtures (developer machine / agent VM with tools):
 
   python3 tool/python/generate_photo_import_fixtures.py
 
-CI runs `--check`, which is stdlib-only. Full regeneration needs the optional\nhost encoders; committed fixtures + evidence remain the source of truth. No\npersonal photos, GPS, or network downloads.
+CI runs `--check`, which is stdlib-only. Full regeneration needs the optional
+host encoders; committed fixtures + evidence remain the source of truth. No
+personal photos, GPS, or network downloads.
 """
 
 from __future__ import annotations
@@ -28,7 +30,9 @@ OUT = ROOT / "test" / "fixtures" / "photo_studio" / "import_compat"
 CASES = OUT / "cases.json"
 TMP = OUT / ".gen_tmp"
 
-# Fixtures owned by the stdlib generator. PNG compression bytes are explicitly\n# not treated as portable: --check compares decoded scanlines plus non-IDAT\n# chunks. Encoder-backed JPEG/WebP/HEIC are structurally validated instead.
+# Fixtures owned by the stdlib generator. PNG compression bytes are explicitly
+# not treated as portable: --check compares decoded scanlines plus non-IDAT
+# chunks. Encoder-backed JPEG/WebP/HEIC are structurally validated instead.
 CASE_DECLARED_DETERMINISTIC_FILES = (
     "png_opaque_2x2.png",
     "png_alpha_2x2.png",
