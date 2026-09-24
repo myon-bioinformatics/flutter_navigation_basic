@@ -86,6 +86,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     snapshot.add_argument("extra", nargs=argparse.REMAINDER)
 
+    evidence = sub.add_parser(
+        "photo-evidence",
+        help="Run the bounded Photo Studio MJS evidence runner.",
+    )
+    evidence.add_argument("--browser", default="chromium", choices=("chromium", "firefox", "webkit"))
+    evidence.add_argument("--base-url", default="http://localhost:8080")
+    evidence.add_argument("--fixture", required=True)
+    evidence.add_argument("--output", default="test-results/photo-studio-evidence.png")
+    evidence.add_argument("--timeout-ms", type=int, default=30000)
+
     report = sub.add_parser("report", help="Open the Playwright HTML report.")
     report.add_argument("extra", nargs=argparse.REMAINDER)
 
@@ -122,6 +132,18 @@ def main(argv: list[str] | None = None) -> int:
         if args.update:
             cmd.append("--update-snapshots")
         return _run(cmd)
+
+    if args.command == "photo-evidence":
+        script = E2E_DIR / "scripts" / "photo_studio_evidence.mjs"
+        return _run([
+            _node(),
+            str(script),
+            f"--browser={args.browser}",
+            f"--baseURL={args.base_url}",
+            f"--fixture={Path(args.fixture).resolve()}",
+            f"--output={args.output}",
+            f"--timeout={args.timeout_ms}",
+        ])
 
     if args.command == "report":
         return _run([*_playwright_prefix(), "show-report", *args.extra])
