@@ -209,3 +209,11 @@ For each proposed Dart -> Python/data/web/Deno migration:
 ## Success criterion
 
 The repository succeeds when a maintainer can add a feature by asking “what is the lightest portable owner?” rather than “how do I implement this in Dart?”, while users retain stable access from desktop web, mobile web, Android-oriented browsers, iPhone/iOS-oriented browsers, and native Flutter surfaces where those surfaces provide real value.
+
+
+## Related reusable knowledge
+
+- [ANTI_PATTERNS.md](./ANTI_PATTERNS.md) consolidates repository incidents and review rules across Flutter/Dart, pytest/Python, Playwright/browser CI, media, and runtime ownership.
+- [CROSS_REPOSITORY_REUSE.md](./CROSS_REPOSITORY_REUSE.md) evaluates what this repository can consume from sibling projects and what should be promoted outward, with lightweight provenance/versioning rules.
+
+The intended direction is two-way reuse without turning sibling repositories into unpinned runtime or CI dependencies.
