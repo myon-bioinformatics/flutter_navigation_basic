@@ -1,56 +1,62 @@
 # Anti-pattern catalogue
 
-This catalogue turns failures and migration lessons already present in this repository into reusable review rules. It covers Flutter/Dart, pytest/Python, Playwright/browser testing, CI, media/platform boundaries, and dependency/runtime ownership.
+> **Status:** Accepted catalogue; individual entries marked `review-only` are policy/review guards rather than automated gates.  
+> **Decided:** 2026-09, PR #89.  
+> **Revisit:** after the first runtime-ownership migration slice and browser-test-kit reconciliation.
 
-The IDs are intentionally stable enough to reference from reviews and regression tests. Add a new ID only when the failure mode is portable beyond one line of code.
+This catalogue turns failures and migration lessons already present in this repository into reusable review rules. `Scope` distinguishes Flutter-local rules from cross-cutting knowledge. `Guard` distinguishes executable enforcement from review guidance.
 
-| ID | Anti-pattern | Failure mode | Preferred pattern |
-| --- | --- | --- | --- |
-| `FRAMEWORK_AS_GOAL` | Preserving Dart/Flutter/GetX because it is already present | Platform reach and maintenance cost become secondary to framework loyalty | Choose the lightest owner that preserves the capability and one source of truth |
-| `BULK_FRAMEWORK_MIGRATION` | Rewriting the historical catalogue in one cleanup | Huge review surface, educational examples lose meaning, regressions are hard to localize | Migrate by responsibility and verified batches; isolate intentionally framework-specific examples |
-| `GLOBAL_SERVICE_LOCATOR_DEFAULT` | New code reaches through global lookup for dependencies | Hidden coupling and difficult tests | Constructor injection; smallest state primitive that fits |
-| `DUPLICATE_RUNTIME_SOURCE` | Reimplementing a production formula/transform in Python or JS without a clear oracle boundary | Two implementations silently diverge | One production source of truth; reference oracle only when independently useful and explicitly tested |
-| `TOOLING_LANGUAGE_DOGMA` | “tooling is Dart by default” or “Python is always simpler” | Generic tooling inherits unnecessary SDK/setup, or runtime code is moved behind an unnatural bridge | Boundary-first ownership using total implementation/dependency/ops cost |
-| `PIP_AT_APP_ROOT` | Quietly introducing general Python runtime/package requirements into the app tree | Python tooling becomes an undeclared second application runtime | Keep dev/test deps allowlisted and scoped; stdlib first |
-| `SILENT_KNOWN_GAP` | Omitting a failing case from the suite | Green CI hides unsupported behavior | pytest `xfail(reason="known: …")` or explicit Flutter `known:/xfail:` skip + outcome receipt |
-| `SKIP_EQUALS_XFAIL` | Treating all skips as known failures | Environment gates and actual known gaps become indistinguishable | Preserve passed/failed/skipped/xfailed/xpassed/error vocabulary |
-| `CORRUPT_REPORT_EQUALS_EMPTY_GREEN` | Ignoring malformed test reporter lines | Truncated CI output can look like zero failures | Count malformed/non-object reporter records as errors |
-| `FULL_CATALOGUE_EVERYWHERE` | Running thousands of reference-pattern tests in every compatibility lane | Suite-load/startup cost dominates useful signal | Full pinned lane + focused moving-stable/core lanes, with explicit path inventory |
-| `STALE_ACTIONS_GREEN` | Reusing the latest green Actions result without checking its SHA | An older commit is mistaken for current validation | Freshness-gate receipts against git HEAD; stale inspection requires explicit opt-in |
-| `PLAYWRIGHT_ARG_GREEDINESS` | Building `--project chromium <spec>` as separate argv tokens | Playwright consumes the spec as another project name | Use exact argv tests and `--project=chromium` / `--grep=value` |
-| `BROWSER_MATRIX_DRIFT` | Playwright config, CI install list, Docker install list, and smoke command disagree | A configured browser silently never runs or cannot launch | Exact parity regression between project identities and installed engines |
-| `ONE_ENGINE_MULTIPLATFORM` | Calling Chromium-only success “multiplatform” | Firefox/WebKit/mobile-specific failures remain invisible | Desktop Chromium/Firefox/WebKit plus high-value mobile profiles |
-| `WEBKIT_EQUALS_SAFARI` | Reporting Playwright WebKit as branded Safari proof | Engine-level CI is overstated as product/device compatibility | Label it WebKit; keep physical iOS/Safari as a separate evidence tier |
-| `EMULATION_EQUALS_DEVICE` | Reporting Pixel/iPhone descriptors as physical-device proof | OS picker, permissions, codec, keyboard and browser-shell differences disappear | Record browser/project/profile metadata and maintain real-device tail tests where needed |
-| `MOBILE_VIEWPORT_ONLY` | Treating a narrow viewport as complete mobile validation | Touch, device semantics and engine differences are missed | Use device-oriented profiles plus explicit responsive assertions; real devices for OS boundaries |
-| `SCREENSHOT_EQUALS_BEHAVIOR` | Screenshot presence is used as interaction/protocol proof | A visually plausible page can be functionally broken | DOM/accessibility/protocol assertions for behavior; screenshots/traces/videos as evidence |
-| `VISUAL_DIFF_TOO_EARLY` | Making visual baselines a hard gate before deterministic rendering is stable | Noise and baseline churn dominate product signal | Establish deterministic smoke/evidence first, then stage visual regression |
-| `HEAVY_E2E_AS_PR_GATE` | Building Flutter and running full browser E2E for every unrelated PR | Slow/expensive feedback and abandoned runs | Cheap install/`--list` smoke on relevant PRs; heavier E2E on explicit lanes |
-| `MUTABLE_ASSET_AS_FIXTURE` | Tests assume generated build metadata is an immutable fixture | Build refresh changes test meaning | Parse through pure helpers or dedicated committed fixtures |
-| `SYNTHETIC_MEDIA_EQUALS_DEVICE_SUPPORT` | Synthetic HEIC/container sniff success is reported as iPhone camera/Safari support | Codec/container detection is confused with real platform decode/import | Separate synthetic fixture, browser, native-host, and physical-device evidence |
-| `DECODE_BEFORE_BUDGET` | Fully decoding untrusted media before size/pixel checks | Memory spikes and platform-specific crashes | Enforce raw byte/pixel budgets before expensive allocation where possible |
-| `UI_DIRECT_PLUGIN_COUPLING` | Widgets call image picker/native APIs directly | Platform behavior cannot be faked or tested deterministically | Adapter/port boundary injected into UI/domain |
-| `DEPENDENCY_FOR_CATALOGUE_COMPLETENESS` | Adding packages merely so a reference catalogue can demonstrate a feature | Runtime dependency weight grows without a real product requirement | Representative completeness; add a dependency only for a real capability |
-| `COSMETIC_PERMUTATION_GROWTH` | Adding near-identical screens/styles after interaction coverage is complete | Repository size/test cost grows without new behavior | Add only materially different interaction/accessibility/layout/platform patterns |
-| `DUAL_ENTRYPOINT_DRIFT` | Public Pages and production entrypoints build different route/page registries | A feature works in one deployed surface but not another | Shared route metadata/builders and parity tests |
-| `PATH_FILTER_BLIND_SPOT` | CI path filters omit shared config/lock/core files that affect a lane | Relevant checks are skipped | Treat path lists as executable contracts and regression-test shared triggers where practical |
+For browser-generic concepts, browser-test-kit is the preferred vocabulary owner. This table was reconciled against `myon-bioinformatics/browser-test-kit@7c53a4fcf8761b437e3177e0c12695ba42601698`. Existing upstream IDs are reused exactly where equivalent; remaining `cross-cutting candidate` IDs are provisional until promoted or deliberately kept local.
+
+| ID | Scope | Anti-pattern / failure mode | Preferred pattern | Guard / provenance |
+| --- | --- | --- | --- | --- |
+| `FRAMEWORK_AS_GOAL` | flutter-local | Preserving Dart/Flutter/GetX because it is already present makes reach and maintenance secondary to framework loyalty | Choose the lightest owner preserving capability and one source of truth | review-only; `GETX_MIGRATION_MAP.md` |
+| `BULK_FRAMEWORK_MIGRATION` | flutter-local | Rewriting the historical catalogue in one cleanup creates huge, hard-to-localize risk | Migrate by responsibility and verified batches | review-only; GetX staged migration |
+| `GLOBAL_SERVICE_LOCATOR_DEFAULT` | flutter-local (GetX) | Global lookup such as `Get.find` hides coupling and complicates tests | Constructor injection; smallest state primitive | CI keeps handcrafted shell GetX-free + review |
+| `DUPLICATE_RUNTIME_SOURCE` | cross-cutting candidate | A production transform is reimplemented as an allegedly independent oracle and silently diverges | One production source; independent oracle/golden only | review-only; see runtime-ownership oracle rule |
+| `TOOLING_LANGUAGE_DOGMA` | cross-cutting candidate; tooling specialization of `FRAMEWORK_AS_GOAL` | “Dart by default” or “Python always simpler” forces an unnatural runtime | Boundary-first ownership by total implementation/dependency/ops cost | review-only |
+| `PIP_AT_APP_ROOT` | flutter-local | General Python requirements turn dev tooling into an undeclared app runtime | Scoped allowlist; stdlib first | Non-Dart requirements allowlist |
+| `SILENT_KNOWN_GAP` | cross-cutting candidate | Removing/omitting a failing case makes CI green by hiding the gap | Keep the case as explicit xfail/known gap | pytest/Flutter outcome receipts; paired with `SKIP_EQUALS_XFAIL` |
+| `SKIP_EQUALS_XFAIL` | cross-cutting candidate | Treating every skip as a known failure erases environment-gate semantics | Preserve passed/failed/skipped/xfailed/xpassed/error | `tool/python/outcomes.py`; paired with `SILENT_KNOWN_GAP` |
+| `CORRUPT_REPORT_EQUALS_EMPTY_GREEN` | cross-cutting candidate | Malformed reporter output can look like zero failures | Corrupt/non-object records are errors | `tool/python/tests/test_outcomes.py` |
+| `FULL_CATALOGUE_EVERYWHERE` | flutter-local | Thousands of reference tests in every compatibility lane make startup dominate signal | Full pinned lane + focused moving/core lanes | CI shard/path design; mobile `@portable` subset |
+| `STALE_ACTIONS_GREEN` | cross-cutting candidate | A previous SHA's green run is reused as current proof | Gate receipts against git HEAD | Actions freshness tooling/tests |
+| `CLI_ARG_GREEDINESS` | cross-cutting; browser-test-kit stable | Space-separated Playwright `--project chromium <spec>` can consume the spec as another project | Exact argv tests; `--project=chromium` | `test_playwright_cli.py`; upstream stable ID |
+| `BROWSER_MATRIX_DRIFT` | cross-cutting; browser-test-kit stable | Config, CI/Docker install and smoke commands disagree | Exact project/install parity regression | `test_playwright_browser_parity.py`; upstream stable ID |
+| `ONE_ENGINE_ASSUMPTION` | cross-cutting; browser-test-kit stable | Chromium-only success is called multiplatform | Desktop Chromium/Firefox/WebKit + high-value mobile profiles | Playwright config/parity; upstream stable ID |
+| `SAFARI_EQUALS_WEBKIT` | cross-cutting; browser-test-kit stable | Playwright WebKit is reported as branded Safari/device proof | Label WebKit honestly; physical iOS/Safari is separate | docs/evidence review; upstream stable ID |
+| `EMULATION_EQUALS_DEVICE` | cross-cutting candidate | Pixel/iPhone descriptors are reported as physical-device proof | Record profile/emulation and retain real-device tail | config comments + evidence review; candidate in upstream doctrine |
+| `MOBILE_VIEWPORT_ONLY` | cross-cutting; browser-test-kit stable | Narrow viewport is treated as complete mobile validation | Device-oriented profiles + responsive assertions + real-device OS-boundary tests | mobile Playwright projects; upstream stable ID |
+| `SCREENSHOT_AS_SELECTOR` | cross-cutting; browser-test-kit stable | Screenshot/pixel evidence substitutes for semantic interaction locators | DOM/accessibility/protocol assertions for behavior; screenshots for visual evidence | Playwright tests + review; upstream stable ID |
+| `VISUAL_DIFF_TOO_EARLY` | cross-cutting; browser-test-kit stable | Hard visual baselines arrive before deterministic rendering is stable | Stage deterministic smoke/evidence first | visual snapshot lane remains explicit; upstream stable ID |
+| `HEAVY_E2E_AS_PR_GATE` | flutter-local | Full Flutter build/browser E2E runs on every unrelated PR | Cheap install/list smoke; explicit heavy lane | Non-Dart workflow; mobile projects restricted to `@portable` |
+| `MUTABLE_ASSET_AS_FIXTURE` | flutter-local | Generated build metadata is assumed immutable | Pure parser or dedicated committed fixture | testing rules/review |
+| `SYNTHETIC_MEDIA_EQUALS_DEVICE_SUPPORT` | flutter-local, portable lesson | Synthetic HEIC/container evidence is reported as iPhone camera/Safari support | Separate fixture, browser, native-host and physical-device evidence | photo compatibility evidence/tests |
+| `DECODE_BEFORE_BUDGET` | cross-cutting candidate | Expensive media decode happens before byte/pixel budgets | Reject before expensive allocation where possible | PhotoImport limits/tests |
+| `UI_DIRECT_PLUGIN_COUPLING` | flutter-local | Widgets call picker/native APIs directly | Inject adapter/port boundary | photo media ports/tests |
+| `DEPENDENCY_FOR_CATALOGUE_COMPLETENESS` | flutter-local, portable lesson | Package added only to make a reference catalogue look complete | Representative completeness; require real capability | dependency audit/review |
+| `COSMETIC_PERMUTATION_GROWTH` | flutter-local | Near-identical screens grow after interaction coverage is complete | Add materially different interaction/accessibility/layout/platform patterns only | UI coverage review |
+| `DUAL_ENTRYPOINT_DRIFT` | flutter-local | Pages and production entrypoints/routes diverge | Shared metadata/builders and parity tests | existing entrypoint/route parity tests |
+| `PATH_FILTER_BLIND_SPOT` | cross-cutting candidate | CI path filters omit shared config/lock/core inputs | Treat path filters as executable contracts | workflow tests/review |
 
 ## Pytest-specific guidance
 
-Pytest is valuable here because fixtures, parametrization, xfail, monkeypatching, temporary paths, and small stdlib-oriented tests can express tooling contracts with little ceremony. It should not become a second product runtime.
+Pytest is useful here because fixtures, parametrization, xfail, monkeypatching, temporary paths, and small stdlib-oriented tests express tooling contracts with little ceremony. It must not become a second product runtime.
 
-Prefer explicit fixture dependencies, narrowly scoped monkeypatches, and tests of exact observable contracts. Keep `xfail` for known unsupported behavior rather than ordinary skips. A passing xfail (`xpass`) is useful information and should remain visible.
-
-Do not hide environment setup inside tests when the test is about argument construction or pure transformation: the Playwright CLI regression correctly stubs the installed CLI prefix and tests exact argv instead of requiring `node_modules`.
+Prefer explicit fixture dependencies, narrowly scoped monkeypatches, and exact observable contracts. Keep `xfail` for known unsupported behavior rather than ordinary skips. A passing xfail (`xpass`) remains visible. For pure argument construction, stub environment setup: the Playwright CLI regression stubs the installed CLI prefix and tests exact argv instead of requiring `node_modules`.
 
 ## Browser/media evidence rule
 
-Evidence claims should name their layer:
+Evidence is a branching structure, not a single ladder:
 
-`fixture -> parser/adapter -> Flutter runtime -> browser engine/profile -> OS/native host -> physical device/browser`
+```text
+fixture -> parser/adapter -> Flutter runtime
+                         |-> browser engine/profile -> browser on physical device
+                         \-> OS/native host --------> installed app on physical device
+```
 
-A lower layer cannot prove a higher one. In particular, synthetic HEIC, Flutter codec tests, WebKit CI, and iPhone emulation are all useful, but none alone proves a real iPhone Photos -> Safari/installed-app flow.
+One branch cannot prove the other. Synthetic HEIC, Flutter codec tests, WebKit CI, and iPhone emulation are useful evidence, but none alone proves a real iPhone Photos -> Safari/installed-app flow.
 
 ## Adding an incident
 
-When a new portable failure is found, record: ID, affected PR/commit, runtime/browser/profile, observed failure, root cause, fix, regression guard, and the portable lesson. If browser-test-kit already owns an equivalent ID, prefer that shared vocabulary instead of inventing a Flutter-only synonym.
+For a new portable failure, record ID, affected PR/commit, runtime/browser/profile, observed failure, root cause, fix, regression guard, and portable lesson. Add `Scope` and `Guard` immediately. If browser-test-kit owns an equivalent stable ID, reuse it instead of inventing a Flutter synonym.
