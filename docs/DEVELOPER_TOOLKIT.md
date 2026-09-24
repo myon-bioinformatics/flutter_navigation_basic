@@ -10,7 +10,7 @@ This repository keeps repeatable diagnostics in Dart so local development, CI, a
 - Python stdlib / `python -m` remain preferred for simple OS/network/packaging/Actions tasks.
 - **Pip dependencies are allowlisted only at `tool/python/requirements.txt`** for
   dev/test tooling (**pytest only**; no pydantic). Root-level or app-tree
-  `requirements.txt` files remain prohibited. Production formulas keep one authoritative runtime implementation. Python may provide readable stdlib/pytest reference oracles when that improves verification, provided the oracle does not become a second production source of truth.
+  `requirements.txt` files remain prohibited. Production formulas keep one authoritative runtime implementation. Prefer language-neutral golden fixtures; a Python stdlib/pytest oracle is appropriate only when it is independently derived from a specification, invariant, known values, or materially different algorithm. A line-for-line Dart translation is not an independent oracle and must not become a second production source of truth.
 - Runtime Flutter dependencies must never be added merely to support developer diagnostics.
 - Network probes and mocks are developer/test utilities; they are not shipped as application runtime features.
 - Generated diagnostics live under `build/` and are git-ignored.
