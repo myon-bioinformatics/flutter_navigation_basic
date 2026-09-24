@@ -26,5 +26,15 @@ export default defineConfig({
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
     },
+    {
+      // Android-oriented browser emulation; not physical-device evidence.
+      name: 'mobile-chromium',
+      use: { ...devices['Pixel 7'] },
+    },
+    {
+      // iPhone/iOS-oriented WebKit emulation; do not label this real Safari proof.
+      name: 'mobile-webkit',
+      use: { ...devices['iPhone 13'] },
+    },
   ],
 });
