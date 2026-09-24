@@ -45,7 +45,7 @@ python tool/python/playwright.py snapshot --update
 # Photo Studio smoke/evidence (Flutter Web must already be on :8080)
 python tool/python/playwright.py photo-evidence \
   --browser chromium \
-  --fixture tool/python/fixtures/photo_import/valid.png \
+  --fixture test/fixtures/photo_studio/import_compat/png_opaque_2x2.png \
   --output test-results/photo-studio-evidence.png \
   --timeout-ms 30000
 
