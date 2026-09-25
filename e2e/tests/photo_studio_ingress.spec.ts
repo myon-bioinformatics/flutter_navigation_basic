@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   openPhotoStudio,
+  clickPhotoStudioAction,
   pickPhotoFixture,
   waitPhotoImportOutcome,
 } from '../utils/photo_studio';
@@ -31,14 +32,14 @@ test.describe('Photo Studio ingress audit', () => {
     await page.evaluate(async (value) => {
       await navigator.clipboard.writeText(value);
     }, `data:image/png;base64,${base64}`);
-    await page.getByText('Paste photo', { exact: true }).click();
+    await clickPhotoStudioAction(page, 'Paste photo');
     expect(await waitPhotoImportOutcome(page)).toBe('rendered');
   });
 
   test('picker rejects a declared non-image payload with unsupported-format state @portable', async ({ page }) => {
     await openPhotoStudio(page);
     const chooserPromise = page.waitForEvent('filechooser');
-    await page.getByText('Import image', { exact: true }).evaluate((element) => (element as HTMLElement).click());
+    await clickPhotoStudioAction(page, 'Import image');
     const chooser = await chooserPromise;
     await chooser.setFiles({ name: 'not-an-image.txt', mimeType: 'text/plain', buffer: Buffer.from('not an image') });
     await expect(
