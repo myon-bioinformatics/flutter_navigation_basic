@@ -15,10 +15,14 @@ export async function openPhotoStudio(page: Page) {
   await waitForFlutter(page);
 }
 
+export async function clickPhotoStudioAction(page: Page, label: string) {
+  const button = page.getByText(label, { exact: true });
+  await button.evaluate((element) => (element as HTMLElement).click());
+}
+
 export async function pickPhotoFixture(page: Page, fileName: string) {
   const chooserPromise = page.waitForEvent('filechooser');
-  const importButton = page.getByText('Import image', { exact: true });
-  await importButton.evaluate((element) => (element as HTMLElement).click());
+  await clickPhotoStudioAction(page, 'Import image');
   const chooser = await chooserPromise;
   await chooser.setFiles(path.join(photoStudioFixtureDir, fileName));
 }
