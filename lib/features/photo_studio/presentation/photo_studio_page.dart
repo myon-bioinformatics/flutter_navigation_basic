@@ -245,19 +245,43 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     }
     if (!_isCurrentImport(generation)) return;
     try {
-      // Keep the common web ingress deliberately boring: browser-supported
-      // image bytes are already validated by their declared image MIME and
-      // can be displayed directly. Do not route them through dart:ui probes,
-      // canvas normalization, resize, or PNG re-encoding here.
+      // Web keeps the original bytes, but success still requires a real frame
+      // decode. This proves the browser/Flutter codec can materialize the image
+      // without reintroducing canvas normalization or PNG re-encoding.
       if (kIsWeb && widget.imageDecodeAdapter == null) {
+        final decoded = await decodeImageFrameSize(rawBytes);
         if (!_isCurrentImport(generation)) return;
+        if (decoded == null) {
+          _setImportStatusIfCurrent(
+            generation,
+            PhotoImportStatus.failure(
+              reason: PhotoImportFailureReason.unsupportedFormat,
+              source: source,
+            ),
+          );
+          return;
+        }
+        final sizeReject = PhotoImportGate.rejectDecodedSize(
+          width: decoded.width,
+          height: decoded.height,
+        );
+        if (sizeReject != null) {
+          _setImportStatusIfCurrent(
+            generation,
+            PhotoImportStatus.failure(
+              reason: PhotoImportStatus.fromRejection(sizeReject),
+              source: source,
+            ),
+          );
+          return;
+        }
         setState(() {
           _mutateWithUndo((s) => s.copyWith(imageBytes: rawBytes));
           _importStatus = PhotoImportStatus.success(
             source: source,
             formatLabel: declaredMimeType?.split('/').last.toUpperCase() ?? 'IMAGE',
-            width: 0,
-            height: 0,
+            width: decoded.width,
+            height: decoded.height,
           );
         });
         return;
@@ -783,14 +807,24 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       _ => scheme.onSurface,
     };
 
+    final resultSignal = switch (status.phase) {
+      PhotoImportPhase.success =>
+        'photo-import-result success:${(status.formatLabel ?? 'image').toLowerCase()}:${status.width ?? 0}x${status.height ?? 0}',
+      PhotoImportPhase.failure =>
+        'photo-import-result rejected:${status.failureReason?.name ?? 'decodeFailed'}',
+      _ => 'photo-import-result ${status.phase.name}',
+    };
+
     return Semantics(
       liveRegion: true,
-      label: [
-        primary,
-        if (meta != null) meta,
-        if (fileName != null && fileName.isNotEmpty) fileName,
-      ].join(' '),
-      child: ConstrainedBox(
+      label: resultSignal,
+      child: Semantics(
+        label: [
+          primary,
+          if (meta != null) meta,
+          if (fileName != null && fileName.isNotEmpty) fileName,
+        ].join(' '),
+        child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 720),
         child: DecoratedBox(
           decoration: BoxDecoration(
@@ -857,6 +891,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
           ),
         ),
       ),
+    ),
     );
   }
 
