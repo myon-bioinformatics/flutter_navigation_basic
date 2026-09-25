@@ -32,9 +32,8 @@ test.describe('Screen Navigation', () => {
   });
 
   test('generic screen Back to Hub navigates to hub @portable', async ({ page }) => {
-    test.fixme(true, 'Back to Hub accessible semantics: tracked in #97');
     await navigateToScreen(page, 5);
-    await tapSemantics(page, 'Back to Hub', { exact: false });
+    await page.locator('[key="back-to-hub"]').click();
     await waitForFlutter(page);
     await expect(page.getByText('Navigation Hub', { exact: false })).toBeVisible();
   });
