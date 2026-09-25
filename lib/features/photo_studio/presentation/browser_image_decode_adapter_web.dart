@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:typed_data';
 
@@ -17,14 +18,12 @@ String _browserImageMimeType(Uint8List bytes) {
 Future<Uint8List?> browserImageDecodeAdapter(Uint8List bytes) async {
   if (bytes.isEmpty) return null;
 
-  String? objectUrl;
   html.ImageElement? image;
   html.CanvasElement? canvas;
   StreamSubscription<html.Event>? loadSub;
   StreamSubscription<html.Event>? errorSub;
   try {
-    final blob = html.Blob([bytes], _browserImageMimeType(bytes));
-    objectUrl = html.Url.createObjectUrlFromBlob(blob);
+    final mimeType = _browserImageMimeType(bytes);
     image = html.ImageElement();
     final loaded = Completer<void>();
     loadSub = image.onLoad.listen((_) {
@@ -35,7 +34,7 @@ Future<Uint8List?> browserImageDecodeAdapter(Uint8List bytes) async {
         loaded.completeError(StateError('browser image decode failed'));
       }
     });
-    image.src = objectUrl;
+    image.src = 'data:$mimeType;base64,${base64Encode(bytes)}';
     await loaded.future.timeout(const Duration(seconds: 8));
 
     final width = image.naturalWidth;
@@ -74,9 +73,6 @@ Future<Uint8List?> browserImageDecodeAdapter(Uint8List bytes) async {
     loadSub?.cancel();
     errorSub?.cancel();
     image?.src = '';
-    if (objectUrl != null) {
-      html.Url.revokeObjectUrl(objectUrl);
-    }
     canvas?.width = 0;
     canvas?.height = 0;
   }
