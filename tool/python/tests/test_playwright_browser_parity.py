@@ -92,7 +92,9 @@ def test_manual_e2e_uses_python_cli_for_portable_five_project_allowlist() -> Non
     for project in EXPECTED_PROJECTS:
         assert f"--project {project}" in command
     assert "--grep @portable" in command
-    assert "--max-failures=1" in command
+    # Manual probe intentionally collects the full format × project matrix.
+    # Do not fail-fast on the first portable mismatch.
+    assert "--max-failures" not in command
     for spec in (
         "tests/hub_navigation.spec.ts",
         "tests/screen_navigation.spec.ts",
