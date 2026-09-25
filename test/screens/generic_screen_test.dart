@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_application_1/config/routes.dart';
 import 'package:flutter_application_1/screens/generic_screen.dart';
 import 'package:flutter_application_1/shared/display/display_scope.dart';
 
@@ -9,10 +10,12 @@ Future<void> _pumpGeneric(
   WidgetTester tester,
   int screenId, {
   DisplayController? controller,
+  Map<String, WidgetBuilder> routes = const {},
 }) async {
   final resolvedController = controller ?? await loadTestDisplayController();
   await tester.pumpWidget(
     MaterialApp(
+      routes: routes,
       home: DisplayScope(controller: resolvedController, child: GenericScreen(screenId: screenId)),
     ),
   );
@@ -36,14 +39,29 @@ void main() {
     await _pumpGeneric(tester, 3);
 
     expect(find.text('Back to Hub'), findsWidgets);
-    final backToHub = find.byKey(const Key('back-to-hub'));
-    expect(backToHub, findsOneWidget);
-    await tester.tap(backToHub);
-    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('back-to-hub')), findsOneWidget);
     expect(find.text('Navigation: BasicReplace'), findsOneWidget);
     expect(find.text('API: HttpPut'), findsOneWidget);
     expect(find.text('Theme: TextButton'), findsOneWidget);
     expect(find.text('Data: FilterNested'), findsOneWidget);
+  });
+
+
+  testWidgets('Back to Hub is tappable and navigates', (tester) async {
+    await _pumpGeneric(
+      tester,
+      3,
+      routes: {
+        AppRoutes.hub: (_) => const Scaffold(body: Text('Hub route reached')),
+      },
+    );
+
+    final backToHub = find.byKey(const Key('back-to-hub'));
+    expect(backToHub, findsOneWidget);
+    await tester.tap(backToHub, warnIfMissed: true);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Hub route reached'), findsOneWidget);
   });
 
   testWidgets('detail screen shows translated tab labels and use-case section headers', (tester) async {
