@@ -158,6 +158,22 @@ This is an executable regression baseline, not a claim about physical Safari,
 native iOS Photos, Android gallery behavior, AVIF, or HEIC/HEIF. Those cells
 remain governed by measured evidence and explicit device/runtime QA.
 
+### Measured five-project run for #95
+
+At head `78aa4a0`, manual run `36146248386` measured the seven-case picker
+matrix with exact terminal signals. Chromium, Firefox, WebKit, and mobile-WebKit
+each passed all 7/7 cases: PNG, baseline/progressive JPEG, lossy/lossless WebP,
+GIF still, and truncated-PNG rejection. `mobile-chromium` is
+`not_verified (navigation)`: its semantics/bootstrap failure occurs before
+format decode and is tracked in #96.
+
+The mobile projects are Playwright device emulation, not physical-device
+evidence. The successful raster fixtures are synthetic 64×32 images except the
+1×1 still GIF; animated GIF, AVIF, and HEIC/HEIF are outside this measured
+baseline. The signal's format label currently comes from the declared MIME
+provenance; it is not a byte-sniffed format assertion. Moving that label to
+byte-derived format detection is a follow-up, not part of this evidence.
+
 ## Reproducible Web evidence (Playwright CLI)
 
 For Web ingress investigations, prefer reproducible Playwright CLI/test runs over hand-captured screenshots. Evidence should be tied to the PR commit and keep the machine-verifiable result separate from the human-readable image.
