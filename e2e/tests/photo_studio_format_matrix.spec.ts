@@ -69,11 +69,20 @@ async function pickFixture(page: Page, label: string, fileName: string) {
 async function expectImportResult(page: Page, label: string, fileName: string) {
   diag('4/4 render:waiting', { label, fileName });
   try {
-    await expect(page.getByText('Image loaded', { exact: true })).toBeVisible({
+    // "Replace image" is the stable observable contract that the selected
+    // bytes reached Photo Studio state. Keep the localized success copy as
+    // diagnostics only: Flutter web semantics does not always expose ordinary
+    // status Text as a DOM text node across renderers.
+    await expect(page.getByText('Replace image', { exact: true })).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByText('Replace image', { exact: true })).toBeVisible();
-    diag('4/4 render:passed', { label, fileName });
+    const visibleTexts = await page.locator('body').innerText().catch(() => '');
+    diag('4/4 render:passed', {
+      label,
+      fileName,
+      bodyHasImageLoaded: visibleTexts.includes('Image loaded'),
+      bodyHasReplaceImage: visibleTexts.includes('Replace image'),
+    });
   } catch (error) {
     const visibleTexts = await page.locator('body').innerText().catch(() => '');
     diag('4/4 render:failed', {
@@ -111,7 +120,6 @@ test.describe('Photo Studio portable format matrix', () => {
     await expect(
       page.getByText('That image format could not be decoded.', { exact: true }),
     ).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText('Image loaded', { exact: true })).toHaveCount(0);
     await expect(page.getByText('Replace image', { exact: true })).toHaveCount(0);
     diag('4/4 render:rejected-as-expected', { label, fileName });
   });
