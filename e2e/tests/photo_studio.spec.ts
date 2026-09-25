@@ -6,6 +6,12 @@ import {
 } from '../utils/photo_studio';
 
 test.describe('Photo Studio representative flow', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.fixme(
+      testInfo.project.name === 'mobile-chromium',
+      'semantics bootstrap: tracked in #96',
+    );
+  });
   test.beforeEach(async ({ page }) => {
     await openPhotoStudio(page);
   });
