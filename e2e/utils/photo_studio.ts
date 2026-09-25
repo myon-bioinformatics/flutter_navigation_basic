@@ -8,7 +8,10 @@ export const photoStudioFixtureDir = path.resolve(
   '../test/fixtures/photo_studio/import_compat',
 );
 
-export type PhotoImportOutcome = 'rendered' | 'rejected' | 'timeout';
+export type PhotoImportOutcome =
+  | { kind: 'rendered'; signal: string }
+  | { kind: 'rejected'; signal: string }
+  | { kind: 'timeout'; signal: null };
 
 export async function openPhotoStudio(page: Page) {
   await page.goto(photoStudioRoute);
@@ -26,14 +29,20 @@ export async function waitPhotoImportOutcome(
   page: Page,
   timeout = 10_000,
 ): Promise<PhotoImportOutcome> {
-  const rendered = page.getByText('Replace image', { exact: true });
-  const rejected = page.getByText(
-    'That image format could not be decoded.',
-    { exact: true },
-  );
-  return Promise.race<PhotoImportOutcome>([
-    rendered.waitFor({ state: 'visible', timeout }).then(() => 'rendered'),
-    rejected.waitFor({ state: 'visible', timeout }).then(() => 'rejected'),
-    page.waitForTimeout(timeout + 100).then(() => 'timeout'),
-  ]);
+  const result = page.getByText(/photo-import-result (?:success|rejected):/, {
+    exact: false,
+  });
+  try {
+    await result.waitFor({ state: 'visible', timeout });
+    const signal = (await result.getAttribute('aria-label')) ?? (await result.innerText());
+    if (signal.includes('photo-import-result success:')) {
+      return { kind: 'rendered', signal };
+    }
+    if (signal.includes('photo-import-result rejected:')) {
+      return { kind: 'rejected', signal };
+    }
+    return { kind: 'timeout', signal: null };
+  } catch {
+    return { kind: 'timeout', signal: null };
+  }
 }
