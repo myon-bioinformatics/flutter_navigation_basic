@@ -21,7 +21,6 @@ import '../domain/studio_frame_style.dart';
 import '../domain/studio_geometry.dart';
 import '../../../core/navigation/route_names.dart';
 import '../../../shared/widgets/tool_door_selector.dart';
-import 'browser_image_decode_adapter.dart';
 import 'export_studio_png.dart';
 import 'photo_rect_canvas.dart';
 import 'pick_local_image_bytes.dart';
