@@ -1,6 +1,6 @@
 import { type Page } from '@playwright/test';
 import path from 'node:path';
-import { waitForFlutter } from './helpers';
+import { tapSemantics, waitForFlutter } from './helpers';
 
 export const photoStudioRoute = '/#/tools/media/photo-studio';
 export const photoStudioFixtureDir = path.resolve(
@@ -15,14 +15,9 @@ export async function openPhotoStudio(page: Page) {
   await waitForFlutter(page);
 }
 
-export async function clickPhotoStudioAction(page: Page, label: string) {
-  const button = page.getByText(label, { exact: true });
-  await button.evaluate((element) => (element as HTMLElement).click());
-}
-
 export async function pickPhotoFixture(page: Page, fileName: string) {
   const chooserPromise = page.waitForEvent('filechooser');
-  await clickPhotoStudioAction(page, 'Import image');
+  await tapSemantics(page, 'Import image');
   const chooser = await chooserPromise;
   await chooser.setFiles(path.join(photoStudioFixtureDir, fileName));
 }
