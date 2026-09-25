@@ -24,7 +24,11 @@ async function openPhotoStudio(page: Page) {
 
 async function pickFixture(page: Page, fileName: string) {
   const chooserPromise = page.waitForEvent('filechooser');
-  await page.getByText('Import image', { exact: true }).click();
+  const importButton = page.getByText('Import image', { exact: true });
+  // Flutter may place a sibling semantics node over the labeled button. Target
+  // the intended accessibility node directly so that the overlay cannot
+  // intercept Playwright's pointer click.
+  await importButton.evaluate((element) => (element as HTMLElement).click());
   const chooser = await chooserPromise;
   await chooser.setFiles(path.join(fixtureDir, fileName));
 }
