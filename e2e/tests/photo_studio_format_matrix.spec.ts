@@ -1,4 +1,4 @@
-import { test, type Page } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { openPhotoStudio, pickPhotoFixture, waitPhotoImportOutcome } from '../utils/photo_studio';
@@ -11,17 +11,18 @@ const fixtureDir = path.resolve(
 type FormatSupport = 'supported' | 'unsupported' | 'browser-dependent';
 
 const formatRegistry = [
-  { label: 'PNG', fileName: 'png_opaque_64x32.png', support: 'supported' },
-  { label: 'JPEG baseline', fileName: 'jpeg_baseline_markers_64x32.jpg', support: 'supported' },
-  { label: 'JPEG progressive', fileName: 'jpeg_progressive_markers_64x32.jpg', support: 'supported' },
-  { label: 'WebP lossy', fileName: 'webp_lossy_64x32.webp', support: 'supported' },
-  { label: 'WebP lossless', fileName: 'webp_lossless_64x32.webp', support: 'supported' },
-  { label: 'GIF still', fileName: 'gif_still_1x1.gif', support: 'supported' },
-  { label: 'PNG truncated', fileName: 'png_truncated.png', support: 'unsupported' },
+  { label: 'PNG', fileName: 'png_opaque_64x32.png', support: 'supported', expectedSize: '64x32' },
+  { label: 'JPEG baseline', fileName: 'jpeg_baseline_markers_64x32.jpg', support: 'supported', expectedSize: '64x32' },
+  { label: 'JPEG progressive', fileName: 'jpeg_progressive_markers_64x32.jpg', support: 'supported', expectedSize: '64x32' },
+  { label: 'WebP lossy', fileName: 'webp_lossy_64x32.webp', support: 'supported', expectedSize: '64x32' },
+  { label: 'WebP lossless', fileName: 'webp_lossless_64x32.webp', support: 'supported', expectedSize: '64x32' },
+  { label: 'GIF still', fileName: 'gif_still_1x1.gif', support: 'supported', expectedSize: '1x1' },
+  { label: 'PNG truncated', fileName: 'png_truncated.png', support: 'unsupported', expectedSize: null },
 ] satisfies ReadonlyArray<{
   label: string;
   fileName: string;
   support: FormatSupport;
+  expectedSize: string | null;
 }>;
 
 function diag(stage: string, fields: Record<string, unknown> = {}) {
@@ -56,7 +57,7 @@ async function probeImportResult(
     bodyHasReplaceImage: visibleTexts.includes('Replace image'),
     bodyHasDecodeError: visibleTexts.includes('could not be decoded'),
   });
-  return reached;
+  return { reached, signal: outcome.signal };
 }
 
 test.describe('Photo Studio portable format matrix', () => {
@@ -66,13 +67,16 @@ test.describe('Photo Studio portable format matrix', () => {
       attachBrowserDiagnostics(page);
 
       let reached: string = 'navigation';
+      let signal: string | null = null;
       try {
         await openPhotoStudio(page);
         reached = 'fixture';
         const fixturePath = path.join(fixtureDir, entry.fileName);
         if (!fs.existsSync(fixturePath)) throw new Error(`missing fixture: ${fixturePath}`);
         await pickPhotoFixture(page, entry.fileName);
-        reached = await probeImportResult(page, entry.label, entry.fileName);
+        const probe = await probeImportResult(page, entry.label, entry.fileName);
+        reached = probe.reached;
+        signal = probe.signal;
       } catch (error) {
         diag('case:probe-error', {
           label: entry.label,
@@ -88,6 +92,7 @@ test.describe('Photo Studio portable format matrix', () => {
         project: testInfo.project.name,
         expected: entry.support === 'unsupported' ? 'rejected' : 'rendered',
         reached,
+        signal,
       };
       await testInfo.attach('format-outcome', {
         body: JSON.stringify(outcome, null, 2),
@@ -95,10 +100,14 @@ test.describe('Photo Studio portable format matrix', () => {
       });
       testInfo.annotations.push({ type: 'reached', description: reached });
 
-      // Probe lane intentionally does not fail on a format mismatch. Its job is
-      // to collect the complete format × project matrix in one manual run.
-      // A separate smoke/contract lane may assert a stable structured signal.
       diag('case:outcome', outcome);
+
+      const expected = entry.support === 'unsupported' ? 'rejected' : 'rendered';
+      expect(reached).toBe(expected);
+      if (entry.expectedSize != null) {
+        expect(signal).not.toBeNull();
+        expect(signal).toContain(`:${entry.expectedSize}`);
+      }
     });
   }
 });
