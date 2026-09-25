@@ -246,9 +246,26 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     }
     if (!_isCurrentImport(generation)) return;
     try {
+      // Keep the common web ingress deliberately boring: browser-supported
+      // image bytes are already validated by their declared image MIME and
+      // can be displayed directly. Do not route them through dart:ui probes,
+      // canvas normalization, resize, or PNG re-encoding here.
+      if (kIsWeb && widget.imageDecodeAdapter == null) {
+        if (!_isCurrentImport(generation)) return;
+        setState(() {
+          _mutateWithUndo((s) => s.copyWith(imageBytes: rawBytes));
+          _importStatus = PhotoImportStatus.success(
+            source: source,
+            formatLabel: declaredMimeType?.split('/').last.toUpperCase() ?? 'IMAGE',
+            width: 0,
+            height: 0,
+          );
+        });
+        return;
+      }
+
       PhotoImportRejection? decodeReject;
-      final adapter = widget.imageDecodeAdapter ??
-          (kIsWeb ? browserImageDecodeAdapter : nativeImageNormalizeAdapter);
+      final adapter = widget.imageDecodeAdapter ?? nativeImageNormalizeAdapter;
       final validated = await loadStudioImageBytes(
         rawBytes,
         nativeDecodeAdapter: adapter,
@@ -267,16 +284,11 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
         );
         return;
       }
-      // The browser adapter already returns a PNG normalized and resized by
-      // the browser canvas. Avoid decoding that PNG a second time through
-      // dart:ui on web; that boundary is renderer-dependent in Flutter web.
-      final compact = kIsWeb && widget.imageDecodeAdapter == null
-          ? Base64ImagePayload(bytes: validated, mimeType: 'image/png')
-          : await Base64ImageBridge.downscaleToPng(
-              validated,
-              scale: PhotoImportLimits.defaultDownscale,
-              maxLongEdge: PhotoImportLimits.maxDocumentLongEdge,
-            );
+      final compact = await Base64ImageBridge.downscaleToPng(
+        validated,
+        scale: PhotoImportLimits.defaultDownscale,
+        maxLongEdge: PhotoImportLimits.maxDocumentLongEdge,
+      );
       if (!_isCurrentImport(generation)) return;
       if (compact.bytes.isEmpty) {
         _setImportStatusIfCurrent(
@@ -291,9 +303,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       final size = _pngIhDrSize(compact.bytes);
       if (!_isCurrentImport(generation)) return;
       setState(() {
-        _mutateWithUndo(
-          (s) => s.copyWith(imageBytes: compact.bytes),
-        );
+        _mutateWithUndo((s) => s.copyWith(imageBytes: compact.bytes));
         _importStatus = PhotoImportStatus.success(
           source: source,
           formatLabel: 'PNG',
