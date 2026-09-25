@@ -1,7 +1,7 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { waitForFlutter } from '../utils/helpers';
+import { openPhotoStudio, pickPhotoFixture, waitPhotoImportOutcome } from '../utils/photo_studio';
 
 const route = '/#/tools/media/photo-studio';
 const fixtureDir = path.resolve(
@@ -38,55 +38,14 @@ function attachBrowserDiagnostics(page: Page) {
   });
 }
 
-async function openPhotoStudio(page: Page) {
-  diag('1/4 navigation:start', { route });
-  await page.goto(route);
-  await waitForFlutter(page);
-  diag('1/4 navigation:ready', { route });
-}
-
-async function pickFixture(page: Page, label: string, fileName: string) {
-  const fixturePath = path.join(fixtureDir, fileName);
-  const exists = fs.existsSync(fixturePath);
-  diag('2/4 fixture:classified', {
-    label,
-    fileName,
-    exists,
-    bytes: exists ? fs.statSync(fixturePath).size : null,
-  });
-  if (!exists) {
-    throw new Error(`[photo-studio-format-matrix] missing fixture: ${fixturePath}`);
-  }
-
-  const chooserPromise = page.waitForEvent('filechooser');
-  const importButton = page.getByText('Import image', { exact: true });
-  await importButton.evaluate((element) => (element as HTMLElement).click());
-  const chooser = await chooserPromise;
-  diag('3/4 picker:acquired', { label, fileName });
-  await chooser.setFiles(fixturePath);
-  diag('3/4 picker:file-set', { label, fileName });
-}
-
-type TerminalStage = 'rendered' | 'rejected' | 'timeout';
 
 async function probeImportResult(
   page: Page,
   label: string,
   fileName: string,
-): Promise<TerminalStage> {
+) {
   diag('4/4 probe:waiting', { label, fileName });
-  const ok = page.getByText('Replace image', { exact: true });
-  const rejected = page.getByText(
-    'That image format could not be decoded.',
-    { exact: true },
-  );
-
-  const reached = await Promise.race<TerminalStage>([
-    ok.waitFor({ state: 'visible', timeout: 10_000 }).then(() => 'rendered'),
-    rejected.waitFor({ state: 'visible', timeout: 10_000 }).then(() => 'rejected'),
-    page.waitForTimeout(10_100).then(() => 'timeout'),
-  ]);
-
+  const reached = await waitPhotoImportOutcome(page);
   const visibleTexts = await page.locator('body').innerText().catch(() => '');
   diag('4/4 probe:result', {
     label,
@@ -109,7 +68,9 @@ test.describe('Photo Studio portable format matrix', () => {
       try {
         await openPhotoStudio(page);
         reached = 'fixture';
-        await pickFixture(page, entry.label, entry.fileName);
+        const fixturePath = path.join(fixtureDir, entry.fileName);
+        if (!fs.existsSync(fixturePath)) throw new Error(`missing fixture: ${fixturePath}`);
+        await pickPhotoFixture(page, entry.fileName);
         reached = await probeImportResult(page, entry.label, entry.fileName);
       } catch (error) {
         diag('case:probe-error', {
