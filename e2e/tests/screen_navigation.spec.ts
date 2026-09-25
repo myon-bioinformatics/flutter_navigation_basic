@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { waitForFlutter, navigateToHub, navigateToScreen, tapSemantics } from '../utils/helpers';
+import { waitForFlutter, navigateToHub, navigateToScreen } from '../utils/helpers';
 import testData from '../fixtures/test_data.json';
 
 test.describe('Screen Navigation', () => {
