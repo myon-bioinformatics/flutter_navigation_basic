@@ -120,6 +120,17 @@ For a future ingress or replacement adapter, prefer the least complex option tha
 4. Keep permission handling and platform availability at the acquisition boundary; converge successful bytes on the shared import gate/decoder.
 5. Do not add a new UI surface (including drop) until the chosen mechanism has contract-test evidence and a clear UX/maintenance benefit.
 
+## Executable portable Web baseline
+
+`e2e/tests/photo_studio_format_matrix.spec.ts` turns the currently committed,
+non-personal raster fixtures into a repeatable Web picker baseline across the
+existing five Playwright projects. It covers PNG, baseline/progressive JPEG,
+lossy/lossless WebP, GIF still, plus a truncated-PNG rejection probe.
+
+This is an executable regression baseline, not a claim about physical Safari,
+native iOS Photos, Android gallery behavior, AVIF, or HEIC/HEIF. Those cells
+remain governed by measured evidence and explicit device/runtime QA.
+
 ## Reproducible Web evidence (Playwright CLI)
 
 For Web ingress investigations, prefer reproducible Playwright CLI/test runs over hand-captured screenshots. Evidence should be tied to the PR commit and keep the machine-verifiable result separate from the human-readable image.
