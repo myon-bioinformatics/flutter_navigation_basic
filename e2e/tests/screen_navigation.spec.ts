@@ -33,7 +33,17 @@ test.describe('Screen Navigation', () => {
 
   test('generic screen Back to Hub navigates to hub @portable', async ({ page }) => {
     await navigateToScreen(page, 5);
-    await page.locator('[key="back-to-hub"]').click();
+    const button = page.locator('[flt-semantics-identifier="back-to-hub"]');
+    try {
+      await button.waitFor({ state: 'attached', timeout: 5_000 });
+    } catch (error) {
+      const identifiers = await page.locator('[flt-semantics-identifier]').evaluateAll(
+        (nodes) => nodes.map((node) => node.getAttribute('flt-semantics-identifier')),
+      );
+      console.log('[back-to-hub probe] semantics identifiers:', identifiers);
+      throw error;
+    }
+    await button.evaluate((element) => (element as HTMLElement).click());
     await waitForFlutter(page);
     await expect(page.getByText('Navigation Hub', { exact: false })).toBeVisible();
   });
