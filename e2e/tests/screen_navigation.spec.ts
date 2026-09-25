@@ -34,26 +34,45 @@ test.describe('Screen Navigation', () => {
   test('generic screen Back to Hub navigates via semantics action @portable', async ({ page }) => {
     await navigateToScreen(page, 5);
     const button = page.locator('[flt-semantics-identifier="back-to-hub"]');
+    let stage = 'attached';
+    const beforeHash = await page.evaluate(() => window.location.hash);
+    const semanticsEnabled = (await page.locator('flt-semantics').count()) > 0;
     try {
+      const count = await button.count();
+      console.log('[back-to-hub probe] pre-action', {
+        stage,
+        semanticsEnabled,
+        count,
+        beforeHash,
+      });
+      expect(count).toBe(1);
       await button.waitFor({ state: 'attached', timeout: 5_000 });
+      stage = 'tappable';
       const probe = await button.evaluate((element) => ({
-        count: 1,
         role: element.getAttribute('role'),
         tappable: element.hasAttribute('flt-tappable'),
         childTappable: !!element.querySelector('[flt-tappable]'),
       }));
-      console.log('[back-to-hub probe]', probe);
+      console.log('[back-to-hub probe] target', { stage, ...probe });
       expect(probe.tappable).toBe(true);
+      stage = 'action';
+      await button.evaluate((element) => (element as HTMLElement).click());
+      await waitForFlutter(page);
+      const afterHash = await page.evaluate(() => window.location.hash);
+      console.log('[back-to-hub probe] post-action', { stage, beforeHash, afterHash });
+      await expect(page.getByText('Navigation Hub', { exact: false })).toBeVisible();
     } catch (error) {
       const identifiers = await page.locator('[flt-semantics-identifier]').evaluateAll(
         (nodes) => nodes.map((node) => node.getAttribute('flt-semantics-identifier')),
       );
-      console.log('[back-to-hub probe] semantics identifiers:', identifiers);
+      console.log('[back-to-hub probe] failure', {
+        stage,
+        semanticsEnabled,
+        beforeHash,
+        identifiers,
+      });
       throw error;
     }
-    await button.evaluate((element) => (element as HTMLElement).click());
-    await waitForFlutter(page);
-    await expect(page.getByText('Navigation Hub', { exact: false })).toBeVisible();
   });
 
   test('generic screen shows pattern info', async ({ page }) => {
