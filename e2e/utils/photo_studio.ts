@@ -33,17 +33,21 @@ export async function waitPhotoImportOutcome(
   try {
     const handle = await page.waitForFunction(
       (sel) => {
-        const element = document.querySelector(sel);
-        if (!element) return null;
-        const signal =
-          element.getAttribute('aria-valuetext') ??
-          element.getAttribute('aria-label') ??
-          element.getAttribute('value') ??
-          element.textContent ??
-          '';
-        return /photo-import-result (?:success|rejected):/.test(signal)
-          ? signal
-          : null;
+        const own = document.querySelector(sel);
+        const candidates = [
+          own?.getAttribute('aria-valuetext'),
+          own?.getAttribute('aria-label'),
+          own?.getAttribute('value'),
+          own?.textContent,
+          ...Array.from(
+            document.querySelectorAll('[aria-label*="photo-import-result"]'),
+            (element) => element.getAttribute('aria-label'),
+          ),
+          document.body.innerText,
+        ]
+          .filter((value): value is string => Boolean(value))
+          .join(' ');
+        return /photo-import-result (?:success|rejected):[^\\s]+/.exec(candidates)?.[0] ?? null;
       },
       selector,
       { timeout },
@@ -53,17 +57,29 @@ export async function waitPhotoImportOutcome(
       ? { kind: 'rendered', signal }
       : { kind: 'rejected', signal };
   } catch {
-    const result = page.locator(selector);
-    const diagnostic = await result
-      .evaluate((element) => ({
-        ariaValueText: element.getAttribute('aria-valuetext'),
-        ariaLabel: element.getAttribute('aria-label'),
-        value: element.getAttribute('value'),
-        textContent: element.textContent,
-      }))
+    const diagnostic = await page
+      .evaluate((sel) => {
+        const element = document.querySelector(sel);
+        return element
+          ? {
+              ariaValueText: element.getAttribute('aria-valuetext'),
+              ariaLabel: element.getAttribute('aria-label'),
+              value: element.getAttribute('value'),
+              textContent: element.textContent,
+            }
+          : null;
+      }, selector)
       .catch(() => null);
+    const identifiers = await page
+      .evaluate(() =>
+        Array.from(document.querySelectorAll('[flt-semantics-identifier]')).map(
+          (element) => element.getAttribute('flt-semantics-identifier'),
+        ),
+      )
+      .catch(() => []);
     console.log(
-      '[photo-import-result] timeout ' + JSON.stringify({ timeout, diagnostic }),
+      '[photo-import-result] timeout ' +
+        JSON.stringify({ timeout, diagnostic, identifiers }),
     );
     return { kind: 'timeout', signal: null };
   }
