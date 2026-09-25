@@ -44,7 +44,7 @@ export async function tapSemantics(
   label: string,
   { exact = true, timeout = 5_000 }: { exact?: boolean; timeout?: number } = {},
 ) {
-  const element = page.getByRole('button', { name: label, exact });
+  const element = page.getByRole('button', { name: label, exact }).first();
   try {
     await element.waitFor({ state: 'visible', timeout });
   } catch (error) {
