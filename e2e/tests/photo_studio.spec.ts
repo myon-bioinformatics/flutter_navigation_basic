@@ -19,6 +19,6 @@ test.describe('Photo Studio representative flow', () => {
 
   test('imports a committed PNG through the browser file picker @portable', async ({ page }) => {
     await pickPhotoFixture(page, 'png_opaque_64x32.png');
-    expect(await waitPhotoImportOutcome(page)).toBe('rendered');
+    expect((await waitPhotoImportOutcome(page)).kind).toBe('rendered');
   });
 });
