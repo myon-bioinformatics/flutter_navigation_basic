@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:html' as html;
-import 'dart:js_interop';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show debugPrint;
@@ -72,21 +71,27 @@ Future<PhotoPickOutcome> pickLocalImageBytesDetailed() {
     reader.onLoad.listen((_) {
       final result = reader.result;
       debugPrint('[photo-picker-web] 4/5 reader:load resultType=${result.runtimeType}');
-      Uint8List? bytes;
-      if (result is ByteBuffer) {
-        bytes = result.asUint8List();
-      } else if (result is JSArrayBuffer) {
-        // dart2wasm exposes FileReader.result as JSArrayBuffer rather than the
-        // dart2js ByteBuffer wrapper. Normalize both runtimes at this boundary.
-        bytes = result.toDart.asUint8List();
-      }
-      if (bytes == null || bytes.isEmpty) {
-        debugPrint('[photo-picker-web] 4/5 reader:unsupported-result');
+      // FileReader.readAsArrayBuffer() is represented differently by dart2js
+      // and dart2wasm. Avoid runtime-type probing: Blob.arrayBuffer() is exposed
+      // by dart:html as a Future<ByteBuffer> and normalizes that browser boundary.
+      if (result == null) {
+        debugPrint('[photo-picker-web] 4/5 reader:null-result');
         finish(const PhotoPickOutcome.failed());
-      } else {
+        return;
+      }
+      file.arrayBuffer().then((buffer) {
+        final bytes = buffer.asUint8List();
+        if (bytes.isEmpty) {
+          debugPrint('[photo-picker-web] 4/5 reader:empty');
+          finish(const PhotoPickOutcome.failed());
+          return;
+        }
         debugPrint('[photo-picker-web] 4/5 reader:bytes length=${bytes.lengthInBytes}');
         finish(PhotoPickOutcome.success(bytes, declaredMimeType: file.type));
-      }
+      }).catchError((Object error) {
+        debugPrint('[photo-picker-web] 4/5 reader:array-buffer-error error=$error');
+        finish(const PhotoPickOutcome.failed());
+      });
     });
     reader.readAsArrayBuffer(file);
   });
