@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:typed_data';
 
@@ -71,16 +72,21 @@ Future<PhotoPickOutcome> pickLocalImageBytesDetailed() {
     reader.onLoad.listen((_) {
       final result = reader.result;
       debugPrint('[photo-picker-web] 4/5 reader:load resultType=${result.runtimeType}');
-      // FileReader.readAsArrayBuffer() is represented differently by dart2js
-      // and dart2wasm. Avoid runtime-type probing: Blob.arrayBuffer() is exposed
-      // by dart:html as a Future<ByteBuffer> and normalizes that browser boundary.
-      if (result == null) {
-        debugPrint('[photo-picker-web] 4/5 reader:null-result');
+      // Data URLs give both dart2js and dart2wasm a stable String boundary.
+      // This avoids depending on the runtime representation of ArrayBuffer.
+      if (result is! String) {
+        debugPrint('[photo-picker-web] 4/5 reader:unsupported-result');
         finish(const PhotoPickOutcome.failed());
         return;
       }
-      file.arrayBuffer().then((buffer) {
-        final bytes = buffer.asUint8List();
+      final separator = result.indexOf(',');
+      if (separator < 0) {
+        debugPrint('[photo-picker-web] 4/5 reader:malformed-data-url');
+        finish(const PhotoPickOutcome.failed());
+        return;
+      }
+      try {
+        final bytes = base64Decode(result.substring(separator + 1));
         if (bytes.isEmpty) {
           debugPrint('[photo-picker-web] 4/5 reader:empty');
           finish(const PhotoPickOutcome.failed());
@@ -88,12 +94,12 @@ Future<PhotoPickOutcome> pickLocalImageBytesDetailed() {
         }
         debugPrint('[photo-picker-web] 4/5 reader:bytes length=${bytes.lengthInBytes}');
         finish(PhotoPickOutcome.success(bytes, declaredMimeType: file.type));
-      }).catchError((Object error) {
-        debugPrint('[photo-picker-web] 4/5 reader:array-buffer-error error=$error');
+      } on FormatException catch (error) {
+        debugPrint('[photo-picker-web] 4/5 reader:base64-error error=$error');
         finish(const PhotoPickOutcome.failed());
-      });
+      }
     });
-    reader.readAsArrayBuffer(file);
+    reader.readAsDataUrl(file);
   });
 
   // Hidden inputs rarely blur. When the file dialog closes without a selection,
