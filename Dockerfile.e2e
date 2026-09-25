@@ -56,4 +56,4 @@ RUN flutter pub get \
 # COPY/chmod is needed here.
 EXPOSE 8080
 ENTRYPOINT ["tool/docker/e2e-entrypoint.sh"]
-CMD ["test", "--project", "chromium", "--project", "firefox", "--project", "webkit", "--project", "mobile-chromium", "--project", "mobile-webkit", "--grep", "@portable", "tests/hub_navigation.spec.ts", "tests/screen_navigation.spec.ts", "tests/photo_studio.spec.ts", "tests/photo_studio_ingress.spec.ts"]
+CMD ["test", "--project", "chromium", "--project", "firefox", "--project", "webkit", "--project", "mobile-chromium", "--project", "mobile-webkit", "--grep", "@portable", "tests/hub_navigation.spec.ts", "tests/screen_navigation.spec.ts", "tests/photo_studio.spec.ts", "tests/photo_studio_ingress.spec.ts", "tests/photo_studio_format_matrix.spec.ts"]
