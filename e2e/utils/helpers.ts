@@ -48,9 +48,11 @@ export async function tapSemantics(
   try {
     await element.waitFor({ state: 'visible', timeout });
   } catch (error) {
-    throw new Error(`tapSemantics: "${label}" not found within ${timeout}ms`, {
-      cause: error,
-    });
+    const detail = String(error).split('\n')[0];
+    throw new Error(
+      `tapSemantics: "${label}" failed within ${timeout}ms: ${detail}`,
+      { cause: error },
+    );
   }
   await element.evaluate((node) => (node as HTMLElement).click());
 }
