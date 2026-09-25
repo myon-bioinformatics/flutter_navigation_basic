@@ -36,6 +36,7 @@ void main() {
     await _pumpGeneric(tester, 3);
 
     expect(find.text('Back to Hub'), findsWidgets);
+    expect(find.byKey(const Key('back-to-hub')), findsOneWidget);
     expect(find.text('Navigation: BasicReplace'), findsOneWidget);
     expect(find.text('API: HttpPut'), findsOneWidget);
     expect(find.text('Theme: TextButton'), findsOneWidget);
