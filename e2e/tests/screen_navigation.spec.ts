@@ -31,11 +31,19 @@ test.describe('Screen Navigation', () => {
     await expect(page.getByText('Back to Hub', { exact: false })).toBeVisible();
   });
 
-  test('generic screen Back to Hub navigates to hub @portable', async ({ page }) => {
+  test('generic screen Back to Hub navigates via semantics action @portable', async ({ page }) => {
     await navigateToScreen(page, 5);
     const button = page.locator('[flt-semantics-identifier="back-to-hub"]');
     try {
       await button.waitFor({ state: 'attached', timeout: 5_000 });
+      const probe = await button.evaluate((element) => ({
+        count: 1,
+        role: element.getAttribute('role'),
+        tappable: element.hasAttribute('flt-tappable'),
+        childTappable: !!element.querySelector('[flt-tappable]'),
+      }));
+      console.log('[back-to-hub probe]', probe);
+      expect(probe.tappable).toBe(true);
     } catch (error) {
       const identifiers = await page.locator('[flt-semantics-identifier]').evaluateAll(
         (nodes) => nodes.map((node) => node.getAttribute('flt-semantics-identifier')),
