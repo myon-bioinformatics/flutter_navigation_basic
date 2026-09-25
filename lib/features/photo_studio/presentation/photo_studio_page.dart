@@ -809,10 +809,10 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
 
     final resultSignal = switch (status.phase) {
       PhotoImportPhase.success =>
-        'photo-import-result success:${(status.formatLabel ?? 'image').toLowerCase()}:${status.width ?? 0}x${status.height ?? 0}',
+        'photo-import-result=success:${(status.formatLabel ?? 'image').toLowerCase()}:${status.width ?? 0}x${status.height ?? 0};',
       PhotoImportPhase.failure =>
-        'photo-import-result rejected:${status.failureReason?.name ?? 'decodeFailed'}',
-      _ => 'photo-import-result ${status.phase.name}',
+        'photo-import-result=rejected:${status.failureReason?.name ?? 'decodeFailed'};',
+      _ => 'photo-import-result=${status.phase.name};',
     };
 
     return Semantics(
