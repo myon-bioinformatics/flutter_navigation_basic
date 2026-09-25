@@ -53,7 +53,7 @@ export async function waitPhotoImportOutcome(
       { timeout },
     );
     const signal = (await handle.jsonValue()) as string;
-    return signal.includes('photo-import-result success:')
+    return signal.startsWith('success:')
       ? { kind: 'rendered', signal }
       : { kind: 'rejected', signal };
   } catch {
