@@ -21,7 +21,7 @@ test.describe('Photo Studio ingress audit', () => {
   test('picker accepts the committed PNG through the shared import pipeline @portable', async ({ page }) => {
     await openPhotoStudio(page);
     await pickPhotoFixture(page, pngFixtureName);
-    expect(await waitPhotoImportOutcome(page)).toBe('rendered');
+    expect((await waitPhotoImportOutcome(page)).kind).toBe('rendered');
   });
 
   test('paste text data URL reaches the same success state @portable @chromium-clipboard', async ({ page, context, browserName }) => {
@@ -33,7 +33,7 @@ test.describe('Photo Studio ingress audit', () => {
       await navigator.clipboard.writeText(value);
     }, `data:image/png;base64,${base64}`);
     await tapSemantics(page, 'Paste photo');
-    expect(await waitPhotoImportOutcome(page)).toBe('rendered');
+    expect((await waitPhotoImportOutcome(page)).kind).toBe('rendered');
   });
 
   test('picker rejects a declared non-image payload with unsupported-format state @portable', async ({ page }) => {
@@ -42,9 +42,9 @@ test.describe('Photo Studio ingress audit', () => {
     await tapSemantics(page, 'Import image');
     const chooser = await chooserPromise;
     await chooser.setFiles({ name: 'not-an-image.txt', mimeType: 'text/plain', buffer: Buffer.from('not an image') });
-    await expect(
-      page.getByText('That image format could not be decoded.', { exact: true }),
-    ).toBeVisible({ timeout: 15_000 });
+    const outcome = await waitPhotoImportOutcome(page, 15_000);
+    expect(outcome.kind).toBe('rejected');
+    expect(outcome.signal).toContain('rejected:unsupportedFormat');
     await expect(page.getByText('Replace image', { exact: true })).toHaveCount(0);
   });
 });
