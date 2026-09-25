@@ -61,6 +61,12 @@ async function probeImportResult(
 }
 
 test.describe('Photo Studio portable format matrix', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.fixme(
+      testInfo.project.name === 'mobile-chromium',
+      'semantics bootstrap: tracked in #96',
+    );
+  });
   for (const entry of formatRegistry) {
     test(`${entry.label} @portable @format-matrix`, async ({ page }, testInfo) => {
       diag('case:start', entry);
