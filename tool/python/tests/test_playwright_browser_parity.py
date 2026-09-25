@@ -97,6 +97,7 @@ def test_manual_e2e_uses_python_cli_for_portable_five_project_allowlist() -> Non
         "tests/screen_navigation.spec.ts",
         "tests/photo_studio.spec.ts",
         "tests/photo_studio_ingress.spec.ts",
+        "tests/photo_studio_format_matrix.spec.ts",
     ):
         assert spec in command
 
@@ -122,5 +123,6 @@ def test_docker_default_cmd_keeps_portable_five_project_allowlist() -> None:
         "tests/screen_navigation.spec.ts",
         "tests/photo_studio.spec.ts",
         "tests/photo_studio_ingress.spec.ts",
+        "tests/photo_studio_format_matrix.spec.ts",
     ):
         assert spec in argv
