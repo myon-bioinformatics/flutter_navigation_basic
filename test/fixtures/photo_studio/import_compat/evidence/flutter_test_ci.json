@@ -8,7 +8,7 @@
   "verifiedAt": "2026-09-17",
   "notes": "Measured by test/photo_studio/photo_import_compat_probe_test.dart. EXIF orientations are visually sampled after Flutter codec apply. iOS Safari / Chrome Web / real native picker remain not_verified.",
   "outcomes": {
-    "png_opaque_2x2": {
+    "png_opaque_64x32": {
       "loader_direct_flutter_codec": "supported",
       "loader_browser_canvas_adapter": "not_verified",
       "loader_native_normalize_adapter": "not_verified",
@@ -16,7 +16,7 @@
       "web_clipboard": "not_verified",
       "native_picker": "not_verified"
     },
-    "png_alpha_2x2": {
+    "png_alpha_64x32": {
       "loader_direct_flutter_codec": "supported",
       "loader_browser_canvas_adapter": "not_verified",
       "loader_native_normalize_adapter": "not_verified",
