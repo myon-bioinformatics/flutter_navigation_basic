@@ -18,7 +18,9 @@ export async function waitForFlutter(page: Page, timeout = 15000) {
     'flt-semantics-placeholder[aria-label="Enable accessibility"]',
   );
   if (await accessibilityButton.isVisible()) {
-    await accessibilityButton.click();
+    // Flutter positions this 1x1px placeholder at (-1px, -1px), outside the
+    // viewport; use its DOM click handler instead of a pointer-based click.
+    await accessibilityButton.evaluate((element: HTMLElement) => element.click());
   }
 
   await page.locator('flt-semantics').first().waitFor({ state: 'attached', timeout });
