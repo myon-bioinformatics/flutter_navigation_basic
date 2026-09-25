@@ -47,7 +47,7 @@ export async function waitPhotoImportOutcome(
         ]
           .filter((value): value is string => Boolean(value))
           .join(' ');
-        return /photo-import-result (?:success|rejected):[^\\s]+/.exec(candidates)?.[0] ?? null;
+        return /photo-import-result (?:success|rejected):\S+/.exec(candidates)?.[0] ?? null;
       },
       selector,
       { timeout },
@@ -78,7 +78,7 @@ export async function waitPhotoImportOutcome(
             (node) => node.getAttribute('aria-label'),
           ).slice(0, 3),
           bodyHit:
-            /photo-import-result \\S+/.exec(document.body.innerText)?.[0] ?? null,
+            /photo-import-result \S+/.exec(document.body.innerText)?.[0] ?? null,
         };
       }, selector)
       .catch(() => null);
