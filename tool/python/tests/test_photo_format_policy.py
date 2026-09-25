@@ -37,8 +37,10 @@ def _inventory_labels() -> set[str]:
 
 def test_every_sniffer_format_is_explicitly_classified_for_reviewers() -> None:
     labels = _inventory_labels()
+    inventory_label = {"heic": "heic / heif"}
     for kind in _recognized_image_kinds():
-        assert kind in labels, f"{kind} is recognized by the app but absent from format inventory"
+        label = inventory_label.get(kind, kind)
+        assert label in labels, f"{kind} is recognized by the app but absent from format inventory"
 
 
 def test_common_uncontracted_formats_remain_explicitly_visible() -> None:
