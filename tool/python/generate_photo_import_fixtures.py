@@ -34,8 +34,8 @@ TMP = OUT / ".gen_tmp"
 # not treated as portable: --check compares decoded scanlines plus non-IDAT
 # chunks. Encoder-backed JPEG/WebP/HEIC are structurally validated instead.
 CASE_DECLARED_DETERMINISTIC_FILES = (
-    "png_opaque_2x2.png",
-    "png_alpha_2x2.png",
+    "png_opaque_64x32.png",
+    "png_alpha_64x32.png",
     "png_markers_64x32.png",
     "gif_still_1x1.gif",
     "avif_ftyp_only.avif",
@@ -217,20 +217,16 @@ def write_deterministic_fixtures(out_dir: Path) -> None:
     Shared by `main()` and `_check_committed()` so the drift check compares
     against the exact same code path that produces the committed fixtures.
     """
-    write_png_rgb(out_dir / "png_opaque_2x2.png", 2, 2, [
-        bytes([0, 0, 0, 255, 0, 0]),
-        bytes([0, 0, 255, 255, 255, 0]),
-    ])
-    write_png_rgba(out_dir / "png_alpha_2x2.png", 2, 2, [
-        bytes([255, 0, 0, 128, 255, 0, 0, 128]),
-        bytes([255, 0, 0, 128, 255, 0, 0, 128]),
+    write_png_rgb(out_dir / "png_opaque_64x32.png", 64, 32, marker_png_rgb(64, 32))
+    write_png_rgba(out_dir / "png_alpha_64x32.png", 64, 32, [
+        bytes([255, 0, 0, 128]) * 64 for _ in range(32)
     ])
     write_png_rgb(out_dir / "png_markers_64x32.png", 64, 32, marker_png_rgb(64, 32))
     write_gif(out_dir / "gif_still_1x1.gif")
     write_ftyp(out_dir / "avif_ftyp_only.avif", "avif", ["avif", "mif1"])
     for brand in ("heic", "heif", "mif1", "msf1", "heix"):
         write_ftyp(out_dir / f"heic_ftyp_{brand}.heic", brand, [brand, "mif1"])
-    write_truncated_png(out_dir / "png_truncated.png", out_dir / "png_opaque_2x2.png")
+    write_truncated_png(out_dir / "png_truncated.png", out_dir / "png_opaque_64x32.png")
     (out_dir / "empty.bin").write_bytes(b"")
     write_png_ihdr_only(out_dir / "png_claim_10000x10000.png", 10000, 10000)
     (out_dir / "README_OVERSIZE.txt").write_text(
@@ -439,8 +435,8 @@ def main(argv: list[str] | None = None) -> int:
 def build_cases_payload() -> dict:
     """Return the language-neutral fixture contract without touching encoders."""
     cases = [
-        _case("png_opaque_2x2", "png", "opaque", "png_opaque_2x2.png", "raster"),
-        _case("png_alpha_2x2", "png", "alpha", "png_alpha_2x2.png", "raster"),
+        _case("png_opaque_64x32", "png", "opaque", "png_opaque_64x32.png", "raster"),
+        _case("png_alpha_64x32", "png", "alpha", "png_alpha_64x32.png", "raster"),
         _case(
             "png_markers_64x32",
             "png",

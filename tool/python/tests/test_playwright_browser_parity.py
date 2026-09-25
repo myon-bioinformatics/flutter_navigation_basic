@@ -92,11 +92,15 @@ def test_manual_e2e_uses_python_cli_for_portable_five_project_allowlist() -> Non
     for project in EXPECTED_PROJECTS:
         assert f"--project {project}" in command
     assert "--grep @portable" in command
+    # Manual probe intentionally collects the full format × project matrix.
+    # Do not fail-fast on the first portable mismatch.
+    assert "--max-failures" not in command
     for spec in (
         "tests/hub_navigation.spec.ts",
         "tests/screen_navigation.spec.ts",
         "tests/photo_studio.spec.ts",
         "tests/photo_studio_ingress.spec.ts",
+        "tests/photo_studio_format_matrix.spec.ts",
     ):
         assert spec in command
 
@@ -117,10 +121,12 @@ def test_docker_default_cmd_keeps_portable_five_project_allowlist() -> None:
     assert projects == EXPECTED_PROJECTS
     grep_index = argv.index("--grep")
     assert argv[grep_index + 1] == "@portable"
+    assert argv[argv.index("--max-failures") + 1] == "1"
     for spec in (
         "tests/hub_navigation.spec.ts",
         "tests/screen_navigation.spec.ts",
         "tests/photo_studio.spec.ts",
         "tests/photo_studio_ingress.spec.ts",
+        "tests/photo_studio_format_matrix.spec.ts",
     ):
         assert spec in argv

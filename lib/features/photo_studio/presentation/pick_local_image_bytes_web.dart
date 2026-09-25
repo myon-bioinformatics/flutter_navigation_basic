@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart' show debugPrint;
 
 import '../data/photo_import_limits.dart';
 import '../data/photo_media_ports.dart';
@@ -12,6 +15,7 @@ Future<Uint8List?> pickLocalImageBytes() async {
 }
 
 Future<PhotoPickOutcome> pickLocalImageBytesDetailed() {
+  debugPrint('[photo-picker-web] 1/5 input:create');
   final completer = Completer<PhotoPickOutcome>();
   final input = html.FileUploadInputElement()
     ..accept = 'image/png,image/jpeg,image/webp,image/*'
@@ -23,6 +27,7 @@ Future<PhotoPickOutcome> pickLocalImageBytesDetailed() {
   Timer? cancelTimer;
 
   void finish(PhotoPickOutcome outcome) {
+    debugPrint('[photo-picker-web] 5/5 finish status=${outcome.status.name} bytes=${outcome.bytes?.lengthInBytes ?? 0} mime=${outcome.declaredMimeType ?? '-'}');
     cancelTimer?.cancel();
     cancelTimer = null;
     focusSubscription?.cancel();
@@ -34,6 +39,7 @@ Future<PhotoPickOutcome> pickLocalImageBytesDetailed() {
   }
 
   input.onChange.listen((_) {
+    debugPrint('[photo-picker-web] 2/5 change:event');
     // A file was chosen (or empty change). Stop treating window focus as cancel.
     selectionStarted = true;
     cancelTimer?.cancel();
@@ -47,6 +53,7 @@ Future<PhotoPickOutcome> pickLocalImageBytesDetailed() {
       return;
     }
     final file = files.first;
+    debugPrint('[photo-picker-web] 3/5 file:selected name=${file.name} size=${file.size} type=${file.type}');
     if (file.size > PhotoImportLimits.maxInputBytes) {
       finish(
         const PhotoPickOutcome.rejected(PhotoImportRejection.tooLargeBytes),
@@ -54,22 +61,45 @@ Future<PhotoPickOutcome> pickLocalImageBytesDetailed() {
       return;
     }
     final reader = html.FileReader();
-    reader.onError.listen((_) => finish(const PhotoPickOutcome.failed()));
-    reader.onAbort.listen((_) => finish(const PhotoPickOutcome.cancelled()));
+    reader.onError.listen((_) {
+      debugPrint('[photo-picker-web] 4/5 reader:error');
+      finish(const PhotoPickOutcome.failed());
+    });
+    reader.onAbort.listen((_) {
+      debugPrint('[photo-picker-web] 4/5 reader:abort');
+      finish(const PhotoPickOutcome.cancelled());
+    });
     reader.onLoad.listen((_) {
       final result = reader.result;
-      if (result is ByteBuffer) {
-        final bytes = result.asUint8List();
+      debugPrint('[photo-picker-web] 4/5 reader:load resultType=${result.runtimeType}');
+      // Data URLs give both dart2js and dart2wasm a stable String boundary.
+      // This avoids depending on the runtime representation of ArrayBuffer.
+      if (result is! String) {
+        debugPrint('[photo-picker-web] 4/5 reader:unsupported-result');
+        finish(const PhotoPickOutcome.failed());
+        return;
+      }
+      final separator = result.indexOf(',');
+      if (separator < 0) {
+        debugPrint('[photo-picker-web] 4/5 reader:malformed-data-url');
+        finish(const PhotoPickOutcome.failed());
+        return;
+      }
+      try {
+        final bytes = base64Decode(result.substring(separator + 1));
         if (bytes.isEmpty) {
+          debugPrint('[photo-picker-web] 4/5 reader:empty');
           finish(const PhotoPickOutcome.failed());
-        } else {
-          finish(PhotoPickOutcome.success(bytes, declaredMimeType: file.type));
+          return;
         }
-      } else {
+        debugPrint('[photo-picker-web] 4/5 reader:bytes length=${bytes.lengthInBytes}');
+        finish(PhotoPickOutcome.success(bytes, declaredMimeType: file.type));
+      } on FormatException catch (error) {
+        debugPrint('[photo-picker-web] 4/5 reader:base64-error error=$error');
         finish(const PhotoPickOutcome.failed());
       }
     });
-    reader.readAsArrayBuffer(file);
+    reader.readAsDataUrl(file);
   });
 
   // Hidden inputs rarely blur. When the file dialog closes without a selection,
@@ -84,6 +114,7 @@ Future<PhotoPickOutcome> pickLocalImageBytesDetailed() {
     });
   });
 
+  debugPrint('[photo-picker-web] 1/5 input:click');
   input.click();
   return completer.future;
 }

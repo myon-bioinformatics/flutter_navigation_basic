@@ -36,6 +36,31 @@ Future<({Uint8List bytes, int width, int height})?> decodeRasterImageBytes(
   return (bytes: bytes, width: size.width, height: size.height);
 }
 
+/// Fully decodes the first frame and returns its raster dimensions.
+///
+/// Unlike [readEncodedImageSize], this proves the codec can materialize a
+/// frame. Web ingress uses this before committing bytes to editor state; it
+/// does not normalize, resize, or re-encode the image.
+Future<({int width, int height})?> decodeImageFrameSize(Uint8List bytes) async {
+  if (bytes.isEmpty) return null;
+  ui.Codec? codec;
+  ui.Image? image;
+  try {
+    codec = await ui.instantiateImageCodec(bytes);
+    final frame = await codec.getNextFrame();
+    image = frame.image;
+    final width = image.width;
+    final height = image.height;
+    if (width <= 0 || height <= 0) return null;
+    return (width: width, height: height);
+  } catch (_) {
+    return null;
+  } finally {
+    image?.dispose();
+    codec?.dispose();
+  }
+}
+
 /// Optional platform/browser adapter that converts unsupported bytes to PNG.
 typedef StudioImageDecodeAdapter = Future<Uint8List?> Function(Uint8List bytes);
 

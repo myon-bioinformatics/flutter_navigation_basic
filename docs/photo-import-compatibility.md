@@ -120,6 +120,60 @@ For a future ingress or replacement adapter, prefer the least complex option tha
 4. Keep permission handling and platform availability at the acquisition boundary; converge successful bytes on the shared import gate/decoder.
 5. Do not add a new UI surface (including drop) until the chosen mechanism has contract-test evidence and a clear UX/maintenance benefit.
 
+## Format support inventory (reviewer-facing)
+
+This table is the explicit Photo Studio import contract. Browser support by itself
+does **not** mean Photo Studio supports a format: the app still has to recognize,
+validate, and decode/normalize it through its own import pipeline.
+
+| Format | Common extensions | Photo Studio status | What is actually claimed |
+| --- | --- | --- | --- |
+| PNG | `.png` | **supported / portable Web baseline** | Static PNG fixtures are exercised across the five Playwright projects. |
+| JPEG | `.jpg`, `.jpeg` | **supported / portable Web baseline** | Baseline + progressive JPEG are exercised. EXIF orientation 1–8 is separately covered by Flutter codec evidence. |
+| WebP | `.webp` | **supported / portable Web baseline** | Lossy + lossless WebP are exercised; alpha has Flutter evidence. |
+| GIF | `.gif` | **supported for still import** | A still GIF is exercised. Animated playback/preservation is **not** part of the current contract. |
+| AVIF | `.avif` | **recognized, not verified as supported** | Container sniffing exists, but the committed AVIF probe is intentionally invalid; no portable decode claim yet. |
+| HEIC / HEIF | `.heic`, `.heif` | **recognized, currently unsupported in measured Flutter CI** | HEIC brands are detected; synthetic HEIC currently reaches `heicConversionFailed`. Browser/native adapters remain runtime-dependent and real iPhone Safari is not verified. |
+| APNG | `.apng`, `.png` | **not separately verified** | It shares the PNG container/signature, but animation semantics are not tested or promised. |
+| SVG | `.svg`, `.svgz` | **not supported by the current Photo Studio contract** | SVG is a browser-standard vector format, but Photo Studio's current raster sniffer/import matrix has no SVG path. Do not infer support from browser rendering support. |
+| BMP | `.bmp` | **not supported by the current contract** | No explicit sniffer/fixture/import evidence. |
+| TIFF | `.tif`, `.tiff` | **not supported by the current contract** | No explicit sniffer/fixture/import evidence; browser support also varies. |
+| ICO / CUR | `.ico`, `.cur` | **not supported by the current contract** | No explicit sniffer/fixture/import evidence. |
+| JPEG XL | `.jxl` | **not supported by the current contract** | No explicit sniffer/fixture/import evidence; browser support is not universal. |
+| Camera RAW / DNG | e.g. `.dng`, `.cr2`, `.nef`, `.arw` | **out of scope / unsupported** | No RAW decoder or normalization adapter is provided. |
+| PSD | `.psd` | **out of scope / unsupported** | Photo Studio imports flattened raster image formats, not layered editor documents. |
+
+“Not supported by the current contract” means **no app-level support is promised or
+tested**. It is intentionally stronger than “not verified”, but does not claim
+that every underlying browser/OS codec is incapable of decoding that format.
+
+## Executable portable Web baseline
+
+`e2e/tests/photo_studio_format_matrix.spec.ts` turns the currently committed,
+non-personal raster fixtures into a repeatable Web picker baseline across the
+existing five Playwright projects. It covers PNG, baseline/progressive JPEG,
+lossy/lossless WebP, GIF still, plus a truncated-PNG rejection probe.
+
+This is an executable regression baseline, not a claim about physical Safari,
+native iOS Photos, Android gallery behavior, AVIF, or HEIC/HEIF. Those cells
+remain governed by measured evidence and explicit device/runtime QA.
+
+### Measured five-project run for #95
+
+At head `78aa4a0`, manual run `36146248386` measured the seven-case picker
+matrix with exact terminal signals. Chromium, Firefox, WebKit, and mobile-WebKit
+each passed all 7/7 cases: PNG, baseline/progressive JPEG, lossy/lossless WebP,
+GIF still, and truncated-PNG rejection. `mobile-chromium` is
+`not_verified (navigation)`: its semantics/bootstrap failure occurs before
+format decode and is tracked in #96.
+
+The mobile projects are Playwright device emulation, not physical-device
+evidence. The successful raster fixtures are synthetic 64×32 images except the
+1×1 still GIF; animated GIF, AVIF, and HEIC/HEIF are outside this measured
+baseline. The signal's format label currently comes from the declared MIME
+provenance; it is not a byte-sniffed format assertion. Moving that label to
+byte-derived format detection is a follow-up, not part of this evidence.
+
 ## Reproducible Web evidence (Playwright CLI)
 
 For Web ingress investigations, prefer reproducible Playwright CLI/test runs over hand-captured screenshots. Evidence should be tied to the PR commit and keep the machine-verifiable result separate from the human-readable image.

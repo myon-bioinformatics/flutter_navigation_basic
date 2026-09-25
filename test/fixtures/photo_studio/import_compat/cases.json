@@ -48,18 +48,18 @@
   ],
   "cases": [
     {
-      "id": "png_opaque_2x2",
+      "id": "png_opaque_64x32",
       "format": "png",
       "variant": "opaque",
-      "fixture": "png_opaque_2x2.png",
+      "fixture": "png_opaque_64x32.png",
       "kind": "raster",
       "notes": null
     },
     {
-      "id": "png_alpha_2x2",
+      "id": "png_alpha_64x32",
       "format": "png",
       "variant": "alpha",
-      "fixture": "png_alpha_2x2.png",
+      "fixture": "png_alpha_64x32.png",
       "kind": "raster",
       "notes": null
     },

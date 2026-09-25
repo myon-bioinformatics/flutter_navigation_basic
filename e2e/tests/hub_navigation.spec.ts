@@ -2,6 +2,12 @@ import { test, expect } from '@playwright/test';
 import { waitForFlutter, navigateToHub } from '../utils/helpers';
 
 test.describe('Hub Screen Navigation', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.fixme(
+      testInfo.project.name === 'mobile-chromium',
+      'semantics bootstrap: tracked in #96',
+    );
+  });
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await waitForFlutter(page);

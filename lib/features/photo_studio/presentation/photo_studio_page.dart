@@ -21,7 +21,6 @@ import '../domain/studio_frame_style.dart';
 import '../domain/studio_geometry.dart';
 import '../../../core/navigation/route_names.dart';
 import '../../../shared/widgets/tool_door_selector.dart';
-import 'browser_image_decode_adapter.dart';
 import 'export_studio_png.dart';
 import 'photo_rect_canvas.dart';
 import 'pick_local_image_bytes.dart';
@@ -246,9 +245,50 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     }
     if (!_isCurrentImport(generation)) return;
     try {
+      // Web keeps the original bytes, but success still requires a real frame
+      // decode. This proves the browser/Flutter codec can materialize the image
+      // without reintroducing canvas normalization or PNG re-encoding.
+      if (kIsWeb && widget.imageDecodeAdapter == null) {
+        final decoded = await decodeImageFrameSize(rawBytes);
+        if (!_isCurrentImport(generation)) return;
+        if (decoded == null) {
+          _setImportStatusIfCurrent(
+            generation,
+            PhotoImportStatus.failure(
+              reason: PhotoImportFailureReason.unsupportedFormat,
+              source: source,
+            ),
+          );
+          return;
+        }
+        final sizeReject = PhotoImportGate.rejectDecodedSize(
+          width: decoded.width,
+          height: decoded.height,
+        );
+        if (sizeReject != null) {
+          _setImportStatusIfCurrent(
+            generation,
+            PhotoImportStatus.failure(
+              reason: PhotoImportStatus.fromRejection(sizeReject),
+              source: source,
+            ),
+          );
+          return;
+        }
+        setState(() {
+          _mutateWithUndo((s) => s.copyWith(imageBytes: rawBytes));
+          _importStatus = PhotoImportStatus.success(
+            source: source,
+            formatLabel: declaredMimeType?.split('/').last.toUpperCase() ?? 'IMAGE',
+            width: decoded.width,
+            height: decoded.height,
+          );
+        });
+        return;
+      }
+
       PhotoImportRejection? decodeReject;
-      final adapter = widget.imageDecodeAdapter ??
-          (kIsWeb ? browserImageDecodeAdapter : nativeImageNormalizeAdapter);
+      final adapter = widget.imageDecodeAdapter ?? nativeImageNormalizeAdapter;
       final validated = await loadStudioImageBytes(
         rawBytes,
         nativeDecodeAdapter: adapter,
@@ -286,9 +326,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       final size = _pngIhDrSize(compact.bytes);
       if (!_isCurrentImport(generation)) return;
       setState(() {
-        _mutateWithUndo(
-          (s) => s.copyWith(imageBytes: compact.bytes),
-        );
+        _mutateWithUndo((s) => s.copyWith(imageBytes: compact.bytes));
         _importStatus = PhotoImportStatus.success(
           source: source,
           formatLabel: 'PNG',
@@ -769,14 +807,26 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       _ => scheme.onSurface,
     };
 
+    final resultSignal = switch (status.phase) {
+      PhotoImportPhase.success =>
+        'photo-import-result=success:${(status.formatLabel ?? 'image').toLowerCase()}:${status.width ?? 0}x${status.height ?? 0};',
+      PhotoImportPhase.failure =>
+        'photo-import-result=rejected:${status.failureReason?.name ?? 'decodeFailed'};',
+      _ => 'photo-import-result=${status.phase.name};',
+    };
+
     return Semantics(
-      liveRegion: true,
-      label: [
-        primary,
-        if (meta != null) meta,
-        if (fileName != null && fileName.isNotEmpty) fileName,
-      ].join(' '),
-      child: ConstrainedBox(
+      container: true,
+      identifier: 'photo-import-result',
+      value: resultSignal,
+      child: Semantics(
+        liveRegion: true,
+        label: [
+          primary,
+          if (meta != null) meta,
+          if (fileName != null && fileName.isNotEmpty) fileName,
+        ].join(' '),
+        child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 720),
         child: DecoratedBox(
           decoration: BoxDecoration(
@@ -843,6 +893,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
           ),
         ),
       ),
+    ),
     );
   }
 

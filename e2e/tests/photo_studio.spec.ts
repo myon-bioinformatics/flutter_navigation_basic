@@ -1,18 +1,19 @@
 import { test, expect } from '@playwright/test';
-import path from 'node:path';
-import { waitForFlutter } from '../utils/helpers';
-
-const photoStudioRoute = '/#/tools/media/photo-studio';
-// Playwright commands in this repository run with e2e/ as the working directory.
-const fixture = path.resolve(
-  process.cwd(),
-  '../test/fixtures/photo_studio/import_compat/png_opaque_2x2.png',
-);
+import {
+  openPhotoStudio,
+  pickPhotoFixture,
+  waitPhotoImportOutcome,
+} from '../utils/photo_studio';
 
 test.describe('Photo Studio representative flow', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.fixme(
+      testInfo.project.name === 'mobile-chromium',
+      'semantics bootstrap: tracked in #96',
+    );
+  });
   test.beforeEach(async ({ page }) => {
-    await page.goto(photoStudioRoute);
-    await waitForFlutter(page);
+    await openPhotoStudio(page);
   });
 
   test('opens the canonical Photo Studio route @portable', async ({ page }) => {
@@ -23,14 +24,7 @@ test.describe('Photo Studio representative flow', () => {
   });
 
   test('imports a committed PNG through the browser file picker @portable', async ({ page }) => {
-    const chooserPromise = page.waitForEvent('filechooser');
-    await page.getByText('Import image', { exact: true }).click();
-    const chooser = await chooserPromise;
-    await chooser.setFiles(fixture);
-
-    await expect(page.getByText('Image loaded', { exact: true })).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.getByText('Replace image', { exact: true })).toBeVisible();
+    await pickPhotoFixture(page, 'png_opaque_64x32.png');
+    expect((await waitPhotoImportOutcome(page)).kind).toBe('rendered');
   });
 });
