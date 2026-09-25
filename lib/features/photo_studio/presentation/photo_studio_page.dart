@@ -267,11 +267,16 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
         );
         return;
       }
-      final compact = await Base64ImageBridge.downscaleToPng(
-        validated,
-        scale: PhotoImportLimits.defaultDownscale,
-        maxLongEdge: PhotoImportLimits.maxDocumentLongEdge,
-      );
+      // The browser adapter already returns a PNG normalized and resized by
+      // the browser canvas. Avoid decoding that PNG a second time through
+      // dart:ui on web; that boundary is renderer-dependent in Flutter web.
+      final compact = kIsWeb && widget.imageDecodeAdapter == null
+          ? Base64ImagePayload(bytes: validated, mimeType: 'image/png')
+          : await Base64ImageBridge.downscaleToPng(
+              validated,
+              scale: PhotoImportLimits.defaultDownscale,
+              maxLongEdge: PhotoImportLimits.maxDocumentLongEdge,
+            );
       if (!_isCurrentImport(generation)) return;
       if (compact.bytes.isEmpty) {
         _setImportStatusIfCurrent(
