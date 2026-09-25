@@ -60,26 +60,31 @@ export async function waitPhotoImportOutcome(
     const diagnostic = await page
       .evaluate((sel) => {
         const element = document.querySelector(sel);
-        return element
-          ? {
-              ariaValueText: element.getAttribute('aria-valuetext'),
-              ariaLabel: element.getAttribute('aria-label'),
-              value: element.getAttribute('value'),
-              textContent: element.textContent,
-            }
-          : null;
+        return {
+          target: element
+            ? {
+                ariaValueText: element.getAttribute('aria-valuetext'),
+                ariaLabel: element.getAttribute('aria-label'),
+                value: element.getAttribute('value'),
+                textContent: element.textContent,
+              }
+            : null,
+          identifiers: Array.from(
+            document.querySelectorAll('[flt-semantics-identifier]'),
+            (node) => node.getAttribute('flt-semantics-identifier'),
+          ),
+          labelHit: Array.from(
+            document.querySelectorAll('[aria-label*="photo-import-result"]'),
+            (node) => node.getAttribute('aria-label'),
+          ).slice(0, 3),
+          bodyHit:
+            /photo-import-result \\S+/.exec(document.body.innerText)?.[0] ?? null,
+        };
       }, selector)
       .catch(() => null);
-    const identifiers = await page
-      .evaluate(() =>
-        Array.from(document.querySelectorAll('[flt-semantics-identifier]')).map(
-          (element) => element.getAttribute('flt-semantics-identifier'),
-        ),
-      )
-      .catch(() => []);
     console.log(
       '[photo-import-result] timeout ' +
-        JSON.stringify({ timeout, diagnostic, identifiers }),
+        JSON.stringify({ timeout, diagnostic }),
     );
     return { kind: 'timeout', signal: null };
   }
