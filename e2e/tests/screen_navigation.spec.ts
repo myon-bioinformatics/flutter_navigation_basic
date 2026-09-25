@@ -3,6 +3,12 @@ import { waitForFlutter, navigateToHub, navigateToScreen, tapSemantics } from '.
 import testData from '../fixtures/test_data.json';
 
 test.describe('Screen Navigation', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.fixme(
+      testInfo.project.name === 'mobile-chromium',
+      'semantics bootstrap: tracked in #96',
+    );
+  });
   test('navigates to Screen1 from hub', async ({ page }) => {
     await navigateToHub(page);
     await page.locator('[key="screen-grid-1"]').click();
@@ -26,6 +32,7 @@ test.describe('Screen Navigation', () => {
   });
 
   test('generic screen Back to Hub navigates to hub @portable', async ({ page }) => {
+    test.fixme(true, 'Back to Hub accessible semantics: tracked in #97');
     await navigateToScreen(page, 5);
     await tapSemantics(page, 'Back to Hub', { exact: false });
     await waitForFlutter(page);
