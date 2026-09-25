@@ -29,24 +29,42 @@ export async function waitPhotoImportOutcome(
   page: Page,
   timeout = 10_000,
 ): Promise<PhotoImportOutcome> {
-  const result = page.locator(
-    '[flt-semantics-identifier="photo-import-result"]',
-  );
+  const selector = '[flt-semantics-identifier="photo-import-result"]';
   try {
-    await result.waitFor({ state: 'attached', timeout });
-    const signal =
-      (await result.getAttribute('aria-valuetext')) ??
-      (await result.getAttribute('aria-label')) ??
-      (await result.getAttribute('value')) ??
-      (await result.innerText());
-    if (signal.includes('photo-import-result success:')) {
-      return { kind: 'rendered', signal };
-    }
-    if (signal.includes('photo-import-result rejected:')) {
-      return { kind: 'rejected', signal };
-    }
-    return { kind: 'timeout', signal: null };
+    const handle = await page.waitForFunction(
+      (sel) => {
+        const element = document.querySelector(sel);
+        if (!element) return null;
+        const signal =
+          element.getAttribute('aria-valuetext') ??
+          element.getAttribute('aria-label') ??
+          element.getAttribute('value') ??
+          element.textContent ??
+          '';
+        return /photo-import-result (?:success|rejected):/.test(signal)
+          ? signal
+          : null;
+      },
+      selector,
+      { timeout },
+    );
+    const signal = (await handle.jsonValue()) as string;
+    return signal.includes('photo-import-result success:')
+      ? { kind: 'rendered', signal }
+      : { kind: 'rejected', signal };
   } catch {
+    const result = page.locator(selector);
+    const diagnostic = await result
+      .evaluate((element) => ({
+        ariaValueText: element.getAttribute('aria-valuetext'),
+        ariaLabel: element.getAttribute('aria-label'),
+        value: element.getAttribute('value'),
+        textContent: element.textContent,
+      }))
+      .catch(() => null);
+    console.log(
+      '[photo-import-result] timeout ' + JSON.stringify({ timeout, diagnostic }),
+    );
     return { kind: 'timeout', signal: null };
   }
 }
