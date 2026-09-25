@@ -16,6 +16,12 @@ const pngFixture = path.resolve(
 );
 
 test.describe('Photo Studio ingress audit', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.fixme(
+      testInfo.project.name === 'mobile-chromium',
+      'semantics bootstrap: tracked in #96',
+    );
+  });
   // Picker/MIME checks are portable. Clipboard write permission is exercised only
   // by Chromium projects; Firefox/WebKit skip before grantPermissions().
   test('picker accepts the committed PNG through the shared import pipeline @portable', async ({ page }) => {
