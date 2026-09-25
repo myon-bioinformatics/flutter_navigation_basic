@@ -3,7 +3,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { openPhotoStudio, pickPhotoFixture, waitPhotoImportOutcome } from '../utils/photo_studio';
 
-const route = '/#/tools/media/photo-studio';
 const fixtureDir = path.resolve(
   process.cwd(),
   '../test/fixtures/photo_studio/import_compat',
@@ -45,12 +44,14 @@ async function probeImportResult(
   fileName: string,
 ) {
   diag('4/4 probe:waiting', { label, fileName });
-  const reached = await waitPhotoImportOutcome(page);
+  const outcome = await waitPhotoImportOutcome(page);
+  const reached = outcome.kind;
   const visibleTexts = await page.locator('body').innerText().catch(() => '');
   diag('4/4 probe:result', {
     label,
     fileName,
     reached,
+    signal: outcome.signal,
     bodyHasImageLoaded: visibleTexts.includes('Image loaded'),
     bodyHasReplaceImage: visibleTexts.includes('Replace image'),
     bodyHasDecodeError: visibleTexts.includes('could not be decoded'),
