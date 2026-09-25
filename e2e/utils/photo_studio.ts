@@ -29,12 +29,16 @@ export async function waitPhotoImportOutcome(
   page: Page,
   timeout = 10_000,
 ): Promise<PhotoImportOutcome> {
-  const result = page.getByText(/photo-import-result (?:success|rejected):/, {
-    exact: false,
-  });
+  const result = page.locator(
+    '[flt-semantics-identifier="photo-import-result"]',
+  );
   try {
-    await result.waitFor({ state: 'visible', timeout });
-    const signal = (await result.getAttribute('aria-label')) ?? (await result.innerText());
+    await result.waitFor({ state: 'attached', timeout });
+    const signal =
+      (await result.getAttribute('aria-valuetext')) ??
+      (await result.getAttribute('aria-label')) ??
+      (await result.getAttribute('value')) ??
+      (await result.innerText());
     if (signal.includes('photo-import-result success:')) {
       return { kind: 'rendered', signal };
     }
