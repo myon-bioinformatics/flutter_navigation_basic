@@ -38,3 +38,9 @@ export async function navigateToScreen(page: Page, screenId: number) {
   await page.goto(`/#/screen${screenId}`);
   await waitForFlutter(page);
 }
+
+export async function tapSemantics(page: Page, label: string) {
+  const element = page.getByText(label, { exact: true });
+  await element.waitFor({ state: 'visible' });
+  await element.evaluate((node) => (node as HTMLElement).click());
+}
