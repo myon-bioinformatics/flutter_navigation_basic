@@ -9,7 +9,7 @@ const fixtureDir = path.resolve(
 );
 
 const portableSupportedCases = [
-  ['PNG', 'png_opaque_2x2.png'],
+  ['PNG', 'png_opaque_64x32.png'],
   ['JPEG baseline', 'jpeg_baseline_markers_64x32.jpg'],
   ['JPEG progressive', 'jpeg_progressive_markers_64x32.jpg'],
   ['WebP lossy', 'webp_lossy_64x32.webp'],
