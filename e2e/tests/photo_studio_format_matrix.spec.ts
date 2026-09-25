@@ -28,6 +28,15 @@ function diag(stage: string, fields: Record<string, unknown> = {}) {
   console.log('[photo-studio-format-matrix]', JSON.stringify({ stage, ...fields }));
 }
 
+function attachBrowserDiagnostics(page: Page) {
+  page.on('console', (message) => {
+    console.log('[browser-console]', message.type(), message.text());
+  });
+  page.on('pageerror', (error) => {
+    console.log('[browser-pageerror]', error.message);
+  });
+}
+
 async function openPhotoStudio(page: Page) {
   diag('1/4 navigation:start', { route });
   await page.goto(route);
@@ -83,6 +92,7 @@ test.describe('Photo Studio portable format matrix', () => {
   for (const entry of formatRegistry) {
     test(`${entry.label} imports successfully through the web picker @portable @format-matrix`, async ({ page }) => {
       diag('case:start', entry);
+      attachBrowserDiagnostics(page);
       await openPhotoStudio(page);
       await pickFixture(page, entry.label, entry.fileName);
       await expectImportResult(page, entry.label, entry.fileName);
@@ -93,6 +103,7 @@ test.describe('Photo Studio portable format matrix', () => {
     const label = 'PNG truncated';
     const fileName = 'png_truncated.png';
     diag('case:start', { label, fileName, support: 'unsupported' });
+    attachBrowserDiagnostics(page);
     await openPhotoStudio(page);
     await pickFixture(page, label, fileName);
 
