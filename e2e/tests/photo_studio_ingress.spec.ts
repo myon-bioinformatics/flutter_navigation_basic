@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
+import path from 'node:path';
 import {
   openPhotoStudio,
   pickPhotoFixture,
@@ -7,7 +8,11 @@ import {
 } from '../utils/photo_studio';
 
 const pngFixtureName = 'png_opaque_64x32.png';
-const pngFixture = new URL(`../../test/fixtures/photo_studio/import_compat/${pngFixtureName}`, import.meta.url);
+const pngFixture = path.resolve(
+  process.cwd(),
+  '../test/fixtures/photo_studio/import_compat',
+  pngFixtureName,
+);
 
 test.describe('Photo Studio ingress audit', () => {
   // Picker/MIME checks are portable. Clipboard write permission is exercised only
