@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:html' as html;
 import 'dart:typed_data';
 
+import '../data/photo_import_limits.dart';
+
 String _browserImageMimeType(Uint8List bytes) {
   if (bytes.length >= 8 && bytes[0] == 137 && bytes[1] == 80 && bytes[2] == 78 && bytes[3] == 71) return 'image/png';
   if (bytes.length >= 3 && bytes[0] == 255 && bytes[1] == 216 && bytes[2] == 255) return 'image/jpeg';
@@ -40,9 +42,28 @@ Future<Uint8List?> browserImageDecodeAdapter(Uint8List bytes) async {
     final height = image.naturalHeight;
     if (width <= 0 || height <= 0) return null;
 
-    canvas = html.CanvasElement(width: width, height: height);
+    // On web this adapter owns normalization *and* resizing. Running the
+    // browser-produced PNG through dart:ui ImageDescriptor again is not
+    // portable across Flutter web renderers (Chromium CI rejected even a
+    // valid 64x32 PNG at that second decode boundary).
+    var targetWidth = (width * PhotoImportLimits.defaultDownscale)
+        .round()
+        .clamp(1, width)
+        .toInt();
+    var targetHeight = (height * PhotoImportLimits.defaultDownscale)
+        .round()
+        .clamp(1, height)
+        .toInt();
+    final longEdge = targetWidth > targetHeight ? targetWidth : targetHeight;
+    if (longEdge > PhotoImportLimits.maxDocumentLongEdge) {
+      final fit = PhotoImportLimits.maxDocumentLongEdge / longEdge;
+      targetWidth = (targetWidth * fit).round().clamp(1, width).toInt();
+      targetHeight = (targetHeight * fit).round().clamp(1, height).toInt();
+    }
+
+    canvas = html.CanvasElement(width: targetWidth, height: targetHeight);
     final ctx = canvas.context2D;
-    ctx.drawImage(image, 0, 0);
+    ctx.drawImageScaled(image, 0, 0, targetWidth, targetHeight);
     final dataUrl = canvas.toDataUrl('image/png');
     final comma = dataUrl.indexOf(',');
     if (comma < 0) return null;
