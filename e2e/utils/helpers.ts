@@ -39,8 +39,18 @@ export async function navigateToScreen(page: Page, screenId: number) {
   await waitForFlutter(page);
 }
 
-export async function tapSemantics(page: Page, label: string) {
-  const element = page.getByText(label, { exact: true });
-  await element.waitFor({ state: 'visible' });
+export async function tapSemantics(
+  page: Page,
+  label: string,
+  { exact = true, timeout = 5_000 }: { exact?: boolean; timeout?: number } = {},
+) {
+  const element = page.getByText(label, { exact });
+  try {
+    await element.waitFor({ state: 'visible', timeout });
+  } catch (error) {
+    throw new Error(`tapSemantics: "${label}" not found within ${timeout}ms`, {
+      cause: error,
+    });
+  }
   await element.evaluate((node) => (node as HTMLElement).click());
 }
