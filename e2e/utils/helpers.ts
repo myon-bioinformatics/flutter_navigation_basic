@@ -1,14 +1,27 @@
-import { Page, expect } from '@playwright/test';
+import { Page } from '@playwright/test';
 
 export async function waitForFlutter(page: Page, timeout = 15000) {
   await page.waitForLoadState('load', { timeout });
-  // Wait for Flutter canvas or a rendered element to be visible
-  try {
-    await page.waitForSelector('flt-glass-pane, canvas, [flt-renderer]', { timeout: 8000 });
-  } catch {
-    // Fallback: wait a short time if Flutter element selectors are not available
-    await page.waitForTimeout(1000);
+  await page.locator('flt-glass-pane').waitFor({ state: 'attached', timeout });
+
+  // Flutter Web keeps its accessibility DOM opt-in. Playwright text locators
+  // cannot see the app's labels until this placeholder is activated.
+  await page.waitForFunction(
+    () =>
+      document.querySelector('flt-semantics-placeholder[aria-label="Enable accessibility"]') !== null ||
+      document.querySelector('flt-semantics') !== null,
+    null,
+    { timeout },
+  );
+
+  const accessibilityButton = page.locator(
+    'flt-semantics-placeholder[aria-label="Enable accessibility"]',
+  );
+  if (await accessibilityButton.isVisible()) {
+    await accessibilityButton.click();
   }
+
+  await page.locator('flt-semantics').first().waitFor({ state: 'attached', timeout });
 }
 
 export async function navigateToHub(page: Page) {
