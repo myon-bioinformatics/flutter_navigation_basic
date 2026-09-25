@@ -816,9 +816,11 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     };
 
     return Semantics(
-      liveRegion: true,
-      label: resultSignal,
+      container: true,
+      identifier: 'photo-import-result',
+      value: resultSignal,
       child: Semantics(
+        liveRegion: true,
         label: [
           primary,
           if (meta != null) meta,
