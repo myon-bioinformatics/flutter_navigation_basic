@@ -58,11 +58,12 @@ test.describe('Screen Navigation', () => {
       stage = 'action';
       await button.evaluate((element) => (element as HTMLElement).click());
       await waitForFlutter(page);
+      await expect(page).toHaveURL(/#\/hub/, { timeout: 5_000 });
       const afterHash = await page.evaluate(() => window.location.hash);
       console.log('[back-to-hub probe] post-action', { stage, beforeHash, afterHash });
-      expect(afterHash).toContain('hub');
       await expect(page.getByText('Navigation Hub', { exact: false })).toBeVisible();
     } catch (error) {
+      count = await button.count().catch(() => -1);
       const identifiers = await page.locator('[flt-semantics-identifier]').evaluateAll(
         (nodes) => nodes.map((node) => node.getAttribute('flt-semantics-identifier')),
       );
