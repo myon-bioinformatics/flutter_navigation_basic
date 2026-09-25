@@ -105,8 +105,17 @@ test.describe('Photo Studio portable format matrix', () => {
       const expected = entry.support === 'unsupported' ? 'rejected' : 'rendered';
       expect(reached).toBe(expected);
       if (entry.expectedSize != null) {
-        expect(signal).not.toBeNull();
-        expect(signal).toContain(`:${entry.expectedSize}`);
+        const expectedFormat =
+          entry.label === 'PNG'
+            ? 'png'
+            : entry.label.startsWith('JPEG')
+              ? 'jpeg'
+              : entry.label.startsWith('WebP')
+                ? 'webp'
+                : 'gif';
+        expect(signal).toBe(`success:${expectedFormat}:${entry.expectedSize}`);
+      } else {
+        expect(signal).toBe('rejected:unsupportedFormat');
       }
     });
   }
