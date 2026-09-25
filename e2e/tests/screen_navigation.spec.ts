@@ -27,7 +27,7 @@ test.describe('Screen Navigation', () => {
 
   test('generic screen Back to Hub navigates to hub @portable', async ({ page }) => {
     await navigateToScreen(page, 5);
-    await tapSemantics(page, 'Back to Hub');
+    await tapSemantics(page, 'Back to Hub', { exact: false });
     await waitForFlutter(page);
     await expect(page.getByText('Navigation Hub', { exact: false })).toBeVisible();
   });
