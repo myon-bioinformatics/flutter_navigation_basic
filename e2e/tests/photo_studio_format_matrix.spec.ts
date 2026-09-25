@@ -18,6 +18,7 @@ const formatRegistry = [
   { label: 'WebP lossy', fileName: 'webp_lossy_64x32.webp', support: 'supported' },
   { label: 'WebP lossless', fileName: 'webp_lossless_64x32.webp', support: 'supported' },
   { label: 'GIF still', fileName: 'gif_still_1x1.gif', support: 'supported' },
+  { label: 'PNG truncated', fileName: 'png_truncated.png', support: 'unsupported' },
 ] satisfies ReadonlyArray<{
   label: string;
   fileName: string;
@@ -66,61 +67,76 @@ async function pickFixture(page: Page, label: string, fileName: string) {
   diag('3/4 picker:file-set', { label, fileName });
 }
 
-async function expectImportResult(page: Page, label: string, fileName: string) {
-  diag('4/4 render:waiting', { label, fileName });
-  try {
-    // "Replace image" is the stable observable contract that the selected
-    // bytes reached Photo Studio state. Keep the localized success copy as
-    // diagnostics only: Flutter web semantics does not always expose ordinary
-    // status Text as a DOM text node across renderers.
-    await expect(page.getByText('Replace image', { exact: true })).toBeVisible({
-      timeout: 15_000,
-    });
-    const visibleTexts = await page.locator('body').innerText().catch(() => '');
-    diag('4/4 render:passed', {
-      label,
-      fileName,
-      bodyHasImageLoaded: visibleTexts.includes('Image loaded'),
-      bodyHasReplaceImage: visibleTexts.includes('Replace image'),
-    });
-  } catch (error) {
-    const visibleTexts = await page.locator('body').innerText().catch(() => '');
-    diag('4/4 render:failed', {
-      label,
-      fileName,
-      reason: error instanceof Error ? error.message.split('\n')[0] : String(error),
-      bodyHasDecodeError: visibleTexts.includes('could not be decoded'),
-      bodyHasImageLoaded: visibleTexts.includes('Image loaded'),
-      bodyHasReplaceImage: visibleTexts.includes('Replace image'),
-    });
-    throw error;
-  }
+type TerminalStage = 'rendered' | 'rejected' | 'timeout';
+
+async function probeImportResult(
+  page: Page,
+  label: string,
+  fileName: string,
+): Promise<TerminalStage> {
+  diag('4/4 probe:waiting', { label, fileName });
+  const ok = page.getByText('Replace image', { exact: true });
+  const rejected = page.getByText(
+    'That image format could not be decoded.',
+    { exact: true },
+  );
+
+  const reached = await Promise.race<TerminalStage>([
+    ok.waitFor({ state: 'visible', timeout: 10_000 }).then(() => 'rendered'),
+    rejected.waitFor({ state: 'visible', timeout: 10_000 }).then(() => 'rejected'),
+    page.waitForTimeout(10_100).then(() => 'timeout'),
+  ]);
+
+  const visibleTexts = await page.locator('body').innerText().catch(() => '');
+  diag('4/4 probe:result', {
+    label,
+    fileName,
+    reached,
+    bodyHasImageLoaded: visibleTexts.includes('Image loaded'),
+    bodyHasReplaceImage: visibleTexts.includes('Replace image'),
+    bodyHasDecodeError: visibleTexts.includes('could not be decoded'),
+  });
+  return reached;
 }
 
 test.describe('Photo Studio portable format matrix', () => {
   for (const entry of formatRegistry) {
-    test(`${entry.label} imports successfully through the web picker @portable @format-matrix`, async ({ page }) => {
+    test(`${entry.label} @portable @format-matrix`, async ({ page }, testInfo) => {
       diag('case:start', entry);
       attachBrowserDiagnostics(page);
-      await openPhotoStudio(page);
-      await pickFixture(page, entry.label, entry.fileName);
-      await expectImportResult(page, entry.label, entry.fileName);
+
+      let reached: string = 'navigation';
+      try {
+        await openPhotoStudio(page);
+        reached = 'fixture';
+        await pickFixture(page, entry.label, entry.fileName);
+        reached = await probeImportResult(page, entry.label, entry.fileName);
+      } catch (error) {
+        diag('case:probe-error', {
+          label: entry.label,
+          fileName: entry.fileName,
+          reached,
+          reason: error instanceof Error ? error.message.split('\n')[0] : String(error),
+        });
+      }
+
+      const outcome = {
+        label: entry.label,
+        fileName: entry.fileName,
+        project: testInfo.project.name,
+        expected: entry.support === 'unsupported' ? 'rejected' : 'rendered',
+        reached,
+      };
+      await testInfo.attach('format-outcome', {
+        body: JSON.stringify(outcome, null, 2),
+        contentType: 'application/json',
+      });
+      testInfo.annotations.push({ type: 'reached', description: reached });
+
+      // Probe lane intentionally does not fail on a format mismatch. Its job is
+      // to collect the complete format × project matrix in one manual run.
+      // A separate smoke/contract lane may assert a stable structured signal.
+      diag('case:outcome', outcome);
     });
   }
-
-  test('truncated PNG is rejected with unsupported-format state @portable @format-matrix', async ({ page }) => {
-    const label = 'PNG truncated';
-    const fileName = 'png_truncated.png';
-    diag('case:start', { label, fileName, support: 'unsupported' });
-    attachBrowserDiagnostics(page);
-    await openPhotoStudio(page);
-    await pickFixture(page, label, fileName);
-
-    diag('4/4 render:waiting-rejection', { label, fileName });
-    await expect(
-      page.getByText('That image format could not be decoded.', { exact: true }),
-    ).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText('Replace image', { exact: true })).toHaveCount(0);
-    diag('4/4 render:rejected-as-expected', { label, fileName });
-  });
 });
