@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:html' as html;
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show debugPrint;
+
 import '../data/photo_import_limits.dart';
 import '../data/photo_media_ports.dart';
 
@@ -12,6 +14,7 @@ Future<Uint8List?> pickLocalImageBytes() async {
 }
 
 Future<PhotoPickOutcome> pickLocalImageBytesDetailed() {
+  debugPrint('[photo-picker-web] 1/5 input:create');
   final completer = Completer<PhotoPickOutcome>();
   final input = html.FileUploadInputElement()
     ..accept = 'image/png,image/jpeg,image/webp,image/*'
@@ -23,6 +26,7 @@ Future<PhotoPickOutcome> pickLocalImageBytesDetailed() {
   Timer? cancelTimer;
 
   void finish(PhotoPickOutcome outcome) {
+    debugPrint('[photo-picker-web] 5/5 finish status=${outcome.status.name} bytes=${outcome.bytes?.lengthInBytes ?? 0} mime=${outcome.declaredMimeType ?? '-'}');
     cancelTimer?.cancel();
     cancelTimer = null;
     focusSubscription?.cancel();
@@ -34,6 +38,7 @@ Future<PhotoPickOutcome> pickLocalImageBytesDetailed() {
   }
 
   input.onChange.listen((_) {
+    debugPrint('[photo-picker-web] 2/5 change:event');
     // A file was chosen (or empty change). Stop treating window focus as cancel.
     selectionStarted = true;
     cancelTimer?.cancel();
@@ -47,6 +52,7 @@ Future<PhotoPickOutcome> pickLocalImageBytesDetailed() {
       return;
     }
     final file = files.first;
+    debugPrint('[photo-picker-web] 3/5 file:selected name=${file.name} size=${file.size} type=${file.type}');
     if (file.size > PhotoImportLimits.maxInputBytes) {
       finish(
         const PhotoPickOutcome.rejected(PhotoImportRejection.tooLargeBytes),
@@ -54,10 +60,17 @@ Future<PhotoPickOutcome> pickLocalImageBytesDetailed() {
       return;
     }
     final reader = html.FileReader();
-    reader.onError.listen((_) => finish(const PhotoPickOutcome.failed()));
-    reader.onAbort.listen((_) => finish(const PhotoPickOutcome.cancelled()));
+    reader.onError.listen((_) {
+      debugPrint('[photo-picker-web] 4/5 reader:error');
+      finish(const PhotoPickOutcome.failed());
+    });
+    reader.onAbort.listen((_) {
+      debugPrint('[photo-picker-web] 4/5 reader:abort');
+      finish(const PhotoPickOutcome.cancelled());
+    });
     reader.onLoad.listen((_) {
       final result = reader.result;
+      debugPrint('[photo-picker-web] 4/5 reader:load resultType=${result.runtimeType}');
       if (result is ByteBuffer) {
         final bytes = result.asUint8List();
         if (bytes.isEmpty) {
@@ -84,6 +97,7 @@ Future<PhotoPickOutcome> pickLocalImageBytesDetailed() {
     });
   });
 
+  debugPrint('[photo-picker-web] 1/5 input:click');
   input.click();
   return completer.future;
 }
