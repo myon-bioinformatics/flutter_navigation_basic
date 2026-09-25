@@ -120,6 +120,33 @@ For a future ingress or replacement adapter, prefer the least complex option tha
 4. Keep permission handling and platform availability at the acquisition boundary; converge successful bytes on the shared import gate/decoder.
 5. Do not add a new UI surface (including drop) until the chosen mechanism has contract-test evidence and a clear UX/maintenance benefit.
 
+## Format support inventory (reviewer-facing)
+
+This table is the explicit Photo Studio import contract. Browser support by itself
+does **not** mean Photo Studio supports a format: the app still has to recognize,
+validate, and decode/normalize it through its own import pipeline.
+
+| Format | Common extensions | Photo Studio status | What is actually claimed |
+| --- | --- | --- | --- |
+| PNG | `.png` | **supported / portable Web baseline** | Static PNG fixtures are exercised across the five Playwright projects. |
+| JPEG | `.jpg`, `.jpeg` | **supported / portable Web baseline** | Baseline + progressive JPEG are exercised. EXIF orientation 1–8 is separately covered by Flutter codec evidence. |
+| WebP | `.webp` | **supported / portable Web baseline** | Lossy + lossless WebP are exercised; alpha has Flutter evidence. |
+| GIF | `.gif` | **supported for still import** | A still GIF is exercised. Animated playback/preservation is **not** part of the current contract. |
+| AVIF | `.avif` | **recognized, not verified as supported** | Container sniffing exists, but the committed AVIF probe is intentionally invalid; no portable decode claim yet. |
+| HEIC / HEIF | `.heic`, `.heif` | **recognized, currently unsupported in measured Flutter CI** | HEIC brands are detected; synthetic HEIC currently reaches `heicConversionFailed`. Browser/native adapters remain runtime-dependent and real iPhone Safari is not verified. |
+| APNG | `.apng`, `.png` | **not separately verified** | It shares the PNG container/signature, but animation semantics are not tested or promised. |
+| SVG | `.svg`, `.svgz` | **not supported by the current Photo Studio contract** | SVG is a browser-standard vector format, but Photo Studio's current raster sniffer/import matrix has no SVG path. Do not infer support from browser rendering support. |
+| BMP | `.bmp` | **not supported by the current contract** | No explicit sniffer/fixture/import evidence. |
+| TIFF | `.tif`, `.tiff` | **not supported by the current contract** | No explicit sniffer/fixture/import evidence; browser support also varies. |
+| ICO / CUR | `.ico`, `.cur` | **not supported by the current contract** | No explicit sniffer/fixture/import evidence. |
+| JPEG XL | `.jxl` | **not supported by the current contract** | No explicit sniffer/fixture/import evidence; browser support is not universal. |
+| Camera RAW / DNG | e.g. `.dng`, `.cr2`, `.nef`, `.arw` | **out of scope / unsupported** | No RAW decoder or normalization adapter is provided. |
+| PSD | `.psd` | **out of scope / unsupported** | Photo Studio imports flattened raster image formats, not layered editor documents. |
+
+“Not supported by the current contract” means **no app-level support is promised or
+tested**. It is intentionally stronger than “not verified”, but does not claim
+that every underlying browser/OS codec is incapable of decoding that format.
+
 ## Executable portable Web baseline
 
 `e2e/tests/photo_studio_format_matrix.spec.ts` turns the currently committed,
