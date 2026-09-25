@@ -37,16 +37,16 @@ test.describe('Screen Navigation', () => {
     let stage = 'attached';
     const beforeHash = await page.evaluate(() => window.location.hash);
     const semanticsEnabled = (await page.locator('flt-semantics').count()) > 0;
+    let count = 0;
     try {
-      const count = await button.count();
+      await expect(button).toHaveCount(1, { timeout: 5_000 });
+      count = await button.count();
       console.log('[back-to-hub probe] pre-action', {
         stage,
         semanticsEnabled,
         count,
         beforeHash,
       });
-      expect(count).toBe(1);
-      await button.waitFor({ state: 'attached', timeout: 5_000 });
       stage = 'tappable';
       const probe = await button.evaluate((element) => ({
         role: element.getAttribute('role'),
@@ -60,6 +60,7 @@ test.describe('Screen Navigation', () => {
       await waitForFlutter(page);
       const afterHash = await page.evaluate(() => window.location.hash);
       console.log('[back-to-hub probe] post-action', { stage, beforeHash, afterHash });
+      expect(afterHash).toContain('hub');
       await expect(page.getByText('Navigation Hub', { exact: false })).toBeVisible();
     } catch (error) {
       const identifiers = await page.locator('[flt-semantics-identifier]').evaluateAll(
@@ -68,6 +69,7 @@ test.describe('Screen Navigation', () => {
       console.log('[back-to-hub probe] failure', {
         stage,
         semanticsEnabled,
+        count,
         beforeHash,
         identifiers,
       });
