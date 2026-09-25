@@ -50,5 +50,6 @@ test.describe('Photo Studio portable format matrix', () => {
       page.getByText('That image format could not be decoded.', { exact: true }),
     ).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText('Image loaded', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Replace image', { exact: true })).toHaveCount(0);
   });
 });
