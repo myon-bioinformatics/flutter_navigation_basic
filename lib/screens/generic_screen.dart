@@ -169,7 +169,6 @@ class _GenericScreenState extends State<GenericScreen> {
         actions: [
           Semantics(
             identifier: 'back-to-hub',
-            button: true,
             child: IconButton(
               key: const Key('back-to-hub'),
               tooltip: display.text('generic.backToHub'),
