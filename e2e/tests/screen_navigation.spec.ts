@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { waitForFlutter, navigateToHub, navigateToScreen } from '../utils/helpers';
+import { waitForFlutter, navigateToHub, navigateToScreen, tapSemantics } from '../utils/helpers';
 import testData from '../fixtures/test_data.json';
 
 test.describe('Screen Navigation', () => {
@@ -27,7 +27,7 @@ test.describe('Screen Navigation', () => {
 
   test('generic screen Back to Hub navigates to hub @portable', async ({ page }) => {
     await navigateToScreen(page, 5);
-    await page.getByText('Back to Hub').click();
+    await tapSemantics(page, 'Back to Hub');
     await waitForFlutter(page);
     await expect(page.getByText('Navigation Hub', { exact: false })).toBeVisible();
   });
