@@ -73,6 +73,14 @@ void main() {
       final node = tester.getSemantics(find.byKey(const Key('back-to-hub')));
       final data = node.getSemanticsData();
       expect(node.identifier, 'back-to-hub');
+      debugPrint(
+        '[back-to-hub a11y] actions=${data.actions} '
+        'button=${data.hasFlag(SemanticsFlag.isButton)} '
+        'hasEnabledState=${data.hasFlag(SemanticsFlag.hasEnabledState)} '
+        'enabled=${data.hasFlag(SemanticsFlag.isEnabled)} '
+        'focusable=${data.hasFlag(SemanticsFlag.isFocusable)} '
+        'focusAction=${data.hasAction(SemanticsAction.focus)}',
+      );
       expect(data.hasAction(SemanticsAction.tap), isTrue);
       expect(node.label, 'Back to Hub');
       var children = 0;
