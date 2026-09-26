@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/config/routes.dart';
@@ -65,25 +64,17 @@ void main() {
     expect(find.text('Hub route reached'), findsOneWidget);
   });
 
-  // Record-first isolation for #99 / #97: do not assert identifier yet.
-  // Capture which semantics node (if any) holds "back-to-hub" before any
-  // production fix such as container: true. Convert to assert after the
-  // broken state is classified.
-  testWidgets('records Back to Hub semantics node (no assert)', (tester) async {
+  // Same-node contract for #97/#99: identifier, tap, and label must share
+  // the Key-backed semantics node (fix A / excludeSemantics).
+  testWidgets('Back to Hub semantics keep identifier with tap', (tester) async {
     final handle = tester.ensureSemantics();
     try {
       await _pumpGeneric(tester, 3);
       final node = tester.getSemantics(find.byKey(const Key('back-to-hub')));
       final data = node.getSemanticsData();
-      debugPrint(
-        '[back-to-hub semantics] '
-        'id=${node.id} '
-        'identifier="${node.identifier}" '
-        'hasTap=${data.hasAction(SemanticsAction.tap)} '
-        'label="${node.label}" '
-        'tooltip="${node.tooltip}"',
-      );
-      debugDumpSemanticsTree();
+      expect(node.identifier, 'back-to-hub');
+      expect(data.hasAction(SemanticsAction.tap), isTrue);
+      expect(node.label, 'Back to Hub');
     } finally {
       handle.dispose();
     }
