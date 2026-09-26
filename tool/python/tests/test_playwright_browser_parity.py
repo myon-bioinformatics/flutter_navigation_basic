@@ -29,7 +29,7 @@ def _install_lines(text: str) -> list[str]:
 
 
 def _flutter_web_target(text: str) -> str:
-    match = re.search(r"flutter build web[^\\n]*?-t\\s+(lib/[^\\s]+\\.dart)", text)
+    match = re.search(r"flutter build web[^\n]*?-t\s+(lib/[^\s]+\.dart)", text)
     assert match is not None, "explicit Flutter web entrypoint not found"
     return match.group(1)
 
