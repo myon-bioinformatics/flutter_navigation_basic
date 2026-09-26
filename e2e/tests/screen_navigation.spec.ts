@@ -80,7 +80,8 @@ test.describe('Screen Navigation', () => {
   });
 
   test('generic screen shows pattern info', async ({ page }) => {
-    await navigateToScreen(page, 5);
+    // /screen5 is a dedicated Screen5Page; screen 6 is a GenericScreen catalogue route.
+    await navigateToScreen(page, 6);
     // Should show pattern cards
     await expect(page.getByText('Navigation', { exact: false })).toBeVisible();
     await expect(page.getByText('API', { exact: false })).toBeVisible();
