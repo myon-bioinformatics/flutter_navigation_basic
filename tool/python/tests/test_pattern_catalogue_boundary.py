@@ -80,6 +80,31 @@ def _dart_tokens(source: str) -> list[tuple[str, str]]:
     return tokens
 
 
+def _skip_metadata(tokens: list[tuple[str, str]], index: int) -> int:
+    """Skip Dart metadata annotations, including qualified names and arguments."""
+    while index < len(tokens) and tokens[index] == ("symbol", "@"):
+        index += 1
+        if index >= len(tokens) or tokens[index][0] != "identifier":
+            return index
+        index += 1
+        while (
+            index + 1 < len(tokens)
+            and tokens[index] == ("symbol", ".")
+            and tokens[index + 1][0] == "identifier"
+        ):
+            index += 2
+        if index < len(tokens) and tokens[index] == ("symbol", "("):
+            depth = 1
+            index += 1
+            while index < len(tokens) and depth:
+                if tokens[index] == ("symbol", "("):
+                    depth += 1
+                elif tokens[index] == ("symbol", ")"):
+                    depth -= 1
+                index += 1
+    return index
+
+
 def _directive_uris(source: str) -> list[str]:
     """Return string URIs from import/export/part directives.
 
@@ -89,19 +114,46 @@ def _directive_uris(source: str) -> list[str]:
     tokens = _dart_tokens(source)
     uris: list[str] = []
     brace_depth = 0
-    for index, (kind, value) in enumerate(tokens):
-        if kind == "identifier" and value in _DIRECTIVES and brace_depth == 0:
-            previous = tokens[index - 1] if index else None
-            if previous is None or previous == ("symbol", ";") or previous == ("symbol", "}"):
-                for body_kind, body_value in tokens[index + 1:]:
-                    if body_kind == "symbol" and body_value == ";":
-                        break
-                    if body_kind == "string":
-                        uris.append(body_value)
+    statement_start = True
+    index = 0
+    while index < len(tokens):
+        kind, value = tokens[index]
+        directive_index = index
+        if brace_depth == 0 and statement_start and tokens[index] == ("symbol", "@"):
+            directive_index = _skip_metadata(tokens, index)
+        if (
+            brace_depth == 0
+            and statement_start
+            and directive_index < len(tokens)
+            and tokens[directive_index][0] == "identifier"
+            and tokens[directive_index][1] in _DIRECTIVES
+        ):
+            end = directive_index + 1
+            while end < len(tokens) and tokens[end] != ("symbol", ";"):
+                if tokens[end][0] == "string":
+                    uris.append(tokens[end][1])
+                end += 1
+            index = min(end + 1, len(tokens))
+            statement_start = True
+            continue
+
+        if brace_depth == 0 and statement_start and directive_index != index:
+            # Metadata belonged to a declaration other than a directive.
+            index = directive_index
+            statement_start = False
+            continue
         if kind == "symbol" and value == "{":
             brace_depth += 1
+            statement_start = False
         elif kind == "symbol" and value == "}":
             brace_depth = max(0, brace_depth - 1)
+            if brace_depth == 0:
+                statement_start = True
+        elif kind == "symbol" and value == ";" and brace_depth == 0:
+            statement_start = True
+        elif brace_depth == 0 and statement_start:
+            statement_start = False
+        index += 1
     return uris
 
 
@@ -166,6 +218,13 @@ def test_directive_parser_finds_pattern_uri_only_in_conditional_branch() -> None
     assert any("_patterns/" in uri for uri in _directive_uris(source))
 
 
+def test_directive_parser_finds_metadata_annotated_import() -> None:
+    source = """@Deprecated('legacy import')
+    import '../features/api_patterns/legacy.dart';
+    """
+    assert _directive_uris(source) == ["../features/api_patterns/legacy.dart"]
+
+
 def test_tracked_non_catalogue_dart_files_do_not_import_pattern_catalogues() -> None:
     violations: list[tuple[str, str]] = []
     for path in _tracked_dart_files():
@@ -179,10 +238,32 @@ def test_tracked_non_catalogue_dart_files_do_not_import_pattern_catalogues() -> 
     )
 
 
-def test_dockerignore_excludes_only_the_two_pattern_catalogue_trees() -> None:
+def test_dockerignore_has_exact_pattern_catalogue_rules() -> None:
     lines = (ROOT / ".dockerignore").read_text(encoding="utf-8").splitlines()
     for rule in DOCKERIGNORE_RULES:
         assert lines.count(rule) == 1, f"expected exactly one .dockerignore rule: {rule}"
+
+
+def test_dockerignore_preserves_photo_studio_import_fixtures() -> None:
+    preserved_paths = (
+        "test",
+        "test/fixtures",
+        "test/fixtures/photo_studio",
+        "test/fixtures/photo_studio/import_compat",
+        "test/fixtures/photo_studio/import_compat/png_opaque_64x32.png",
+    )
+    rules = [
+        line.strip().strip("/")
+        for line in (ROOT / ".dockerignore").read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.lstrip().startswith("#") and not line.lstrip().startswith("!")
+    ]
+    for path in preserved_paths:
+        prefixes = ["/".join(path.split("/")[:index]) for index in range(1, len(path.split("/")) + 1)]
+        assert not any(
+            fnmatch.fnmatchcase(prefix, rule)
+            for prefix in prefixes
+            for rule in rules
+        ), f".dockerignore excludes the required fixture path: {path}"
 
 
 def test_non_dart_workflow_runs_the_boundary_test_for_relevant_changes() -> None:
