@@ -269,7 +269,7 @@ jobs:
       - name: Install Flutter deps and build web
         run: |
           flutter pub get
-          flutter build web --release -t lib/main_prod.dart --base-href "/"
+          flutter build web --release -t lib/main.dart --base-href "/"
 
       - name: Install Playwright
         working-directory: e2e

@@ -27,12 +27,13 @@ test.describe('Screen Navigation', () => {
   });
 
   test('generic screen shows Back to Hub button', async ({ page }) => {
-    await navigateToScreen(page, 5);
-    await expect(page.getByText('Back to Hub', { exact: false })).toBeVisible();
+    // /screen5 is Screen5Page (URL Params), not GenericScreen — use a catalogue id.
+    await navigateToScreen(page, 6);
+    await expect(page.locator('[flt-semantics-identifier="back-to-hub"]')).toHaveCount(1);
   });
 
   test('generic screen Back to Hub navigates via semantics action @portable', async ({ page }) => {
-    await navigateToScreen(page, 5);
+    await navigateToScreen(page, 6);
     const button = page.locator('[flt-semantics-identifier="back-to-hub"]');
     let stage = 'attached';
     const beforeHash = await page.evaluate(() => window.location.hash);

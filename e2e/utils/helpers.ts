@@ -35,6 +35,10 @@ export async function navigateToHub(page: Page) {
 }
 
 export async function navigateToScreen(page: Page, screenId: number) {
+  // Flutter Web can drop a cold deep-link hash before the engine binds routes.
+  // Boot home first, then navigate to the catalogue screen.
+  await page.goto('/');
+  await waitForFlutter(page);
   await page.goto(`/#/screen${screenId}`);
   await waitForFlutter(page);
 }
