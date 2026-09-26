@@ -49,7 +49,7 @@ RUN npm install --prefix e2e \
 # Now the full source, and build the release web bundle.
 COPY . .
 RUN flutter pub get \
-    && flutter build web --release -t lib/main_prod.dart --base-href "/"
+    && flutter build web --release -t lib/main.dart --base-href "/"
 
 # tool/docker/e2e-entrypoint.sh already arrived via `COPY . .` above and is
 # tracked with the executable bit set (`chmod +x` in git), so no extra
