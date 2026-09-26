@@ -34,6 +34,11 @@ def _flutter_web_target(text: str) -> str:
     return match.group(1)
 
 
+def test_flutter_web_target_parses_known_line() -> None:
+    line = "flutter build web --release -t lib/main.dart --base-href /"
+    assert _flutter_web_target(line) == "lib/main.dart"
+
+
 def test_manual_ci_and_docker_build_the_same_flutter_entrypoint() -> None:
     workflow = (ROOT / ".github" / "workflows" / "non-dart.yml").read_text(encoding="utf-8")
     dockerfile = (ROOT / "Dockerfile.e2e").read_text(encoding="utf-8")
