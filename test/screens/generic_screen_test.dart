@@ -80,6 +80,12 @@ void main() {
       expect(data.hasAction(SemanticsAction.tap), isTrue);
       expect(data.hasAction(SemanticsAction.focus), isTrue);
       expect(node.label, 'Back to Hub');
+
+      tester.binding.pipelineOwner.semanticsOwner!
+          .performAction(node.id, SemanticsAction.focus);
+      await tester.pump();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'back-to-hub');
+
       var children = 0;
       node.visitChildren((_) {
         children++;
