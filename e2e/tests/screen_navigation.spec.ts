@@ -58,7 +58,7 @@ test.describe('Screen Navigation', () => {
       stage = 'action';
       await button.evaluate((element) => (element as HTMLElement).click());
       await waitForFlutter(page);
-      await expect(page).toHaveURL(/#\/hub/, { timeout: 5_000 });
+      await expect(page).toHaveURL(/#\/hub$/, { timeout: 5_000 });
       const afterHash = await page.evaluate(() => window.location.hash);
       console.log('[back-to-hub probe] post-action', { stage, beforeHash, afterHash });
       await expect(page.getByText('Navigation Hub', { exact: false })).toBeVisible();
