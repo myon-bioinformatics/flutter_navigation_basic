@@ -73,8 +73,25 @@ void main() {
       final node = tester.getSemantics(find.byKey(const Key('back-to-hub')));
       final data = node.getSemanticsData();
       expect(node.identifier, 'back-to-hub');
+      expect(data.hasFlag(SemanticsFlag.isButton), isTrue);
+      expect(data.hasFlag(SemanticsFlag.hasEnabledState), isTrue);
+      expect(data.hasFlag(SemanticsFlag.isEnabled), isTrue);
+      expect(data.hasFlag(SemanticsFlag.isFocusable), isTrue);
       expect(data.hasAction(SemanticsAction.tap), isTrue);
+      expect(data.hasAction(SemanticsAction.focus), isTrue);
       expect(node.label, 'Back to Hub');
+
+      tester.binding.pipelineOwner.semanticsOwner!
+          .performAction(node.id, SemanticsAction.focus);
+      await tester.pump();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'back-to-hub');
+
+      var children = 0;
+      node.visitChildren((_) {
+        children++;
+        return true;
+      });
+      expect(children, 0, reason: 'excludeSemantics must not leave a second tappable child');
     } finally {
       handle.dispose();
     }

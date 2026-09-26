@@ -27,6 +27,27 @@ def _install_lines(text: str) -> list[str]:
     ]
 
 
+
+def _flutter_web_target(text: str) -> str:
+    match = re.search(r"flutter build web[^\n]*?-t\s+(lib/[^\s]+\.dart)", text)
+    assert match is not None, "explicit Flutter web entrypoint not found"
+    return match.group(1)
+
+
+def test_flutter_web_target_parses_known_line() -> None:
+    line = "flutter build web --release -t lib/main.dart --base-href /"
+    assert _flutter_web_target(line) == "lib/main.dart"
+
+
+def test_manual_ci_and_docker_build_the_same_flutter_entrypoint() -> None:
+    workflow = (ROOT / ".github" / "workflows" / "non-dart.yml").read_text(encoding="utf-8")
+    dockerfile = (ROOT / "Dockerfile.e2e").read_text(encoding="utf-8")
+
+    manual_target = _flutter_web_target(workflow)
+    docker_target = _flutter_web_target(dockerfile)
+
+    assert manual_target == docker_target == "lib/main.dart"
+
 def test_playwright_projects_are_the_expected_browser_set() -> None:
     assert _configured_projects() == EXPECTED_PROJECTS
 
