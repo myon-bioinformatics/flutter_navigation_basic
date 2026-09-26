@@ -46,7 +46,6 @@ void main() {
     expect(find.text('Data: FilterNested'), findsOneWidget);
   });
 
-
   testWidgets('Back to Hub is tappable and navigates', (tester) async {
     await _pumpGeneric(
       tester,
