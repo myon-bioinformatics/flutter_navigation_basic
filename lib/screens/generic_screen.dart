@@ -122,6 +122,7 @@ class GenericScreen extends StatefulWidget {
 
 class _GenericScreenState extends State<GenericScreen> {
   ScreenData? _data;
+  final FocusNode _backToHubFocus = FocusNode(debugLabel: 'back-to-hub');
 
   @override
   void initState() {
@@ -152,6 +153,12 @@ class _GenericScreenState extends State<GenericScreen> {
   void _backToHub() => Navigator.pushNamed(context, AppRoutes.hub);
 
   @override
+  void dispose() {
+    _backToHubFocus.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final display = DisplayScope.of(context);
     final data = _data;
@@ -170,11 +177,15 @@ class _GenericScreenState extends State<GenericScreen> {
           Semantics(
             identifier: 'back-to-hub',
             button: true,
+            enabled: true,
+            focusable: true,
             label: display.text('generic.backToHub'),
             onTap: _backToHub,
+            onFocus: _backToHubFocus.requestFocus,
             excludeSemantics: true,
             child: IconButton(
               key: const Key('back-to-hub'),
+              focusNode: _backToHubFocus,
               tooltip: display.text('generic.backToHub'),
               onPressed: _backToHub,
               icon: const Icon(Icons.grid_view),
