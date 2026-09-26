@@ -75,6 +75,12 @@ void main() {
       expect(node.identifier, 'back-to-hub');
       expect(data.hasAction(SemanticsAction.tap), isTrue);
       expect(node.label, 'Back to Hub');
+      var children = 0;
+      node.visitChildren((_) {
+        children++;
+        return true;
+      });
+      expect(children, 0, reason: 'excludeSemantics must not leave a second tappable child');
     } finally {
       handle.dispose();
     }
