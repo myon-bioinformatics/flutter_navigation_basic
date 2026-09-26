@@ -28,6 +28,10 @@ on:
         description: "Also run Playwright E2E (needs Flutter web build)"
         type: boolean
         default: false
+      run_entrypoint_ab:
+        description: "Run #103 Chromium main.dart vs main_prod.dart A/B probe"
+        type: boolean
+        default: false
 
 concurrency:
   group: non-dart-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -302,3 +306,62 @@ jobs:
             e2e/test-results/
           retention-days: 14
           if-no-files-found: ignore
+
+
+  # #103 diagnostic lane: same Chromium picker probe against both entrypoints.
+  entrypoint-ab:
+    name: "Entrypoint A/B (${{ matrix.label }})"
+    if: github.event_name == 'workflow_dispatch' && inputs.run_entrypoint_ab
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: main
+            entrypoint: lib/main.dart
+          - label: main_prod
+            entrypoint: lib/main_prod.dart
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.0"
+          cache: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build selected entrypoint
+        run: |
+          flutter pub get
+          echo "[entrypoint-ab] entrypoint=${{ matrix.entrypoint }} sha=${{ github.sha }}"
+          flutter build web --release -t "${{ matrix.entrypoint }}" --base-href "/"
+
+      - name: Install Chromium
+        working-directory: e2e
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+
+      - name: Run #103 picker probe
+        working-directory: e2e
+        env:
+          ENTRYPOINT_AB_LABEL: ${{ matrix.label }}
+          ENTRYPOINT_AB_TARGET: ${{ matrix.entrypoint }}
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8080 --directory ../build/web &
+          server_pid=$!
+          trap 'kill "$server_pid" || true' EXIT
+          for _ in $(seq 1 30); do
+            if curl -fsS "http://127.0.0.1:8080" >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          npx playwright test --project=chromium tests/entrypoint_ab.spec.ts

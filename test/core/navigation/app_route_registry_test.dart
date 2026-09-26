@@ -53,6 +53,21 @@ void main() {
     expect(public.containsAll(catalogue), isTrue);
   });
 
+  test('public route table resolves the canonical Photo Studio route', () {
+    expect(RouteNames.photoStudio, '/tools/media/photo-studio');
+    expect(AppRoutes.routes.containsKey(RouteNames.photoStudio), isTrue);
+  });
+
+  testWidgets('public Photo Studio route lands on PhotoStudioPage',
+      (tester) async {
+    await _pumpNamedRoute(
+      tester,
+      routes: AppRoutes.routes,
+      initialRoute: RouteNames.photoStudio,
+    );
+    expect(find.byType(PhotoStudioPage), findsOneWidget);
+  });
+
   test('legacy deep-link aliases stay in the shared registry', () {
     final canonical = AppRouteRegistry.canonicalRoutes;
     expect(canonical.containsKey(RouteNames.boundingBox), isTrue);

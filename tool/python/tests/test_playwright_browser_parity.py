@@ -60,9 +60,13 @@ def test_ci_and_docker_install_only_browser_engines() -> None:
     workflow_installs = _install_lines(workflow)
     docker_installs = _install_lines(dockerfile)
 
+    # The regular smoke/manual lanes install the full configured engine set.
+    # #103's opt-in diagnostic A/B lane intentionally installs Chromium only
+    # because it compares entrypoints, not browser portability.
     assert workflow_installs == [
         f"npx {expected_install}",
         f"npx {expected_install}",
+        "npx playwright install --with-deps chromium",
     ]
     assert docker_installs == [f"&& npx --prefix e2e {expected_install}"]
 
