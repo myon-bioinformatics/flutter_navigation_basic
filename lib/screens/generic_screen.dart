@@ -167,10 +167,18 @@ class _GenericScreenState extends State<GenericScreen> {
         title: Text(appBarTitle),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
-          IconButton(
-            tooltip: display.text('generic.backToHub'),
-            onPressed: _backToHub,
-            icon: const Icon(Icons.grid_view),
+          Semantics(
+            identifier: 'back-to-hub',
+            button: true,
+            label: display.text('generic.backToHub'),
+            onTap: _backToHub,
+            excludeSemantics: true,
+            child: IconButton(
+              key: const Key('back-to-hub'),
+              tooltip: display.text('generic.backToHub'),
+              onPressed: _backToHub,
+              icon: const Icon(Icons.grid_view),
+            ),
           ),
         ],
       ),
