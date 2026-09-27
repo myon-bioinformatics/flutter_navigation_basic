@@ -39,6 +39,11 @@ class RequestExecutionResult {
   });
 
   final int statusCode;
+
+  /// Transport-level success used by UI/MCP consumers before inspecting
+  /// protocol-specific diagnostics. HTTP status remains available as evidence.
+  bool get ok => statusCode >= 200 && statusCode < 300;
+
   final Map<String, Object?> body;
   final Map<String, String> headers;
   final String requestTarget;
@@ -51,6 +56,7 @@ class RequestExecutionResult {
   final RequestDraft? wireDraft;
 
   Map<String, Object?> toJson() => {
+        'ok': ok,
         'statusCode': statusCode,
         'headers': headers,
         'requestTarget': requestTarget,
@@ -494,6 +500,7 @@ String formatExecutionReceipt({
   final redactedTarget = redactRequestTarget(result.requestTarget, wire);
   return 'request-target: $redactedTarget\n'
       'execution-path: ${result.executionPath}\n'
+      'ok: ${result.ok}\n'
       'status: ${result.statusCode}\n'
       'curl (redacted):\n$redactedCurl\n\n'
       'response:\n$body';
@@ -509,6 +516,7 @@ Map<String, Object?> redactExecutionResult(RequestExecutionResult result) {
   }
   final wire = result.wireDraft;
   return {
+    'ok': result.ok,
     'statusCode': result.statusCode,
     'executionPath': result.executionPath,
     'headers': headers,
