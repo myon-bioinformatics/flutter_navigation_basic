@@ -40,10 +40,6 @@ List<AppTool> get appTools => const [
         labelKey: 'photoStudio.title',
       ),
       AppTool(
-        routeName: RouteNames.clipboardWorkbench,
-        labelKey: 'clipboardWorkbench.appBarTitle',
-      ),
-      AppTool(
         routeName: RouteNames.httpRequestDraft,
         labelKey: 'httpDraft.title',
       ),
