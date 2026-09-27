@@ -79,6 +79,16 @@ test.describe('Screen Navigation', () => {
     }
   });
 
+  test('direct cold deep link to Screen6 renders without Home warm-up @portable', async ({ page }) => {
+    // Regression probe for #107: opens the hash route directly, bypassing
+    // navigateToScreen's Home warm-up, so a cold deep link is proven on its own.
+    await page.goto('/#/screen6');
+    await waitForFlutter(page);
+    await expect(page).toHaveURL(/#\/screen6$/);
+    await expect(page.getByText(/Screen\s*6\b/)).toBeVisible();
+    await expect(page.locator('[flt-semantics-identifier="back-to-hub"]')).toHaveCount(1);
+  });
+
   test('generic screen shows pattern info', async ({ page }) => {
     // /screen5 is a dedicated Screen5Page; screen 6 is a GenericScreen catalogue route.
     await navigateToScreen(page, 6);
