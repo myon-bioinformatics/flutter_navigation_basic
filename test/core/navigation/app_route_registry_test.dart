@@ -6,6 +6,7 @@ import 'package:flutter_application_1/core/navigation/app_tools.dart';
 import 'package:flutter_application_1/core/navigation/route_names.dart';
 import 'package:flutter_application_1/features/composition_generator/presentation/composition_generator_page.dart';
 import 'package:flutter_application_1/features/counter_playground/presentation/counter_playground_page.dart';
+import 'package:flutter_application_1/features/http_request_draft/presentation/http_request_draft_page.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/photo_studio_page.dart';
 import 'package:flutter_application_1/screens/counter_playground_screen.dart';
 import 'package:flutter_application_1/screens/generic_screen.dart';
