@@ -58,6 +58,18 @@ void main() {
     expect(AppRoutes.routes.containsKey(RouteNames.photoStudio), isTrue);
   });
 
+  testWidgets('legacy API routes land on the consolidated HTTP Request Draft',
+      (tester) async {
+    for (final route in [AppRoutes.externalApi, AppRoutes.mockApi]) {
+      await _pumpNamedRoute(
+        tester,
+        routes: AppRoutes.routes,
+        initialRoute: route,
+      );
+      expect(find.byType(HttpRequestDraftPage), findsOneWidget);
+    }
+  });
+
   testWidgets('public Photo Studio route lands on PhotoStudioPage',
       (tester) async {
     await _pumpNamedRoute(
