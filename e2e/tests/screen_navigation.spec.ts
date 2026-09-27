@@ -85,7 +85,7 @@ test.describe('Screen Navigation', () => {
     await page.goto('/#/screen6');
     await waitForFlutter(page);
     await expect(page).toHaveURL(/#\/screen6$/);
-    await expect(page.getByText('Screen6', { exact: false })).toBeVisible();
+    await expect(page.getByText(/Screen\s*6\b/)).toBeVisible();
     await expect(page.locator('[flt-semantics-identifier="back-to-hub"]')).toHaveCount(1);
   });
 
