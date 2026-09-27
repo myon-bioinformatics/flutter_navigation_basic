@@ -101,6 +101,21 @@ Non-Dart checks live in `.github/workflows/non-dart.yml` (Python stdlib in Docke
 pytest oracles, optional Playwright). Keep Flutter/`Pages` free of those startups
 unless a shared golden under `tool/python/fixtures` or `tool/time/fixtures` changes.
 
+### Pattern catalogue boundary
+
+The Docker E2E build does not consume the generated `*_patterns` catalogues. Keep
+those trees out of the Docker context only while no non-catalogue Dart source
+imports them. The focused guard is
+`tool/python/tests/test_pattern_catalogue_boundary.py`; it checks tracked Dart
+imports and the two exact `.dockerignore` rules, while preserving
+`test/fixtures/photo_studio/import_compat`.
+
+The `pattern-boundary` job in `.github/workflows/non-dart.yml` is the enforcing
+CI location. It must run when `.dockerignore`, `lib/**/*.dart`,
+`test/**/*.dart`, this test, or the workflow changes. Do not remove the
+generated catalogues from Flutter analysis/test lanes or change their schedule
+as part of this boundary optimization.
+
 ## Autonomous Recovery
 
 Do not ask for permission before fixing these when they are caused by the current task:
