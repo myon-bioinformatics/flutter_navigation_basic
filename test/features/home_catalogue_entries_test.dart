@@ -5,7 +5,6 @@ import 'package:flutter_application_1/core/navigation/app_navigation.dart';
 import 'package:flutter_application_1/features/home/presentation/home_screen.dart';
 import 'package:flutter_application_1/screens/hub_screen.dart';
 import 'package:flutter_application_1/screens/mcp_integration_screen.dart';
-import 'package:flutter_application_1/screens/mock_api_screen.dart';
 import 'package:flutter_application_1/screens/ui_showcase_screen.dart';
 
 import '../support/display_test_harness.dart';
@@ -51,17 +50,17 @@ void main() {
   const entries = <(String, Type)>[
     ('Navigation Hub', HubScreen),
     ('UI Showcase', UiShowcaseScreen),
-    ('API Integration', ApiIntegrationScreen),
     ('MCP Integration', McpIntegrationScreen),
   ];
 
-  testWidgets('feature Home exposes Hub, Showcase, API, and MCP labels',
+  testWidgets('feature Home exposes Hub, Showcase, and MCP labels',
       (tester) async {
     await _pumpHome(tester, routes: AppRoutes.routes);
 
     for (final entry in entries) {
       expect(find.text(entry.$1), findsOneWidget);
     }
+    expect(find.text('API Integration'), findsNothing);
   });
 
   for (final entry in entries) {
