@@ -3,6 +3,7 @@ import 'package:flutter_application_1/features/http_request_draft/presentation/h
 import 'package:flutter_application_1/shared/http/request_draft.dart';
 import 'package:flutter_application_1/shared/http/request_draft_codec.dart';
 import 'package:flutter_application_1/shared/http/request_field.dart';
+import 'package:flutter_application_1/shared/http/request_executor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/display_test_harness.dart';
@@ -73,6 +74,30 @@ void main() {
     final curl = RequestDraftCodec.toCurl(draft);
     expect(curl, contains('***'));
     expect(curl, isNot(contains('top-secret')));
+  });
+
+  test('execution result exposes ok first while retaining HTTP status evidence', () {
+    const success = RequestExecutionResult(statusCode: 204, body: {});
+    const denied = RequestExecutionResult(
+      statusCode: 403,
+      body: {'error': 'forbidden'},
+    );
+
+    expect(success.ok, isTrue);
+    expect(success.toJson()['ok'], isTrue);
+    expect(success.toJson()['statusCode'], 204);
+
+    expect(denied.ok, isFalse);
+    expect(denied.toJson()['ok'], isFalse);
+    expect(denied.toJson()['statusCode'], 403);
+
+    final receipt = formatExecutionReceipt(
+      draft: const RequestDraft(url: 'https://example.com'),
+      result: denied,
+      redactedCurl: 'curl https://example.com',
+    );
+    expect(receipt, contains('ok: false'));
+    expect(receipt, contains('status: 403'));
   });
 
   testWidgets('page dispose completes without controller exceptions',
