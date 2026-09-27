@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../features/clipboard_shelf/presentation/clipboard_shelf_page.dart';
-import '../../features/clipboard_workbench/presentation/clipboard_workbench_page.dart';
 import '../../features/coordinate_tool/presentation/coordinate_tool_page.dart';
 import '../../features/home/domain/home_controller.dart';
 import '../../features/home/presentation/home_screen.dart';
@@ -16,7 +15,6 @@ import '../../screens/counter_playground_screen.dart';
 import '../../screens/hub_screen.dart';
 import '../../screens/irony_generator_screen.dart';
 import '../../screens/mcp_integration_screen.dart';
-import '../../screens/mock_api_screen.dart';
 import '../../screens/ui_showcase_screen.dart';
 
 /// Single source of route name → page builder metadata for both entrypoints.
@@ -33,7 +31,7 @@ class AppRouteRegistry {
   static Map<String, WidgetBuilder> get catalogueRoutes => {
         '/hub': (_) => const HubScreen(),
         '/examples/ui-showcase': (_) => const UiShowcaseScreen(),
-        '/examples/external-integration/api': (_) => const ApiIntegrationScreen(),
+        '/examples/external-integration/api': (_) => const HttpRequestDraftPage(),
         '/examples/external-integration/mcp': (_) => const McpIntegrationScreen(),
       };
 
@@ -51,7 +49,8 @@ class AppRouteRegistry {
         RouteNames.compositionGenerator: (_) => const CompositionStudioScreen(),
         RouteNames.compositionSeedGenerator: (_) =>
             const CompositionStudioScreen(),
-        RouteNames.clipboardWorkbench: (_) => const ClipboardWorkbenchPage(),
+        // Legacy deep link: the Workbench now lives on the Clipboard page.
+        RouteNames.clipboardWorkbench: (_) => const ClipboardShelfPage(),
         RouteNames.httpRequestDraft: (_) => const HttpRequestDraftPage(),
         RouteNames.screen5: (_) => Screen5Page(controller: Screen5Controller()),
       };
