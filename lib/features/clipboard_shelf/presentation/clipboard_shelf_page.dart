@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/navigation/route_names.dart';
 import '../../../shared/display/display_scope.dart';
 import '../../../shared/widgets/clipboard_shelf.dart';
+import '../../../shared/widgets/clipboard_prompt_workbench.dart';
 import '../../../shared/widgets/tool_door_selector.dart';
 
 class ClipboardShelfPage extends StatelessWidget {
@@ -22,6 +23,8 @@ class ClipboardShelfPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 ClipboardShelf(),
+                SizedBox(height: 32),
+                ClipboardPromptWorkbench(),
                 SizedBox(height: 24),
                 ToolDoorSelector(currentRouteName: RouteNames.clipboardShelf),
               ],

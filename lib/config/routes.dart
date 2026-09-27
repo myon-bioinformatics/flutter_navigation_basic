@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../core/navigation/app_route_registry.dart';
 import '../core/navigation/route_names.dart';
 import '../screens/generic_screen.dart';
-import '../screens/mock_api_screen.dart';
 
 /// Public (`main.dart`) route table.
 ///
@@ -52,7 +51,7 @@ class AppRoutes {
     }
 
     map.addAll(AppRouteRegistry.catalogueRoutes);
-    map[mockApi] = (_) => const ApiIntegrationScreen();
+    map[mockApi] = AppRouteRegistry.canonicalRoutes[RouteNames.httpRequestDraft]!;
 
     return map;
   }

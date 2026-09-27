@@ -6,6 +6,7 @@ import 'package:flutter_application_1/core/navigation/app_tools.dart';
 import 'package:flutter_application_1/core/navigation/route_names.dart';
 import 'package:flutter_application_1/features/composition_generator/presentation/composition_generator_page.dart';
 import 'package:flutter_application_1/features/counter_playground/presentation/counter_playground_page.dart';
+import 'package:flutter_application_1/features/http_request_draft/presentation/http_request_draft_page.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/photo_studio_page.dart';
 import 'package:flutter_application_1/screens/counter_playground_screen.dart';
 import 'package:flutter_application_1/screens/generic_screen.dart';
@@ -56,6 +57,18 @@ void main() {
   test('public route table resolves the canonical Photo Studio route', () {
     expect(RouteNames.photoStudio, '/tools/media/photo-studio');
     expect(AppRoutes.routes.containsKey(RouteNames.photoStudio), isTrue);
+  });
+
+  testWidgets('legacy API routes land on the consolidated HTTP Request Draft',
+      (tester) async {
+    for (final route in [AppRoutes.externalApi, AppRoutes.mockApi]) {
+      await _pumpNamedRoute(
+        tester,
+        routes: AppRoutes.routes,
+        initialRoute: route,
+      );
+      expect(find.byType(HttpRequestDraftPage), findsOneWidget);
+    }
   });
 
   testWidgets('public Photo Studio route lands on PhotoStudioPage',

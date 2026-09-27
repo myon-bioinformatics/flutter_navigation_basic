@@ -233,8 +233,6 @@ String? _routeSourceIdForRoute(String? routeName) {
     '/examples/irony-generator' => 'irony_generator_screen',
     '/examples/composition-generator' => 'composition_generator_screen',
     '/examples/ui-showcase' => 'ui_showcase_screen',
-    '/examples/external-integration/api' => 'mock_api_screen',
-    '/examples/mock-api' => 'mock_api_screen',
     '/examples/external-integration/mcp' => 'mcp_integration_screen',
     _ => null,
   };

@@ -89,15 +89,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           Navigator.of(context).pushNamed(RouteNames.photoStudio),
                     ),
                     HomeOverviewAction(
-                      label: display
-                          .text('home.action.clipboardWorkbenchProd.label'),
-                      subtitle: display
-                          .text('home.action.clipboardWorkbenchProd.subtitle'),
-                      icon: Icons.content_paste_go_outlined,
-                      onTap: () => Navigator.of(context)
-                          .pushNamed(RouteNames.clipboardWorkbench),
-                    ),
-                    HomeOverviewAction(
                       label: display.text('httpDraft.title'),
                       subtitle:
                           display.text('home.action.httpRequestDraft.subtitle'),
@@ -118,13 +109,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       icon: Icons.dashboard_customize_outlined,
                       onTap: () =>
                           Navigator.of(context).pushNamed(AppRoutes.uiShowcase),
-                    ),
-                    HomeOverviewAction(
-                      label: display.text('home.action.apiIntegration.label'),
-                      subtitle: display.text('home.action.apiIntegration.subtitle'),
-                      icon: Icons.http_outlined,
-                      onTap: () =>
-                          Navigator.of(context).pushNamed(AppRoutes.externalApi),
                     ),
                     HomeOverviewAction(
                       label: display.text('home.action.mcpIntegration.label'),
