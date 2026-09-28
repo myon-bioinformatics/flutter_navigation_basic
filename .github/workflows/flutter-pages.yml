@@ -93,7 +93,7 @@ jobs:
           PY
 
       - name: Check out the Flutter-gated commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ steps.gated.outputs.sha }}
 
@@ -153,4 +153,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
