@@ -23,7 +23,7 @@ jobs:
       python: ${{ steps.filter.outputs.python }}
       patterns: ${{ steps.filter.outputs.patterns }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -116,7 +116,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Flutter 3.47.0
         uses: subosito/flutter-action@v2
@@ -176,7 +176,7 @@ jobs:
         shard: [0, 1]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Flutter 3.47.0
         uses: subosito/flutter-action@v2
@@ -205,7 +205,7 @@ jobs:
         shard: [0, 1, 2, 3]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Flutter 3.47.0
         uses: subosito/flutter-action@v2
@@ -230,10 +230,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -279,7 +279,7 @@ jobs:
 
       - name: Upload python oracle summary artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: python-oracle-summary
           path: build/diagnostics/python-oracle/
@@ -299,7 +299,7 @@ jobs:
         shard: [0, 1]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up latest stable Flutter
         uses: subosito/flutter-action@v2
@@ -334,7 +334,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Flutter 3.47.0
         uses: subosito/flutter-action@v2
@@ -352,7 +352,7 @@ jobs:
         run: cat build/diagnostics/android-arm64/summary.txt
 
       - name: Upload size diagnostics
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-arm64-size-diagnostics
           path: build/diagnostics/android-arm64/
@@ -367,7 +367,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Flutter 3.47.0
         uses: subosito/flutter-action@v2
@@ -396,7 +396,7 @@ jobs:
 
       - name: Upload JVM test log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-jvm-unit-tests
           path: build/android-unit-tests.log
@@ -411,7 +411,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Flutter 3.47.0
         uses: subosito/flutter-action@v2
@@ -433,7 +433,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Flutter 3.47.0
         uses: subosito/flutter-action@v2
@@ -481,7 +481,7 @@ jobs:
 
       - name: Upload XCTest log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ios-xctest-log
           path: build/ios-xctest/
