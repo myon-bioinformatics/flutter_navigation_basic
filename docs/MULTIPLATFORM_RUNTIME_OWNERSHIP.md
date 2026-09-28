@@ -315,7 +315,7 @@ The repository succeeds when a maintainer can add a feature by asking “what is
 
 ## Related reusable knowledge
 
-- [ANTI_PATTERNS.md](./ANTI_PATTERNS.md) consolidates repository incidents and review rules across Flutter/Dart, pytest/Python, Playwright/browser CI, media, and runtime ownership.
+- [antipatterns.md](./antipatterns.md) consolidates repository incidents and review rules across Flutter/Dart, pytest/Python, Playwright/browser CI, media, and runtime ownership.
 - [CROSS_REPOSITORY_REUSE.md](./CROSS_REPOSITORY_REUSE.md) evaluates what this repository can consume from sibling projects and what should be promoted outward, with lightweight provenance/versioning rules.
 
 The intended direction is two-way reuse without turning sibling repositories into unpinned runtime or CI dependencies.
