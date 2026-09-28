@@ -13,10 +13,4 @@ permissions:
 
 jobs:
   actionlint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Check all workflow syntax
-        uses: docker://rhysd/actionlint:1.7.12
-        with:
-          args: -color
+    uses: myon-bioinformatics/myon-bioinformatics/.github/workflows/reusable-actionlint.yml@main
