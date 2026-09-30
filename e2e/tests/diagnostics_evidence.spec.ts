@@ -37,13 +37,13 @@ test('canonical Home and Build diagnostics evidence @portable', async ({ page },
   // A semantics node can be "visible" while still outside the viewport.
   // Scroll the target into view and require viewport intersection before
   // accepting the second screenshot as Build diagnostics evidence.
-  await generated.scrollIntoViewIfNeeded();
+  await generated.scrollIntoViewIfNeeded({ timeout: 10_000 });
   await expect(generated).toBeInViewport();
   // Flutter merges the Build card's text into one semantics node. The exact
   // Home timestamp locator can therefore still resolve to Home after scrolling.
   const buildCommitted = page.getByText(`Committed: ${canonical.head.timestamp}`)
     .filter({ hasText: `Metadata generated ${canonical.generated_at}` });
-  await expect(buildCommitted).toBeInViewport();
+  await expect(buildCommitted).toBeInViewport({ ratio: 0.9 });
   await expect(buildDiagnostics).toBeInViewport();
   await expect(page.getByText(`Commit ${canonical.head.short_sha}`)).toBeInViewport();
   await capture('build-diagnostics.png');
