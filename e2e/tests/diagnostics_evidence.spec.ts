@@ -1,4 +1,4 @@
-import { test, expect, type Locator } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
 import { waitForFlutter } from '../utils/helpers';
@@ -20,8 +20,8 @@ test('canonical Home and Build diagnostics evidence @portable', async ({ page },
   await page.goto('/');
   await waitForFlutter(page, 30_000);
   const committed = page.getByText(`Committed: ${canonical.head.timestamp}`, { exact: true });
-  await expect(committed.first()).toBeVisible();
-  await expect(page.getByRole('button', { name: new RegExp(`^SHA: ${canonical.head.sha}`) })).toBeVisible();
+  await expect(committed.first()).toBeInViewport();
+  await expect(page.getByRole('button', { name: new RegExp(`^SHA: ${canonical.head.sha}`) })).toBeInViewport();
   const captures: { file: string; bytes: number; sha256: string }[] = [];
   async function capture(file: string) {
     const output = testInfo.outputPath(file);
@@ -32,43 +32,21 @@ test('canonical Home and Build diagnostics evidence @portable', async ({ page },
     await testInfo.attach(file, { path: output, contentType: 'image/png' });
   }
   await capture('home.png');
-  const generated = page.getByText('Metadata generated ' + canonical.generated_at);
+  const generated = page.getByText(`Metadata generated ${canonical.generated_at}`);
   const buildDiagnostics = page.getByText('Build diagnostics');
-  const buildCommit = page.getByText('Commit ' + canonical.head.short_sha);
-  async function intersectsViewport(locator: Locator) {
-    const box = await locator.boundingBox();
-    const viewport = page.viewportSize();
-    return Boolean(
-      box &&
-        viewport &&
-        box.width > 0 &&
-        box.height > 0 &&
-        box.x < viewport.width &&
-        box.x + box.width > 0 &&
-        box.y < viewport.height &&
-        box.y + box.height > 0,
-    );
-  }
-  // Flutter paints a scrollable canvas; move the real viewport, not the
-  // accessibility nodes. Mobile WebKit does not support mouse.wheel.
-  for (let attempt = 0; attempt < 20 && !(await intersectsViewport(generated)); attempt++) {
-    if (testInfo.project.name === 'mobile-webkit') {
-      await page.keyboard.press('End');
-    } else {
-      await page.mouse.move(Math.floor(page.viewportSize()!.width / 2), Math.floor(page.viewportSize()!.height / 2));
-      await page.mouse.wheel(0, 400);
-    }
-    await page.waitForTimeout(150);
-  }
-  await expect(generated).toBeVisible();
-  expect(await intersectsViewport(generated), 'Metadata generated must be on screen').toBe(true);
-  await expect(committed.last()).toBeVisible();
-  expect(await intersectsViewport(committed.last()), 'Build commit timestamp must be on screen').toBe(true);
-  await expect(buildDiagnostics).toBeVisible();
-  await expect(buildCommit).toBeVisible();
-  expect(await intersectsViewport(buildCommit), 'Build commit SHA must be on screen').toBe(true);
+  // A semantics node can be "visible" while still outside the viewport.
+  // Scroll the target into view and require viewport intersection before
+  // accepting the second screenshot as Build diagnostics evidence.
+  await generated.scrollIntoViewIfNeeded();
+  await expect(generated).toBeInViewport();
+  // Flutter merges the Build card's text into one semantics node. The exact
+  // Home timestamp locator can therefore still resolve to Home after scrolling.
+  const buildCommitted = page.getByText(`Committed: ${canonical.head.timestamp}`)
+    .filter({ hasText: `Metadata generated ${canonical.generated_at}` });
+  await expect(buildCommitted).toBeInViewport();
+  await expect(buildDiagnostics).toBeInViewport();
+  await expect(page.getByText(`Commit ${canonical.head.short_sha}`)).toBeInViewport();
   await capture('build-diagnostics.png');
-  expect(captures[0].sha256, 'Build screenshot must differ from the Home viewport').not.toBe(captures[1].sha256);
   expect(captures[1].sha256).not.toBe(captures[0].sha256);
   const manifest = testInfo.outputPath('evidence.json');
   fs.writeFileSync(manifest, JSON.stringify({
