@@ -69,10 +69,10 @@ class BuildMetadata {
 
   static Future<BuildMetadata> load() async {
     // Reads the tracked fallback asset in local/default builds. CI Pages and
-    // release paths rewrite assets/diagnostics/build_meta.json with
+    // release paths rewrite assets/diagnostics/build_metadata.json with
     // `dart run tool/dev.dart meta` before packaging, so deployed UIs show
     // the real commit — never rely on the checked-in placeholder as truth.
-    final raw = await rootBundle.loadString('assets/diagnostics/build_meta.json');
+    final raw = await rootBundle.loadString('assets/diagnostics/build_metadata.json');
     final json = jsonDecode(raw) as Map<String, dynamic>;
     return BuildMetadata.fromJson(json);
   }
@@ -84,6 +84,7 @@ class RevisionMetadata {
     required this.shortSha,
     required this.ref,
     required this.committedAt,
+    this.generatedAt,
     required this.subject,
     required this.commitUrl,
     required this.dirty,
@@ -93,6 +94,9 @@ class RevisionMetadata {
   final String? shortSha;
   final String? ref;
   final String? committedAt;
+
+  /// Snapshot time supplied by the canonical Python producer.
+  final String? generatedAt;
   final String? subject;
   final String? commitUrl;
   final bool dirty;
@@ -109,6 +113,7 @@ class RevisionMetadata {
       shortSha: json['shortSha'] as String?,
       ref: json['ref'] as String?,
       committedAt: json['committedAt'] as String?,
+      generatedAt: json['generatedAt'] as String?,
       subject: json['subject'] as String?,
       commitUrl: json['commitUrl'] as String?,
       dirty: json['dirty'] as bool? ?? false,

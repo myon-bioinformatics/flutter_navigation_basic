@@ -2,13 +2,26 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'src/toolkit_io.dart';
+import 'src/repository_metadata.dart';
 
 Future<void> main(List<String> args) async {
-  final outputPath = _valueAfter(args, '--output') ?? 'assets/diagnostics/build_meta.json';
+  final outputPath =
+      _valueAfter(args, '--output') ?? 'assets/diagnostics/build_metadata.json';
   final artifactPath = _valueAfter(args, '--artifact');
   final analysisPath = _valueAfter(args, '--analysis');
   final platform = _valueAfter(args, '--platform') ?? 'unmeasured';
   final mode = _valueAfter(args, '--mode') ?? 'release';
+
+  // Generate once for direct/dev/Android calls. Pages supplies its already
+  // gated record with --repository-metadata; never re-read Git identity here.
+  final inputPath = _valueAfter(args, '--repository-metadata');
+  if (inputPath == null && !await _generateRepositoryMetadata()) return;
+  final revision = await readRepositoryRevision(
+    inputPath ?? 'build/diagnostics/repository/repository-metadata.json',
+    dirty: (await _gitOutput(['status', '--porcelain']))?.isNotEmpty ?? false,
+    serverUrl:
+        Platform.environment['GITHUB_SERVER_URL'] ?? 'https://github.com',
+  );
 
   final pubspec = await File('pubspec.yaml').readAsString();
   final versionMatch = RegExp(
@@ -23,7 +36,6 @@ Future<void> main(List<String> args) async {
 
   final screenReport = await _discoverFeatureWeights();
   final routeSourceReport = await _discoverRouteSourceWeights();
-  final revision = await _discoverRevision();
   final artifact = artifactPath == null ? null : File(artifactPath);
   final analysis = analysisPath == null ? null : File(analysisPath);
   final report = <String, dynamic>{
@@ -35,8 +47,12 @@ Future<void> main(List<String> args) async {
     'measurement': {
       'platform': platform,
       'mode': mode,
-      'artifactBytes': artifact != null && await artifact.exists() ? await artifact.length() : null,
-      'analysisJsonBytes': analysis != null && await analysis.exists() ? await analysis.length() : null,
+      'artifactBytes': artifact != null && await artifact.exists()
+          ? await artifact.length()
+          : null,
+      'analysisJsonBytes': analysis != null && await analysis.exists()
+          ? await analysis.length()
+          : null,
       'artifactPath': artifactPath,
       'analysisPath': analysisPath,
       'note': artifactPath == null
@@ -57,44 +73,29 @@ Future<void> main(List<String> args) async {
 
   final output = File(outputPath);
   await output.parent.create(recursive: true);
-  await output.writeAsString('${const JsonEncoder.withIndent('  ').convert(report)}\n');
+  await output.writeAsString(
+    '${const JsonEncoder.withIndent('  ').convert(report)}\n',
+  );
   stdout.writeln('Build metadata: ${output.path}');
 }
 
-Future<Map<String, dynamic>> _discoverRevision() async {
-  final sha = await _gitOutput(['rev-parse', 'HEAD']);
-  final shortSha = await _gitOutput(['rev-parse', '--short=8', 'HEAD']);
-  final committedAt = await _gitOutput(['show', '-s', '--format=%cI', 'HEAD']);
-  final subject = await _gitOutput(['show', '-s', '--format=%s', 'HEAD']);
-  // Intentionally includes untracked files: the contract is "this build is
-  // exactly what's checked out at HEAD", not just "tracked files match HEAD".
-  // Use `--untracked-files=no` instead if that stricter contract is ever needed.
-  final status = await _gitOutput(['status', '--porcelain']);
-
-  final githubRef = Platform.environment['GITHUB_REF_NAME']?.trim();
-  final ref = githubRef != null && githubRef.isNotEmpty
-      ? githubRef
-      : await _gitOutput(['branch', '--show-current']);
-
-  final githubRepository = Platform.environment['GITHUB_REPOSITORY']?.trim();
-  final githubServer = Platform.environment['GITHUB_SERVER_URL']?.trim();
-  String? commitUrl;
-  if (sha != null && githubRepository != null && githubRepository.isNotEmpty) {
-    final server = githubServer != null && githubServer.isNotEmpty
-        ? githubServer
-        : 'https://github.com';
-    commitUrl = '$server/$githubRepository/commit/$sha';
+Future<bool> _generateRepositoryMetadata() async {
+  for (final executable in ['python3', 'python']) {
+    try {
+      final result = await runCommand(executable, [
+        'tool/python/generate_repository_metadata.py',
+      ], stream: true);
+      if (!result.ok) exitCode = result.exitCode;
+      return result.ok;
+    } on ProcessException {
+      // Try the other executable name only when Python could not be launched.
+    }
   }
-
-  return <String, dynamic>{
-    'sha': sha,
-    'shortSha': shortSha,
-    'ref': ref,
-    'committedAt': committedAt,
-    'subject': subject,
-    'commitUrl': commitUrl,
-    'dirty': status?.isNotEmpty ?? false,
-  };
+  stderr.writeln(
+    'Python 3 is required to generate canonical repository metadata',
+  );
+  exitCode = 2;
+  return false;
 }
 
 Future<String?> _gitOutput(List<String> args) async {
@@ -124,7 +125,9 @@ Future<Map<String, dynamic>> _discoverFeatureWeights() async {
 
   final report = <String, dynamic>{};
   for (final feature in directories) {
-    final id = feature.uri.pathSegments.where((segment) => segment.isNotEmpty).last;
+    final id = feature.uri.pathSegments
+        .where((segment) => segment.isNotEmpty)
+        .last;
     final presentation = Directory(
       '${feature.path}${Platform.pathSeparator}presentation',
     );

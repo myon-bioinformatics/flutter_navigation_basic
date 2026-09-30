@@ -94,13 +94,13 @@ Future<void> main(List<String> args) async {
   await analysis.copy(copiedAnalysis.path);
 
   final metadata = File(
-    '${diagnosticsDir.path}${Platform.pathSeparator}build_meta.json',
+    '${diagnosticsDir.path}${Platform.pathSeparator}build_metadata.json',
   );
   final meta = await runCommand(
     'dart',
     [
       'run',
-      'tool/build_meta.dart',
+      'tool/build_metadata.dart',
       '--output',
       metadata.path,
       '--artifact',

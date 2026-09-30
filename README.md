@@ -148,3 +148,14 @@ npx playwright test --project=chromium
 Pull Requestでは `.github/workflows/dart.yml` が analyze / test / Flutter Web build を検証します。Pinned は **core** と **patterns**（約792ファイル）に分割され、patterns は該当 path 変更時（および `main`）のみ走ります。Python / Playwright 系は `.github/workflows/non-dart.yml` が担当します。`main` への push 後は `.github/workflows/flutter-pages.yml` が同じ検証を通して GitHub Pages へデプロイします。
 
 エージェント間の PR コメントは `AGENTS.md` の `from:` / `to:` ヘッダで宛先を明示します。
+
+### Repository timestamps in Home diagnostics
+
+Home's calendar date is the device's current date. The visible commit timestamp
+in Home and Build diagnostics comes from canonical `head.timestamp`; the
+metadata generation timestamp comes from canonical `generated_at`. The Dart
+adapter preserves both strings (including their timezone offsets) without
+reading Git or using the device clock as a fallback. Older diagnostic assets
+show unknown timestamps rather than inventing them. Pages marks the source
+snapshot as `web` / `release`; release artifact size remains unmeasured until
+an actual artifact is supplied.

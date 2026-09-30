@@ -125,8 +125,13 @@ jobs:
       # Refresh after analyze so the mutable diagnostics asset does not change
       # fixture assumptions. The regenerated file is still embedded in the
       # GitHub Pages web build below.
+      - name: Generate canonical repository metadata for gated checkout
+        env:
+          GATED_SHA: ${{ steps.gated.outputs.sha }}
+        run: python3 tool/python/generate_repository_metadata.py --expected-sha "$GATED_SHA"
+
       - name: Refresh source diagnostics metadata
-        run: dart run tool/dev.dart meta
+        run: dart run tool/dev.dart meta --platform web --repository-metadata build/diagnostics/repository/repository-metadata.json
 
       - name: Build Flutter web
         run: flutter build web --release --base-href "/flutter_navigation_basic/"

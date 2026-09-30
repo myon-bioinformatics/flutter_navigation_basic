@@ -27,7 +27,7 @@ python3 tool/python/build_artifact_report.py --compare before.json after.json
 
 `build_artifact_report.py` is a stdlib-only, report-only size summary (counts,
 categories, largest files, gzip estimate, before/after delta). It does not
-replace `tool/build_meta.dart` / `tool/inspect.dart` and does not enforce
+replace `tool/build_metadata.dart` / `tool/inspect.dart` and does not enforce
 budgets or require dual CI builds.
 
 
@@ -210,3 +210,32 @@ These commands require no repository Python package setup. If a proposed tool ne
 ## Runtime ownership review
 
 See [`MULTIPLATFORM_RUNTIME_OWNERSHIP.md`](./MULTIPLATFORM_RUNTIME_OWNERSHIP.md) for the current Dart/Python/browser-native/Deno decision rubric and the browser-first multi-platform verification plan. The invariant is platform reach and maintainability, not language preservation.
+
+### Canonical repository identity (#123)
+
+`dart run tool/dev.dart meta` (and Android size diagnostics) generates canonical
+JSON/JSONL using `tool/python/generate_repository_metadata.py`, then reads that
+record into the existing Flutter build diagnostics. Python 3 and Git are required
+for generation. The contract and producer are byte-for-byte pins of Ironmate
+`0aee64da2f8d0119a3ef9b955e5c3818f28aaf92`; source paths, Git blob IDs and SHA-256
+are recorded in `tool/python/vendor/repository_metadata_provenance.json`.
+
+Dart does not collect SHA, short SHA, branch, commit timestamp or subject. Missing
+canonical input fails generation; there is no independent Dart Git fallback.
+Flutter keeps app/version/build/stage, platform/mode, artifact/analysis sizes,
+source/assets/screen/route measurements, checkout dirty evidence and commit-link
+presentation. The tracked `assets/diagnostics/build_metadata.json` remains a
+neutral fallback, not live repository metadata.
+
+Pages preserves its gated checkout verification, generates canonical metadata
+with `--expected-sha` for that checkout, and supplies the JSON through
+`--repository-metadata build/diagnostics/repository/repository-metadata.json`
+before building the embedded diagnostics asset. SHA comes from checkout HEAD,
+not `GITHUB_SHA`. Branch follows the producer's `GITHUB_HEAD_REF`,
+`GITHUB_REF_NAME`, checkout branch order (`detached` outside GitHub when detached).
+
+To refresh the upstream pin, replace both vendored files from the same exact
+source commit and update both blob IDs and SHA-256 values in provenance. Run the
+Python repository metadata tests and Flutter build metadata adapter/model tests
+before changing the pin. Generic tool-version observations remain a later
+Ironmate #49 migration.
