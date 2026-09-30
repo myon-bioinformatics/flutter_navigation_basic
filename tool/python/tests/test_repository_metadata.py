@@ -81,7 +81,7 @@ def test_vendor_provenance_matches_exact_bytes():
         assert entry["sha256"] == hashes["sha256"]
         data = (vendor / name).read_bytes()
         assert hashlib.sha256(data).hexdigest() == hashes["sha256"]
-        blob = f"blob {len(data)}\\0".encode() + data
+        blob = f"blob {len(data)}".encode() + bytes([0]) + data
         assert hashlib.sha1(blob).hexdigest() == hashes["git_blob_sha"]
 
 
