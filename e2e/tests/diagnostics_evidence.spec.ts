@@ -21,7 +21,7 @@ test('canonical Home and Build diagnostics evidence @portable', async ({ page },
   await waitForFlutter(page, 30_000);
   const committed = page.getByText(`Committed: ${canonical.head.timestamp}`, { exact: true });
   await expect(committed.first()).toBeVisible();
-  await expect(page.getByText(new RegExp(`^${canonical.head.short_sha} ·`)).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: new RegExp(`^SHA: ${canonical.head.sha}`) })).toBeVisible();
   const captures: { file: string; bytes: number; sha256: string }[] = [];
   async function capture(file: string) {
     const output = testInfo.outputPath(file);
