@@ -12,10 +12,13 @@ void main() {
   group('canonical repository metadata adapter', () {
     late Map<String, dynamic> canonical;
     setUp(() {
-      canonical = jsonDecode(
-        File('tool/python/fixtures/repository_metadata_v1.json')
-            .readAsStringSync(),
-      ) as Map<String, dynamic>;
+      canonical =
+          jsonDecode(
+                File(
+                  'tool/python/fixtures/repository_metadata_v1.json',
+                ).readAsStringSync(),
+              )
+              as Map<String, dynamic>;
     });
 
     test('producer fields reach the existing UI model unchanged', () {
