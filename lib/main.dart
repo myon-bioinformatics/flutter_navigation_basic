@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'features/now_timeline/presentation/time_rules_bootstrap.dart';
 import 'config/app_config.dart';
 import 'config/routes.dart';
 import 'shared/diagnostics/route_diagnostics_observer.dart';
@@ -7,6 +8,7 @@ import 'shared/display/display_scope.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await loadTimeRules();
   final display = await DisplayController.load();
   runApp(DisplayScope(controller: display, child: const App()));
 }

@@ -1,11 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter_application_1/features/now_timeline/domain/zone_table.dart';
+
 import 'package:flutter_application_1/features/now_timeline/domain/now_timeline_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() => IanaTimeRules.configure(ZoneTable.fromJson(
+    File('assets/time/zone_table.json').readAsStringSync(),
+  )));
+
   group('IanaTimeRules', () {
     test('Tokyo stays UTC+9 without DST', () {
       expect(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'features/now_timeline/presentation/time_rules_bootstrap.dart';
 import 'core/config/app_config.dart';
 import 'core/navigation/app_navigation.dart';
 import 'core/navigation/route_names.dart';
@@ -11,6 +12,7 @@ import 'shared/themes/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await loadTimeRules();
   await AppConfig.initialize(env: AppEnvironment.production);
   await StorageService.initialize();
   final display = await DisplayController.load();

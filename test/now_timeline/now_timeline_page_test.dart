@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/features/now_timeline/presentation/time_rules_bootstrap.dart';
 import 'package:flutter_application_1/features/now_timeline/presentation/now_timeline_page.dart';
 import 'package:flutter_application_1/shared/display/display_scope.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../support/display_test_harness.dart';
 
 void main() {
+  setUp(loadTimeRules);
   testWidgets('renders text from the app-wide display locale, not a screen-local store', (tester) async {
     final controller = await loadTestDisplayController(
       initialValues: {DisplayController.preferenceKey: 'jpn'},

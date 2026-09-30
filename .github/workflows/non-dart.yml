@@ -11,6 +11,7 @@ on:
     paths:
       - "tool/python/**"
       - "tool/time/**"
+      - "assets/time/**"
       - "test/fixtures/photo_studio/import_compat/**"
       - "e2e/**"
       - "**/requirements.txt"
@@ -23,6 +24,7 @@ on:
     paths:
       - "tool/python/**"
       - "tool/time/**"
+      - "assets/time/**"
       - "test/fixtures/photo_studio/import_compat/**"
       - "e2e/**"
       - "**/requirements.txt"
@@ -99,7 +101,7 @@ jobs:
           playwright=false
           for f in "${files[@]}"; do
             case "$f" in
-              tool/python/*|tool/time/*|test/fixtures/photo_studio/import_compat/*)
+              tool/python/*|tool/time/*|assets/time/*|test/fixtures/photo_studio/import_compat/*)
                 python=true
                 ;;
               e2e/*)
@@ -210,6 +212,7 @@ jobs:
         run: |
           python tool/time/verify_timezone.py
           python tool/time/generate_timezone_cases.py --check
+          python tool/time/generate_zone_table.py --check
 
       - name: Verify photo fixture drift
         run: python tool/python/generate_photo_import_fixtures.py --check
