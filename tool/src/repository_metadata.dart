@@ -31,6 +31,7 @@ Map<String, dynamic> revisionFromRepositoryMetadata(
     'shortSha': field(head, 'short_sha'),
     'ref': field(head, 'branch'),
     'committedAt': field(head, 'timestamp'),
+    'generatedAt': field(record, 'generated_at'),
     'subject': field(head, 'subject'),
     'commitUrl': '$serverUrl/$fullName/commit/$sha',
     'dirty': dirty,

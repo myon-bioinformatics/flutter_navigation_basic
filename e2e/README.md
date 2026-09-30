@@ -92,7 +92,7 @@ docker run --rm \
   flutter-nav-e2e snapshot --update
 ```
 
-- `-v .../playwright-report`, `-v .../test-results` を bind mount すると、HTML レポート・失敗時スクショ・trace・video がホスト側にそのまま残ります（現状 CI の手動 `playwright` ジョブは artifact upload していないため、CI 経由よりこちらの方が確実に手元でスクショを回収できます）。
+- `-v .../playwright-report`, `-v .../test-results` を bind mount すると、HTML レポート・失敗時スクショ・trace・video がホスト側にそのまま残ります（手動 `playwright` CI でもレポートと失敗時証跡を artifact として保存します）。
 - `e2e/tests` も mount すると、`snapshot --update` で生成した `*-snapshots/*.png` baseline がホスト側のリポジトリにそのまま書き戻されます（コミットするかはレビューして判断してください）。
 - Flutter/Node のバージョンは `Dockerfile.e2e` の `ARG FLUTTER_VERSION` / `ARG NODE_MAJOR` で固定しています。CI 側（`non-dart.yml` の `playwright` ジョブ）を更新するときはこちらも合わせてください。
 - CI には現状組み込んでいません（このDockerfileはローカル/手元での再現用）。CIをDocker化するかどうかは別途判断が必要です。
@@ -150,3 +150,16 @@ Dockerfile.e2e                  # Flutter build + Playwright, containerized
 ```
 
 `photo_studio.spec.ts` owns the shortest representative picker happy path. `photo_studio_ingress.spec.ts` intentionally audits ingress boundaries (portable picker/MIME rejection plus Chromium-scoped clipboard) and should not grow into a second copy of the full representative flow. `photo_studio_format_matrix.spec.ts` owns the committed portable Web format baseline (PNG/JPEG/WebP/GIF plus a truncated-image rejection probe); it does not claim HEIC/iOS Safari support.
+
+### Successful diagnostics evidence
+
+`Diagnostics screenshot evidence` runs automatically for Home / diagnostics /
+metadata and evidence-tooling changes on PRs and main, and can be run manually.
+It builds the Pages `lib/main.dart` entrypoint using canonical metadata for the
+exact checked-out SHA, asserts visible SHA and timestamps, and captures Home and
+Build diagnostics on Chromium, Firefox, WebKit and mobile WebKit. Mobile WebKit
+is emulation, not physical iPhone evidence. The SHA-named artifact includes eight
+success PNGs, four JSON receipts (browser/version/viewport and PNG SHA-256), the
+canonical metadata and HTML report. Missing receipts or PNGs fail the job.
+Artifacts expire after 14 days. This focused lane is separate from opt-in full E2E
+and pixel-baseline comparison; its GREEN result includes successful capture.

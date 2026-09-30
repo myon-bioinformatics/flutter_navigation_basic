@@ -5,6 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/shared/diagnostics/build_metadata.dart';
 
 import '../../../tool/src/repository_metadata.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_application_1/shared/diagnostics/build_diagnostics_card.dart';
+import 'package:flutter_application_1/shared/widgets/home_overview_panel.dart';
+import '../../support/display_test_harness.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -47,6 +51,7 @@ void main() {
       expect(metadata.revision.shortSha, head['short_sha']);
       expect(metadata.revision.ref, head['branch']);
       expect(metadata.revision.committedAt, head['timestamp']);
+      expect(metadata.revision.generatedAt, canonical['generated_at']);
       expect(metadata.revision.subject, head['subject']);
       expect(metadata.revision.dirty, isTrue);
       expect(
@@ -113,6 +118,65 @@ void main() {
     );
   });
 
+  testWidgets('canonical timestamps are visible in Home and diagnostics', (
+    tester,
+  ) async {
+    final canonical =
+        jsonDecode(
+              File(
+                'tool/python/fixtures/repository_metadata_v1.json',
+              ).readAsStringSync(),
+            )
+            as Map<String, dynamic>;
+    final metadata = BuildMetadata.fromJson({
+      'repository': {
+        'revision': revisionFromRepositoryMetadata(canonical, dirty: false),
+      },
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        home: await wrapWithDisplayScope(
+          Scaffold(
+            body: SingleChildScrollView(
+              child: Column(
+                children: [
+                  HomeOverviewPanel(
+                    actions: const [],
+                    metadataLoader: () async => metadata,
+                  ),
+                  BuildDiagnosticsCard(metadataLoader: () async => metadata),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final timestamp = (canonical['head'] as Map)['timestamp'];
+    expect(find.text('Committed: $timestamp'), findsNWidgets(2));
+    expect(
+      find.text('Metadata generated ${canonical['generated_at']}'),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('legacy diagnostic timestamps stay unknown', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: BuildDiagnosticsCard(
+            metadataLoader: () async => BuildMetadata.fromJson(const {}),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Committed: unknown'), findsOneWidget);
+    expect(find.text('Metadata generated unknown'), findsOneWidget);
+  });
+
   group('RevisionMetadata.fromJson', () {
     test('defaults every field gracefully when the map is empty', () {
       final revision = RevisionMetadata.fromJson(const {});
@@ -121,6 +185,7 @@ void main() {
       expect(revision.shortSha, isNull);
       expect(revision.ref, isNull);
       expect(revision.committedAt, isNull);
+      expect(revision.generatedAt, isNull);
       expect(revision.subject, isNull);
       expect(revision.commitUrl, isNull);
       expect(revision.dirty, isFalse);

@@ -208,6 +208,11 @@ class _BuildMetricsState extends State<_BuildMetrics> {
           runSpacing: 10,
           children: [
             versionMetric,
+            if (revision.committedAt != null)
+              Text(display.text(
+                'homeOverview.committedLabel',
+                arguments: {'date': revision.committedAt},
+              )),
             Tooltip(
               message: details.isEmpty
                   ? display.text('homeOverview.gitRevisionUnavailable')
