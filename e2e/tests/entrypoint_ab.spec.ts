@@ -31,9 +31,9 @@ test('records cold Photo Studio route and picker state @entrypoint-ab', async ({
   await page.goto(photoStudioRoute);
   await waitForFlutter(page);
 
-  // READ_BEFORE_SETTLE guard: the temporary spinner MaterialApp in main.dart
-  // can expose flt-semantics before the real app has replaced it. Do not record
-  // the A/B observation until either Home or Photo Studio is identifiable.
+  // READ_BEFORE_SETTLE guard: accessibility readiness alone does not identify
+  // the rendered route. The app mounts once after DisplayController.load();
+  // record the observation only when Home or Photo Studio is identifiable.
   let screenIdentity: ScreenIdentity = 'loading';
   try {
     await expect

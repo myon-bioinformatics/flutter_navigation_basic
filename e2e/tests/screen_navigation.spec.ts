@@ -80,8 +80,8 @@ test.describe('Screen Navigation', () => {
   });
 
   test('direct cold deep link to Screen6 renders without Home warm-up @portable', async ({ page }) => {
-    // Regression probe for #107: opens the hash route directly, bypassing
-    // navigateToScreen's Home warm-up, so a cold deep link is proven on its own.
+    // Regression probe for #107: keep the first navigation explicit so this
+    // still proves a cold deep link if shared helpers change in the future.
     await page.goto('/#/screen6');
     await waitForFlutter(page);
     await expect(page).toHaveURL(/#\/screen6$/);
