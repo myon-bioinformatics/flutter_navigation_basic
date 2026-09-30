@@ -64,11 +64,25 @@ def test_vendor_provenance_matches_exact_bytes():
     provenance = json.loads((vendor / "repository_metadata_provenance.json").read_text())
     assert provenance["source_commit"] == "0aee64da2f8d0119a3ef9b955e5c3818f28aaf92"
     assert provenance["repository"] == "myon-bioinformatics/Ironmate"
-    for name, entry in provenance["files"].items():
+    expected = {
+        "repository_metadata_contract.py": {
+            "git_blob_sha": "a61a2949e58a42635b0830289e368b4125b1274b",
+            "sha256": "c8093d806756925b68978b5a40a218e4acd5daf43f2d7fc2e358cabf8dc39e9a",
+        },
+        "repository_metadata_generator.py": {
+            "git_blob_sha": "eef572ce64e92bfecf0451235f884aa208044587",
+            "sha256": "a2edc91cc0a269d8b2fc6a9be1cfa0edbfae18604d53a1b9ebdcb72004be9a06",
+        },
+    }
+    assert set(provenance["files"]) == set(expected)
+    for name, hashes in expected.items():
+        entry = provenance["files"][name]
+        assert entry["git_blob_sha"] == hashes["git_blob_sha"]
+        assert entry["sha256"] == hashes["sha256"]
         data = (vendor / name).read_bytes()
-        assert hashlib.sha256(data).hexdigest() == entry["sha256"]
-        blob = f"blob {len(data)}\0".encode() + data
-        assert hashlib.sha1(blob).hexdigest() == entry["git_blob_sha"]
+        assert hashlib.sha256(data).hexdigest() == hashes["sha256"]
+        blob = f"blob {len(data)}\\0".encode() + data
+        assert hashlib.sha1(blob).hexdigest() == hashes["git_blob_sha"]
 
 
 def test_pages_generates_only_after_checkout_gate_and_embeds_asset():
