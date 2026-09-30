@@ -91,6 +91,10 @@ jobs:
           for receipt in receipts:
               data = json.loads(receipt.read_text())
               assert data['sha'] == expected['head']['sha']
+              assert data['committed_at'] == expected['head']['timestamp']
+              assert data['generated_at'] == expected['generated_at']
+              assert len(data['captures']) == 2
+              assert len({c['sha256'] for c in data['captures']}) == 2
               assert {c['file'] for c in data['captures']} == {'home.png', 'build-diagnostics.png'}
               for capture in data['captures']:
                   png = (receipt.parent / capture['file']).read_bytes()
