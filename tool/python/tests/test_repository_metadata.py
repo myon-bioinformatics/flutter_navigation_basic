@@ -89,7 +89,7 @@ def test_pages_generates_only_after_checkout_gate_and_embeds_asset():
     workflow = (ROOT / ".github/workflows/flutter-pages.yml").read_text()
     assert "github.event.workflow_run.head_branch == 'main'" in workflow
     assert workflow.index("Verify checkout matches gated SHA") < workflow.index("generate_repository_metadata.py --expected-sha")
-    assert workflow.index("generate_repository_metadata.py --expected-sha") < workflow.index("meta --repository-metadata") < workflow.index("flutter build web")
+    assert workflow.index("generate_repository_metadata.py --expected-sha") < workflow.index("meta --platform web --repository-metadata") < workflow.index("flutter build web")
     assert "assets/diagnostics/build_metadata.json" in (ROOT / "pubspec.yaml").read_text()
 
 

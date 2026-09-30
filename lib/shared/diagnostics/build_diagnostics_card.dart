@@ -3,9 +3,14 @@ import 'package:flutter/material.dart';
 import 'build_metadata.dart';
 
 class BuildDiagnosticsCard extends StatefulWidget {
-  const BuildDiagnosticsCard({super.key, this.screenId});
+  const BuildDiagnosticsCard({
+    super.key,
+    this.screenId,
+    this.metadataLoader = BuildMetadata.load,
+  });
 
   final String? screenId;
+  final Future<BuildMetadata> Function() metadataLoader;
 
   @override
   State<BuildDiagnosticsCard> createState() => _BuildDiagnosticsCardState();
@@ -17,7 +22,7 @@ class _BuildDiagnosticsCardState extends State<BuildDiagnosticsCard> {
   @override
   void initState() {
     super.initState();
-    _metadata = BuildMetadata.load();
+    _metadata = widget.metadataLoader();
   }
 
   @override
@@ -47,6 +52,8 @@ class _BuildDiagnosticsCardState extends State<BuildDiagnosticsCard> {
                     Text('Stage ${metadata.stage}'),
                     Text('${metadata.platform} · ${metadata.mode}'),
                     Text('Commit ${metadata.revision.displaySha}'),
+                    Text('Committed: ${metadata.revision.committedAt ?? 'unknown'}'),
+                    Text('Metadata generated ${metadata.revision.generatedAt ?? 'unknown'}'),
                     Text('artifact ${formatDiagnosticBytes(metadata.artifactBytes)}'),
                     Text('repo ${formatDiagnosticBytes(metadata.sourceBytes)}'),
                     Text('assets ${formatDiagnosticBytes(metadata.assetBytes)}'),
