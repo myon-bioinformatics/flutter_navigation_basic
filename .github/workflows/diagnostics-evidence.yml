@@ -70,6 +70,10 @@ jobs:
           trap 'kill "$server_pid" || true' EXIT
           for attempt in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:8080/ >/dev/null; then break; fi
+            if [[ "$attempt" == "30" ]]; then
+              echo "Timed out waiting for the local server" >&2
+              exit 1
+            fi
             sleep 1
           done
           curl -fsS http://127.0.0.1:8080/ >/dev/null
