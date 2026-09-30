@@ -28,7 +28,7 @@ When relevant and available:
 
 ## Notes specific to this repository
 
-- `assets/diagnostics/build_meta.json` is refreshed by `dart run tool/dev.dart meta` for GitHub Pages builds. Do not write tests that assume that mutable asset remains a legacy fixture.
+- `assets/diagnostics/build_metadata.json` is refreshed by `dart run tool/dev.dart meta` for GitHub Pages builds. Do not write tests that assume that mutable asset remains a legacy fixture.
 - Prefer parsing fixtures via `BuildMetadata.fromJson` (or equivalent pure helpers) when testing diagnostics metadata compatibility.
 - Pip Python deps are allowlisted only at `tool/python/requirements.txt` for light calculation/oracle tests. Keep Flutter widget tests in Dart.
 - Shared calculation goldens live under `tool/python/fixtures/` and should be asserted from both Dart and pytest when both exist.

@@ -5,7 +5,7 @@ Produces JSON with file counts, byte totals, category/extension breakdowns,
 largest files, and a gzip estimate. Optional before/after delta compare.
 Does not enforce budgets and does not require dual CI builds.
 
-Distinct from ``tool/build_meta.dart`` / ``tool/inspect.dart``.
+Distinct from ``tool/build_metadata.dart`` / ``tool/inspect.dart``.
 """
 
 from __future__ import annotations
