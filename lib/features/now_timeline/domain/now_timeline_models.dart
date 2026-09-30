@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'zone_table.dart';
+
 enum TimelineKind { person, place, schedule, event }
 
 class TimelineEntry {
@@ -114,10 +116,9 @@ class NowTimelineStore {
       ];
 }
 
-/// Lightweight runtime rules for the first IANA identifiers used by Stage 1.
-///
-/// `tool/time` uses Python stdlib `zoneinfo` as an independent oracle. Runtime
-/// stays Flutter/Dart-only and does not ship a second timezone database.
+/// Synchronous facade over the generated IANA table configured at startup.
+/// Conversion APIs throw RangeError outside the table window; diagnostic
+/// lookupAtUtc retains the endpoint state and an explicit outsideTable flag.
 class IanaTimeRules {
   static const supportedZones = <String>[
     'Asia/Tokyo',
@@ -125,23 +126,42 @@ class IanaTimeRules {
     'America/New_York',
   ];
 
-  static int offsetMinutesAtUtc(String zoneName, DateTime utc) {
-    final instant = utc.toUtc();
-    switch (zoneName) {
-      case 'Asia/Tokyo':
-        return 540;
-      case 'Europe/London':
-        return _isLondonDst(instant) ? 60 : 0;
-      case 'America/New_York':
-        return _isNewYorkDst(instant) ? -240 : -300;
-      default:
-        throw ArgumentError.value(zoneName, 'zoneName', 'Unsupported IANA zone');
+  static ZoneTable? _table;
+
+  static void configure(ZoneTable table) {
+    for (final zone in supportedZones) {
+      if (!table.containsZone(zone)) {
+        throw ArgumentError.value(zone, 'table', 'Missing supported zone');
+      }
     }
+    _table = table;
   }
+
+  static ZoneLookupResult lookupAtUtc(String zoneName, DateTime utc) {
+    final table = _table;
+    if (table == null) {
+      throw StateError('IanaTimeRules.configure() has not been called');
+    }
+    return table.lookupAtUtc(zoneName, utc);
+  }
+
+  static ZoneLookupResult _lookupWithinTable(String zoneName, DateTime utc) {
+    final result = lookupAtUtc(zoneName, utc);
+    if (result.outsideTable) {
+      throw RangeError('UTC instant outside generated zone table: '
+          '$zoneName at ${utc.toUtc().toIso8601String()}');
+    }
+    return result;
+  }
+
+  static int offsetMinutesAtUtc(String zoneName, DateTime utc) =>
+      _lookupWithinTable(zoneName, utc).offsetMinutes;
 
   static DateTime toLocal(String zoneName, DateTime utc) {
     final instant = utc.toUtc();
-    return instant.add(Duration(minutes: offsetMinutesAtUtc(zoneName, instant)));
+    return instant.add(
+      Duration(minutes: offsetMinutesAtUtc(zoneName, instant)),
+    );
   }
 
   static DateTime localWallTimeToUtc(String zoneName, DateTime localWallTime) {
@@ -172,11 +192,8 @@ class IanaTimeRules {
     return resolved;
   }
 
-  static bool isDst(String zoneName, DateTime utc) {
-    if (zoneName == 'Europe/London') return _isLondonDst(utc.toUtc());
-    if (zoneName == 'America/New_York') return _isNewYorkDst(utc.toUtc());
-    return false;
-  }
+  static bool isDst(String zoneName, DateTime utc) =>
+      _lookupWithinTable(zoneName, utc).isDst;
 
   static bool _sameWallMinute(DateTime a, DateTime b) =>
       a.year == b.year &&
@@ -184,31 +201,6 @@ class IanaTimeRules {
       a.day == b.day &&
       a.hour == b.hour &&
       a.minute == b.minute;
-
-  static bool _isLondonDst(DateTime utc) {
-    final start = DateTime.utc(utc.year, 3, _lastSunday(utc.year, 3), 1);
-    final end = DateTime.utc(utc.year, 10, _lastSunday(utc.year, 10), 1);
-    return !utc.isBefore(start) && utc.isBefore(end);
-  }
-
-  static bool _isNewYorkDst(DateTime utc) {
-    final marchSunday = _nthSunday(utc.year, 3, 2);
-    final novemberSunday = _nthSunday(utc.year, 11, 1);
-    final start = DateTime.utc(utc.year, 3, marchSunday, 7);
-    final end = DateTime.utc(utc.year, 11, novemberSunday, 6);
-    return !utc.isBefore(start) && utc.isBefore(end);
-  }
-
-  static int _nthSunday(int year, int month, int nth) {
-    final first = DateTime.utc(year, month, 1);
-    final daysUntilSunday = (DateTime.sunday - first.weekday) % 7;
-    return 1 + daysUntilSunday + (nth - 1) * 7;
-  }
-
-  static int _lastSunday(int year, int month) {
-    final last = DateTime.utc(year, month + 1, 0);
-    return last.day - ((last.weekday - DateTime.sunday) % 7);
-  }
 }
 
 /// One projected schedule boundary, already resolved to a UTC instant.

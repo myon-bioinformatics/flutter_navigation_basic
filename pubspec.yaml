@@ -37,3 +37,4 @@ flutter:
     - assets/ui_showcase.json
     - assets/diagnostics/build_metadata.json
     - assets/display/app_text.json
+    - assets/time/zone_table.json

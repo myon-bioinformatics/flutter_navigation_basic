@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'core/config/app_config.dart';
+import 'core/logging/logger_service.dart';
 import 'core/navigation/app_navigation.dart';
 import 'core/navigation/route_names.dart';
 import 'core/services/storage_service.dart';
-import 'core/logging/logger_service.dart';
+import 'features/now_timeline/presentation/time_rules_bootstrap.dart';
 import 'shared/diagnostics/route_diagnostics_observer.dart';
 import 'shared/diagnostics/weight_badge_overlay.dart';
 import 'shared/display/display_scope.dart';
@@ -11,6 +13,7 @@ import 'shared/themes/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await loadTimeRules();
   await AppConfig.initialize(env: AppEnvironment.production);
   await StorageService.initialize();
   final display = await DisplayController.load();
