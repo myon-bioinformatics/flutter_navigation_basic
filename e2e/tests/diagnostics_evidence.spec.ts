@@ -34,22 +34,16 @@ test('canonical Home and Build diagnostics evidence @portable', async ({ page },
   await capture('home.png');
   const generated = page.getByText(`Metadata generated ${canonical.generated_at}`);
   const buildDiagnostics = page.getByText('Build diagnostics');
-  // Flutter paints a scrollable canvas; move the real viewport, not the
-  // accessibility nodes. Mobile WebKit does not support mouse.wheel.
-  for (let attempt = 0; attempt < 20 && !(await generated.isVisible()); attempt++) {
-    if (testInfo.project.name === 'mobile-webkit') {
-      await page.keyboard.press('End');
-    } else {
-      await page.mouse.move(Math.floor(page.viewportSize()!.width / 2), Math.floor(page.viewportSize()!.height / 2));
-      await page.mouse.wheel(0, 400);
-    }
-    await page.waitForTimeout(150);
-  }
-  await expect(generated).toBeVisible();
-  await expect(committed.last()).toBeVisible();
-  await expect(buildDiagnostics).toBeVisible();
-  await expect(page.getByText(`Commit ${canonical.head.short_sha}`)).toBeVisible();
+  // A semantics node can be "visible" while still outside the viewport.
+  // Scroll the target into view and require viewport intersection before
+  // accepting the second screenshot as Build diagnostics evidence.
+  await generated.scrollIntoViewIfNeeded();
+  await expect(generated).toBeInViewport();
+  await expect(committed.last()).toBeInViewport();
+  await expect(buildDiagnostics).toBeInViewport();
+  await expect(page.getByText(`Commit ${canonical.head.short_sha}`)).toBeInViewport();
   await capture('build-diagnostics.png');
+  expect(captures[1].sha256).not.toBe(captures[0].sha256);
   const manifest = testInfo.outputPath('evidence.json');
   fs.writeFileSync(manifest, JSON.stringify({
     sha: canonical.head.sha,
