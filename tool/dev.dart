@@ -20,10 +20,10 @@ Future<void> main(List<String> args) async {
       exitCode = await _forward('dart', ['run', 'tool/check_versions.dart', ...rest]);
       return;
     case 'meta':
-      exitCode = await _forward('dart', ['run', 'tool/build_meta.dart', ...rest]);
+      exitCode = await _forward('dart', ['run', 'tool/build_metadata.dart', ...rest]);
       return;
     case 'size':
-      final metaCode = await _forward('dart', ['run', 'tool/build_meta.dart']);
+      final metaCode = await _forward('dart', ['run', 'tool/build_metadata.dart']);
       if (metaCode != 0) {
         exitCode = metaCode;
         return;

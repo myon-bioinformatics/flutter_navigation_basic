@@ -118,7 +118,7 @@ python3 -m http.server 8000 --directory build/web
 ## Build artifact report (stdlib)
 
 Report-only size summary for a built tree (for example `build/web`). Distinct
-from `tool/build_meta.dart` / `tool/inspect.dart`. No hard budgets; dual CI
+from `tool/build_metadata.dart` / `tool/inspect.dart`. No hard budgets; dual CI
 builds are not required.
 
 ```bash
