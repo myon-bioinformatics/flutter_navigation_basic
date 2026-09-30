@@ -4,8 +4,8 @@ Web デバッグ対応 Playwright E2E テスト for flutter_navigation_basic。
 
 ## CI
 
-- PR で `e2e/` を触ると **Non-Dart** workflow が Playwright の install + `--list` smoke だけ回す（Flutter は起動しない）。
-- フル E2E（web build + Chromium / Firefox / WebKit + mobile emulation の portable matrix）は GitHub Actions の **Non-Dart checks → Run workflow** で `run_playwright=true` のときだけ。Flutter/Pages の必須経路には載せない。visual snapshot spec は baseline 未登録の間は既存 Full E2E から分離し、`python tool/python/playwright.py snapshot --update` で明示的に生成する。
+- PR で `e2e/` を触ると **Non-Dart** workflow が install + `--list` smoke に加えて full portable E2E を自動選択する。
+- full E2E（web build + Chromium / Firefox / WebKit + mobile emulation）は、`e2e/**`、entrypoint/routes/navigation、Home、Photo Studio、Clipboard Shelf、`lib/screens/**`、または Non-Dart workflow 自身が変わったときだけ自動実行する。その他の Dart/Python 変更では走らない。手動の `run_playwright=true/false` 切替は廃止し、**Non-Dart checks → Run workflow** は入力なしの強制再実行としてだけ残す。Flutter/Pages workflow とは分離したまま。visual snapshot spec は baseline 未登録の間は portable E2E から分離し、`python tool/python/playwright.py snapshot --update` で明示的に生成する。
 
 ## セットアップ
 
@@ -67,7 +67,7 @@ Playwright config は Chromium / Firefox / WebKit の3 projectを定義してお
 
 ## Docker（Flutter/Node/Playwright を何もインストールしていない環境向け）
 
-`Dockerfile.e2e` は「Flutter web release ビルド → 配信 → `tool/python/playwright.py` 実行」を1イメージに固めたものです。CI の `playwright` ジョブ（`.github/workflows/non-dart.yml`）と同じ手順・同じ Flutter/Node バージョンをコンテナ内で再現するので、ホスト側に Flutter SDK も Node もなくても、`docker` さえあれば実行・再現できます。
+`Dockerfile.e2e` は「Flutter web release ビルド → 配信 → `tool/python/playwright.py` 実行」を1イメージに固めたものです。CI の自動選択 `playwright` ジョブ（`.github/workflows/non-dart.yml`）と同じ手順・同じ Flutter/Node バージョンをコンテナ内で再現するので、ホスト側に Flutter SDK も Node もなくても、`docker` さえあれば実行・再現できます。
 
 ```bash
 # プロジェクトルートで（初回はFlutter/Node/Chromium/Firefox/WebKitのダウンロードが入るため数分かかります）
@@ -92,7 +92,7 @@ docker run --rm \
   flutter-nav-e2e snapshot --update
 ```
 
-- `-v .../playwright-report`, `-v .../test-results` を bind mount すると、HTML レポート・失敗時スクショ・trace・video がホスト側にそのまま残ります（手動 `playwright` CI でもレポートと失敗時証跡を artifact として保存します）。
+- `-v .../playwright-report`, `-v .../test-results` を bind mount すると、HTML レポート・失敗時スクショ・trace・video がホスト側にそのまま残ります（自動選択 `playwright` CI でもレポートと失敗時証跡を artifact として保存します）。
 - `e2e/tests` も mount すると、`snapshot --update` で生成した `*-snapshots/*.png` baseline がホスト側のリポジトリにそのまま書き戻されます（コミットするかはレビューして判断してください）。
 - Flutter/Node のバージョンは `Dockerfile.e2e` の `ARG FLUTTER_VERSION` / `ARG NODE_MAJOR` で固定しています。CI 側（`non-dart.yml` の `playwright` ジョブ）を更新するときはこちらも合わせてください。
 - CI には現状組み込んでいません（このDockerfileはローカル/手元での再現用）。CIをDocker化するかどうかは別途判断が必要です。
@@ -161,5 +161,5 @@ Build diagnostics on Chromium, Firefox, WebKit and mobile WebKit. Mobile WebKit
 is emulation, not physical iPhone evidence. The SHA-named artifact includes eight
 success PNGs, four JSON receipts (browser/version/viewport and PNG SHA-256), the
 canonical metadata and HTML report. Missing receipts or PNGs fail the job.
-Artifacts expire after 14 days. This focused lane is separate from opt-in full E2E
+Artifacts expire after 14 days. This focused lane is separate from change-selected full E2E
 and pixel-baseline comparison; its GREEN result includes successful capture.

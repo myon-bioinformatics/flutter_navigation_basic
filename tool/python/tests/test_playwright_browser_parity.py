@@ -39,14 +39,14 @@ def test_flutter_web_target_parses_known_line() -> None:
     assert _flutter_web_target(line) == "lib/main.dart"
 
 
-def test_manual_ci_and_docker_build_the_same_flutter_entrypoint() -> None:
+def test_auto_ci_and_docker_build_the_same_flutter_entrypoint() -> None:
     workflow = (ROOT / ".github" / "workflows" / "non-dart.yml").read_text(encoding="utf-8")
     dockerfile = (ROOT / "Dockerfile.e2e").read_text(encoding="utf-8")
 
-    manual_target = _flutter_web_target(workflow)
+    ci_target = _flutter_web_target(workflow)
     docker_target = _flutter_web_target(dockerfile)
 
-    assert manual_target == docker_target == "lib/main.dart"
+    assert ci_target == docker_target == "lib/main.dart"
 
 def test_playwright_projects_are_the_expected_browser_set() -> None:
     assert _configured_projects() == EXPECTED_PROJECTS
@@ -60,7 +60,7 @@ def test_ci_and_docker_install_only_browser_engines() -> None:
     workflow_installs = _install_lines(workflow)
     docker_installs = _install_lines(dockerfile)
 
-    # The regular smoke/manual lanes install the full configured engine set.
+    # The regular smoke/auto-E2E lanes install the full configured engine set.
     assert workflow_installs == [
         f"npx {expected_install}",
         f"npx {expected_install}",
@@ -104,7 +104,7 @@ def test_ci_lists_every_exact_project() -> None:
     assert list_command in workflow
 
 
-def test_manual_e2e_uses_python_cli_for_portable_five_project_allowlist() -> None:
+def test_auto_e2e_uses_python_cli_for_portable_five_project_allowlist() -> None:
     workflow = (ROOT / ".github" / "workflows" / "non-dart.yml").read_text(encoding="utf-8")
     command = next(
         line.strip()
@@ -114,7 +114,7 @@ def test_manual_e2e_uses_python_cli_for_portable_five_project_allowlist() -> Non
     for project in EXPECTED_PROJECTS:
         assert f"--project {project}" in command
     assert "--grep @portable" in command
-    # Manual probe intentionally collects the full format × project matrix.
+    # Auto-selected probe intentionally collects the full format × project matrix.
     # Do not fail-fast on the first portable mismatch.
     assert "--max-failures" not in command
     for spec in (
@@ -152,3 +152,32 @@ def test_docker_default_cmd_keeps_portable_five_project_allowlist() -> None:
         "tests/photo_studio_format_matrix.spec.ts",
     ):
         assert spec in argv
+
+
+def test_playwright_selection_is_path_driven_without_boolean_input() -> None:
+    workflow = (ROOT / ".github" / "workflows" / "non-dart.yml").read_text(encoding="utf-8")
+
+    assert "run_playwright" not in workflow
+    assert "playwright: ${{ steps.filter.outputs.playwright }}" in workflow
+    assert "if: needs.changes.outputs.playwright == 'true'" in workflow
+    assert "name: Playwright E2E (auto)" in workflow
+
+    for selector in (
+        "e2e/*)",
+        "lib/main.dart",
+        "lib/config/routes.dart",
+        "lib/core/navigation/*",
+        "lib/features/home/*",
+        "lib/features/photo_studio/*",
+        "lib/features/clipboard_shelf/*",
+        "lib/screens/*",
+        ".github/workflows/non-dart.yml",
+    ):
+        assert selector in workflow
+
+
+def test_workflow_dispatch_is_force_run_without_playwright_toggle() -> None:
+    workflow = (ROOT / ".github" / "workflows" / "non-dart.yml").read_text(encoding="utf-8")
+    dispatch_block = workflow.split('if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]', 1)[1]
+    dispatch_block = dispatch_block.split("exit 0", 1)[0]
+    assert 'echo "playwright=true"' in dispatch_block

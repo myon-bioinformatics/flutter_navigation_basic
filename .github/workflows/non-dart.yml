@@ -1,8 +1,8 @@
 name: Non-Dart checks
 
-# Python stdlib / pytest oracles, Docker-friendly smoke, and optional
-# Playwright — kept off the Flutter critical path so Dart-only PRs do not
-# pay non-Dart startup, and non-Dart PRs do not boot Flutter. The lightweight
+# Python stdlib / pytest oracles, Docker-friendly smoke, and change-selected
+# Playwright. Full portable E2E runs automatically only when browser-facing
+# paths change; unrelated Dart/Python changes keep the lightweight lanes. The
 # pattern-boundary job is the exception for Dart changes: it checks Docker/import
 # boundaries without running the full non-Dart suite or booting Flutter.
 on:
@@ -30,12 +30,9 @@ on:
       - "lib/**/*.dart"
       - "test/**/*.dart"
       - ".github/workflows/non-dart.yml"
+  # Explicit dispatch remains a force-run escape hatch, but no boolean toggle is
+  # required in normal operation; the path classifier owns Playwright selection.
   workflow_dispatch:
-    inputs:
-      run_playwright:
-        description: "Also run Playwright E2E (needs Flutter web build)"
-        type: boolean
-        default: false
 
 concurrency:
   group: non-dart-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -53,6 +50,7 @@ jobs:
       e2e: ${{ steps.filter.outputs.e2e }}
       workflow: ${{ steps.filter.outputs.workflow }}
       pattern_boundary: ${{ steps.filter.outputs.pattern_boundary }}
+      playwright: ${{ steps.filter.outputs.playwright }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -68,6 +66,7 @@ jobs:
               echo "e2e=true"
               echo "workflow=true"
               echo "pattern_boundary=true"
+              echo "playwright=true"
             } >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -85,6 +84,7 @@ jobs:
                 echo "e2e=true"
                 echo "workflow=true"
                 echo "pattern_boundary=true"
+                echo "playwright=true"
               } >> "$GITHUB_OUTPUT"
               exit 0
             fi
@@ -96,6 +96,7 @@ jobs:
           e2e=false
           workflow=false
           pattern_boundary=false
+          playwright=false
           for f in "${files[@]}"; do
             case "$f" in
               tool/python/*|tool/time/*|test/fixtures/photo_studio/import_compat/*)
@@ -103,15 +104,24 @@ jobs:
                 ;;
               e2e/*)
                 e2e=true
+                playwright=true
                 ;;
               .github/workflows/non-dart.yml)
                 workflow=true
                 python=true
+                playwright=true
                 ;;
             esac
             case "$f" in
               .dockerignore|lib/*.dart|test/*.dart|tool/python/tests/test_pattern_catalogue_boundary.py|.github/workflows/non-dart.yml)
                 pattern_boundary=true
+                ;;
+            esac
+            # Full browser E2E is selected only for surfaces covered by the
+            # portable suite. Keep broad lib/**/*.dart changes off this lane.
+            case "$f" in
+              lib/main.dart|lib/config/routes.dart|lib/core/navigation/*|lib/features/home/*|lib/features/photo_studio/*|lib/features/clipboard_shelf/*|lib/screens/*)
+                playwright=true
                 ;;
             esac
             # Any requirements.txt (including outside tool/python) must hit allowlist.
@@ -127,11 +137,12 @@ jobs:
             echo "e2e=$e2e"
             echo "workflow=$workflow"
             echo "pattern_boundary=$pattern_boundary"
+            echo "playwright=$playwright"
           } >> "$GITHUB_OUTPUT"
           {
             echo "Changed files (${#files[@]}):"
             printf '%s\n' "${files[@]}"
-            echo "outputs: python=$python e2e=$e2e workflow=$workflow pattern_boundary=$pattern_boundary"
+            echo "outputs: python=$python e2e=$e2e workflow=$workflow pattern_boundary=$pattern_boundary playwright=$playwright"
           }
 
   # This is the only non-Dart job activated by ordinary Dart-source changes.
@@ -289,10 +300,12 @@ jobs:
           npx playwright install --with-deps chromium firefox webkit
           npx playwright test --list --project=chromium --project=firefox --project=webkit --project=mobile-chromium --project=mobile-webkit
 
-  # Full E2E is opt-in (workflow_dispatch) so it stays off PR / Pages critical path.
+  # Full portable E2E is selected from changed browser-facing paths. It remains
+  # outside Flutter/Pages workflows, so unrelated changes do not pay this cost.
   playwright:
-    name: Playwright E2E (manual)
-    if: github.event_name == 'workflow_dispatch' && inputs.run_playwright
+    name: Playwright E2E (auto)
+    needs: changes
+    if: needs.changes.outputs.playwright == 'true'
     runs-on: ubuntu-latest
 
     steps:
