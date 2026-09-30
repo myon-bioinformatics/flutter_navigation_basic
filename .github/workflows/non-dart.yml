@@ -84,6 +84,7 @@ jobs:
                 echo "e2e=true"
                 echo "workflow=true"
                 echo "pattern_boundary=true"
+                echo "playwright=true"
               } >> "$GITHUB_OUTPUT"
               exit 0
             fi
