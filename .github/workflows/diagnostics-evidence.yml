@@ -1,0 +1,107 @@
+name: Diagnostics screenshot evidence
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'lib/shared/diagnostics/**'
+      - 'lib/shared/widgets/home_overview_panel.dart'
+      - 'lib/features/home/**'
+      - 'tool/src/repository_metadata.dart'
+      - 'tool/python/**'
+      - 'e2e/**'
+      - '.github/workflows/diagnostics-evidence.yml'
+      - '.github/workflows/flutter-pages.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'lib/shared/diagnostics/**'
+      - 'lib/shared/widgets/home_overview_panel.dart'
+      - 'lib/features/home/**'
+      - 'tool/src/repository_metadata.dart'
+      - 'tool/python/**'
+      - 'e2e/**'
+      - '.github/workflows/diagnostics-evidence.yml'
+      - '.github/workflows/flutter-pages.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: diagnostics-evidence-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.0'
+          cache: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Build the Pages entrypoint with canonical metadata
+        run: |
+          flutter pub get
+          python3 tool/python/generate_repository_metadata.py --expected-sha "$EXPECTED_SHA"
+          dart run tool/dev.dart meta --platform web --repository-metadata build/diagnostics/repository/repository-metadata.json
+          flutter build web --release -t lib/main.dart --base-href '/'
+      - name: Install browsers
+        working-directory: e2e
+        run: |
+          npm install
+          npx playwright install --with-deps chromium firefox webkit
+      - name: Assert visible metadata and capture success evidence
+        working-directory: e2e
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8080 --directory ../build/web &
+          server_pid=$!
+          trap 'kill "$server_pid" || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/ >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8080/ >/dev/null
+          npx playwright test tests/diagnostics_evidence.spec.ts --project=chromium --project=firefox --project=webkit --project=mobile-webkit
+      - name: Require all four screenshot receipts
+        run: |
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          root = Path('e2e/test-results')
+          receipts = list(root.rglob('evidence.json'))
+          assert len(receipts) == 4, f'Expected four receipts, found {len(receipts)}'
+          expected = json.loads(Path('build/diagnostics/repository/repository-metadata.json').read_text())
+          assert {json.loads(p.read_text())['project'] for p in receipts} == {'chromium', 'firefox', 'webkit', 'mobile-webkit'}
+          for receipt in receipts:
+              data = json.loads(receipt.read_text())
+              assert data['sha'] == expected['head']['sha']
+              assert {c['file'] for c in data['captures']} == {'home.png', 'build-diagnostics.png'}
+              for capture in data['captures']:
+                  png = (receipt.parent / capture['file']).read_bytes()
+                  assert png.startswith(b'\x89PNG\r\n\x1a\n')
+                  assert len(png) == capture['bytes'] > 1000
+                  assert hashlib.sha256(png).hexdigest() == capture['sha256']
+          PY
+      - name: Upload screenshots, receipts and browser report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: diagnostics-evidence-${{ env.EXPECTED_SHA }}
+          path: |
+            e2e/test-results/
+            e2e/playwright-report/
+            build/diagnostics/repository/
+          if-no-files-found: error
+          retention-days: 14
