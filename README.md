@@ -159,3 +159,6 @@ reading Git or using the device clock as a fallback. Older diagnostic assets
 show unknown timestamps rather than inventing them. Pages marks the source
 snapshot as `web` / `release`; release artifact size remains unmeasured until
 an actual artifact is supplied.
+
+Now Timelineのタイムゾーン生成asset・対応期間・再生成手順は
+[Generated zone table](docs/GENERATED_ZONE_TABLE.md) を参照してください。

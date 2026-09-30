@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/features/now_timeline/presentation/time_rules_bootstrap.dart';
 import 'package:flutter_application_1/features/now_timeline/presentation/now_timeline_page.dart';
+import 'package:flutter_application_1/features/now_timeline/presentation/time_rules_bootstrap.dart';
 import 'package:flutter_application_1/shared/display/display_scope.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';

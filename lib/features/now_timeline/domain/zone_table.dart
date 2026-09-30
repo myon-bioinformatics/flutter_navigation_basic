@@ -23,28 +23,54 @@ class ZoneTable {
   bool containsZone(String zoneName) => _zones.containsKey(zoneName);
 
   factory ZoneTable.fromJson(String source) {
-    final json = jsonDecode(source) as Map<String, dynamic>;
+    final decoded = jsonDecode(source);
+    if (decoded is! Map<String, dynamic>) {
+      throw const FormatException('Zone table must be an object');
+    }
+    final json = decoded;
     if (json['schema_version'] != 1) {
       throw const FormatException('Unsupported zone table schema');
     }
-    final window = json['window_utc'] as List<dynamic>;
+    final window = json['window_utc'];
+    if (window is! List ||
+        window.length != 2 ||
+        window[0] is! String ||
+        window[1] is! String) {
+      throw const FormatException('Invalid zone table window');
+    }
     final start = DateTime.parse(window[0] as String).toUtc();
     final end = DateTime.parse(window[1] as String).toUtc();
     if (!start.isBefore(end)) {
       throw const FormatException('Invalid zone table window');
     }
     final zones = <String, List<List<int>>>{};
-    for (final entry in (json['zones'] as Map<String, dynamic>).entries) {
-      final rows =
-          ((entry.value as Map<String, dynamic>)['transitions'] as List)
-              .map((row) => List<int>.unmodifiable((row as List).cast<int>()))
-              .toList(growable: false);
+    final rawZones = json['zones'];
+    if (rawZones is! Map<String, dynamic> || rawZones.isEmpty) {
+      throw const FormatException('Invalid zone table zones');
+    }
+    for (final entry in rawZones.entries) {
+      final value = entry.value;
+      if (entry.key.isEmpty ||
+          value is! Map<String, dynamic> ||
+          value['transitions'] is! List) {
+        throw const FormatException('Invalid zone transitions');
+      }
+      final rows = <List<int>>[];
+      for (final rawRow in value['transitions'] as List) {
+        if (rawRow is! List ||
+            rawRow.length != 3 ||
+            rawRow.any((item) => item is! int)) {
+          throw const FormatException('Invalid zone transition types');
+        }
+        rows.add(List<int>.unmodifiable(rawRow.cast<int>()));
+      }
       if (rows.isEmpty) {
         throw const FormatException('Empty zone transitions');
       }
       int? previous;
       for (final row in rows) {
-        if (row.length != 3 ||
+        if (row[1] < -24 * 60 ||
+            row[1] > 24 * 60 ||
             (row[2] != 0 && row[2] != 1) ||
             (previous != null && row[0] <= previous) ||
             row[0] < start.millisecondsSinceEpoch ~/ 1000 ||

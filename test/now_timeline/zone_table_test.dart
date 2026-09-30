@@ -53,6 +53,129 @@ void main() {
     }
   });
 
+  test('facade rejects out-of-window conversions including July 2040 NY', () {
+    IanaTimeRules.configure(table);
+    for (final utc in [
+      DateTime.utc(2000).subtract(const Duration(microseconds: 1)),
+      DateTime.utc(2038),
+      DateTime.utc(2040, 7, 1, 12),
+    ]) {
+      const zone = 'America/New_York';
+      final diagnostic = IanaTimeRules.lookupAtUtc(zone, utc);
+      expect(diagnostic.outsideTable, isTrue);
+      expect(diagnostic.offsetMinutes, -300);
+      expect(diagnostic.isDst, isFalse);
+      expect(
+        () => IanaTimeRules.offsetMinutesAtUtc(zone, utc),
+        throwsRangeError,
+      );
+      expect(() => IanaTimeRules.toLocal(zone, utc), throwsRangeError);
+      expect(() => IanaTimeRules.isDst(zone, utc), throwsRangeError);
+      expect(
+        () => IanaTimeRules.localWallTimeToUtc(zone, utc),
+        throwsRangeError,
+      );
+    }
+    expect(
+      IanaTimeRules.offsetMinutesAtUtc(
+        'America/New_York',
+        DateTime.utc(2037, 7, 1, 12),
+      ),
+      -240,
+    );
+    expect(
+      IanaTimeRules.isDst('America/New_York', DateTime.utc(2037, 7, 1, 12)),
+      isTrue,
+    );
+  });
+
+  test(
+    'all transition instants also preserve the state one microsecond after',
+    () {
+      final zones =
+          (jsonDecode(source) as Map<String, dynamic>)['zones']
+              as Map<String, dynamic>;
+      for (final entry in zones.entries) {
+        final rows =
+            (entry.value as Map<String, dynamic>)['transitions'] as List;
+        for (final row in rows.skip(1)) {
+          final after = DateTime.fromMicrosecondsSinceEpoch(
+            (row[0] as int) * Duration.microsecondsPerSecond + 1,
+            isUtc: true,
+          );
+          final result = table.lookupAtUtc(entry.key, after);
+          expect(
+            result.offsetMinutes,
+            row[1],
+            reason: '${entry.key} after $after',
+          );
+          expect(result.isDst, row[2] == 1);
+          expect(result.outsideTable, isFalse);
+        }
+      }
+    },
+  );
+
+  test(
+    'malformed JSON structures and offset ranges always fail with FormatException',
+    () {
+      for (final malformed in ['[]', 'null', '{broken']) {
+        expect(() => ZoneTable.fromJson(malformed), throwsFormatException);
+      }
+      for (final window in [
+        null,
+        [],
+        ['2000-01-01'],
+        [0, 1],
+        ['invalid', '2038-01-01'],
+      ]) {
+        final json = jsonDecode(source) as Map<String, dynamic>;
+        json['window_utc'] = window;
+        expect(
+          () => ZoneTable.fromJson(jsonEncode(json)),
+          throwsFormatException,
+        );
+      }
+      for (final zones in [
+        null,
+        [],
+        {},
+        {'Asia/Tokyo': null},
+        {
+          'Asia/Tokyo': {'transitions': null},
+        },
+      ]) {
+        final json = jsonDecode(source) as Map<String, dynamic>;
+        json['zones'] = zones;
+        expect(
+          () => ZoneTable.fromJson(jsonEncode(json)),
+          throwsFormatException,
+        );
+      }
+      for (final row in [
+        null,
+        'bad row',
+        [],
+        [946684800, 540],
+        [946684800, '540', 0],
+        [946684800, 540.0, 0],
+        [946684800, 540, false],
+        [946684800, -1441, 0],
+        [946684800, 1441, 0],
+        [946684800, 540, 2],
+      ]) {
+        final json = jsonDecode(source) as Map<String, dynamic>;
+        (json['zones']['Asia/Tokyo'] as Map<String, dynamic>)['transitions'] = [
+          row,
+        ];
+        expect(
+          () => ZoneTable.fromJson(jsonEncode(json)),
+          throwsFormatException,
+        );
+      }
+    },
+  );
+
   test('unknown zone fails for table and facade APIs', () {
     IanaTimeRules.configure(table);
     final utc = DateTime.utc(2026);

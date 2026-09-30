@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'features/now_timeline/presentation/time_rules_bootstrap.dart';
 import 'config/app_config.dart';
 import 'config/routes.dart';
+import 'features/now_timeline/presentation/time_rules_bootstrap.dart';
 import 'shared/diagnostics/route_diagnostics_observer.dart';
 import 'shared/diagnostics/weight_badge_overlay.dart';
 import 'shared/display/display_scope.dart';

@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter_application_1/features/now_timeline/domain/zone_table.dart';
-
 import 'package:flutter_application_1/features/now_timeline/domain/now_timeline_models.dart';
+import 'package:flutter_application_1/features/now_timeline/domain/zone_table.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

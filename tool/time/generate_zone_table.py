@@ -8,6 +8,9 @@ IANA tzdata), so the table has no hand-written DST rules.
     python3 tool/time/generate_zone_table.py           # write the asset
     python3 tool/time/generate_zone_table.py --check   # CI drift check
     python3 tool/time/generate_zone_table.py --stdout  # print without writing
+
+--check fails on content drift; a release-label-only difference is a warning.
+Unknown tzdata provenance fails closed. See docs/GENERATED_ZONE_TABLE.md.
 """
 
 from __future__ import annotations
@@ -74,6 +77,21 @@ def tzdata_version() -> str | None:
         if first_line.startswith("# version "):
             return first_line.removeprefix("# version ").strip()
     return None
+
+
+def _require_tzdata_version() -> str:
+    version = tzdata_version()
+    if not version:
+        raise SystemExit(
+            "zone table: cannot determine IANA tzdata version; use a TZPATH "
+            "with tzdata.zi (set PYTHONTZPATH before starting Python)"
+        )
+    return version
+
+
+def comparable_table(table: dict[str, object]) -> dict[str, object]:
+    """Compare all asset content except advisory tzdata release provenance."""
+    return {key: value for key, value in table.items() if key != "tzdata_version"}
 
 
 def _zone(name: str) -> ZoneInfo:
@@ -158,7 +176,7 @@ def build_table() -> dict[str, object]:
     table: dict[str, object] = {
         "schema_version": 1,
         "source": "Python stdlib zoneinfo / system IANA tzdata",
-        "tzdata_version": tzdata_version(),
+        "tzdata_version": _require_tzdata_version(),
         "window_utc": [WINDOW_START.isoformat(), WINDOW_END.isoformat()],
         "row_format": ["utc_epoch_seconds", "offset_minutes", "is_dst"],
         "regions": {region: list(zones) for region, zones in REGIONS.items()},
@@ -210,13 +228,16 @@ def main() -> int:
             current = json.loads(ASSET_PATH.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
             return fail(f"cannot read {ASSET_PATH}: {exc}")
-        if current != expected:
-            before, after = current.get("tzdata_version"), expected["tzdata_version"]
-            if before != after:
-                return fail(
-                    f"tzdata changed ({before} -> {after}); run "
-                    "`python3 tool/time/generate_zone_table.py` and commit the result"
-                )
+        if not isinstance(current, dict) or not current.get("tzdata_version"):
+            return fail("asset has no tzdata version provenance")
+        before, after = current["tzdata_version"], expected["tzdata_version"]
+        if before != after:
+            print(
+                f"zone table: warning: tzdata release differs ({before} -> {after}); "
+                "checking transition content independently of the release label",
+                file=sys.stderr,
+            )
+        if comparable_table(current) != comparable_table(expected):
             return fail(
                 "asset is stale; run `python3 tool/time/generate_zone_table.py` and commit the result"
             )

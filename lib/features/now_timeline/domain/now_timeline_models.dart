@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'zone_table.dart';
-
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'zone_table.dart';
 
 enum TimelineKind { person, place, schedule, event }
 
@@ -117,6 +117,8 @@ class NowTimelineStore {
 }
 
 /// Synchronous facade over the generated IANA table configured at startup.
+/// Conversion APIs throw RangeError outside the table window; diagnostic
+/// lookupAtUtc retains the endpoint state and an explicit outsideTable flag.
 class IanaTimeRules {
   static const supportedZones = <String>[
     'Asia/Tokyo',
@@ -143,8 +145,17 @@ class IanaTimeRules {
     return table.lookupAtUtc(zoneName, utc);
   }
 
+  static ZoneLookupResult _lookupWithinTable(String zoneName, DateTime utc) {
+    final result = lookupAtUtc(zoneName, utc);
+    if (result.outsideTable) {
+      throw RangeError('UTC instant outside generated zone table: '
+          '$zoneName at ${utc.toUtc().toIso8601String()}');
+    }
+    return result;
+  }
+
   static int offsetMinutesAtUtc(String zoneName, DateTime utc) =>
-      lookupAtUtc(zoneName, utc).offsetMinutes;
+      _lookupWithinTable(zoneName, utc).offsetMinutes;
 
   static DateTime toLocal(String zoneName, DateTime utc) {
     final instant = utc.toUtc();
@@ -182,7 +193,7 @@ class IanaTimeRules {
   }
 
   static bool isDst(String zoneName, DateTime utc) =>
-      lookupAtUtc(zoneName, utc).isDst;
+      _lookupWithinTable(zoneName, utc).isDst;
 
   static bool _sameWallMinute(DateTime a, DateTime b) =>
       a.year == b.year &&
