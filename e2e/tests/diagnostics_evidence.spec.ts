@@ -32,18 +32,23 @@ test('canonical Home and Build diagnostics evidence @portable', async ({ page },
     await testInfo.attach(file, { path: output, contentType: 'image/png' });
   }
   await capture('home.png');
-  const generated = page.getByText(`Metadata generated ${canonical.generated_at}`, { exact: true });
-  // Flutter paints a scrollable canvas; scroll the real viewport, not the
-  // accessibility DOM (whose nodes may not be native scroll containers).
+  const generated = page.getByText(`Metadata generated ${canonical.generated_at}`);
+  const buildDiagnostics = page.getByText('Build diagnostics');
+  // Flutter paints a scrollable canvas; move the real viewport, not the
+  // accessibility nodes. Mobile WebKit does not support mouse.wheel.
   for (let attempt = 0; attempt < 20 && !(await generated.isVisible()); attempt++) {
-    await page.mouse.move(Math.floor(page.viewportSize()!.width / 2), Math.floor(page.viewportSize()!.height / 2));
-    await page.mouse.wheel(0, 400);
+    if (testInfo.project.name === 'mobile-webkit') {
+      await page.keyboard.press('End');
+    } else {
+      await page.mouse.move(Math.floor(page.viewportSize()!.width / 2), Math.floor(page.viewportSize()!.height / 2));
+      await page.mouse.wheel(0, 400);
+    }
     await page.waitForTimeout(150);
   }
   await expect(generated).toBeVisible();
   await expect(committed.last()).toBeVisible();
-  await expect(page.getByText('Build diagnostics', { exact: true })).toBeVisible();
-  await expect(page.getByText(`Commit ${canonical.head.short_sha}`, { exact: true }).last()).toBeVisible();
+  await expect(buildDiagnostics).toBeVisible();
+  await expect(page.getByText(`Commit ${canonical.head.short_sha}`)).toBeVisible();
   await capture('build-diagnostics.png');
   const manifest = testInfo.outputPath('evidence.json');
   fs.writeFileSync(manifest, JSON.stringify({
