@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "source": "Python stdlib zoneinfo / system IANA tzdata",
-  "tzdata_version": "2025b",
+  "tzdata_version": "2026c",
   "window_utc": ["2000-01-01T00:00:00+00:00", "2038-01-01T00:00:00+00:00"],
   "row_format": ["utc_epoch_seconds", "offset_minutes", "is_dst"],
   "regions": {"UTC": ["UTC"], "Asia": ["Asia/Tokyo", "Asia/Shanghai", "Asia/Singapore", "Asia/Kolkata", "Asia/Kathmandu", "Asia/Dubai"], "Europe": ["Europe/London", "Europe/Paris", "Europe/Istanbul", "Europe/Moscow"], "Africa": ["Africa/Lagos", "Africa/Cairo", "Africa/Johannesburg"], "North America": ["America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "America/Mexico_City", "Pacific/Honolulu"], "South America": ["America/Sao_Paulo", "America/Argentina/Buenos_Aires"], "Oceania": ["Australia/Sydney", "Australia/Perth", "Pacific/Auckland"]},
