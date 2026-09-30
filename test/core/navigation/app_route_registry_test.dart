@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/features/now_timeline/presentation/time_rules_bootstrap.dart';
 import 'package:flutter_application_1/config/routes.dart';
 import 'package:flutter_application_1/core/navigation/app_navigation.dart';
 import 'package:flutter_application_1/core/navigation/app_route_registry.dart';
@@ -41,6 +42,7 @@ Future<void> _pumpNamedRoute(
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(loadTimeRules);
 
   test('AppNavigation and AppRoutes share canonical + catalogue route keys', () {
     final canonical = AppRouteRegistry.canonicalRoutes.keys.toSet();
