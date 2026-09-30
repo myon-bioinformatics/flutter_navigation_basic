@@ -50,6 +50,9 @@ test('canonical Home and Build diagnostics evidence @portable', async ({ page },
   expect(captures[1].sha256).not.toBe(captures[0].sha256);
   const manifest = testInfo.outputPath('evidence.json');
   fs.writeFileSync(manifest, JSON.stringify({
+    stage: 'complete',
+    run_id: process.env.GITHUB_RUN_ID,
+    run_attempt: process.env.GITHUB_RUN_ATTEMPT,
     sha: canonical.head.sha,
     committed_at: canonical.head.timestamp,
     generated_at: canonical.generated_at,

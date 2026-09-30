@@ -43,6 +43,13 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
+      - name: Check out pinned browser-test-kit validators
+        uses: actions/checkout@v7
+        with:
+          repository: myon-bioinformatics/browser-test-kit
+          ref: 3a054c777a98300ee272e4458990b849c32a7ef0
+          path: .browser-test-kit
+          persist-credentials: false
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.47.0'
@@ -78,29 +85,25 @@ jobs:
           done
           curl -fsS http://127.0.0.1:8080/ >/dev/null
           npx playwright test tests/diagnostics_evidence.spec.ts --project=chromium --project=firefox --project=webkit --project=mobile-webkit
-      - name: Require all four screenshot receipts
+      - name: Validate project capture sets and canonical provenance
+        run: |
+          python3 -S .browser-test-kit/scripts/check_capture_evidence.py e2e/test-results \
+            --expect chromium,firefox,webkit,mobile-webkit \
+            --captures home.png,build-diagnostics.png \
+            --sha "$EXPECTED_SHA" \
+            --canonical build/diagnostics/repository/repository-metadata.json \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT"
+      - name: Check application-specific capture guards
         run: |
           python3 - <<'PY'
-          import hashlib, json
+          import json
           from pathlib import Path
-          root = Path('e2e/test-results')
-          receipts = list(root.rglob('evidence.json'))
-          assert len(receipts) == 4, f'Expected four receipts, found {len(receipts)}'
-          expected = json.loads(Path('build/diagnostics/repository/repository-metadata.json').read_text())
-          assert {json.loads(p.read_text())['project'] for p in receipts} == {'chromium', 'firefox', 'webkit', 'mobile-webkit'}
-          for receipt in receipts:
+          for receipt in Path('e2e/test-results').rglob('evidence.json'):
               data = json.loads(receipt.read_text())
-              assert data['sha'] == expected['head']['sha']
-              assert data['committed_at'] == expected['head']['timestamp']
-              assert data['generated_at'] == expected['generated_at']
-              assert len(data['captures']) == 2
-              assert len({c['sha256'] for c in data['captures']}) == 2
-              assert {c['file'] for c in data['captures']} == {'home.png', 'build-diagnostics.png'}
-              for capture in data['captures']:
-                  png = (receipt.parent / capture['file']).read_bytes()
-                  assert png.startswith(b'\x89PNG\r\n\x1a\n')
-                  assert len(png) == capture['bytes'] > 1000
-                  assert hashlib.sha256(png).hexdigest() == capture['sha256']
+              if data.get('stage', 'complete') != 'complete':
+                  continue
+              assert all(c['bytes'] > 1000 for c in data['captures']), receipt
+              assert len({c['sha256'] for c in data['captures']}) == 2, receipt
           PY
       - name: Upload screenshots, receipts and browser report
         if: always()

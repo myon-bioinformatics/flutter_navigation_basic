@@ -163,3 +163,10 @@ success PNGs, four JSON receipts (browser/version/viewport and PNG SHA-256), the
 canonical metadata and HTML report. Missing receipts or PNGs fail the job.
 Artifacts expire after 14 days. This focused lane is separate from change-selected full E2E
 and pixel-baseline comparison; its GREEN result includes successful capture.
+
+The receipt validator is shared from [browser-test-kit](https://github.com/myon-bioinformatics/browser-test-kit/blob/3a054c777a98300ee272e4458990b849c32a7ef0/docs/screenshot-evidence.md), pinned in the evidence workflow to `3a054c777a98300ee272e4458990b849c32a7ef0`.
+It validates complete project capture sets, every complete retry, PNG structure,
+size/hash, checkout SHA, canonical timestamps and exact run/attempt identity.
+Receipts now explicitly record `stage: complete`, `run_id` and `run_attempt`.
+The application retains the >1000-byte and distinct Home/diagnostics image guards;
+scrolling, metadata assertions and capture semantics remain in the Flutter test.
