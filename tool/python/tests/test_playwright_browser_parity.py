@@ -48,6 +48,27 @@ def test_auto_ci_and_docker_build_the_same_flutter_entrypoint() -> None:
 
     assert ci_target == docker_target == "lib/main.dart"
 
+
+def test_e2e_semantics_define_is_pinned_to_browser_builds() -> None:
+    workflow = (ROOT / ".github" / "workflows" / "non-dart.yml").read_text(encoding="utf-8")
+    dockerfile = (ROOT / "Dockerfile.e2e").read_text(encoding="utf-8")
+    dart_workflow = (ROOT / ".github" / "workflows" / "dart.yml").read_text(encoding="utf-8")
+    pages_workflow = (ROOT / ".github" / "workflows" / "flutter-pages.yml").read_text(encoding="utf-8")
+    main = (ROOT / "lib" / "main.dart").read_text(encoding="utf-8")
+
+    expected_build = (
+        'flutter build web --release -t lib/main.dart '
+        '--dart-define=E2E=true --base-href "/"'
+    )
+    assert expected_build in workflow
+    assert expected_build in dockerfile
+
+    assert "--dart-define=E2E=true" not in dart_workflow
+    assert "--dart-define=E2E=true" not in pages_workflow
+
+    assert "bool.fromEnvironment('E2E', defaultValue: false)" in main
+    assert "SemanticsBinding.instance.ensureSemantics()" in main
+
 def test_playwright_projects_are_the_expected_browser_set() -> None:
     assert _configured_projects() == EXPECTED_PROJECTS
 
