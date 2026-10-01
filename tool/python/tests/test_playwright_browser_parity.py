@@ -70,6 +70,19 @@ def test_e2e_semantics_define_is_pinned_to_browser_builds() -> None:
     assert "_e2eSemanticsHandles.add(" in main
     assert "SemanticsBinding.instance.ensureSemantics()" in main
 
+def test_wait_for_flutter_semantics_activation_is_race_free() -> None:
+    source = (ROOT / "e2e" / "utils" / "helpers.ts").read_text(encoding="utf-8")
+    helper = source.split("export async function waitForFlutter", 1)[1].split(
+        "export async function navigateToHub", 1
+    )[0]
+
+    assert "await page.waitForFunction(" in helper
+    assert "placeholder.click();" in helper
+    assert "document.querySelector('flt-semantics') !== null" in helper
+    assert "accessibilityButton.isVisible()" not in helper
+    assert "accessibilityButton.evaluate(" not in helper
+
+
 def test_playwright_projects_are_the_expected_browser_set() -> None:
     assert _configured_projects() == EXPECTED_PROJECTS
 
