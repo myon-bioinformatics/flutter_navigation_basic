@@ -67,6 +67,7 @@ def test_e2e_semantics_define_is_pinned_to_browser_builds() -> None:
     assert "--dart-define=E2E=true" not in pages_workflow
 
     assert "bool.fromEnvironment('E2E', defaultValue: false)" in main
+    assert "_e2eSemanticsHandles.add(" in main
     assert "SemanticsBinding.instance.ensureSemantics()" in main
 
 def test_playwright_projects_are_the_expected_browser_set() -> None:
