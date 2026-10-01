@@ -7,7 +7,7 @@ import 'shared/diagnostics/route_diagnostics_observer.dart';
 import 'shared/diagnostics/weight_badge_overlay.dart';
 import 'shared/display/display_scope.dart';
 
-SemanticsHandle? _e2eSemanticsHandle;
+final List<SemanticsHandle> _e2eSemanticsHandles = <SemanticsHandle>[];
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,7 +15,7 @@ Future<void> main() async {
     // Keep the handle for the process lifetime so browser E2E can address the
     // Flutter semantics tree deterministically. Production builds never pass
     // this define and therefore preserve platform-driven semantics behavior.
-    _e2eSemanticsHandle = SemanticsBinding.instance.ensureSemantics();
+    _e2eSemanticsHandles.add(SemanticsBinding.instance.ensureSemantics());
   }
   await loadTimeRules();
   final display = await DisplayController.load();
