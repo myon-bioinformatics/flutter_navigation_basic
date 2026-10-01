@@ -3,12 +3,6 @@ import { waitForFlutter, navigateToHub, navigateToScreen } from '../utils/helper
 import testData from '../fixtures/test_data.json';
 
 test.describe('Screen Navigation', () => {
-  test.beforeEach(({}, testInfo) => {
-    test.fixme(
-      testInfo.project.name === 'mobile-chromium',
-      'semantics bootstrap: tracked in #96',
-    );
-  });
   test('navigates to Screen1 from hub', async ({ page }) => {
     await navigateToHub(page);
     await page.locator('[key="screen-grid-1"]').click();
