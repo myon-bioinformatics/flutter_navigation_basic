@@ -4,26 +4,28 @@ export async function waitForFlutter(page: Page, timeout = 15000) {
   await page.waitForLoadState('load', { timeout });
   await page.locator('flt-glass-pane').waitFor({ state: 'attached', timeout });
 
-  // Flutter Web keeps its accessibility DOM opt-in. Playwright text locators
-  // cannot see the app's labels until this placeholder is activated.
+  // Flutter Web keeps its accessibility DOM opt-in. The E2E build usually
+  // enables semantics from Dart, while non-E2E callers may still expose the
+  // accessibility placeholder. Query/click/recheck in one browser callback so
+  // a placeholder removed by Flutter cannot race a second locator operation.
   await page.waitForFunction(
-    () =>
-      document.querySelector('flt-semantics-placeholder[aria-label="Enable accessibility"]') !== null ||
-      document.querySelector('flt-semantics') !== null,
+    () => {
+      if (document.querySelector('flt-semantics') !== null) {
+        return true;
+      }
+
+      const placeholder = document.querySelector(
+        'flt-semantics-placeholder[aria-label="Enable accessibility"]',
+      );
+      if (placeholder instanceof HTMLElement) {
+        placeholder.click();
+      }
+
+      return document.querySelector('flt-semantics') !== null;
+    },
     null,
     { timeout },
   );
-
-  const accessibilityButton = page.locator(
-    'flt-semantics-placeholder[aria-label="Enable accessibility"]',
-  );
-  if (await accessibilityButton.isVisible()) {
-    // Flutter positions this 1x1px placeholder at (-1px, -1px), outside the
-    // viewport; use its DOM click handler instead of a pointer-based click.
-    await accessibilityButton.evaluate((element: HTMLElement) => element.click());
-  }
-
-  await page.locator('flt-semantics').first().waitFor({ state: 'attached', timeout });
 }
 
 export async function navigateToHub(page: Page) {
