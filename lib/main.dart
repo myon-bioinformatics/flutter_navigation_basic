@@ -5,6 +5,7 @@ import 'config/routes.dart';
 import 'features/now_timeline/presentation/time_rules_bootstrap.dart';
 import 'shared/diagnostics/route_diagnostics_observer.dart';
 import 'shared/diagnostics/weight_badge_overlay.dart';
+import 'shared/bootstrap/app_bootstrap.dart';
 import 'shared/display/display_scope.dart';
 
 final List<SemanticsHandle> _e2eSemanticsHandles = <SemanticsHandle>[];
@@ -17,9 +18,8 @@ Future<void> main() async {
     // this define and therefore preserve platform-driven semantics behavior.
     _e2eSemanticsHandles.add(SemanticsBinding.instance.ensureSemantics());
   }
-  await loadTimeRules();
-  final display = await DisplayController.load();
-  runApp(DisplayScope(controller: display, child: const App()));
+  // Pages / browser-E2E entrypoint: no production-only services here.
+  await bootstrapApp(prepare: loadTimeRules, app: const App());
 }
 
 class App extends StatelessWidget {

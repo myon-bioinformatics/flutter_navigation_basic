@@ -11,7 +11,7 @@ class DisplayController extends ChangeNotifier {
   static const legacyNowTimelinePreferenceKey = 'now_timeline.locale.v1';
 
   final DisplayCatalog catalog;
-  final SharedPreferences _preferences;
+  final SharedPreferences? _preferences;
   String _locale;
 
   /// Canonical ISO 639-3 locale code (e.g. `eng`, `jpn`).
@@ -22,18 +22,39 @@ class DisplayController extends ChangeNotifier {
 
   Locale get flutterLocale => DisplayLocaleCodes.toFlutterLocale(_locale);
 
-  static Future<DisplayController> load() async {
-    final catalog = await DisplayCatalog.load();
-    final preferences = await SharedPreferences.getInstance();
+  /// Catalog failure propagates (no catalog means no UI text). A preferences
+  /// or storage failure is non-fatal: the session runs with the default
+  /// locale and nothing is persisted.
+  static Future<DisplayController> load({
+    Future<DisplayCatalog> Function() catalogLoader = DisplayCatalog.load,
+    Future<SharedPreferences> Function() preferencesLoader =
+        SharedPreferences.getInstance,
+  }) async {
+    final catalog = await catalogLoader();
+    final SharedPreferences preferences;
+    try {
+      preferences = await preferencesLoader();
+    } catch (_) {
+      return DisplayController._(catalog, null, DisplayLocaleCodes.eng);
+    }
     final saved = preferences.getString(preferenceKey);
     final legacy = preferences.getString(legacyNowTimelinePreferenceKey);
     final locale = DisplayLocaleCodes.canonicalize(saved ?? legacy);
 
     if (saved != locale) {
-      await preferences.setString(preferenceKey, locale);
+      await _persist(preferences, locale);
     }
 
     return DisplayController._(catalog, preferences, locale);
+  }
+
+  static Future<void> _persist(SharedPreferences? prefs, String locale) async {
+    if (prefs == null) return;
+    try {
+      await prefs.setString(preferenceKey, locale);
+    } catch (_) {
+      // Best-effort; the in-memory locale stays authoritative.
+    }
   }
 
   String text(
@@ -46,12 +67,12 @@ class DisplayController extends ChangeNotifier {
     final resolved = DisplayLocaleCodes.canonicalize(value);
     if (_locale == resolved) {
       // Still rewrite prefs when a legacy two-letter code was passed in.
-      await _preferences.setString(preferenceKey, resolved);
+      await _persist(_preferences, resolved);
       return;
     }
     _locale = resolved;
     notifyListeners();
-    await _preferences.setString(preferenceKey, resolved);
+    await _persist(_preferences, resolved);
   }
 }
 

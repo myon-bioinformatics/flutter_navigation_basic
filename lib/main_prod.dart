@@ -8,17 +8,23 @@ import 'core/services/storage_service.dart';
 import 'features/now_timeline/presentation/time_rules_bootstrap.dart';
 import 'shared/diagnostics/route_diagnostics_observer.dart';
 import 'shared/diagnostics/weight_badge_overlay.dart';
+import 'shared/bootstrap/app_bootstrap.dart';
 import 'shared/display/display_scope.dart';
 import 'shared/themes/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await loadTimeRules();
-  await AppConfig.initialize(env: AppEnvironment.production);
-  await StorageService.initialize();
-  final display = await DisplayController.load();
+  // Native/iOS + production-entrypoint build lane. Production-only
+  // initialization stays explicit here; display policy is shared.
+  await bootstrapApp(
+    prepare: () async {
+      await loadTimeRules();
+      await AppConfig.initialize(env: AppEnvironment.production);
+      await StorageService.initialize();
+    },
+    app: const MyApp(),
+  );
   LoggerService.info('App started in production mode');
-  runApp(DisplayScope(controller: display, child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
