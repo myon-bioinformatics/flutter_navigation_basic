@@ -310,6 +310,10 @@ jobs:
     needs: changes
     if: needs.changes.outputs.playwright == 'true'
     runs-on: ubuntu-latest
+    # A healthy portable run completes well below this bound. Avoid holding a
+    # hosted runner for GitHub's 360-minute default when browser installation
+    # or the runner itself becomes stuck.
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v7
@@ -328,7 +332,7 @@ jobs:
       - name: Install Flutter deps and build web
         run: |
           flutter pub get
-          flutter build web --release -t lib/main.dart --base-href "/"
+          flutter build web --release -t lib/main.dart --dart-define=E2E=true --base-href "/"
 
       - name: Install Playwright
         working-directory: e2e
