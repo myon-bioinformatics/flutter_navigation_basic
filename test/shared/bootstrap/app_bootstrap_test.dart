@@ -32,6 +32,14 @@ void main() {
 
   testWidgets('preferences failure still renders usable UI in default locale',
       (tester) async {
+    // Asset loading must escape the widget fake-async zone, as in
+    // test/support/display_test_harness.dart. Keep preference failure injected.
+    final controller = await tester.runAsync<DisplayController>(
+      () => DisplayController.load(
+        preferencesLoader: () => throw StateError('storage rejected'),
+      ),
+    );
+    expect(controller, isNotNull);
     await bootstrapApp(
       app: Builder(
         builder: (context) => Text(
@@ -39,9 +47,7 @@ void main() {
           textDirection: TextDirection.ltr,
         ),
       ),
-      loadDisplay: () => DisplayController.load(
-        preferencesLoader: () => throw StateError('storage rejected'),
-      ),
+      loadDisplay: () async => controller!,
     );
     await tester.pump();
 
