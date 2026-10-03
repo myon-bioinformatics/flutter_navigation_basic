@@ -1,0 +1,4 @@
+# Public vendored Python/LICENSE bytes are verified against Git blob + SHA-256.
+tool/python/vendor/repository_metadata_contract.py -text
+tool/python/vendor/repository_metadata_generator.py -text
+tool/python/vendor/Ironmate-LICENSE -text
