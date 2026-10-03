@@ -59,30 +59,35 @@ def test_cli_gated_sha_and_json_jsonl(checkout, tmp_path):
     validate_repository_record(record)
 
 
-def test_vendor_provenance_matches_exact_bytes():
+def test_vendor_lock_matches_exact_bytes_and_ci_contract():
     vendor = PYTHON_DIR / "vendor"
-    provenance = json.loads((vendor / "repository_metadata_provenance.json").read_text())
-    assert provenance["source_commit"] == "0aee64da2f8d0119a3ef9b955e5c3818f28aaf92"
-    assert provenance["repository"] == "myon-bioinformatics/Ironmate"
+    lock = json.loads((PYTHON_DIR / "vendor.lock.json").read_text(encoding="utf-8"))
+    assert lock["schema"] == "vendor-lock/1"
     expected = {
-        "repository_metadata_contract.py": {
-            "git_blob_sha": "a61a2949e58a42635b0830289e368b4125b1274b",
-            "sha256": "c8093d806756925b68978b5a40a218e4acd5daf43f2d7fc2e358cabf8dc39e9a",
-        },
-        "repository_metadata_generator.py": {
-            "git_blob_sha": "eef572ce64e92bfecf0451235f884aa208044587",
-            "sha256": "a2edc91cc0a269d8b2fc6a9be1cfa0edbfae18604d53a1b9ebdcb72004be9a06",
-        },
+        ("repository_metadata_contract.py", "tool/python/vendor/repository_metadata_contract.py"),
+        ("repository_metadata_generator.py", "tool/python/vendor/repository_metadata_generator.py"),
+        ("LICENSE", "tool/python/vendor/Ironmate-LICENSE"),
     }
-    assert set(provenance["files"]) == set(expected)
-    for name, hashes in expected.items():
-        entry = provenance["files"][name]
-        assert entry["git_blob_sha"] == hashes["git_blob_sha"]
-        assert entry["sha256"] == hashes["sha256"]
-        data = (vendor / name).read_bytes()
-        assert hashlib.sha256(data).hexdigest() == hashes["sha256"]
+    entries = lock["files"]
+    assert {(entry["source"], entry["destination"]) for entry in entries} == expected
+    assert {entry["repository"] for entry in entries} == {"myon-bioinformatics/Ironmate"}
+    assert {entry["ref"] for entry in entries} == {"refs/heads/main"}
+    commits = {entry["commit"] for entry in entries}
+    assert len(commits) == 1
+    assert all(len(commit) == 40 and set(commit) <= set("0123456789abcdef") for commit in commits)
+    for entry in entries:
+        data = (ROOT / entry["destination"]).read_bytes()
+        assert hashlib.sha256(data).hexdigest() == entry["sha256"]
         blob = f"blob {len(data)}".encode() + bytes([0]) + data
-        assert hashlib.sha1(blob).hexdigest() == hashes["git_blob_sha"]
+        assert hashlib.sha1(blob).hexdigest() == entry["blob_sha"]
+    assert not (vendor / "repository_metadata_provenance.json").exists()
+
+    workflow = (ROOT / ".github/workflows/non-dart.yml").read_text(encoding="utf-8")
+    assert workflow.count("ref: 37f30d5acdc1906d4acbd103ce6f652bc13ca7eb") == 2
+    assert workflow.count("vendor_sync.py update --manifest tool/python/vendor.lock.json") == 1
+    assert workflow.count("vendor_sync.py materialize --manifest tool/python/vendor.lock.json") == 1
+    assert not any(token in workflow for token in ("VENDOR_UPDATE_TOKEN", "VENDOR_UPDATES_ENABLED", "GH_TOKEN"))
+    assert "37f30d5acdc1906d4acbd103ce6f652bc13ca7eb" in (PYTHON_DIR / "README.md").read_text(encoding="utf-8")
 
 
 def test_pages_generates_only_after_checkout_gate_and_embeds_asset():
