@@ -217,6 +217,62 @@ jobs:
       - name: Verify photo fixture drift
         run: python tool/python/generate_photo_import_fixtures.py --check
 
+  python-vendor-locked:
+    name: Python vendor locked baseline
+    needs: changes
+    if: needs.changes.outputs.python == 'true' || needs.changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Fetch pinned shared vendor tool
+        uses: actions/checkout@v7
+        with:
+          repository: myon-bioinformatics/myon-bioinformatics
+          ref: 37f30d5acdc1906d4acbd103ce6f652bc13ca7eb
+          path: .vendor-sync-tools
+          persist-credentials: false
+
+      - name: Verify and recreate locked metadata vendor snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -S .vendor-sync-tools/vendor_sync.py check --manifest tool/python/vendor.lock.json
+          rm tool/python/vendor/repository_metadata_contract.py
+          rm tool/python/vendor/repository_metadata_generator.py
+          rm tool/python/vendor/Ironmate-LICENSE
+          python -S .vendor-sync-tools/vendor_sync.py materialize --manifest tool/python/vendor.lock.json
+          python -S .vendor-sync-tools/vendor_sync.py check --manifest tool/python/vendor.lock.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: tool/python/requirements.txt
+
+      - name: Install Python test dependencies
+        run: python -m pip install -r tool/python/requirements.txt
+
+      - name: Run locked metadata regressions
+        run: python -m pytest -q tool/python/tests/test_repository_metadata.py
+
+      - name: Preserve locked metadata vendor snapshot
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: python-vendor-locked
+          path: |
+            tool/python/vendor.lock.json
+            tool/python/vendor/repository_metadata_contract.py
+            tool/python/vendor/repository_metadata_generator.py
+            tool/python/vendor/Ironmate-LICENSE
+          if-no-files-found: error
+          retention-days: 14
+
   python-pytest:
     name: Python pytest oracles
     needs: changes
@@ -225,6 +281,24 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Fetch pinned shared vendor tool
+        uses: actions/checkout@v7
+        with:
+          repository: myon-bioinformatics/myon-bioinformatics
+          ref: 37f30d5acdc1906d4acbd103ce6f652bc13ca7eb
+          path: .vendor-sync-tools
+          persist-credentials: false
+
+      - name: Update public metadata vendor files for this run
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -S .vendor-sync-tools/vendor_sync.py check --manifest tool/python/vendor.lock.json
+          python -S .vendor-sync-tools/vendor_sync.py update --manifest tool/python/vendor.lock.json
+          python -S .vendor-sync-tools/vendor_sync.py check --manifest tool/python/vendor.lock.json
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -278,6 +352,19 @@ jobs:
         with:
           name: python-oracle-summary
           path: build/diagnostics/python-oracle/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Preserve candidate metadata vendor snapshot
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: python-vendor-candidate
+          path: |
+            tool/python/vendor.lock.json
+            tool/python/vendor/repository_metadata_contract.py
+            tool/python/vendor/repository_metadata_generator.py
+            tool/python/vendor/Ironmate-LICENSE
           if-no-files-found: error
           retention-days: 14
 
