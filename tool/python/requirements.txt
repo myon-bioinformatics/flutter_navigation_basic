@@ -5,7 +5,7 @@ pytest>=8
 # Fixture regeneration only (`tool/python/generate_photo_import_fixtures.py`).
 # CI calls the generator only with --check; that path is stdlib-only and does not regenerate encoder-backed fixtures.
 # Full regeneration still needs Pillow plus host ffmpeg/heif-enc.
-Pillow==11.0.0
+Pillow==12.3.0
 
 # Workflow contract tests only; runtime and timezone generators remain stdlib-only.
 PyYAML>=6
