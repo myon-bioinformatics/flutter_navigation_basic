@@ -142,3 +142,20 @@ python3 tool/python/build_artifact_report.py --compare before.json after.json
 - `actions_latest.py` / `test.py`: fetch latest Actions jobs + optional artifact download
 - CI uploads `python-oracle-summary` for later `--download-artifact` use
 - Latest-stable Flutter shards run **core** paths only (`tool/ci/flutter_core_test_paths.txt`); pattern catalogues stay on pinned shards
+
+
+## Shared repository-metadata vendor lock
+
+The two repository-metadata modules under `tool/python/vendor/` are test/build
+inputs copied from public `myon-bioinformatics/Ironmate`. Their exact upstream
+commit, Git blob and SHA-256 identities, plus the upstream LICENSE, are recorded
+in `tool/python/vendor.lock.json` (`vendor-lock/1`).
+
+Ordinary Non-Dart CI uses the shared stdlib-only `vendor_sync.py` pinned at
+`37f30d5acdc1906d4acbd103ce6f652bc13ca7eb`. A locked lane first recreates the checked-in files from their fixed
+commit and runs the metadata regressions. The normal pytest lane then resolves
+`refs/heads/main` in a disposable checkout, verifies the candidate bytes and
+runs the existing Python suite against that candidate. The resolved lock and
+files are retained as Actions artifacts. CI never writes back to the repository,
+pushes a branch, opens a PR, or requires an update token. Pages and application
+builds continue to use the checked-in baseline.
