@@ -18,7 +18,7 @@ Future<void> main() async {
     // this define and therefore preserve platform-driven semantics behavior.
     _e2eSemanticsHandles.add(SemanticsBinding.instance.ensureSemantics());
   }
-  // Pages / browser-E2E entrypoint: no production-only services here.
+  // Canonical Web/native entrypoint; no legacy shell services are needed.
   await bootstrapApp(prepare: loadTimeRules, app: const App());
 }
 

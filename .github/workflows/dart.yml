@@ -137,7 +137,7 @@ jobs:
       - name: Verify handcrafted shell is GetX-free
         run: |
           if grep -R -n "package:get/get.dart" \
-            lib/main_prod.dart \
+            lib/main.dart \
             lib/core/navigation/app_navigation.dart \
             lib/features/home \
             lib/features/now_timeline \
@@ -161,8 +161,6 @@ jobs:
       - name: Build Flutter web
         run: flutter build web --release --base-href "/flutter_navigation_basic/"
 
-      - name: Build production entrypoint
-        run: flutter build web --release -t lib/main_prod.dart --base-href "/flutter_navigation_basic/"
 
   # Pinned core product suites (excludes ~792 pattern catalogue files).
   unit-tests:
@@ -322,9 +320,9 @@ jobs:
           mapfile -t paths < <(grep -vE '^\s*(#|$)' tool/ci/flutter_core_test_paths.txt)
           flutter test --total-shards=2 --shard-index=${{ matrix.shard }} "${paths[@]}"
 
-      - name: Build production entrypoint on latest stable
+      - name: Build canonical web entrypoint on latest stable
         if: matrix.shard == 0
-        run: flutter build web --release -t lib/main_prod.dart --base-href "/flutter_navigation_basic/"
+        run: flutter build web --release -t lib/main.dart --base-href "/flutter_navigation_basic/"
 
   # Flutter + Gradle startup is expensive; skip on PRs that cannot affect size.
   android-size:
@@ -345,7 +343,7 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Measure production Android arm64 release
+      - name: Measure canonical Android arm64 release
         run: dart run tool/dev.dart size
 
       - name: Show size summary
@@ -423,7 +421,7 @@ jobs:
         run: flutter pub get
 
       - name: Build iOS release without codesigning
-        run: flutter build ios --release --no-codesign -t lib/main_prod.dart
+        run: flutter build ios --release --no-codesign -t lib/main.dart
 
   # RunnerTests XCTest (ImageNormalizeTests) on the iOS Simulator.
   ios-tests:
@@ -445,7 +443,7 @@ jobs:
         run: flutter pub get
 
       - name: Prepare iOS simulator build
-        run: flutter build ios --simulator --debug --no-codesign -t lib/main_prod.dart
+        run: flutter build ios --simulator --debug --no-codesign -t lib/main.dart
 
       - name: Select iPhone simulator destination
         id: sim

@@ -6,9 +6,8 @@ import '../display/display_scope.dart';
 
 /// Shared Door-to-Door tool selector for Tools screen footers.
 ///
-/// Uses [Navigator.of] with named routes so both default (`main.dart` /
-/// [AppRoutes]) and production (`main_prod.dart` / [AppNavigation])
-/// entrypoints work without a global navigator key.
+/// Uses [Navigator.of] with named routes in the canonical app,
+/// without a global navigator key.
 class ToolDoorSelector extends StatelessWidget {
   const ToolDoorSelector({
     super.key,

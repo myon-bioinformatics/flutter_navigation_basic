@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../display/display_scope.dart';
 
-/// Shared startup policy for every entrypoint (`main.dart`, `main_prod.dart`).
+/// Startup policy for the canonical Web/native entrypoint (`main.dart`).
 ///
 /// Entrypoint-specific initialization runs in [prepare] before display
 /// loading. A catalog (or [prepare]) failure shows [StartupErrorApp] instead

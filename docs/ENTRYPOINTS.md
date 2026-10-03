@@ -1,20 +1,23 @@
-# Entrypoints and build lanes (#102)
+# Canonical entrypoint and build lanes (#102)
 
-Both entrypoints start through `bootstrapApp` (`lib/shared/bootstrap/app_bootstrap.dart`).
-Shared policy: catalog load failure shows `StartupErrorApp` (semantics identifier
-`startup-error`); preferences/storage failure continues with in-memory `eng`.
+All Web and native builds use `lib/main.dart`, which starts through
+`bootstrapApp` (`lib/shared/bootstrap/app_bootstrap.dart`).
+Catalog load failure shows `StartupErrorApp` (semantics identifier
+`startup-error`); preferences failure continues with in-memory `eng`.
 
 | Lane | Entrypoint | Role / evidence provenance |
 | --- | --- | --- |
-| GitHub Pages (`flutter-pages.yml`) | `lib/main.dart` | published web app |
-| Browser E2E / Docker (`non-dart.yml`) | `lib/main.dart` (`E2E=true`) | evidence for the Pages entrypoint only |
-| `dart.yml` web build | `lib/main_prod.dart` | production-entrypoint compile check; NOT the Pages artifact |
-| iOS build / XCTest | `lib/main_prod.dart` | native entrypoint |
+| GitHub Pages | `lib/main.dart` | published Web app from the Flutter-gated main commit |
+| Browser E2E / Docker | `lib/main.dart` (`E2E=true`) | browser evidence; semantics explicitly enabled |
+| Pinned / latest-stable Web CI | `lib/main.dart` | release compile checks |
+| iOS release / Simulator XCTest | `lib/main.dart` | native build and platform tests |
+| Android arm64 size | `lib/main.dart` by default | measured APK; summary records the target |
 
-`main_prod.dart` keeps production-only init (`AppConfig`, `StorageService`,
-`LoggerService`, `AppNavigation.navigatorKey`, `AppTheme`) explicit; `main.dart`
-does not run it. Evidence from one entrypoint must not be attributed to the other.
+The redundant legacy shell was removed. Its environment/storage initialization,
+theme, navigator key and success log were not copied into the current app.
+Existing reusable routes and feature code remain. No second deployment or
+Deno/Python runtime was introduced: the removed shell was Flutter UI/bootstrap.
 
-## Maintainer follow-up (cannot be edited by the bot)
-In `.github/workflows/dart.yml` rename the two `Build production entrypoint ...`
-web steps (lines ~165, ~327) to e.g. `Build web (main_prod.dart compile check, not the Pages artifact)`.
+Evidence remains specific to its SHA, platform and flags. A common entrypoint
+does not turn browser tests into proof of native runtime behavior, nor compare
+new APK sizes directly with historical measurements of the legacy shell.

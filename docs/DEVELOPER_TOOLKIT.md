@@ -43,7 +43,7 @@ dart run tool/dev.dart all
 ```
 
 - `check`: dependency resolution, lockfile reproducibility, inspect, analyze, test.
-- `full`: `check` plus both release web builds and size reporting.
+- `full`: `check` plus the canonical release web build and size reporting.
 - `bundle`: collect diagnostics and package them as a ZIP when a standard Python launcher is available.
 - `all`: full validation followed by diagnostic bundle generation.
 
@@ -80,7 +80,7 @@ dart run tool/check.dart
 dart run tool/check.dart --full
 ```
 
-The full mode includes both release web entrypoints and prints build sizes. Each step reports its duration and exit status.
+The full mode includes the canonical release web entrypoint and prints its build size. Each step reports its duration and exit status.
 
 ## Latest stable direct dependencies
 

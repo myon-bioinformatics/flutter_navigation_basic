@@ -17,17 +17,13 @@ import '../../screens/irony_generator_screen.dart';
 import '../../screens/mcp_integration_screen.dart';
 import '../../screens/ui_showcase_screen.dart';
 
-/// Single source of route name → page builder metadata for both entrypoints.
-///
-/// `main.dart` ([AppRoutes]) and `main_prod.dart` ([AppNavigation]) must mount
-/// these same builders so GitHub Pages (default `main.dart`) and prod CI smoke
-/// show the same Door-enabled feature pages.
+/// Single source of route name → page builder metadata for the canonical app.
 class AppRouteRegistry {
   AppRouteRegistry._();
 
   /// Canonical tool routes (Door catalogue) plus legacy deep-link aliases.
 
-  /// Public catalogue / integration routes shared by both entrypoints.
+  /// Public catalogue / integration routes used by the canonical app.
   static Map<String, WidgetBuilder> get catalogueRoutes => {
         '/hub': (_) => const HubScreen(),
         '/examples/ui-showcase': (_) => const UiShowcaseScreen(),

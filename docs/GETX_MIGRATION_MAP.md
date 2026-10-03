@@ -6,8 +6,7 @@ This document tracks removal of GetX from the application while preserving the r
 
 The **application shell is now GetX-free**:
 
-- `lib/main.dart` already uses `MaterialApp`.
-- `lib/main_prod.dart` now uses `MaterialApp` rather than `GetMaterialApp`.
+- `lib/main.dart` is the sole Web/native entrypoint and uses `MaterialApp`.
 - `lib/core/navigation/app_navigation.dart` uses Flutter `Navigator` + a `GlobalKey<NavigatorState>` and a standard `Map<String, WidgetBuilder>` route registry.
 - handcrafted Home / Counter / Irony / Composition / Screen 5 pages use ordinary `StatelessWidget` / `StatefulWidget`, explicit constructor injection, plain Dart controllers, and `ChangeNotifier` only where mutation is required.
 - CI rejects any new `package:get/get.dart` import in that handcrafted shell.
