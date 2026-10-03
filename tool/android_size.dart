@@ -3,7 +3,7 @@ import 'dart:io';
 import 'src/toolkit_io.dart';
 
 Future<void> main(List<String> args) async {
-  final target = _valueAfter(args, '--target') ?? 'lib/main_prod.dart';
+  final target = _valueAfter(args, '--target') ?? 'lib/main.dart';
   final diagnosticsDir = Directory(
     _valueAfter(args, '--output-dir') ?? 'build/diagnostics/android-arm64',
   );

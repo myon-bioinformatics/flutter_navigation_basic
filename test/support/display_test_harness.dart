@@ -26,8 +26,7 @@ Future<DisplayController> loadTestDisplayController({
 }
 
 /// Wraps [child] in a [DisplayScope] backed by a freshly loaded
-/// [DisplayController], mirroring how `main.dart`/`main_prod.dart` bootstrap
-/// the app. Keeping the real-async boundary here means existing widget tests
+/// [DisplayController], mirroring how `main.dart` bootstraps the app. Keeping the real-async boundary here means existing widget tests
 /// get deterministic bootstrap behavior without file-by-file timeout fixes.
 Future<Widget> wrapWithDisplayScope(Widget child) async {
   final controller = await loadTestDisplayController();

@@ -195,7 +195,7 @@ Usage:
   dart run tool/dev.dart full
   dart run tool/dev.dart versions
   dart run tool/dev.dart meta [--artifact path] [--analysis path] [--platform name]
-  dart run tool/dev.dart size [--target lib/main_prod.dart]
+  dart run tool/dev.dart size [--target lib/main.dart]
   dart run tool/dev.dart net <url>
   dart run tool/dev.dart mock [args]
   dart run tool/dev.dart bundle [--output path.zip]
@@ -204,7 +204,7 @@ Usage:
 
 Recommended one-liners:
   dart run tool/dev.dart check   # quick repository health
-  dart run tool/dev.dart full    # quick health + both release web builds
+  dart run tool/dev.dart full    # quick health + the canonical release web build
   dart run tool/dev.dart meta    # refresh app/screen source metadata
   dart run tool/dev.dart size    # refresh metadata + Android arm64 release analysis
   dart run tool/dev.dart bundle  # reusable diagnostic ZIP

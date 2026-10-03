@@ -6,8 +6,7 @@ import '../screens/generic_screen.dart';
 
 /// Public (`main.dart`) route table.
 ///
-/// Tool routes come from [AppRouteRegistry] so GitHub Pages shows the same
-/// Door-enabled feature pages as `main_prod.dart` / [AppNavigation].
+/// Tool routes come from [AppRouteRegistry] for the canonical Web/native app.
 class AppRoutes {
   static const String home = RouteNames.home;
   static const String hub = '/hub';

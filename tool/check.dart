@@ -17,7 +17,7 @@ Future<void> main(List<String> args) async {
   ];
 
   stdout.writeln('Developer Toolkit check (${full ? 'full' : 'quick'})');
-  stdout.writeln('Use --full to include both release web builds.');
+  stdout.writeln('Use --full to include the canonical release web build.');
   stdout.writeln();
 
   for (final step in steps) {
@@ -49,23 +49,6 @@ Future<void> main(List<String> args) async {
     final defaultSize = await directorySize(Directory('build/web'));
     stdout.writeln('Default web build size: ${formatBytes(defaultSize)}');
 
-    if (!await _runStep(const _Step(
-      'Build production entrypoint',
-      'flutter',
-      [
-        'build',
-        'web',
-        '--release',
-        '-t',
-        'lib/main_prod.dart',
-        '--base-href',
-        '/flutter_navigation_basic/',
-      ],
-    ))) {
-      return;
-    }
-    final productionSize = await directorySize(Directory('build/web'));
-    stdout.writeln('Production web build size: ${formatBytes(productionSize)}');
   }
 
   stdout.writeln();

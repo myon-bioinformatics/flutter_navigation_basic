@@ -13,8 +13,7 @@ https://myon-bioinformatics.github.io/flutter_navigation_basic/
 
 ```
 lib/
-├── main.dart                      # エントリポイント（MaterialApp設定のみ）
-├── main_prod.dart                 # 本番エントリポイント（GetMaterialApp + 環境設定）
+├── main.dart                      # Web・native共通エントリポイント（MaterialApp + bootstrap）
 ├── config/
 │   ├── app_config.dart            # アプリ名・テーマカラー等の設定（旧来版）
 │   └── routes.dart                # 198画面 + 意味ベースのexample routes

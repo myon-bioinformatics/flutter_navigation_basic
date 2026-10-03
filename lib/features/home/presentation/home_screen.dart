@@ -56,8 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: display.text('homeOverview.title'),
                   subtitle: display.text('homeOverview.subtitle'),
                   actions: [
-                    // Navigator.pushNamed works for both main.dart (no global
-                    // key) and main_prod.dart (navigatorKey attached).
+                    // Use the enclosing Navigator without a global key.
                     HomeOverviewAction(
                       label: display.text('home.action.clipboardShelfProd.label'),
                       subtitle:
