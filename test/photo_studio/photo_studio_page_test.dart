@@ -622,11 +622,19 @@ void main() {
     expect(_undoEnabled(tester), isTrue);
     expect(tester.widget<Slider>(find.byType(Slider)).value, closeTo(1.0, 0.05));
 
-    // Undo the placement first; selecting the shortcut while the Circle tool
-    // was armed is now its own history entry because it clears draftShape.
+    // Undo placement, then the shortcut's separate frame-tool history entry.
+    await _tapUndo(tester);
+    expect(_rectCardText(tester), afterMove);
+    expect(_shapeSelected(tester, 'None'), isTrue);
+    expect(tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas)).stamps,
+        isEmpty);
+    expect(_undoEnabled(tester), isTrue);
+
     await _tapUndo(tester);
     expect(_rectCardText(tester), afterMove);
     expect(_shapeSelected(tester, 'Circle'), isTrue);
+    expect(tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas)).pendingEmoji,
+        isNull);
     expect(_undoEnabled(tester), isTrue);
 
     await _tapUndo(tester);

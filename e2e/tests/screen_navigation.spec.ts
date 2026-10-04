@@ -96,12 +96,14 @@ test.describe('Screen Navigation', () => {
     const search = searchRegion.getByRole('textbox');
     await expect(search).toHaveCount(1);
     await expect(search).toBeEditable();
-    // Keep focus on Flutter's real editable semantics node. Desktop WebKit
-    // can expose a changed DOM value with insertText without updating Flutter
-    // state. Sequential key events also exercise Flutter's onChanged path.
+    // DOM focus precedes Flutter's editing-strategy activation on WebKit.
+    // The engine creates this input with autocorrect=off, then applies the
+    // TextField's default autocorrect=on when it attaches input listeners.
     await search.click();
     await expect(search).toBeFocused();
-    await search.pressSequentially('Transformed Result List');
+    await expect(search).toHaveAttribute('autocorrect', 'on');
+    // Give each real key event a frame to propagate before the next key.
+    await search.pressSequentially('Transformed Result List', { delay: 50 });
     await expect(search).toHaveValue('Transformed Result List');
     const resultCount = page.locator(
       '[flt-semantics-identifier="screen6-result-count"]',
