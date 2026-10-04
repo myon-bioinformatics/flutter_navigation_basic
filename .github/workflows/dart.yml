@@ -242,6 +242,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r tool/python/requirements.txt
 
+      - name: Fetch pinned test-only JUnit importer
+        uses: actions/checkout@v7
+        with:
+          repository: myon-bioinformatics/xprobe
+          ref: 7e7015b2df69ad446b968f6fa49711b5b1dbdd3f
+          path: .junit-tools
+          persist-credentials: false
+          sparse-checkout: xprobe.py
+          sparse-checkout-cone-mode: false
+
       - name: Run pytest
         run: python tool/python/test.py --pytest -- --oracle-mode=local --outcomes-json build/diagnostics/python-oracle/pytest_outcomes.json
 
