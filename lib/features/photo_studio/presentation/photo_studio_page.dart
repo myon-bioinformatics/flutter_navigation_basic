@@ -688,9 +688,6 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     setState(() {
       final previousIds = _studio.stamps.map((s) => s.emojiStampId).toSet();
       var next = _studio.copyWith(stamps: stamps);
-      if (_pendingEmoji != null) {
-        _pendingEmoji = null;
-      }
       final added = stamps
           .where((s) => !previousIds.contains(s.emojiStampId))
           .toList();
@@ -751,7 +748,11 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     final text = _stampController.text.trim();
     if (text.isEmpty) return;
     setState(() {
-      _pendingEmoji = _pendingEmoji == text ? null : text;
+      final next = _pendingEmoji == text ? null : text;
+      _pendingEmoji = next;
+      if (next != null) {
+        _studio = _studio.copyWith(draftShape: null);
+      }
     });
   }
 
@@ -779,8 +780,16 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
   }
 
   void _setDraftShape(StudioFrameShape? shape) {
-    if (_studio.draftShape == shape) return;
-    _setStateWithUndo((s) => s.copyWith(draftShape: shape));
+    if (_studio.draftShape == shape &&
+        (shape == null || _pendingEmoji == null)) {
+      return;
+    }
+    setState(() {
+      if (shape != null) {
+        _pendingEmoji = null;
+      }
+      _mutateWithUndo((s) => s.copyWith(draftShape: shape));
+    });
   }
 
   void _onCanvasSizeChanged(Size size) {
@@ -1222,6 +1231,8 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                       } else {
                                         _pendingEmoji = emoji;
                                         _stampController.text = emoji;
+                                        _studio =
+                                            _studio.copyWith(draftShape: null);
                                       }
                                     });
                                   },
