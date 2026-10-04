@@ -405,6 +405,29 @@ void main() {
     expect(_shapeSelected(tester, 'None'), isTrue);
   });
 
+  testWidgets('shortcut stamp tool participates in frame-tool undo history',
+      (tester) async {
+    await _pumpPage(tester);
+
+    await _selectDraftTool(tester, 'Circle');
+    expect(_shapeSelected(tester, 'Circle'), isTrue);
+
+    await _tapEmojiShortcut(tester, '⭐');
+    var canvas = tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas));
+    expect(_shapeSelected(tester, 'None'), isTrue);
+    expect(canvas.pendingEmoji, '⭐');
+
+    await _tapUndo(tester);
+    canvas = tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas));
+    expect(_shapeSelected(tester, 'Circle'), isTrue);
+    expect(canvas.pendingEmoji, isNull);
+
+    await _tapRedo(tester);
+    canvas = tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas));
+    expect(_shapeSelected(tester, 'None'), isTrue);
+    expect(canvas.pendingEmoji, isNull);
+  });
+
   testWidgets('creates two frames with draft tools', (tester) async {
     await _pumpPage(tester);
 
@@ -1036,6 +1059,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.widget<Slider>(find.byType(Slider)).value, closeTo(1.0, 0.05));
 
+    PhotoRectCanvas canvas() =>
+        tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas));
+    final beforeDrag = List<EmojiStamp>.of(canvas().stamps);
+    expect(beforeDrag, hasLength(1));
+    final original = beforeDrag.single;
+
     final gesture = await tester.startGesture(first);
     await tester.pump();
     final moved =
@@ -1044,6 +1073,18 @@ void main() {
     await tester.pump();
     await gesture.up();
     await tester.pumpAndSettle();
+
+    final afterDrag = List<EmojiStamp>.of(canvas().stamps);
+    expect(afterDrag, hasLength(1));
+    expect(afterDrag.single.emojiStampId, original.emojiStampId);
+    expect(afterDrag.single.x, isNot(closeTo(original.x, 1e-9)));
+    expect(afterDrag.single.y, isNot(closeTo(original.y, 1e-9)));
+
+    await _tapUndo(tester);
+    final restored = List<EmojiStamp>.of(canvas().stamps);
+    expect(restored, hasLength(1));
+    expect(restored.single, original);
+    expect(canvas().pendingEmoji, '⭐');
 
     await tester.drag(find.byType(Slider), const Offset(70, 0));
     await tester.pumpAndSettle();
@@ -1065,12 +1106,8 @@ void main() {
 
     await tester.tapAt(moved);
     await tester.pumpAndSettle();
-    final reselected = tester.widget<Slider>(find.byType(Slider)).value;
-    expect(
-      (reselected - scaled).abs() < 0.25 || (reselected - secondScale).abs() > 0.1,
-      isTrue,
-      reason: 'tapping near the first stamp should change selection/scale',
-    );
+    expect(canvas().stamps, hasLength(3),
+        reason: 'an empty-canvas tap remains a fresh repeated placement');
   });
 
   testWidgets('390px AppBar keeps Photo Studio title without overflow',
