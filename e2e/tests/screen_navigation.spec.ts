@@ -79,7 +79,8 @@ test.describe('Screen Navigation', () => {
     await page.goto('/#/screen6');
     await waitForFlutter(page);
     await expect(page).toHaveURL(/#\/screen6$/);
-    await expect(page.getByText(/Screen\s*6\b/)).toBeVisible();
+    // The catalogue also contains Screen6; use its unique search field instead.
+    await expect(page.getByPlaceholder('Search screens…', { exact: true })).toBeVisible();
     await expect(page.locator('[flt-semantics-identifier="back-to-hub"]')).toHaveCount(1);
   });
 
