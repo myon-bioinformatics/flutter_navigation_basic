@@ -3,7 +3,7 @@
     "eng": {
       "common.copy": "Copy",
       "common.refresh": "Refresh",
-    "common.loadError": "Could not load screens.",
+      "common.loadError": "Could not load screens.",
       "home.title": "Home 🏠",
       "coordinate.title": "Latitude / Longitude",
       "coordinate.subtitle": "Treat a coordinate as an exact point or loose real-world area, craft manual boxes, then copy map links, bounds, and platform snippets.",
@@ -1269,7 +1269,8 @@
       "photoStudio.clipboardUnavailable": "ブラウザがクリップボード画像へのアクセスを許可しませんでした。読み込みを使うか、権限を許可してから再度貼り付けてください。",
       "photoStudio.importRetry": "再試行",
       "photoStudio.imageTooManyPixels": "ピクセル数が多すぎます。小さい画像かスクリーンショットを選んでください。",
-      "photoStudio.imageHeicUnsupported": "この HEIC/HEIF 写真はここではデコードできません。JPEG/PNG で書き出すか、ネイティブ版を使ってください。"
+      "photoStudio.imageHeicUnsupported": "この HEIC/HEIF 写真はここではデコードできません。JPEG/PNG で書き出すか、ネイティブ版を使ってください。",
+      "common.loadError": "画面を読み込めませんでした。"
     },
     "fra": {
       "common.copy": "Copier",
@@ -1904,7 +1905,8 @@
       "photoStudio.clipboardUnavailable": "Ce navigateur n’a pas autorisé l’accès aux images du presse-papiers. Utilisez Importer, ou collez à nouveau après autorisation.",
       "photoStudio.importRetry": "Réessayer",
       "photoStudio.imageTooManyPixels": "Cette photo a trop de pixels. Choisissez une image plus petite ou une capture d’écran.",
-      "photoStudio.imageHeicUnsupported": "Cette photo HEIC/HEIF ne peut pas être décodée ici. Exportez en JPEG ou PNG, ou utilisez une version native."
+      "photoStudio.imageHeicUnsupported": "Cette photo HEIC/HEIF ne peut pas être décodée ici. Exportez en JPEG ou PNG, ou utilisez une version native.",
+      "common.loadError": "Impossible de charger les écrans."
     },
     "spa": {
       "common.copy": "Copiar",
@@ -2539,7 +2541,8 @@
       "photoStudio.clipboardUnavailable": "Este navegador no permitió acceso a imágenes del portapapeles. Usa Importar, o pega de nuevo tras permitir el permiso.",
       "photoStudio.importRetry": "Reintentar",
       "photoStudio.imageTooManyPixels": "Esta foto tiene demasiados píxeles. Elige una imagen más pequeña o una captura de pantalla.",
-      "photoStudio.imageHeicUnsupported": "Esta foto HEIC/HEIF no se puede decodificar aquí. Expórtala como JPEG o PNG, o usa una compilación nativa."
+      "photoStudio.imageHeicUnsupported": "Esta foto HEIC/HEIF no se puede decodificar aquí. Expórtala como JPEG o PNG, o usa una compilación nativa.",
+      "common.loadError": "No se pudieron cargar las pantallas."
     },
     "por": {
       "common.copy": "Copiar",
@@ -3174,7 +3177,8 @@
       "photoStudio.clipboardUnavailable": "Este navegador não permitiu acesso a imagens da área de transferência. Use Importar, ou cole novamente após permitir.",
       "photoStudio.importRetry": "Tentar de novo",
       "photoStudio.imageTooManyPixels": "Esta foto tem pixels demais. Escolha uma imagem menor ou uma captura de tela.",
-      "photoStudio.imageHeicUnsupported": "Esta foto HEIC/HEIF não pode ser decodificada aqui. Exporte como JPEG ou PNG, ou use um build nativo."
+      "photoStudio.imageHeicUnsupported": "Esta foto HEIC/HEIF não pode ser decodificada aqui. Exporte como JPEG ou PNG, ou use um build nativo.",
+      "common.loadError": "Não foi possível carregar as telas."
     },
     "ara": {
       "common.copy": "نسخ",
@@ -3809,7 +3813,8 @@
       "photoStudio.clipboardUnavailable": "لم يسمح هذا المتصفح بالوصول إلى صور الحافظة. جرّب الاستيراد، أو الصق مجددًا بعد السماح.",
       "photoStudio.importRetry": "إعادة المحاولة",
       "photoStudio.imageTooManyPixels": "تحتوي هذه الصورة على عدد كبير جدًا من البكسلات. اختر صورة أصغر أو لقطة شاشة.",
-      "photoStudio.imageHeicUnsupported": "لا يمكن فك ترميز صورة HEIC/HEIF هنا. صدّرها كـ JPEG أو PNG، أو استخدم إصدارًا أصليًا."
+      "photoStudio.imageHeicUnsupported": "لا يمكن فك ترميز صورة HEIC/HEIF هنا. صدّرها كـ JPEG أو PNG، أو استخدم إصدارًا أصليًا.",
+      "common.loadError": "تعذر تحميل الشاشات."
     },
     "zho": {
       "common.copy": "复制",
@@ -4444,7 +4449,8 @@
       "photoStudio.clipboardUnavailable": "浏览器未允许访问剪贴板图片。请使用导入，或在允许权限后再次粘贴。",
       "photoStudio.importRetry": "重试",
       "photoStudio.imageTooManyPixels": "该照片像素过多。请选择较小的图像或截图。",
-      "photoStudio.imageHeicUnsupported": "此处无法解码此 HEIC/HEIF 照片。请导出为 JPEG 或 PNG，或使用原生版本。"
+      "photoStudio.imageHeicUnsupported": "此处无法解码此 HEIC/HEIF 照片。请导出为 JPEG 或 PNG，或使用原生版本。",
+      "common.loadError": "无法加载屏幕。"
     },
     "rus": {
       "common.copy": "Копировать",
@@ -5079,7 +5085,8 @@
       "photoStudio.clipboardUnavailable": "Браузер не разрешил доступ к изображениям буфера. Используйте импорт или вставьте снова после разрешения.",
       "photoStudio.importRetry": "Повторить",
       "photoStudio.imageTooManyPixels": "В этом фото слишком много пикселей. Выберите изображение меньшего размера или снимок экрана.",
-      "photoStudio.imageHeicUnsupported": "Это фото HEIC/HEIF здесь нельзя декодировать. Экспортируйте в JPEG или PNG либо используйте нативную сборку."
+      "photoStudio.imageHeicUnsupported": "Это фото HEIC/HEIF здесь нельзя декодировать. Экспортируйте в JPEG или PNG либо используйте нативную сборку.",
+      "common.loadError": "Не удалось загрузить экраны."
     },
     "ind": {
       "common.copy": "Salin",
@@ -5714,7 +5721,8 @@
       "photoStudio.clipboardUnavailable": "Browser ini tidak mengizinkan akses gambar clipboard. Gunakan Impor, atau tempel lagi setelah mengizinkan.",
       "photoStudio.importRetry": "Coba lagi",
       "photoStudio.imageTooManyPixels": "Foto itu memiliki terlalu banyak piksel. Pilih gambar yang lebih kecil atau tangkapan layar.",
-      "photoStudio.imageHeicUnsupported": "Foto HEIC/HEIF ini tidak dapat didekode di sini. Ekspor sebagai JPEG atau PNG, atau gunakan build native."
+      "photoStudio.imageHeicUnsupported": "Foto HEIC/HEIF ini tidak dapat didekode di sini. Ekspor sebagai JPEG atau PNG, atau gunakan build native.",
+      "common.loadError": "Tidak dapat memuat layar."
     },
     "deu": {
       "common.copy": "Kopieren",
@@ -6349,7 +6357,8 @@
       "photoStudio.clipboardUnavailable": "Dieser Browser hat keinen Zugriff auf Zwischenablage-Bilder erlaubt. Nutzen Sie Import oder fügen Sie nach Erlaubnis erneut ein.",
       "photoStudio.importRetry": "Erneut versuchen",
       "photoStudio.imageTooManyPixels": "Dieses Foto hat zu viele Pixel. Wählen Sie ein kleineres Bild oder einen Screenshot.",
-      "photoStudio.imageHeicUnsupported": "Dieses HEIC/HEIF-Foto kann hier nicht dekodiert werden. Exportieren Sie als JPEG oder PNG oder nutzen Sie einen nativen Build."
+      "photoStudio.imageHeicUnsupported": "Dieses HEIC/HEIF-Foto kann hier nicht dekodiert werden. Exportieren Sie als JPEG oder PNG oder nutzen Sie einen nativen Build.",
+      "common.loadError": "Bildschirme konnten nicht geladen werden."
     },
     "swa": {
       "common.copy": "Nakili",
@@ -6984,7 +6993,8 @@
       "photoStudio.clipboardUnavailable": "Kivinjari hiki hakikuruhusu ufikiaji wa picha za ubao wa kunakili. Tumia Ingiza, au bandika tena baada ya ruhusa.",
       "photoStudio.importRetry": "Jaribu tena",
       "photoStudio.imageTooManyPixels": "Picha hiyo ina pikseli nyingi mno. Chagua picha ndogo au skrini.",
-      "photoStudio.imageHeicUnsupported": "Picha hii ya HEIC/HEIF haiwezi kuddecode hapa. Hamisha kama JPEG au PNG, au tumia toleo asilia."
+      "photoStudio.imageHeicUnsupported": "Picha hii ya HEIC/HEIF haiwezi kuddecode hapa. Hamisha kama JPEG au PNG, au tumia toleo asilia.",
+      "common.loadError": "Haikuweza kupakia skrini."
     }
   }
 }
