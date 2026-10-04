@@ -1,12 +1,17 @@
 import 'dart:typed_data';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/emoji_stamp.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/normalized_rect.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/photo_studio_history.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/photo_studio_state.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/studio_frame.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/studio_frame_style.dart';
+import 'package:flutter_application_1/features/photo_studio/presentation/photo_rect_canvas.dart';
+import 'package:flutter_application_1/features/photo_studio/presentation/photo_studio_page.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/display_test_harness.dart';
 
 PhotoStudioState _state({
   Uint8List? imageBytes,
@@ -264,5 +269,121 @@ void main() {
       expect(history.canRedo, isFalse);
       expect(history.redo(d), isNull);
     });
+  });
+
+  group('Photo Studio gesture history', () {
+    for (final cancel in const [false, true]) {
+      final ending = cancel ? 'pointer cancel' : 'pointer up';
+      testWidgets('spray $ending closes one undo/redo transaction',
+          (tester) async {
+        await tester.binding.setSurfaceSize(const Size(900, 2600));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        await tester.pumpWidget(
+          MaterialApp(
+            home: await wrapWithDisplayScope(const PhotoStudioPage()),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50));
+
+        final canvasFinder = find.byType(PhotoRectCanvas);
+        PhotoRectCanvas canvas() =>
+            tester.widget<PhotoRectCanvas>(canvasFinder);
+        Finder historyButton(String tooltip) => find.byWidgetPredicate(
+              (widget) => widget is IconButton && widget.tooltip == tooltip,
+            );
+        bool enabled(String tooltip) =>
+            tester.widget<IconButton>(historyButton(tooltip)).onPressed != null;
+        Future<void> tapHistory(String tooltip) async {
+          final button = historyButton(tooltip);
+          expect(button, findsOneWidget);
+          expect(enabled(tooltip), isTrue);
+          await tester.ensureVisible(button);
+          await tester.tap(button);
+          await tester.pump();
+        }
+
+        expect(canvas().stamps, isEmpty);
+        expect(enabled('Undo'), isFalse);
+        expect(enabled('Redo'), isFalse);
+        final shortcut = find.widgetWithText(ActionChip, '⭐');
+        await tester.ensureVisible(shortcut);
+        await tester.tap(shortcut);
+        await tester.pump();
+        expect(canvas().pendingEmoji, '⭐');
+        expect(enabled('Undo'), isFalse);
+
+        await tester.ensureVisible(canvasFinder);
+        await tester.pump();
+        final box = tester.getRect(canvasFinder);
+        final gesture = await tester.startGesture(
+          Offset(box.left + box.width * 0.1, box.top + box.height * 0.2),
+        );
+        await gesture.moveTo(
+          Offset(box.left + box.width * 0.35, box.top + box.height * 0.3),
+        );
+        // Deliberately send another move before a parent rebuild.
+        await gesture.moveTo(
+          Offset(box.left + box.width * 0.6, box.top + box.height * 0.5),
+        );
+        await tester.pump();
+        final sprayed = List<EmojiStamp>.of(canvas().stamps);
+        expect(sprayed, hasLength(3));
+        expect(sprayed.map((stamp) => stamp.emojiStampId).toSet(), hasLength(3));
+        expect(enabled('Undo'), isFalse);
+
+        if (cancel) {
+          await gesture.cancel();
+        } else {
+          await gesture.up();
+        }
+        await tester.pump();
+        // Cancel commits the placements made so far, just like pointer-up.
+        // A missing onEditEnd must fail here, before another gesture can hide it.
+        expect(enabled('Undo'), isTrue);
+        expect(canvas().stamps, orderedEquals(sprayed));
+        await tester.pump(const Duration(seconds: 1));
+        expect(canvas().stamps, orderedEquals(sprayed));
+
+        await tapHistory('Undo');
+        expect(canvas().stamps, isEmpty);
+        expect(enabled('Undo'), isFalse);
+        expect(enabled('Redo'), isTrue);
+        await tapHistory('Redo');
+        // EmojiStamp value equality checks IDs, emoji, coordinates and scale.
+        expect(canvas().stamps, orderedEquals(sprayed));
+        expect(canvas().selectedEmojiStampId, sprayed.last.emojiStampId);
+        expect(enabled('Redo'), isFalse);
+        expect(canvas().pendingEmoji, '⭐');
+
+        // The next independent tap must not join or reuse the closed spray.
+        await tester.ensureVisible(canvasFinder);
+        await tester.pump();
+        final nextBox = tester.getRect(canvasFinder);
+        await tester.tapAt(
+          Offset(
+            nextBox.left + nextBox.width * 0.85,
+            nextBox.top + nextBox.height * 0.85,
+          ),
+        );
+        await tester.pump();
+        final withTap = List<EmojiStamp>.of(canvas().stamps);
+        expect(withTap, hasLength(4));
+        expect(withTap.take(3), orderedEquals(sprayed));
+        expect(withTap.map((stamp) => stamp.emojiStampId).toSet(), hasLength(4));
+
+        await tapHistory('Undo');
+        expect(canvas().stamps, orderedEquals(sprayed));
+        await tapHistory('Undo');
+        expect(canvas().stamps, isEmpty);
+        expect(enabled('Undo'), isFalse);
+        await tapHistory('Redo');
+        expect(canvas().stamps, orderedEquals(sprayed));
+        await tapHistory('Redo');
+        expect(canvas().stamps, orderedEquals(withTap));
+        expect(enabled('Redo'), isFalse);
+        expect(tester.takeException(), isNull);
+      });
+    }
   });
 }

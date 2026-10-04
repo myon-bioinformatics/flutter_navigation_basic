@@ -100,14 +100,23 @@ class ScreenData {
 
 class ScreensConfig {
   static List<ScreenData>? _cache;
+  static Future<List<ScreenData>> Function()? _loaderOverride;
+
+  static void resetCache({Future<List<ScreenData>> Function()? loader}) {
+    _cache = null;
+    _loaderOverride = loader;
+  }
 
   static Future<List<ScreenData>> load() async {
     if (_cache != null) return _cache!;
-    final raw = await rootBundle.loadString('assets/screens.json');
-    final json = jsonDecode(raw) as Map<String, dynamic>;
-    _cache = (json['screens'] as List)
-        .map((e) => ScreenData.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final loader = _loaderOverride ?? (() async {
+      final raw = await rootBundle.loadString('assets/screens.json');
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      return (json['screens'] as List)
+          .map((e) => ScreenData.fromJson(e as Map<String, dynamic>))
+          .toList();
+    });
+    _cache = await loader();
     return _cache!;
   }
 }
@@ -122,6 +131,9 @@ class GenericScreen extends StatefulWidget {
 
 class _GenericScreenState extends State<GenericScreen> {
   ScreenData? _data;
+  List<ScreenData> _screens = const [];
+  Object? _loadError;
+  bool _loading = false;
   final FocusNode _backToHubFocus = FocusNode(debugLabel: 'back-to-hub');
 
   @override
@@ -131,23 +143,50 @@ class _GenericScreenState extends State<GenericScreen> {
   }
 
   Future<void> _loadData() async {
-    final screens = await ScreensConfig.load();
-    final data = screens.firstWhere(
-      (s) => s.screenDataId == widget.screenId,
-      orElse: () => ScreenData(
-        screenDataId: widget.screenId,
-        name: 'Screen${widget.screenId}',
-        title: 'Screen ${widget.screenId}',
-        emoji: '📱',
-        description: '',
-        category: 'navigation',
-        navigationPattern: '',
-        apiPattern: '',
-        themePattern: '',
-        dataPattern: '',
-      ),
-    );
-    if (mounted) setState(() => _data = data);
+    if (_loading) return;
+    _loading = true;
+    if (_loadError != null && mounted) {
+      setState(() => _loadError = null);
+    }
+    try {
+      final screens = await ScreensConfig.load();
+      final data = screens.firstWhere(
+        (s) => s.screenDataId == widget.screenId,
+        orElse: () => ScreenData(
+          screenDataId: widget.screenId,
+          name: 'Screen${widget.screenId}',
+          title: 'Screen ${widget.screenId}',
+          emoji: '📱',
+          description: '',
+          category: 'navigation',
+          navigationPattern: '',
+          apiPattern: '',
+          themePattern: '',
+          dataPattern: '',
+        ),
+      );
+      if (!mounted) {
+        _loading = false;
+        return;
+      }
+      setState(() {
+        _screens = screens;
+        _data = data;
+        _loadError = null;
+        _loading = false;
+      });
+    } catch (error) {
+      if (!mounted) {
+        _loading = false;
+        return;
+      }
+      setState(() {
+        _screens = const [];
+        _data = null;
+        _loadError = error;
+        _loading = false;
+      });
+    }
   }
 
   void _backToHub() => Navigator.pushNamed(context, AppRoutes.hub);
@@ -194,17 +233,50 @@ class _GenericScreenState extends State<GenericScreen> {
         ],
       ),
       body: data == null
-          ? const Center(child: CircularProgressIndicator())
-          : _GenericScreenBody(data: data, onBackToHub: _backToHub),
+          ? _loadError == null
+              ? const Center(child: CircularProgressIndicator())
+              : Center(
+                  child: Semantics(
+                    identifier: 'screen-catalog-load-error',
+                    container: true,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.error_outline, size: 28),
+                        const SizedBox(height: 12),
+                        Text(
+                          display.text('common.loadError'),
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 12),
+                        FilledButton.icon(
+                          onPressed: _loadData,
+                          icon: const Icon(Icons.refresh),
+                          label: Text(display.text('common.refresh')),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+          : _GenericScreenBody(
+              data: data,
+              allScreens: _screens,
+              onBackToHub: _backToHub,
+            ),
     );
   }
 }
 
 class _GenericScreenBody extends StatelessWidget {
   final ScreenData data;
+  final List<ScreenData> allScreens;
   final VoidCallback onBackToHub;
 
-  const _GenericScreenBody({required this.data, required this.onBackToHub});
+  const _GenericScreenBody({
+    required this.data,
+    required this.allScreens,
+    required this.onBackToHub,
+  });
 
   bool get _hasDomainInfo => data.domainJa.isNotEmpty && data.templateJa.isNotEmpty;
 
@@ -276,14 +348,16 @@ class _GenericScreenBody extends StatelessWidget {
         ),
         const Divider(height: 1),
         Expanded(
-          child: detail == null
-              ? PatternTemplateBody(
-                  screenId: data.screenDataId,
-                  title: data.title,
-                  description: data.description,
-                  templateOverride: data.templateOverride,
-                )
-              : DefaultTabController(
+          child: data.screenDataId == 6
+              ? _Screen6CatalogSearch(screens: allScreens)
+              : detail == null
+                  ? PatternTemplateBody(
+                      screenId: data.screenDataId,
+                      title: data.title,
+                      description: data.description,
+                      templateOverride: data.templateOverride,
+                    )
+                  : DefaultTabController(
                   length: 2,
                   child: Column(
                     children: [
@@ -311,6 +385,143 @@ class _GenericScreenBody extends StatelessWidget {
                 ),
         ),
       ],
+    );
+  }
+}
+
+class _Screen6CatalogSearch extends StatefulWidget {
+  const _Screen6CatalogSearch({required this.screens});
+
+  final List<ScreenData> screens;
+
+  @override
+  State<_Screen6CatalogSearch> createState() => _Screen6CatalogSearchState();
+}
+
+class _Screen6CatalogSearchState extends State<_Screen6CatalogSearch> {
+  final TextEditingController _queryController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _queryController.dispose();
+    super.dispose();
+  }
+
+  List<ScreenData> get _filtered {
+    final query = _query.trim().toLowerCase();
+    if (query.isEmpty) return widget.screens;
+    return widget.screens.where((screen) {
+      final haystack = <String>[
+        screen.screenDataId.toString(),
+        'screen${screen.screenDataId}',
+        screen.name,
+        screen.title,
+        screen.domainKey,
+        screen.domainJa,
+        screen.useCaseJa,
+        screen.useCaseEn,
+        screen.useCaseKey,
+        screen.description,
+      ].join('\n').toLowerCase();
+      return haystack.contains(query);
+    }).toList();
+  }
+
+  void _open(ScreenData screen) {
+    if (screen.screenDataId == 6) return;
+    Navigator.pushNamed(context, AppRoutes.screenRoute(screen.screenDataId));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
+    final filtered = _filtered;
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Keep a locale-independent web identifier without replacing the
+          // TextField's editable semantics or its clear-button child.
+          Semantics(
+            identifier: 'screen6-search',
+            container: true,
+            explicitChildNodes: true,
+            child: TextField(
+              key: const Key('screen6-catalog-search'),
+              controller: _queryController,
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                hintText: display.text('hub.searchHint'),
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _query.isEmpty
+                    ? null
+                    : IconButton(
+                        key: const Key('screen6-catalog-clear'),
+                        tooltip: display.text('clipboardWorkbench.clear'),
+                        onPressed: () {
+                          _queryController.clear();
+                          setState(() => _query = '');
+                        },
+                        icon: const Icon(Icons.clear),
+                      ),
+              ),
+              onChanged: (value) => setState(() => _query = value),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Semantics(
+            identifier: 'screen6-result-count',
+            container: true,
+            child: Text(
+              '${filtered.length} / ${widget.screens.length}',
+              key: const Key('screen6-result-count'),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: filtered.isEmpty
+                ? Center(child: Text(display.text('hub.empty')))
+                : ListView.separated(
+                    key: const Key('screen6-catalog-results'),
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final screen = filtered[index];
+                      final isCurrent = screen.screenDataId == 6;
+                      return Semantics(
+                        identifier: 'screen6-result-${screen.screenDataId}',
+                        container: true,
+                        explicitChildNodes: true,
+                        child: ListTile(
+                          key: Key('screen6-result-${screen.screenDataId}'),
+                          leading: Text(
+                            screen.emoji,
+                            style: const TextStyle(fontSize: 24),
+                          ),
+                          title: Text(
+                            'Screen ${screen.screenDataId} · ${screen.useCaseJa.isEmpty ? screen.title : screen.useCaseJa}',
+                          ),
+                          subtitle: Text(
+                            [
+                              if (screen.useCaseEn.isNotEmpty) screen.useCaseEn,
+                              if (screen.domainJa.isNotEmpty)
+                                '${screen.domainEmoji} ${screen.domainJa}',
+                            ].join(' · '),
+                          ),
+                          trailing: isCurrent
+                              ? const Icon(Icons.search)
+                              : const Icon(Icons.chevron_right),
+                          onTap: isCurrent ? null : () => _open(screen),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }

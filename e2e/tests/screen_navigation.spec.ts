@@ -79,18 +79,54 @@ test.describe('Screen Navigation', () => {
     await page.goto('/#/screen6');
     await waitForFlutter(page);
     await expect(page).toHaveURL(/#\/screen6$/);
-    await expect(page.getByText(/Screen\s*6\b/)).toBeVisible();
+    // Flutter hint text is localized and is not a DOM placeholder contract.
+    const searchRegion = page.locator('[flt-semantics-identifier="screen6-search"]');
+    await expect(searchRegion).toHaveCount(1);
+    await expect(searchRegion).toBeVisible();
+    await expect(searchRegion.getByRole('textbox')).toHaveCount(1);
     await expect(page.locator('[flt-semantics-identifier="back-to-hub"]')).toHaveCount(1);
   });
 
-  test('generic screen shows pattern info', async ({ page }) => {
-    // /screen5 is a dedicated Screen5Page; screen 6 is a GenericScreen catalogue route.
+  test('Screen6 searches the catalogue and opens Screen5 @portable', async ({ page }) => {
     await navigateToScreen(page, 6);
-    // Should show pattern cards
-    await expect(page.getByText('Navigation', { exact: false })).toBeVisible();
-    await expect(page.getByText('API', { exact: false })).toBeVisible();
-    await expect(page.getByText('Theme', { exact: false })).toBeVisible();
-    await expect(page.getByText('Data', { exact: false })).toBeVisible();
+    const searchRegion = page.locator('[flt-semantics-identifier="screen6-search"]');
+    await expect(searchRegion).toHaveCount(1);
+    await expect(searchRegion).toBeVisible();
+    // Type into the editable descendant, not the semantics container.
+    const search = searchRegion.getByRole('textbox');
+    await expect(search).toHaveCount(1);
+    await expect(search).toBeEditable();
+    // DOM focus precedes Flutter's editing-strategy activation on WebKit.
+    // The engine creates this input with autocorrect=off, then applies the
+    // TextField's default autocorrect=on when it attaches input listeners.
+    await search.click();
+    await expect(search).toBeFocused();
+    await expect(search).toHaveAttribute('autocorrect', 'on');
+    // Give each real key event a frame to propagate before the next key.
+    await search.pressSequentially('Transformed Result List', { delay: 50 });
+    await expect(search).toHaveValue('Transformed Result List');
+    const resultCount = page.locator(
+      '[flt-semantics-identifier="screen6-result-count"]',
+    );
+    await expect(resultCount).toHaveCount(1);
+    await expect(resultCount).toContainText('1 / 198');
+
+    const result = page.locator(
+      '[flt-semantics-identifier="screen6-result-5"]',
+    );
+    await expect(result).toHaveCount(1);
+    await expect(result).toBeVisible();
+    // Keep navigation tied to the row's real Flutter semantics tap action.
+    const tapTarget = result.locator('[flt-tappable]');
+    await expect(tapTarget).toHaveCount(1);
+    await tapTarget.evaluate((element) => {
+      if (!(element instanceof HTMLElement)) {
+        throw new Error('Screen5 catalogue result tap target is not an HTMLElement');
+      }
+      element.click();
+    });
+    await waitForFlutter(page);
+    await expect(page).toHaveURL(/#\/screen5$/);
   });
 
   for (const screenId of testData.sampleScreenIds) {

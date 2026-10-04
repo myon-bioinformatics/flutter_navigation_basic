@@ -385,6 +385,49 @@ void main() {
     expect(_undoEnabled(tester), isTrue);
   });
 
+  testWidgets('reselecting the same frame tool is no-op while stamp is armed',
+      (tester) async {
+    await _pumpPage(tester);
+
+    await _tapEmojiShortcut(tester, '⭐');
+    await tester.pump();
+    expect(find.textContaining('Armed:'), findsOneWidget);
+
+    await _selectDraftTool(tester, 'Circle');
+    expect(_shapeSelected(tester, 'Circle'), isTrue);
+    expect(_undoEnabled(tester), isTrue);
+
+    await _selectDraftTool(tester, 'Circle');
+    expect(_shapeSelected(tester, 'Circle'), isTrue);
+    expect(_undoEnabled(tester), isTrue);
+
+    await _tapUndo(tester);
+    expect(_shapeSelected(tester, 'None'), isTrue);
+  });
+
+  testWidgets('shortcut stamp tool participates in frame-tool undo history',
+      (tester) async {
+    await _pumpPage(tester);
+
+    await _selectDraftTool(tester, 'Circle');
+    expect(_shapeSelected(tester, 'Circle'), isTrue);
+
+    await _tapEmojiShortcut(tester, '⭐');
+    var canvas = tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas));
+    expect(_shapeSelected(tester, 'None'), isTrue);
+    expect(canvas.pendingEmoji, '⭐');
+
+    await _tapUndo(tester);
+    canvas = tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas));
+    expect(_shapeSelected(tester, 'Circle'), isTrue);
+    expect(canvas.pendingEmoji, isNull);
+
+    await _tapRedo(tester);
+    canvas = tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas));
+    expect(_shapeSelected(tester, 'None'), isTrue);
+    expect(canvas.pendingEmoji, isNull);
+  });
+
   testWidgets('creates two frames with draft tools', (tester) async {
     await _pumpPage(tester);
 
@@ -579,8 +622,19 @@ void main() {
     expect(_undoEnabled(tester), isTrue);
     expect(tester.widget<Slider>(find.byType(Slider)).value, closeTo(1.0, 0.05));
 
+    // Undo placement, then the shortcut's separate frame-tool history entry.
     await _tapUndo(tester);
     expect(_rectCardText(tester), afterMove);
+    expect(_shapeSelected(tester, 'None'), isTrue);
+    expect(tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas)).stamps,
+        isEmpty);
+    expect(_undoEnabled(tester), isTrue);
+
+    await _tapUndo(tester);
+    expect(_rectCardText(tester), afterMove);
+    expect(_shapeSelected(tester, 'Circle'), isTrue);
+    expect(tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas)).pendingEmoji,
+        isNull);
     expect(_undoEnabled(tester), isTrue);
 
     await _tapUndo(tester);
@@ -1001,7 +1055,7 @@ void main() {
     expect(_rectCardText(tester), before);
   });
 
-  testWidgets('emoji tap places, selects, syncs scale; drag does not double-place',
+  testWidgets('emoji selection persists; existing stamp drag does not double-place',
       (tester) async {
     await _pumpPage(tester);
 
@@ -1016,6 +1070,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.widget<Slider>(find.byType(Slider)).value, closeTo(1.0, 0.05));
 
+    PhotoRectCanvas canvas() =>
+        tester.widget<PhotoRectCanvas>(find.byType(PhotoRectCanvas));
+    final beforeDrag = List<EmojiStamp>.of(canvas().stamps);
+    expect(beforeDrag, hasLength(1));
+    final original = beforeDrag.single;
+
     final gesture = await tester.startGesture(first);
     await tester.pump();
     final moved =
@@ -1025,13 +1085,25 @@ void main() {
     await gesture.up();
     await tester.pumpAndSettle();
 
+    final afterDrag = List<EmojiStamp>.of(canvas().stamps);
+    expect(afterDrag, hasLength(1));
+    expect(afterDrag.single.emojiStampId, original.emojiStampId);
+    expect(afterDrag.single.x, isNot(closeTo(original.x, 1e-9)));
+    expect(afterDrag.single.y, isNot(closeTo(original.y, 1e-9)));
+
+    await _tapUndo(tester);
+    final restored = List<EmojiStamp>.of(canvas().stamps);
+    expect(restored, hasLength(1));
+    expect(restored.single, original);
+    expect(canvas().pendingEmoji, '⭐');
+
     await tester.drag(find.byType(Slider), const Offset(70, 0));
     await tester.pumpAndSettle();
     final scaled = tester.widget<Slider>(find.byType(Slider)).value;
     expect(scaled, greaterThan(1.1));
 
-    await _tapEmojiShortcut(tester, '⭐');
-    await tester.pumpAndSettle();
+    // The stamp tool remains armed after the first placement, so the second
+    // independent tap must create a fresh stamp without reselecting the chip.
     final second =
         Offset(box.left + box.width * 0.12, box.top + box.height * 0.82);
     await tester.tapAt(second);
@@ -1045,12 +1117,8 @@ void main() {
 
     await tester.tapAt(moved);
     await tester.pumpAndSettle();
-    final reselected = tester.widget<Slider>(find.byType(Slider)).value;
-    expect(
-      (reselected - scaled).abs() < 0.25 || (reselected - secondScale).abs() > 0.1,
-      isTrue,
-      reason: 'tapping near the first stamp should change selection/scale',
-    );
+    expect(canvas().stamps, hasLength(3),
+        reason: 'an empty-canvas tap remains a fresh repeated placement');
   });
 
   testWidgets('390px AppBar keeps Photo Studio title without overflow',
@@ -1736,4 +1804,53 @@ void main() {
       isNull,
     );
   });
+
+  testWidgets('stamp selection survives placement and spray is one undo gesture',
+      (tester) async {
+    await _pumpPage(tester);
+
+    final shortcut = find.widgetWithText(ActionChip, '⭐');
+    await tester.ensureVisible(shortcut);
+    await tester.tap(shortcut);
+    await tester.pump();
+
+    final canvasFinder = find.byType(PhotoRectCanvas);
+    final box = tester.getRect(canvasFinder);
+    final gesture = await tester.startGesture(
+      Offset(box.left + box.width * 0.1, box.top + box.height * 0.5),
+    );
+    await tester.pump();
+    await gesture.moveTo(
+      Offset(box.left + box.width * 0.4, box.top + box.height * 0.5),
+    );
+    await tester.pump();
+    await gesture.moveTo(
+      Offset(box.left + box.width * 0.8, box.top + box.height * 0.5),
+    );
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+
+    final sprayed = tester.widget<PhotoRectCanvas>(canvasFinder).stamps.length;
+    expect(sprayed, greaterThanOrEqualTo(3));
+
+    await tester.tapAt(
+      Offset(box.left + box.width * 0.8, box.top + box.height * 0.85),
+    );
+    await tester.pump();
+    expect(
+      tester.widget<PhotoRectCanvas>(canvasFinder).stamps,
+      hasLength(sprayed + 1),
+    );
+
+    await _tapUndo(tester);
+    expect(
+      tester.widget<PhotoRectCanvas>(canvasFinder).stamps,
+      hasLength(sprayed),
+    );
+
+    await _tapUndo(tester);
+    expect(tester.widget<PhotoRectCanvas>(canvasFinder).stamps, isEmpty);
+  });
+
 }

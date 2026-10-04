@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/features/photo_studio/domain/emoji_stamp.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/normalized_rect.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/studio_frame.dart';
 import 'package:flutter_application_1/features/photo_studio/domain/studio_frame_style.dart';
@@ -425,4 +426,112 @@ void main() {
     expect(bottom.rect.left, greaterThan(0.1));
     expect(bottom.rect.top, greaterThan(0.1));
   });
+
+  testWidgets('armed emoji stays reusable across separate taps', (tester) async {
+    var stamps = <EmojiStamp>[];
+
+    await tester.binding.setSurfaceSize(const Size(400, 400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) {
+              return PhotoRectCanvas(
+                frames: const [],
+                onFramesChanged: (_) {},
+                pendingEmoji: '⭐',
+                stamps: stamps,
+                onStampsChanged: (next) {
+                  setState(() => stamps = next);
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final box = tester.getRect(find.byType(PhotoRectCanvas));
+    await tester.tapAt(
+      Offset(box.left + box.width * 0.2, box.top + box.height * 0.3),
+    );
+    await tester.pump();
+    await tester.tapAt(
+      Offset(box.left + box.width * 0.8, box.top + box.height * 0.7),
+    );
+    await tester.pump();
+
+    expect(stamps, hasLength(2));
+    expect(stamps.map((stamp) => stamp.emoji), everyElement('⭐'));
+    expect(
+      stamps.map((stamp) => stamp.emojiStampId).toSet(),
+      hasLength(2),
+    );
+  });
+
+  testWidgets('armed emoji sprays spaced stamps during one drag gesture',
+      (tester) async {
+    var stamps = <EmojiStamp>[];
+    var editStarts = 0;
+    var editEnds = 0;
+
+    await tester.binding.setSurfaceSize(const Size(400, 400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) {
+              return PhotoRectCanvas(
+                frames: const [],
+                onFramesChanged: (_) {},
+                pendingEmoji: '🔥',
+                stamps: stamps,
+                onStampsChanged: (next) {
+                  setState(() => stamps = next);
+                },
+                onEditStart: () => editStarts += 1,
+                onEditEnd: () => editEnds += 1,
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final box = tester.getRect(find.byType(PhotoRectCanvas));
+    final start =
+        Offset(box.left + box.width * 0.1, box.top + box.height * 0.5);
+    final gesture = await tester.startGesture(start);
+    await tester.pump();
+    await gesture.moveTo(
+      Offset(box.left + box.width * 0.35, box.top + box.height * 0.5),
+    );
+    await tester.pump();
+    await gesture.moveTo(
+      Offset(box.left + box.width * 0.65, box.top + box.height * 0.5),
+    );
+    await tester.pump();
+    await gesture.moveTo(
+      Offset(box.left + box.width * 0.9, box.top + box.height * 0.5),
+    );
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+
+    expect(stamps.length, greaterThanOrEqualTo(4));
+    expect(stamps.map((stamp) => stamp.emoji), everyElement('🔥'));
+    expect(
+      stamps.map((stamp) => stamp.emojiStampId).toSet().length,
+      stamps.length,
+    );
+    expect(editStarts, 1);
+    expect(editEnds, 1);
+  });
+
 }

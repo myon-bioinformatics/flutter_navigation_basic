@@ -114,6 +114,178 @@ void main() {
     expect(find.text('Snippet'), findsOneWidget);
   });
 
+  testWidgets('Screen6 load failure shows error and retry succeeds once',
+      (tester) async {
+    var calls = 0;
+    ScreensConfig.resetCache(loader: () async {
+      calls++;
+      if (calls == 1) {
+        throw StateError('synthetic catalogue failure');
+      }
+      return const [
+        ScreenData(
+          screenDataId: 6,
+          name: 'Screen6',
+          title: 'Search',
+          emoji: '🔎',
+          description: 'Search catalogue',
+          category: 'navigation',
+          navigationPattern: '',
+          apiPattern: '',
+          themePattern: '',
+          dataPattern: '',
+          useCaseJa: '検索結果一覧',
+          useCaseEn: 'Search Results',
+        ),
+        ScreenData(
+          screenDataId: 5,
+          name: 'Screen5',
+          title: 'Results',
+          emoji: '🔢',
+          description: 'Results',
+          category: 'navigation',
+          navigationPattern: '',
+          apiPattern: '',
+          themePattern: '',
+          dataPattern: '',
+          useCaseJa: '変換結果一覧',
+          useCaseEn: 'Transformed Result List',
+        ),
+      ];
+    });
+    addTearDown(() => ScreensConfig.resetCache());
+
+    await _pumpGeneric(tester, 6);
+    expect(calls, 1);
+    expect(find.text('Could not load screens.'), findsOneWidget);
+    expect(find.byKey(const Key('screen6-catalog-search')), findsNothing);
+
+    final retry = find.widgetWithText(FilledButton, 'Refresh');
+    expect(retry, findsOneWidget);
+    await tester.tap(retry);
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(calls, 2);
+    expect(find.text('Could not load screens.'), findsNothing);
+    expect(find.byKey(const Key('screen6-catalog-search')), findsOneWidget);
+    expect(find.text('2 / 2'), findsOneWidget);
+  });
+
+  testWidgets('Screen6 searches the real catalogue and opens an existing route',
+      (tester) async {
+    await _pumpGeneric(
+      tester,
+      6,
+      routes: {
+        AppRoutes.screenRoute(5): (_) =>
+            const Scaffold(body: Text('Screen5 route reached')),
+      },
+    );
+
+    expect(find.byKey(const Key('screen6-catalog-search')), findsOneWidget);
+    expect(find.text('198 / 198'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('screen6-catalog-search')),
+      'Transformed Result List',
+    );
+    await tester.pump();
+
+    expect(find.byKey(const Key('screen6-result-5')), findsOneWidget);
+    expect(find.text('1 / 198'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is Semantics &&
+            widget.properties.identifier == 'screen6-result-5',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is Semantics &&
+            widget.properties.identifier == 'screen6-result-count',
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('screen6-result-5')));
+    await tester.pumpAndSettle();
+    expect(find.text('Screen5 route reached'), findsOneWidget);
+  });
+
+  for (final locale in const ['eng', 'jpn']) {
+    testWidgets('Screen6 search identifier retains editable semantics in $locale',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      try {
+        final controller = await loadTestDisplayController(
+          initialValues: {DisplayController.preferenceKey: locale},
+        );
+        await _pumpGeneric(tester, 6, controller: controller);
+
+        final region = find.byWidgetPredicate(
+          (widget) => widget is Semantics &&
+              widget.properties.identifier == 'screen6-search',
+        );
+        expect(region, findsOneWidget);
+        final node = tester.getSemantics(region);
+        expect(node.identifier, 'screen6-search');
+        final fields = <SemanticsNode>[];
+        void collectFields(SemanticsNode parent) {
+          parent.visitChildren((child) {
+            if (child.getSemanticsData().hasFlag(SemanticsFlag.isTextField)) {
+              fields.add(child);
+            }
+            collectFields(child);
+            return true;
+          });
+        }
+
+        collectFields(node);
+        expect(fields, hasLength(1));
+        final field = find.byKey(const Key('screen6-catalog-search'));
+        expect(
+          tester.widget<TextField>(field).decoration!.hintText,
+          controller.text('hub.searchHint'),
+        );
+
+        // Keep the stable identifier contract, but verify editability through
+        // the real widget instead of pinning a framework-specific semantics
+        // action that can vary across Flutter versions.
+        await tester.enterText(field, 'Transformed Result List');
+        await tester.pump();
+        expect(find.text('1 / 198'), findsOneWidget);
+        expect(find.byKey(const Key('screen6-result-5')), findsOneWidget);
+        expect(region, findsOneWidget);
+        expect(tester.getSemantics(region).identifier, 'screen6-search');
+        expect(find.byKey(const Key('screen6-catalog-clear')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      } finally {
+        handle.dispose();
+      }
+    });
+  }
+
+  testWidgets('Screen6 supports Japanese search, empty results, and clear',
+      (tester) async {
+    await _pumpGeneric(tester, 6);
+
+    final field = find.byKey(const Key('screen6-catalog-search'));
+    await tester.enterText(field, '変換結果一覧');
+    await tester.pump();
+    expect(find.byKey(const Key('screen6-result-5')), findsOneWidget);
+
+    await tester.enterText(field, 'definitely-no-such-screen');
+    await tester.pump();
+    expect(find.text('No screens found.'), findsOneWidget);
+    expect(find.text('0 / 198'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('screen6-catalog-clear')));
+    await tester.pump();
+    expect(find.text('198 / 198'), findsOneWidget);
+  });
+
   testWidgets('renders translated chrome for a non-English display locale', (tester) async {
     final controller = await loadTestDisplayController(
       initialValues: {DisplayController.preferenceKey: 'jpn'},
