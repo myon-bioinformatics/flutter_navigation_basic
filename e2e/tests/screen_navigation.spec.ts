@@ -79,18 +79,38 @@ test.describe('Screen Navigation', () => {
     await page.goto('/#/screen6');
     await waitForFlutter(page);
     await expect(page).toHaveURL(/#\/screen6$/);
-    // The catalogue also contains Screen6; use its unique search field instead.
-    await expect(page.getByPlaceholder('Search screens…', { exact: true })).toBeVisible();
+    // Flutter hint text is localized and is not a DOM placeholder contract.
+    const searchRegion = page.locator('[flt-semantics-identifier="screen6-search"]');
+    await expect(searchRegion).toHaveCount(1);
+    await expect(searchRegion).toBeVisible();
+    await expect(searchRegion.getByRole('textbox')).toHaveCount(1);
     await expect(page.locator('[flt-semantics-identifier="back-to-hub"]')).toHaveCount(1);
   });
 
-  test('Screen6 searches the catalogue and opens Screen5', async ({ page }) => {
+  test('Screen6 searches the catalogue and opens Screen5 @portable', async ({ page }) => {
     await navigateToScreen(page, 6);
-    const search = page.getByPlaceholder('Search screens…');
-    await expect(search).toBeVisible();
+    const searchRegion = page.locator('[flt-semantics-identifier="screen6-search"]');
+    await expect(searchRegion).toHaveCount(1);
+    await expect(searchRegion).toBeVisible();
+    // Fill the editable descendant, not the non-editable semantics container.
+    const search = searchRegion.getByRole('textbox');
+    await expect(search).toHaveCount(1);
+    await expect(search).toBeEditable();
     await search.fill('Transformed Result List');
-    await expect(page.getByText('Screen 5 · 変換結果一覧')).toBeVisible();
-    await page.getByText('Screen 5 · 変換結果一覧').click();
+    await expect(search).toHaveValue('Transformed Result List');
+    await expect(page.getByText('1 / 198', { exact: true })).toBeVisible();
+    // This is a real bundled catalogue title, not a translated UI placeholder.
+    const result = page.getByText('Screen 5 · 変換結果一覧', { exact: true });
+    await expect(result).toHaveCount(1);
+    await expect(result).toBeVisible();
+    // Use the row's actual semantics tap action, as the back-to-hub probe does.
+    await result.evaluate((element) => {
+      const target = element.closest('[flt-tappable]');
+      if (!(target instanceof HTMLElement)) {
+        throw new Error('Screen5 catalogue result has no semantics tap action');
+      }
+      target.click();
+    });
     await waitForFlutter(page);
     await expect(page).toHaveURL(/#\/screen5$/);
   });
