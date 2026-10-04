@@ -428,26 +428,33 @@ class _Screen6CatalogSearchState extends State<_Screen6CatalogSearch> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          TextField(
-            key: const Key('screen6-catalog-search'),
-            controller: _queryController,
-            decoration: InputDecoration(
-              border: const OutlineInputBorder(),
-              hintText: display.text('hub.searchHint'),
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _query.isEmpty
-                  ? null
-                  : IconButton(
-                      key: const Key('screen6-catalog-clear'),
-                      tooltip: display.text('clipboardWorkbench.clear'),
-                      onPressed: () {
-                        _queryController.clear();
-                        setState(() => _query = '');
-                      },
-                      icon: const Icon(Icons.clear),
-                    ),
+          // Keep a locale-independent web identifier without replacing the
+          // TextField's editable semantics or its clear-button child.
+          Semantics(
+            identifier: 'screen6-search',
+            container: true,
+            explicitChildNodes: true,
+            child: TextField(
+              key: const Key('screen6-catalog-search'),
+              controller: _queryController,
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                hintText: display.text('hub.searchHint'),
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _query.isEmpty
+                    ? null
+                    : IconButton(
+                        key: const Key('screen6-catalog-clear'),
+                        tooltip: display.text('clipboardWorkbench.clear'),
+                        onPressed: () {
+                          _queryController.clear();
+                          setState(() => _query = '');
+                        },
+                        icon: const Icon(Icons.clear),
+                      ),
+              ),
+              onChanged: (value) => setState(() => _query = value),
             ),
-            onChanged: (value) => setState(() => _query = value),
           ),
           const SizedBox(height: 8),
           Text(
