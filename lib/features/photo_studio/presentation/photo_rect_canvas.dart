@@ -81,12 +81,16 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
   String? _creatingStudioFrameId;
   StudioFrame? _liveCreateFrame;
   String? _draggingEmojiStampId;
+  List<EmojiStamp>? _gestureStamps;
+  bool _sprayingEmoji = false;
+  Offset? _lastSprayLocal;
   /// Frame targeted by the active move/resize gesture (may lead parent selection).
   String? _editingStudioFrameId;
   bool _editStartNotified = false;
   Size? _lastReportedSize;
 
   static const double _handleHitSlop = 18;
+  static const double _spraySpacing = 28;
 
   void _notifyEditStart() {
     if (_editStartNotified) return;
@@ -199,18 +203,25 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
     widget.onSelectedEmojiStampIdChanged?.call(emojiStampId);
   }
 
-  void _placePendingEmoji(Offset local, Size size) {
+  void _placePendingEmoji(
+    Offset local,
+    Size size, {
+    bool repeated = false,
+  }) {
     final pending = widget.pendingEmoji;
     if (pending == null || pending.isEmpty) return;
-    if (_placedEmojiForPointer) return;
+    if (!repeated && _placedEmojiForPointer) return;
 
     _notifyEditStart();
-    _placedEmojiForPointer = true;
+    if (!repeated) {
+      _placedEmojiForPointer = true;
+    }
     final nx = (local.dx / size.width).clamp(0.0, 1.0);
     final ny = (local.dy / size.height).clamp(0.0, 1.0);
     final emojiStampId = newStudioObjectId('stamp');
+    final base = _gestureStamps ?? widget.stamps;
     final next = <EmojiStamp>[
-      ...widget.stamps,
+      ...base,
       EmojiStamp(
         emojiStampId: emojiStampId,
         emoji: pending,
@@ -219,9 +230,9 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
         scale: 1,
       ),
     ];
+    _gestureStamps = next;
     widget.onStampsChanged?.call(next);
     _selectEmojiStamp(emojiStampId);
-    _draggingEmojiStampId = emojiStampId;
   }
 
   Offset? _tapDownLocal;
@@ -277,6 +288,9 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
       if (!_placedEmojiForPointer) {
         _placePendingEmoji(details.localPosition, size);
       }
+      _sprayingEmoji = true;
+      _lastSprayLocal = details.localPosition;
+      _draggingEmojiStampId = null;
       _activeHandle = null;
       _createOrigin = null;
       _creatingStudioFrameId = null;
@@ -355,6 +369,18 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
 
   void _onPanUpdate(DragUpdateDetails details, Size size) {
     if (size.width <= 0 || size.height <= 0) return;
+
+    if (_sprayingEmoji &&
+        widget.pendingEmoji != null &&
+        widget.pendingEmoji!.isNotEmpty) {
+      final last = _lastSprayLocal;
+      if (last == null ||
+          (details.localPosition - last).distance >= _spraySpacing) {
+        _placePendingEmoji(details.localPosition, size, repeated: true);
+        _lastSprayLocal = details.localPosition;
+      }
+      return;
+    }
 
     final draggingEmojiStampId = _draggingEmojiStampId;
     if (draggingEmojiStampId != null) {
@@ -436,6 +462,9 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
     _editingStudioFrameId = null;
     _activeHandle = null;
     _draggingEmojiStampId = null;
+    _gestureStamps = null;
+    _sprayingEmoji = false;
+    _lastSprayLocal = null;
     _lastLocal = null;
     _editStartNotified = false;
     _placedEmojiForPointer = false;
@@ -470,6 +499,9 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
             onPointerDown: (event) {
               _tapDownLocal = event.localPosition;
               _placedEmojiForPointer = false;
+              _gestureStamps = List<EmojiStamp>.from(widget.stamps);
+              _sprayingEmoji = false;
+              _lastSprayLocal = null;
               _activePointer = event.pointer;
               _pointerDragging = false;
             },
@@ -531,6 +563,9 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
                 _pointerDragging = false;
                 _finishGesture();
               } else {
+                _gestureStamps = null;
+                _sprayingEmoji = false;
+                _lastSprayLocal = null;
                 _placedEmojiForPointer = false;
                 _pointerDragging = false;
               }
