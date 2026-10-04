@@ -1736,4 +1736,53 @@ void main() {
       isNull,
     );
   });
+
+  testWidgets('stamp selection survives placement and spray is one undo gesture',
+      (tester) async {
+    await _pumpPage(tester);
+
+    final shortcut = find.widgetWithText(ActionChip, '⭐');
+    await tester.ensureVisible(shortcut);
+    await tester.tap(shortcut);
+    await tester.pump();
+
+    final canvasFinder = find.byType(PhotoRectCanvas);
+    final box = tester.getRect(canvasFinder);
+    final gesture = await tester.startGesture(
+      Offset(box.left + box.width * 0.1, box.top + box.height * 0.5),
+    );
+    await tester.pump();
+    await gesture.moveTo(
+      Offset(box.left + box.width * 0.4, box.top + box.height * 0.5),
+    );
+    await tester.pump();
+    await gesture.moveTo(
+      Offset(box.left + box.width * 0.8, box.top + box.height * 0.5),
+    );
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+
+    final sprayed = tester.widget<PhotoRectCanvas>(canvasFinder).stamps.length;
+    expect(sprayed, greaterThanOrEqualTo(3));
+
+    await tester.tapAt(
+      Offset(box.left + box.width * 0.8, box.top + box.height * 0.85),
+    );
+    await tester.pump();
+    expect(
+      tester.widget<PhotoRectCanvas>(canvasFinder).stamps,
+      hasLength(sprayed + 1),
+    );
+
+    await _tapUndo(tester);
+    expect(
+      tester.widget<PhotoRectCanvas>(canvasFinder).stamps,
+      hasLength(sprayed),
+    );
+
+    await _tapUndo(tester);
+    expect(tester.widget<PhotoRectCanvas>(canvasFinder).stamps, isEmpty);
+  });
+
 }
