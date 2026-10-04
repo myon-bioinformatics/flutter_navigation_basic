@@ -153,7 +153,7 @@ void main() {
         ),
       ];
     });
-    addTearDown(ScreensConfig.resetCache);
+    addTearDown(() => ScreensConfig.resetCache());
 
     await _pumpGeneric(tester, 6);
     expect(calls, 1);
