@@ -3,6 +3,7 @@
     "eng": {
       "common.copy": "Copy",
       "common.refresh": "Refresh",
+    "common.loadError": "Could not load screens.",
       "home.title": "Home 🏠",
       "coordinate.title": "Latitude / Longitude",
       "coordinate.subtitle": "Treat a coordinate as an exact point or loose real-world area, craft manual boxes, then copy map links, bounds, and platform snippets.",

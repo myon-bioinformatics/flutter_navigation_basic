@@ -750,8 +750,10 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     setState(() {
       final next = _pendingEmoji == text ? null : text;
       _pendingEmoji = next;
-      if (next != null) {
-        _studio = _studio.copyWith(draftShape: null);
+      if (next != null && _studio.draftShape != null) {
+        _mutateWithUndo((s) => s.copyWith(draftShape: null));
+      } else if (next == null && _studio.draftShape != null) {
+        _mutateWithUndo((s) => s.copyWith(draftShape: null));
       }
     });
   }
@@ -784,11 +786,18 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
         (shape == null || _pendingEmoji == null)) {
       return;
     }
+    final previous = _studio;
+    final next = previous.copyWith(draftShape: shape);
+    if (shape != null) {
+      _pendingEmoji = null;
+    }
     setState(() {
       if (shape != null) {
         _pendingEmoji = null;
       }
-      _mutateWithUndo((s) => s.copyWith(draftShape: shape));
+      if (previous == next) return;
+      _history.recordChange(previous, next);
+      _studio = next;
     });
   }
 

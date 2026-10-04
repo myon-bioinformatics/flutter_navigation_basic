@@ -385,6 +385,26 @@ void main() {
     expect(_undoEnabled(tester), isTrue);
   });
 
+  testWidgets('reselecting the same frame tool is no-op while stamp is armed',
+      (tester) async {
+    await _pumpPage(tester);
+
+    await _tapEmojiShortcut(tester, '⭐');
+    await tester.pump();
+    expect(find.textContaining('Armed:'), findsOneWidget);
+
+    await _selectDraftTool(tester, 'Circle');
+    expect(_shapeSelected(tester, 'Circle'), isTrue);
+    expect(_undoEnabled(tester), isTrue);
+
+    await _selectDraftTool(tester, 'Circle');
+    expect(_shapeSelected(tester, 'Circle'), isTrue);
+    expect(_undoEnabled(tester), isTrue);
+
+    await _tapUndo(tester);
+    expect(_shapeSelected(tester, 'None'), isTrue);
+  });
+
   testWidgets('creates two frames with draft tools', (tester) async {
     await _pumpPage(tester);
 

@@ -100,14 +100,23 @@ class ScreenData {
 
 class ScreensConfig {
   static List<ScreenData>? _cache;
+  static Future<List<ScreenData>> Function()? _loaderOverride;
+
+  static void resetCache({Future<List<ScreenData>> Function()? loader}) {
+    _cache = null;
+    _loaderOverride = loader;
+  }
 
   static Future<List<ScreenData>> load() async {
     if (_cache != null) return _cache!;
-    final raw = await rootBundle.loadString('assets/screens.json');
-    final json = jsonDecode(raw) as Map<String, dynamic>;
-    _cache = (json['screens'] as List)
-        .map((e) => ScreenData.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final loader = _loaderOverride ?? (() async {
+      final raw = await rootBundle.loadString('assets/screens.json');
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      return (json['screens'] as List)
+          .map((e) => ScreenData.fromJson(e as Map<String, dynamic>))
+          .toList();
+    });
+    _cache = await loader();
     return _cache!;
   }
 }
@@ -216,10 +225,22 @@ class _GenericScreenState extends State<GenericScreen> {
                   child: Semantics(
                     identifier: 'screen-catalog-load-error',
                     container: true,
-                    child: FilledButton.icon(
-                      onPressed: _loadData,
-                      icon: const Icon(Icons.refresh),
-                      label: Text(display.text('common.refresh')),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.error_outline, size: 28),
+                        const SizedBox(height: 12),
+                        Text(
+                          display.text('common.loadError'),
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 12),
+                        FilledButton.icon(
+                          onPressed: _loadData,
+                          icon: const Icon(Icons.refresh),
+                          label: Text(display.text('common.refresh')),
+                        ),
+                      ],
                     ),
                   ),
                 )
