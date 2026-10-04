@@ -96,20 +96,31 @@ test.describe('Screen Navigation', () => {
     const search = searchRegion.getByRole('textbox');
     await expect(search).toHaveCount(1);
     await expect(search).toBeEditable();
-    await search.fill('Transformed Result List');
+    // WebKit can update the DOM input value without dispatching the sequence
+    // Flutter needs to rebuild the filtered catalogue. Focus the real editable
+    // semantics node and type through keyboard events instead of DOM-only fill.
+    await search.click();
+    await search.pressSequentially('Transformed Result List');
     await expect(search).toHaveValue('Transformed Result List');
-    await expect(page.getByText('1 / 198', { exact: true })).toBeVisible();
-    // This is a real bundled catalogue title, not a translated UI placeholder.
-    const result = page.getByText('Screen 5 · 変換結果一覧', { exact: true });
+    const resultCount = page.locator(
+      '[flt-semantics-identifier="screen6-result-count"]',
+    );
+    await expect(resultCount).toHaveCount(1);
+    await expect(resultCount).toContainText('1 / 198');
+
+    const result = page.locator(
+      '[flt-semantics-identifier="screen6-result-5"]',
+    );
     await expect(result).toHaveCount(1);
     await expect(result).toBeVisible();
-    // Use the row's actual semantics tap action, as the back-to-hub probe does.
-    await result.evaluate((element) => {
-      const target = element.closest('[flt-tappable]');
-      if (!(target instanceof HTMLElement)) {
-        throw new Error('Screen5 catalogue result has no semantics tap action');
+    // Keep navigation tied to the row's real Flutter semantics tap action.
+    const tapTarget = result.locator('[flt-tappable]');
+    await expect(tapTarget).toHaveCount(1);
+    await tapTarget.evaluate((element) => {
+      if (!(element instanceof HTMLElement)) {
+        throw new Error('Screen5 catalogue result tap target is not an HTMLElement');
       }
-      target.click();
+      element.click();
     });
     await waitForFlutter(page);
     await expect(page).toHaveURL(/#\/screen5$/);
