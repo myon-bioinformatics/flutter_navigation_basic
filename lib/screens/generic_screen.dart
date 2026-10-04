@@ -133,6 +133,7 @@ class _GenericScreenState extends State<GenericScreen> {
   ScreenData? _data;
   List<ScreenData> _screens = const [];
   Object? _loadError;
+  bool _loading = false;
   final FocusNode _backToHubFocus = FocusNode(debugLabel: 'back-to-hub');
 
   @override
@@ -142,6 +143,11 @@ class _GenericScreenState extends State<GenericScreen> {
   }
 
   Future<void> _loadData() async {
+    if (_loading) return;
+    _loading = true;
+    if (_loadError != null && mounted) {
+      setState(() => _loadError = null);
+    }
     try {
       final screens = await ScreensConfig.load();
       final data = screens.firstWhere(
@@ -159,18 +165,26 @@ class _GenericScreenState extends State<GenericScreen> {
           dataPattern: '',
         ),
       );
-      if (!mounted) return;
+      if (!mounted) {
+        _loading = false;
+        return;
+      }
       setState(() {
         _screens = screens;
         _data = data;
         _loadError = null;
+        _loading = false;
       });
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted) {
+        _loading = false;
+        return;
+      }
       setState(() {
         _screens = const [];
         _data = null;
         _loadError = error;
+        _loading = false;
       });
     }
   }
@@ -457,10 +471,14 @@ class _Screen6CatalogSearchState extends State<_Screen6CatalogSearch> {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            '${filtered.length} / ${widget.screens.length}',
-            key: const Key('screen6-result-count'),
-            style: Theme.of(context).textTheme.bodySmall,
+          Semantics(
+            identifier: 'screen6-result-count',
+            container: true,
+            child: Text(
+              '${filtered.length} / ${widget.screens.length}',
+              key: const Key('screen6-result-count'),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ),
           const SizedBox(height: 8),
           Expanded(
@@ -473,25 +491,31 @@ class _Screen6CatalogSearchState extends State<_Screen6CatalogSearch> {
                     itemBuilder: (context, index) {
                       final screen = filtered[index];
                       final isCurrent = screen.screenDataId == 6;
-                      return ListTile(
-                        key: Key('screen6-result-${screen.screenDataId}'),
-                        leading: Text(
-                          screen.emoji,
-                          style: const TextStyle(fontSize: 24),
+                      return Semantics(
+                        identifier: 'screen6-result-${screen.screenDataId}',
+                        container: true,
+                        explicitChildNodes: true,
+                        child: ListTile(
+                          key: Key('screen6-result-${screen.screenDataId}'),
+                          leading: Text(
+                            screen.emoji,
+                            style: const TextStyle(fontSize: 24),
+                          ),
+                          title: Text(
+                            'Screen ${screen.screenDataId} · ${screen.useCaseJa.isEmpty ? screen.title : screen.useCaseJa}',
+                          ),
+                          subtitle: Text(
+                            [
+                              if (screen.useCaseEn.isNotEmpty) screen.useCaseEn,
+                              if (screen.domainJa.isNotEmpty)
+                                '${screen.domainEmoji} ${screen.domainJa}',
+                            ].join(' · '),
+                          ),
+                          trailing: isCurrent
+                              ? const Icon(Icons.search)
+                              : const Icon(Icons.chevron_right),
+                          onTap: isCurrent ? null : () => _open(screen),
                         ),
-                        title: Text(
-                          'Screen ${screen.screenDataId} · ${screen.useCaseJa.isEmpty ? screen.title : screen.useCaseJa}',
-                        ),
-                        subtitle: Text(
-                          [
-                            if (screen.useCaseEn.isNotEmpty) screen.useCaseEn,
-                            if (screen.domainJa.isNotEmpty)
-                              '${screen.domainEmoji} ${screen.domainJa}',
-                          ].join(' · '),
-                        ),
-                        trailing:
-                            isCurrent ? const Icon(Icons.search) : const Icon(Icons.chevron_right),
-                        onTap: isCurrent ? null : () => _open(screen),
                       );
                     },
                   ),
