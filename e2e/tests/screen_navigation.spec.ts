@@ -96,11 +96,12 @@ test.describe('Screen Navigation', () => {
     const search = searchRegion.getByRole('textbox');
     await expect(search).toHaveCount(1);
     await expect(search).toBeEditable();
-    // WebKit can update the DOM input value without dispatching the sequence
-    // Flutter needs to rebuild the filtered catalogue. Focus the real editable
-    // semantics node and type through keyboard events instead of DOM-only fill.
+    // Keep focus on Flutter's real editable semantics node. Desktop WebKit
+    // can expose a changed DOM value without delivering the event sequence
+    // Flutter needs to rebuild state, so insert text through the page keyboard.
     await search.click();
-    await search.pressSequentially('Transformed Result List');
+    await expect(search).toBeFocused();
+    await page.keyboard.insertText('Transformed Result List');
     await expect(search).toHaveValue('Transformed Result List');
     const resultCount = page.locator(
       '[flt-semantics-identifier="screen6-result-count"]',
