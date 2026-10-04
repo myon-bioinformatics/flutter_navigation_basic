@@ -114,6 +114,64 @@ void main() {
     expect(find.text('Snippet'), findsOneWidget);
   });
 
+  testWidgets('Screen6 load failure shows error and retry succeeds once',
+      (tester) async {
+    var calls = 0;
+    ScreensConfig.resetCache(loader: () async {
+      calls++;
+      if (calls == 1) {
+        throw StateError('synthetic catalogue failure');
+      }
+      return const [
+        ScreenData(
+          screenDataId: 6,
+          name: 'Screen6',
+          title: 'Search',
+          emoji: '🔎',
+          description: 'Search catalogue',
+          category: 'navigation',
+          navigationPattern: '',
+          apiPattern: '',
+          themePattern: '',
+          dataPattern: '',
+          useCaseJa: '検索結果一覧',
+          useCaseEn: 'Search Results',
+        ),
+        ScreenData(
+          screenDataId: 5,
+          name: 'Screen5',
+          title: 'Results',
+          emoji: '🔢',
+          description: 'Results',
+          category: 'navigation',
+          navigationPattern: '',
+          apiPattern: '',
+          themePattern: '',
+          dataPattern: '',
+          useCaseJa: '変換結果一覧',
+          useCaseEn: 'Transformed Result List',
+        ),
+      ];
+    });
+    addTearDown(ScreensConfig.resetCache);
+
+    await _pumpGeneric(tester, 6);
+    expect(calls, 1);
+    expect(find.text('Could not load screens.'), findsOneWidget);
+    expect(find.byKey(const Key('screen6-catalog-search')), findsNothing);
+
+    final retry = find.widgetWithText(FilledButton, 'Refresh');
+    expect(retry, findsOneWidget);
+    await tester.tap(retry);
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(calls, 2);
+    expect(find.text('Could not load screens.'), findsNothing);
+    expect(find.byKey(const Key('screen6-catalog-search')), findsOneWidget);
+    expect(find.text('2 / 2'), findsOneWidget);
+  });
+
   testWidgets('Screen6 searches the real catalogue and opens an existing route',
       (tester) async {
     await _pumpGeneric(
@@ -136,6 +194,20 @@ void main() {
 
     expect(find.byKey(const Key('screen6-result-5')), findsOneWidget);
     expect(find.text('1 / 198'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is Semantics &&
+            widget.properties.identifier == 'screen6-result-5',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is Semantics &&
+            widget.properties.identifier == 'screen6-result-count',
+      ),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byKey(const Key('screen6-result-5')));
     await tester.pumpAndSettle();
