@@ -1001,7 +1001,7 @@ void main() {
     expect(_rectCardText(tester), before);
   });
 
-  testWidgets('emoji tap places, selects, syncs scale; drag does not double-place',
+  testWidgets('emoji selection persists; existing stamp drag does not double-place',
       (tester) async {
     await _pumpPage(tester);
 
@@ -1030,8 +1030,8 @@ void main() {
     final scaled = tester.widget<Slider>(find.byType(Slider)).value;
     expect(scaled, greaterThan(1.1));
 
-    await _tapEmojiShortcut(tester, '⭐');
-    await tester.pumpAndSettle();
+    // The stamp tool remains armed after the first placement, so the second
+    // independent tap must create a fresh stamp without reselecting the chip.
     final second =
         Offset(box.left + box.width * 0.12, box.top + box.height * 0.82);
     await tester.tapAt(second);
