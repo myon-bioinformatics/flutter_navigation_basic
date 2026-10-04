@@ -46,7 +46,7 @@ class StartupErrorApp extends StatelessWidget {
             child: Semantics(
               identifier: 'startup-error',
               child: Text(
-                'Startup failed: the app could not load its display text.\n$error',
+                'Startup failed: the app could not finish initialization.\n$error',
                 textAlign: TextAlign.center,
               ),
             ),

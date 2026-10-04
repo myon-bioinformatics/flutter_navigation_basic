@@ -312,8 +312,38 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r tool/python/requirements.txt
 
+      - name: Fetch pinned test-only JUnit importer
+        uses: actions/checkout@v7
+        with:
+          repository: myon-bioinformatics/xprobe
+          ref: 7e7015b2df69ad446b968f6fa49711b5b1dbdd3f
+          path: .junit-tools
+          persist-credentials: false
+          sparse-checkout: xprobe.py
+          sparse-checkout-cone-mode: false
       - name: Run pytest
-        run: python tool/python/test.py --pytest -- --oracle-mode=local --outcomes-json build/diagnostics/python-oracle/pytest_outcomes.json
+        env:
+          FLUTTER_FAILURE_EVIDENCE: ${{ github.workspace }}/build/controlled-failure
+        run: >-
+          python tool/python/test.py --pytest -- --oracle-mode=local
+          --outcomes-json "$GITHUB_WORKSPACE/build/diagnostics/python-oracle/pytest_outcomes.json"
+          --junitxml="$GITHUB_WORKSPACE/build/test-results/python-3.12.xml"
+      - name: Preserve junit-python-3.12
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: junit-python-3.12
+          path: build/test-results/python-3.12.xml
+          if-no-files-found: error
+          retention-days: 14
+      - name: Preserve junit-controlled-python-3.12
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: junit-controlled-python-3.12
+          path: build/controlled-failure/
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Write local oracle receipt
         if: always()
@@ -453,3 +483,14 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
 
+
+
+  junit-identity:
+    needs: [changes, python-pytest]
+    if: always() && (needs.changes.outputs.python == 'true' || needs.changes.outputs.workflow == 'true')
+    permissions:
+      contents: read
+      actions: read
+    uses: myon-bioinformatics/myon-bioinformatics/.github/workflows/reusable-junit-identity.yml@4dfda95d6573250477f991a0421fa6acb9bc0258
+    with:
+      expected-reports: '["junit-python-3.12/python-3.12.xml", "junit-controlled-python-3.12/junit.xml"]'
