@@ -418,7 +418,7 @@ class _Screen6CatalogSearchState extends State<_Screen6CatalogSearch> {
                   ? null
                   : IconButton(
                       key: const Key('screen6-catalog-clear'),
-                      tooltip: 'Clear',
+                      tooltip: display.text('clipboardWorkbench.clear'),
                       onPressed: () {
                         _queryController.clear();
                         setState(() => _query = '');
