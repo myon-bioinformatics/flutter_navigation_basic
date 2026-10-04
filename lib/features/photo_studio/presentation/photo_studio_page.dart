@@ -152,6 +152,9 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     setState(() {
       _invalidatePendingImageLoad();
       _studio = snap;
+      if (_studio.draftShape != null) {
+        _pendingEmoji = null;
+      }
       _status = DisplayScope.of(context).text('photoStudio.undoDone');
     });
   }
@@ -162,6 +165,9 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     setState(() {
       _invalidatePendingImageLoad();
       _studio = snap;
+      if (_studio.draftShape != null) {
+        _pendingEmoji = null;
+      }
       _status = DisplayScope.of(context).text('photoStudio.redoDone');
     });
   }
@@ -752,8 +758,6 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       _pendingEmoji = next;
       if (next != null && _studio.draftShape != null) {
         _mutateWithUndo((s) => s.copyWith(draftShape: null));
-      } else if (next == null && _studio.draftShape != null) {
-        _mutateWithUndo((s) => s.copyWith(draftShape: null));
       }
     });
   }
@@ -1240,8 +1244,11 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
                                       } else {
                                         _pendingEmoji = emoji;
                                         _stampController.text = emoji;
-                                        _studio =
-                                            _studio.copyWith(draftShape: null);
+                                        if (_studio.draftShape != null) {
+                                          _mutateWithUndo(
+                                            (s) => s.copyWith(draftShape: null),
+                                          );
+                                        }
                                       }
                                     });
                                   },
