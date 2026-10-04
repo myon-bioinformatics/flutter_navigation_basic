@@ -142,6 +142,62 @@ void main() {
     expect(find.text('Screen5 route reached'), findsOneWidget);
   });
 
+  for (final locale in const ['eng', 'jpn']) {
+    testWidgets('Screen6 search identifier retains editable semantics in $locale',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      addTearDown(handle.dispose);
+      final controller = await loadTestDisplayController(
+        initialValues: {DisplayController.preferenceKey: locale},
+      );
+      await _pumpGeneric(tester, 6, controller: controller);
+
+      final region = find.byWidgetPredicate(
+        (widget) => widget is Semantics &&
+            widget.properties.identifier == 'screen6-search',
+      );
+      expect(region, findsOneWidget);
+      final node = tester.getSemantics(region);
+      expect(node.identifier, 'screen6-search');
+      final fields = <SemanticsNode>[];
+      void collectFields(SemanticsNode parent) {
+        parent.visitChildren((child) {
+          if (child.getSemanticsData().hasFlag(SemanticsFlag.isTextField)) {
+            fields.add(child);
+          }
+          collectFields(child);
+          return true;
+        });
+      }
+
+      collectFields(node);
+      expect(fields, hasLength(1));
+      expect(
+        fields.single.getSemanticsData().hasAction(SemanticsAction.setText),
+        isTrue,
+      );
+      expect(
+        tester.widget<TextField>(find.byKey(const Key('screen6-catalog-search')))
+            .decoration!.hintText,
+        controller.text('hub.searchHint'),
+      );
+
+      // The identifier must not replace or hide the real editable child.
+      tester.binding.pipelineOwner.semanticsOwner!.performAction(
+        fields.single.id,
+        SemanticsAction.setText,
+        'Transformed Result List',
+      );
+      await tester.pump();
+      expect(find.text('1 / 198'), findsOneWidget);
+      expect(find.byKey(const Key('screen6-result-5')), findsOneWidget);
+      expect(region, findsOneWidget);
+      expect(tester.getSemantics(region).identifier, 'screen6-search');
+      expect(find.byKey(const Key('screen6-catalog-clear')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('Screen6 supports Japanese search, empty results, and clear',
       (tester) async {
     await _pumpGeneric(tester, 6);
