@@ -6,12 +6,17 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import pytest
 
 PYTHON_DIR = Path(__file__).resolve().parents[1]
 ROOT = PYTHON_DIR.parents[1]
 
 
 def test_oracle_wrapper_junit_preserves_failure_and_outcomes(tmp_path):
+    importer = ROOT / ".junit-tools" / "xprobe.py"
+    if not importer.is_file() and os.environ.get("GITHUB_ACTIONS") != "true" and not os.environ.get("FLUTTER_FAILURE_EVIDENCE"):
+        pytest.skip("optional local JUnit regression: fetch the pinned importer (docs/junit-evidence.md)")
+    assert importer.is_file(), "CI must provision the pinned test-only JUnit importer"
     evidence = Path(os.environ.get("FLUTTER_FAILURE_EVIDENCE", tmp_path / "evidence")).resolve()
     evidence.mkdir(parents=True, exist_ok=True)
     fixture = tmp_path / "test_oracle.py"
@@ -50,13 +55,12 @@ def test_skip():
                               env=env, capture_output=True, text=True, timeout=60)
     (evidence / "exit.json").write_text(json.dumps({"without_junit": plain.returncode,
                                                 "with_junit": reported.returncode}), encoding="utf-8")
-    assert plain.returncode == reported.returncode == 1, reported.stdout + reported.stderr
+    assert plain.returncode == reported.returncode == 1, plain.stdout + plain.stderr + reported.stdout + reported.stderr
     outcomes = json.loads((evidence / "outcomes.json").read_text(encoding="utf-8"))
     assert outcomes == json.loads(plain_path.read_text(encoding="utf-8"))
     assert outcomes["exitstatus"] == 1 and outcomes["ok"] is False
     assert outcomes["counts"] == {"passed": 1, "failed": 1, "skipped": 1,
                                   "xfailed": 0, "xpassed": 0, "error": 1}
-    importer = ROOT / ".junit-tools" / "xprobe.py"
     data = importer.read_bytes()
     assert hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest() == "dbc5b7d55005d6288c072a7612584d6170c216f4"
     spec = importlib.util.spec_from_file_location("oracle_junit_xprobe", importer)
