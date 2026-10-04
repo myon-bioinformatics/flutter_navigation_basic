@@ -83,14 +83,15 @@ test.describe('Screen Navigation', () => {
     await expect(page.locator('[flt-semantics-identifier="back-to-hub"]')).toHaveCount(1);
   });
 
-  test('generic screen shows pattern info', async ({ page }) => {
-    // /screen5 is a dedicated Screen5Page; screen 6 is a GenericScreen catalogue route.
+  test('Screen6 searches the catalogue and opens Screen5', async ({ page }) => {
     await navigateToScreen(page, 6);
-    // Should show pattern cards
-    await expect(page.getByText('Navigation', { exact: false })).toBeVisible();
-    await expect(page.getByText('API', { exact: false })).toBeVisible();
-    await expect(page.getByText('Theme', { exact: false })).toBeVisible();
-    await expect(page.getByText('Data', { exact: false })).toBeVisible();
+    const search = page.getByPlaceholder('Search screens…');
+    await expect(search).toBeVisible();
+    await search.fill('Transformed Result List');
+    await expect(page.getByText('Screen 5 · 変換結果一覧')).toBeVisible();
+    await page.getByText('Screen 5 · 変換結果一覧').click();
+    await waitForFlutter(page);
+    await expect(page).toHaveURL(/#\/screen5$/);
   });
 
   for (const screenId of testData.sampleScreenIds) {
