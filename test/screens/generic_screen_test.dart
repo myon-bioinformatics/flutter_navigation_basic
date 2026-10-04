@@ -218,49 +218,52 @@ void main() {
     testWidgets('Screen6 search identifier retains editable semantics in $locale',
         (tester) async {
       final handle = tester.ensureSemantics();
-      addTearDown(handle.dispose);
-      final controller = await loadTestDisplayController(
-        initialValues: {DisplayController.preferenceKey: locale},
-      );
-      await _pumpGeneric(tester, 6, controller: controller);
+      try {
+        final controller = await loadTestDisplayController(
+          initialValues: {DisplayController.preferenceKey: locale},
+        );
+        await _pumpGeneric(tester, 6, controller: controller);
 
-      final region = find.byWidgetPredicate(
-        (widget) => widget is Semantics &&
-            widget.properties.identifier == 'screen6-search',
-      );
-      expect(region, findsOneWidget);
-      final node = tester.getSemantics(region);
-      expect(node.identifier, 'screen6-search');
-      final fields = <SemanticsNode>[];
-      void collectFields(SemanticsNode parent) {
-        parent.visitChildren((child) {
-          if (child.getSemanticsData().hasFlag(SemanticsFlag.isTextField)) {
-            fields.add(child);
-          }
-          collectFields(child);
-          return true;
-        });
+        final region = find.byWidgetPredicate(
+          (widget) => widget is Semantics &&
+              widget.properties.identifier == 'screen6-search',
+        );
+        expect(region, findsOneWidget);
+        final node = tester.getSemantics(region);
+        expect(node.identifier, 'screen6-search');
+        final fields = <SemanticsNode>[];
+        void collectFields(SemanticsNode parent) {
+          parent.visitChildren((child) {
+            if (child.getSemanticsData().hasFlag(SemanticsFlag.isTextField)) {
+              fields.add(child);
+            }
+            collectFields(child);
+            return true;
+          });
+        }
+
+        collectFields(node);
+        expect(fields, hasLength(1));
+        final field = find.byKey(const Key('screen6-catalog-search'));
+        expect(
+          tester.widget<TextField>(field).decoration!.hintText,
+          controller.text('hub.searchHint'),
+        );
+
+        // Keep the stable identifier contract, but verify editability through
+        // the real widget instead of pinning a framework-specific semantics
+        // action that can vary across Flutter versions.
+        await tester.enterText(field, 'Transformed Result List');
+        await tester.pump();
+        expect(find.text('1 / 198'), findsOneWidget);
+        expect(find.byKey(const Key('screen6-result-5')), findsOneWidget);
+        expect(region, findsOneWidget);
+        expect(tester.getSemantics(region).identifier, 'screen6-search');
+        expect(find.byKey(const Key('screen6-catalog-clear')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      } finally {
+        handle.dispose();
       }
-
-      collectFields(node);
-      expect(fields, hasLength(1));
-      final field = find.byKey(const Key('screen6-catalog-search'));
-      expect(
-        tester.widget<TextField>(field).decoration!.hintText,
-        controller.text('hub.searchHint'),
-      );
-
-      // Keep the stable identifier contract, but verify editability through
-      // the real widget instead of pinning a framework-specific semantics
-      // action that can vary across Flutter versions.
-      await tester.enterText(field, 'Transformed Result List');
-      await tester.pump();
-      expect(find.text('1 / 198'), findsOneWidget);
-      expect(find.byKey(const Key('screen6-result-5')), findsOneWidget);
-      expect(region, findsOneWidget);
-      expect(tester.getSemantics(region).identifier, 'screen6-search');
-      expect(find.byKey(const Key('screen6-catalog-clear')), findsOneWidget);
-      expect(tester.takeException(), isNull);
     });
   }
 

@@ -92,16 +92,16 @@ test.describe('Screen Navigation', () => {
     const searchRegion = page.locator('[flt-semantics-identifier="screen6-search"]');
     await expect(searchRegion).toHaveCount(1);
     await expect(searchRegion).toBeVisible();
-    // Fill the editable descendant, not the non-editable semantics container.
+    // Type into the editable descendant, not the semantics container.
     const search = searchRegion.getByRole('textbox');
     await expect(search).toHaveCount(1);
     await expect(search).toBeEditable();
     // Keep focus on Flutter's real editable semantics node. Desktop WebKit
-    // can expose a changed DOM value without delivering the event sequence
-    // Flutter needs to rebuild state, so insert text through the page keyboard.
+    // can expose a changed DOM value with insertText without updating Flutter
+    // state. Sequential key events also exercise Flutter's onChanged path.
     await search.click();
     await expect(search).toBeFocused();
-    await page.keyboard.insertText('Transformed Result List');
+    await search.pressSequentially('Transformed Result List');
     await expect(search).toHaveValue('Transformed Result List');
     const resultCount = page.locator(
       '[flt-semantics-identifier="screen6-result-count"]',
