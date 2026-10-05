@@ -117,18 +117,30 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
     lock = json.loads((PYTHON_DIR / "vendor.lock.json").read_text(encoding="utf-8"))
     assert lock["schema"] == "vendor-lock/1"
     expected = {
-        ("repository_metadata_contract.py", "tool/python/vendor/repository_metadata_contract.py"),
-        ("repository_metadata_generator.py", "tool/python/vendor/repository_metadata_generator.py"),
-        ("LICENSE", "tool/python/vendor/Ironmate-LICENSE"),
+        ("myon-bioinformatics/Ironmate", "repository_metadata_contract.py", "tool/python/vendor/repository_metadata_contract.py"),
+        ("myon-bioinformatics/Ironmate", "repository_metadata_generator.py", "tool/python/vendor/repository_metadata_generator.py"),
+        ("myon-bioinformatics/Ironmate", "LICENSE", "tool/python/vendor/Ironmate-LICENSE"),
+        ("myon-bioinformatics/yourself", "yourself.py", "tool/python/vendor/yourself.py"),
+        ("myon-bioinformatics/yourself", "LICENSE", "tool/python/vendor/yourself-LICENSE"),
+        ("myon-bioinformatics/xprobe", "xprobe.py", "tool/python/vendor/xprobe.py"),
+        ("myon-bioinformatics/xprobe", "LICENSE", "tool/python/vendor/xprobe-LICENSE"),
+        ("myon-bioinformatics/browser-test-kit", "scripts/gh_ops.py", "tool/python/vendor/gh_ops.py"),
+        ("myon-bioinformatics/browser-test-kit", "scripts/check_evidence.py", "tool/python/vendor/check_evidence.py"),
+        ("myon-bioinformatics/browser-test-kit", "scripts/check_png.py", "tool/python/vendor/check_png.py"),
+        ("myon-bioinformatics/browser-test-kit", "scripts/jsonl_digest.py", "tool/python/vendor/jsonl_digest.py"),
+        ("myon-bioinformatics/browser-test-kit", "LICENSE", "tool/python/vendor/browser-test-kit-LICENSE"),
+        ("myon-bioinformatics/myon-bioinformatics", "git_inspector.py", "tool/python/vendor/git_inspector.py"),
+        ("myon-bioinformatics/myon-bioinformatics", "LICENSE", "tool/python/vendor/myon-bioinformatics-LICENSE"),
+        ("myon-bioinformatics/cli_args", "cli_args.py", "tool/python/vendor/cli_args.py"),
+        ("myon-bioinformatics/cli_args", "LICENSE", "tool/python/vendor/cli_args-LICENSE"),
     }
     entries = lock["files"]
-    assert {(entry["source"], entry["destination"]) for entry in entries} == expected
-    assert {entry["repository"] for entry in entries} == {"myon-bioinformatics/Ironmate"}
+    assert {(entry["repository"], entry["source"], entry["destination"]) for entry in entries} == expected
     assert {entry["ref"] for entry in entries} == {"refs/heads/main"}
-    commits = {entry["commit"] for entry in entries}
-    assert len(commits) == 1
-    assert all(len(commit) == 40 and set(commit) <= set("0123456789abcdef") for commit in commits)
+    assert len({entry["destination"] for entry in entries}) == len(entries)
     for entry in entries:
+        commit = entry["commit"]
+        assert len(commit) == 40 and set(commit) <= set("0123456789abcdef")
         data = (ROOT / entry["destination"]).read_bytes()
         assert hashlib.sha256(data).hexdigest() == entry["sha256"]
         blob = f"blob {len(data)}".encode() + bytes([0]) + data

@@ -55,6 +55,8 @@ def test_skip():
                               env=env, capture_output=True, text=True, timeout=60)
     (evidence / "exit.json").write_text(json.dumps({"without_junit": plain.returncode,
                                                 "with_junit": reported.returncode}), encoding="utf-8")
+    # JUnit is evidence, never an exit-code normalizer: the failing native child
+    # must remain failing with and without the report enabled.
     assert plain.returncode == reported.returncode == 1, plain.stdout + plain.stderr + reported.stdout + reported.stderr
     outcomes = json.loads((evidence / "outcomes.json").read_text(encoding="utf-8"))
     assert outcomes == json.loads(plain_path.read_text(encoding="utf-8"))
@@ -78,3 +80,6 @@ def test_skip():
     assert all(c["context"]["commit_sha"] is None for c in cases)
     for sentinel in ("PARAMETER_SENTINEL", "STDOUT_SENTINEL", "ASSERTION_SENTINEL", "SETUP_SENTINEL"):
         assert sentinel in raw and sentinel not in compact
+
+
+
