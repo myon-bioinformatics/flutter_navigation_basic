@@ -1,12 +1,9 @@
-// Pattern 001: Python-produced asset -> Flutter loading/result/error boundary.
+// FilterBasic uses the same generated-asset/UI boundary as 002/003.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:get/get.dart';
-import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_001/controller.dart';
-import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_001/model.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_001/service.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_001/view.dart';
 
@@ -24,83 +21,70 @@ class _Bundle extends CachingAssetBundle {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('FilterBasic model compatibility roundtrip', () {
-    final result = Pattern001Result.fromJson(
-      Pattern001Result(message: 'example').toJson(),
-    );
-    expect(result.message, 'example');
+  test('FilterBasic loads its real Python-produced asset', () async {
+    expect(await Pattern001Service().load(), [1, 1]);
   });
 
-  test('FilterBasic reads the real bundled Python result', () async {
-    final result = await Pattern001Service().run();
-    expect(result.message, contains('[1, 1]'));
-  });
-
-  test('FilterBasic consumes supplied results without filtering again', () async {
-    final bundle = _Bundle((path) async {
-      expect(path, 'assets/data_processing/filter_basic.json');
+  test('FilterBasic consumes supplied values without evaluating predicates', () async {
+    final values = await Pattern001Service(bundle: _Bundle((key) async {
+      expect(key, 'assets/data_processing/filter_basic.json');
       return '{"values":["猫",null,"犬"]}';
-    });
-    expect((await Pattern001Service(bundle: bundle).run()).message,
-        contains('[猫, null, 犬]'));
+    })).load();
+    expect(values, ['猫', null, '犬']);
+    expect(() => values.add('mutation'), throwsUnsupportedError);
   });
 
-  for (final invalid in ['not json', '[]', '{}', '{"values":"invalid"}']) {
-    test('FilterBasic rejects malformed result: $invalid', () async {
-      final service = Pattern001Service(bundle: _Bundle((_) async => invalid));
-      await expectLater(service.run(), throwsFormatException);
+  for (final invalid in ['not json', '[]', '{}', '{"values":null}']) {
+    test('FilterBasic rejects malformed asset: $invalid', () async {
+      await expectLater(
+        Pattern001Service(bundle: _Bundle((_) async => invalid)).load(),
+        throwsFormatException,
+      );
     });
   }
 
-  test('FilterBasic propagates missing asset instead of returning a mock', () async {
-    final service = Pattern001Service(
-      bundle: _Bundle((_) async => throw FlutterError('missing asset')),
+  test('FilterBasic propagates a missing asset, without a mock fallback', () async {
+    await expectLater(
+      Pattern001Service(bundle: _Bundle((_) async => throw FlutterError('missing asset'))).load(),
+      throwsA(isA<FlutterError>()),
     );
-    await expectLater(service.run(), throwsA(isA<FlutterError>()));
   });
 
-  testWidgets('FilterBasic UI shows loading then actual processed values', (tester) async {
-    Get.testMode = true;
-    addTearDown(() {
-      Get.reset();
-      Get.testMode = false;
-    });
+  testWidgets('FilterBasic shows loading once then actual processed values', (tester) async {
     final pending = Completer<String>();
-    final controller = Get.put(Pattern001Controller(
-      service: Pattern001Service(bundle: _Bundle((_) => pending.future)),
+    var calls = 0;
+    await tester.pumpWidget(MaterialApp(
+      home: Pattern001View(bundle: _Bundle((_) {
+        calls++;
+        return pending.future;
+      })),
     ));
-    await tester.pumpWidget(const MaterialApp(home: Pattern001View()));
-    await tester.tap(find.text('実行'));
+    final button = find.widgetWithText(ElevatedButton, '実行');
+    await tester.tap(button);
     await tester.pump();
     expect(find.textContaining('実行中'), findsOneWidget);
-    expect(tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed, isNull);
+    expect(tester.widget<ElevatedButton>(button).onPressed, isNull);
+    await tester.tap(button);
+    expect(calls, 1);
     pending.complete('{"values":["猫","猫"]}');
     await tester.pumpAndSettle();
-    expect(find.textContaining('[猫, 猫]'), findsOneWidget);
-    expect(controller.isLoading.value, isFalse);
+    expect(find.text('結果: [猫, 猫]'), findsOneWidget);
   });
 
-  testWidgets('FilterBasic UI exposes errors and permits retry', (tester) async {
-    Get.testMode = true;
-    addTearDown(() {
-      Get.reset();
-      Get.testMode = false;
-    });
+  testWidgets('FilterBasic exposes failure and retries without GetX registration', (tester) async {
     var attempts = 0;
-    final controller = Get.put(Pattern001Controller(
-      service: Pattern001Service(bundle: _Bundle((_) async =>
+    await tester.pumpWidget(MaterialApp(
+      home: Pattern001View(bundle: _Bundle((_) async =>
           attempts++ == 0 ? '{"values":null}' : '{"values":[7]}')),
     ));
-    await tester.pumpWidget(const MaterialApp(home: Pattern001View()));
     await tester.tap(find.text('実行'));
     await tester.pumpAndSettle();
-    expect(controller.hasError.value, isTrue);
     expect(find.textContaining('読み込み失敗'), findsOneWidget);
     expect(find.textContaining('Expected a JSON object'), findsOneWidget);
     await tester.tap(find.text('実行'));
     await tester.pumpAndSettle();
-    expect(controller.hasError.value, isFalse);
-    expect(find.textContaining('[7]'), findsOneWidget);
+    expect(find.text('結果: [7]'), findsOneWidget);
     expect(find.textContaining('Expected a JSON object'), findsNothing);
+    expect(attempts, 2);
   });
 }

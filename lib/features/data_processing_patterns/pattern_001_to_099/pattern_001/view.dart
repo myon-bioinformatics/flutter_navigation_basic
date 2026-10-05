@@ -1,37 +1,18 @@
-// Pattern 001: FilterBasic — Python-generated example, not a runtime filter.
+// Pattern 001: FilterBasic — generated example, not runtime processing.
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/processed_list_example.dart';
 
-class Pattern001View extends GetView<Pattern001Controller> {
-  const Pattern001View({super.key});
+import 'service.dart';
+
+class Pattern001View extends StatelessWidget {
+  const Pattern001View({super.key, this.bundle});
+
+  final AssetBundle? bundle;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Pattern 001: FilterBasic')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Pythonで生成したフィルター結果を読み込む例。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            Obx(() => controller.hasError.value
-                ? Text(controller.errorMessage.value)
-                : const SizedBox.shrink()),
-            const SizedBox(height: 16),
-            Obx(() => ElevatedButton(
-                  onPressed: controller.isLoading.value ? null : controller.execute,
-                  child: const Text('実行'),
-                )),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ProcessedListExample(
+        title: 'Pattern 001: FilterBasic',
+        asset: Pattern001Service(bundle: bundle),
+      );
 }

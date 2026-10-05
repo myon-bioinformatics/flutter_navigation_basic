@@ -46,13 +46,13 @@ Python owns filtering, validation, generation and drift checking. Shared
 `JsonListAsset` only loads/validates JSON; no predicate or synthetic fallback.
 The earlier duplicate Dart `list_filters.dart` was removed in this PR.
 
-002/003 share `ProcessedListExample` for loading/result/error/retry state.
-Their four duplicate model/controller files are deleted and their two stub
-test files are replaced by one parametrized Flutter suite. Retained services
-are asset-path constructors and views are presentation configuration; no GetX
-binding is needed. Their old internal run/message-model contract is replaced
-by shared `load()` values. 001's compatibility model/controller/tests remain
-unchanged in this increment; full catalogue consolidation is not claimed.
+001/002/003 now share `ProcessedListExample` for loading/result/error/retry
+state. Their pattern-specific model/controller scaffolding is deleted; retained
+services are asset-path constructors and views are presentation configuration,
+with no GetX binding. 002/003 share one parametrized Flutter suite while 001
+keeps a focused boundary test file. The old internal run/message-model contract
+is replaced by shared `load()` values. Full catalogue consolidation is not
+claimed.
 
 ## Failure evidence and verification
 
