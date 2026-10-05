@@ -77,3 +77,13 @@ def test_filter_basic_asset_and_flutter_test_are_enrolled():
     paths = (ROOT / "tool/ci/flutter_pattern_test_paths.txt").read_text().splitlines()
     assert "test/features/data_processing_patterns" in paths
     assert (ROOT / "test/features/data_processing_patterns/pattern_001_to_099/pattern_001_test.dart").is_file()
+
+
+@pytest.mark.parametrize("values", [[True, True], [1.0, 1.0]])
+def test_filter_basic_check_preserves_json_value_types(tmp_path, values):
+    # Python considers True == 1 == 1.0, but Flutter renders these differently.
+    target = tmp_path / "result.json"
+    target.write_text(json.dumps({"values": values}), encoding="utf-8")
+    result = _run("", "--input", INPUT, "--output", target, "--check")
+    assert result.returncode == 1
+    assert "stale" in result.stderr

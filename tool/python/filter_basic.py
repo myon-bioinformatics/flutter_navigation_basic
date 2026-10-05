@@ -49,7 +49,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.check:
             current = json.loads(args.output.read_text(encoding="utf-8"), parse_constant=_reject_constant)
             # Compare only the consumed contract, not unrelated metadata/formatting.
-            if not isinstance(current, dict) or current.get("values") != result["values"]:
+            if (not isinstance(current, dict) or "values" not in current or
+                    json.dumps(current["values"], sort_keys=True) !=
+                    json.dumps(result["values"], sort_keys=True)):
                 print("filter-basic: generated values are stale", file=sys.stderr)
                 return 1
         elif args.output is not None:
