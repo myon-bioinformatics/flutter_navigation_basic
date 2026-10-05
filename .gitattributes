@@ -15,3 +15,4 @@ tool/python/vendor/xprobe-LICENSE -text
 tool/python/vendor/browser-test-kit-LICENSE -text
 tool/python/vendor/myon-bioinformatics-LICENSE -text
 tool/python/vendor/cli_args-LICENSE -text
+tool/python/vendor/check_png.py -text
