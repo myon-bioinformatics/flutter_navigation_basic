@@ -1,7 +1,8 @@
-"""Canonical checkout identity, Pages gating, and exact vendoring provenance."""
+"""Canonical checkout identity, portable tooling, Pages gating, and exact vendoring."""
 import hashlib
 import json
 from pathlib import Path
+import runpy
 import subprocess
 import sys
 
@@ -10,6 +11,7 @@ import pytest
 PYTHON_DIR = Path(__file__).resolve().parents[1]
 ROOT = PYTHON_DIR.parents[1]
 sys.path.insert(0, str(PYTHON_DIR / "vendor"))
+import repository_metadata_generator as canonical_generator
 from repository_metadata_generator import record_from_checkout
 from repository_metadata_contract import validate_repository_record
 
@@ -57,6 +59,57 @@ def test_cli_gated_sha_and_json_jsonl(checkout, tmp_path):
     record = json.loads((output / "repository-metadata.json").read_text())
     assert record == json.loads((output / "repository-metadata.jsonl").read_text())
     validate_repository_record(record)
+    assert record["tooling"]["python"] == canonical_generator.normalize_version_output(
+        "python", canonical_generator.platform.python_version(),
+    )
+    assert record["tooling"]["git"] == canonical_generator.normalize_version_output(
+        "git", git(checkout, "--version"),
+    )
+
+
+@pytest.mark.parametrize(
+    "python_version,command_versions,expected_tooling",
+    [
+        pytest.param(
+            "3.11.9",
+            {"git": "2.45.0", "gh": "2.61.0", "node": "22.1.0", "npm": "10.8.0", "npx": "10.8.0"},
+            {"python": "3.11.9", "git": "2.45.0", "gh": "2.61.0", "node": "22.1.0", "npm": "10.8.0", "npx": "10.8.0"},
+            id="all-present",
+        ),
+        pytest.param(
+            "3.11.9", {"git": "2.45.0"},
+            {"python": "3.11.9", "git": "2.45.0"}, id="partial",
+        ),
+        pytest.param("not-a-version", {}, {}, id="empty"),
+    ],
+)
+def test_adapter_collects_canonical_tooling_without_nulls(
+    checkout, tmp_path, monkeypatch, python_version, command_versions, expected_tooling,
+):
+    # Control observation inputs, not the adapter, collector or checkout identity.
+    monkeypatch.setattr(canonical_generator.platform, "python_version", lambda: python_version)
+    observed_commands = []
+
+    def observe_command(command):
+        observed_commands.append(command)
+        return command_versions.get(command)
+
+    monkeypatch.setattr(canonical_generator, "observe_command_version", observe_command)
+    main = runpy.run_path(str(PYTHON_DIR / "generate_repository_metadata.py"))["main"]
+    output = tmp_path / "out"
+    sha = git(checkout, "rev-parse", "HEAD")
+    assert main([
+        "--root", str(checkout), "--repository", "example/repo",
+        "--output-dir", str(output), "--expected-sha", sha,
+    ]) == 0
+
+    record = json.loads((output / "repository-metadata.json").read_text(encoding="utf-8"))
+    assert record == json.loads((output / "repository-metadata.jsonl").read_text(encoding="utf-8"))
+    validate_repository_record(record)
+    assert observed_commands == ["git", "gh", "node", "npm", "npx"]
+    assert record["tooling"] == expected_tooling
+    assert record["head"]["sha"] == sha
+    assert record["head"]["subject"] == "metadata fixture 日本語"
 
 
 def test_vendor_lock_matches_exact_bytes_and_ci_contract():
