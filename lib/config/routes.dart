@@ -39,7 +39,7 @@ class AppRoutes {
     };
 
     // Catalogue / demo routes that are public-entrypoint only.
-    for (var i = 1; i <= 200; i++) {
+    for (var i = 1; i <= 198; i++) {
       // Capture per-iteration so each builder closes over a fixed screen id.
       final screenId = i;
       final name = screenRoute(screenId);
