@@ -1,12 +1,11 @@
 // Pattern 001: FilterBasic
-// UI catalogue boundary. Canonical filter behavior is implemented and tested
-// by tool/python/filter_basic.py; Flutter does not duplicate that data logic.
+// Shared runtime operation for the Flutter catalogue boundary.
+import 'package:flutter_application_1/core/data_processing/list_filters.dart';
 import 'model.dart';
 
 class Pattern001Service {
   Future<Pattern001Result> run() async {
-    return const Pattern001Result(
-      message: 'FilterBasic: canonical stdlib Python filter is available',
-    );
+    final filtered = filterEquals<int>(const [1, 2, 1, 3], 1);
+    return Pattern001Result(message: 'FilterBasic: $filtered');
   }
 }
