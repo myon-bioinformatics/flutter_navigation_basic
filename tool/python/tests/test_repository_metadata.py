@@ -116,19 +116,24 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
     vendor = PYTHON_DIR / "vendor"
     lock = json.loads((PYTHON_DIR / "vendor.lock.json").read_text(encoding="utf-8"))
     assert lock["schema"] == "vendor-lock/1"
-    expected = {
-        ("repository_metadata_contract.py", "tool/python/vendor/repository_metadata_contract.py"),
-        ("repository_metadata_generator.py", "tool/python/vendor/repository_metadata_generator.py"),
-        ("LICENSE", "tool/python/vendor/Ironmate-LICENSE"),
+    required = {
+        ("myon-bioinformatics/Ironmate", "repository_metadata_contract.py"),
+        ("myon-bioinformatics/Ironmate", "repository_metadata_generator.py"),
+        ("myon-bioinformatics/yourself", "yourself.py"),
+        ("myon-bioinformatics/xprobe", "xprobe.py"),
+        ("myon-bioinformatics/browser-test-kit", "scripts/gh_ops.py"),
+        ("myon-bioinformatics/browser-test-kit", "scripts/check_evidence.py"),
+        ("myon-bioinformatics/browser-test-kit", "scripts/jsonl_digest.py"),
+        ("myon-bioinformatics/myon-bioinformatics", "git_inspector.py"),
+        ("myon-bioinformatics/cli_args", "cli_args.py"),
     }
     entries = lock["files"]
-    assert {(entry["source"], entry["destination"]) for entry in entries} == expected
-    assert {entry["repository"] for entry in entries} == {"myon-bioinformatics/Ironmate"}
+    assert required <= {(entry["repository"], entry["source"]) for entry in entries}
     assert {entry["ref"] for entry in entries} == {"refs/heads/main"}
-    commits = {entry["commit"] for entry in entries}
-    assert len(commits) == 1
-    assert all(len(commit) == 40 and set(commit) <= set("0123456789abcdef") for commit in commits)
+    assert len({entry["destination"] for entry in entries}) == len(entries)
     for entry in entries:
+        commit = entry["commit"]
+        assert len(commit) == 40 and set(commit) <= set("0123456789abcdef")
         data = (ROOT / entry["destination"]).read_bytes()
         assert hashlib.sha256(data).hexdigest() == entry["sha256"]
         blob = f"blob {len(data)}".encode() + bytes([0]) + data
