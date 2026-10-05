@@ -97,7 +97,4 @@ are not full CI/audit evidence.
 
 The authoritative audit starts at **790/792, undecodable 0**. 001–003 reduce it
 to **787/792** and 030 to **786/792**; their GetX consolidation changes file
-counts separately from placeholder counts. The 086 reuse slice should reduce the
-PR value to **785/792** while leaving the service denominator unchanged. Record
-the measured current-head result from CI in #144 before calling that value
-verified; merged main remains a separate baseline until this PR is integrated.
+counts separately from placeholder counts. The 086 reuse slice is measured at **785/792, undecodable 0** on current-head CI, while leaving the service denominator unchanged. Merged main remains the separate **790/792, undecodable 0** baseline until this PR is integrated.
