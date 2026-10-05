@@ -1,4 +1,4 @@
-// Pattern 001: FilterBasic — only the Python result-asset boundary.
+// Pattern 001: FilterBasic — load externally processed values only.
 import 'package:flutter/services.dart';
 import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
 

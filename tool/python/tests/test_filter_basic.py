@@ -73,10 +73,19 @@ def test_filter_basic_missing_file_and_invalid_check(tmp_path):
 
 
 def test_filter_basic_asset_and_flutter_test_are_enrolled():
-    assert "assets/data_processing/filter_basic.json" in (ROOT / "pubspec.yaml").read_text()
-    paths = (ROOT / "tool/ci/flutter_pattern_test_paths.txt").read_text().splitlines()
+    assert "assets/data_processing/filter_basic.json" in (ROOT / "pubspec.yaml").read_text(encoding="utf-8")
+    paths = (ROOT / "tool/ci/flutter_pattern_test_paths.txt").read_text(encoding="utf-8").splitlines()
     assert "test/features/data_processing_patterns" in paths
-    assert (ROOT / "test/features/data_processing_patterns/pattern_001_to_099/pattern_001_test.dart").is_file()
+    assert (ROOT / "test/features/data_processing_patterns/pattern_001_to_099/filter_conditions_test.dart").is_file()
+
+
+@pytest.mark.parametrize("number", [1, 2, 3])
+def test_migrated_filters_have_no_getx_scaffold(number):
+    pattern = ROOT / f"lib/features/data_processing_patterns/pattern_001_to_099/pattern_{number:03d}"
+    for filename in ("model.dart", "controller.dart"):
+        assert not (pattern / filename).exists()
+    for filename in ("service.dart", "view.dart"):
+        assert "package:get/" not in (pattern / filename).read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize("values", [[True, True], [1.0, 1.0]])

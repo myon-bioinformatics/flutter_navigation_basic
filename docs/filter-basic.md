@@ -1,4 +1,4 @@
-# Filtering examples: one Python producer, small Flutter boundaries
+# Filtering examples: one Python producer, shared Flutter boundary
 
 The #144 work in #145 implements FilterBasic (001), FilterMultiple (002) and
 FilterNested (003) with the same stdlib-only CLI. Existing catalogue views load
@@ -46,13 +46,14 @@ Python owns filtering, validation, generation and drift checking. Shared
 `JsonListAsset` only loads/validates JSON; no predicate or synthetic fallback.
 The earlier duplicate Dart `list_filters.dart` was removed in this PR.
 
-001/002/003 now share `ProcessedListExample` for loading/result/error/retry
-state. Their pattern-specific model/controller scaffolding is deleted; retained
-services are asset-path constructors and views are presentation configuration,
-with no GetX binding. 002/003 share one parametrized Flutter suite while 001
-keeps a focused boundary test file. The old internal run/message-model contract
-is replaced by shared `load()` values. Full catalogue consolidation is not
-claimed.
+All three examples now share `ProcessedListExample` loading/result/error/retry
+and disposal state. Their six duplicate model/controller files are deleted;
+services are asset-path constructors, and views configure presentation.
+No GetX binding, global registration or controller reset is needed. The old
+internal `run()`/message-model interfaces are intentionally replaced by
+`load()` values. Existing view names and const construction are preserved.
+The shared Flutter suite replaces all three former per-pattern test files;
+this does not claim the rest of the catalogue is consolidated or GetX-free.
 
 ## Failure evidence and verification
 
@@ -69,14 +70,13 @@ propagation (earlier measured null commit context and ordinal IDs). Unused
 `.junit-tools` workflow checkouts also remain cleanup work. These gaps are not
 claimed fixed and do not require another tooling bootstrap.
 
-The existing pytest path collects `test_filter_basic.py`,
-`test_filter_conditions.py` and the native `test_junit_evidence.py`. Flutter
-001 tests plus `filter_conditions_test.dart` use the existing pattern-shard
-path. 002/003 cover real assets, malformed/missing data, loading, duplicate-load
-prevention, errors/retry, empty results and completion after disposal.
+Existing pytest collects `test_filter_basic.py`, `test_filter_conditions.py`
+and native `test_junit_evidence.py`. All three examples use the shared Flutter
+`filter_conditions_test.dart` in the existing pattern-shard directory, checking
+real assets, malformed/missing data, loading, duplicate-load prevention,
+errors/retry, empty results and completion after disposal without GetX.
 
-The repository-local CI audit is authoritative, not a partial local copy.
-Starting **790/792, undecodable 0** became **789/792** for 001. 002/003 should
-reduce this to **787/792** (three replaced services in this PR). Record actual
-current-head results in #144; removing markers or older-head green checks alone
-does not prove current end-to-end behavior.
+The repository-local CI audit is authoritative. Starting **790/792,
+undecodable 0** became **787/792** for 001–003. Removing 001's GetX scaffold
+changes the runtime file count, not that already-reduced placeholder count.
+Record current-head results in #144; older-head green is not current evidence.
