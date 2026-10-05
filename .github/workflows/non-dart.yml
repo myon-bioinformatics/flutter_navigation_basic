@@ -241,9 +241,13 @@ jobs:
         run: |
           set -euo pipefail
           python -S .vendor-sync-tools/vendor_sync.py check --manifest tool/python/vendor.lock.json
-          rm tool/python/vendor/repository_metadata_contract.py
-          rm tool/python/vendor/repository_metadata_generator.py
-          rm tool/python/vendor/Ironmate-LICENSE
+          python -S - <<'PY'
+          import json
+          from pathlib import Path
+          lock = json.loads(Path("tool/python/vendor.lock.json").read_text(encoding="utf-8"))
+          for entry in lock["files"]:
+              Path(entry["destination"]).unlink()
+          PY
           python -S .vendor-sync-tools/vendor_sync.py materialize --manifest tool/python/vendor.lock.json
           python -S .vendor-sync-tools/vendor_sync.py check --manifest tool/python/vendor.lock.json
 
@@ -267,9 +271,7 @@ jobs:
           name: python-vendor-locked
           path: |
             tool/python/vendor.lock.json
-            tool/python/vendor/repository_metadata_contract.py
-            tool/python/vendor/repository_metadata_generator.py
-            tool/python/vendor/Ironmate-LICENSE
+            tool/python/vendor/
           if-no-files-found: error
           retention-days: 14
 
