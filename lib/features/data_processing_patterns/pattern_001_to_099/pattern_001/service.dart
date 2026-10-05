@@ -1,11 +1,20 @@
-// Pattern 001: FilterBasic
-// Shared runtime operation for the Flutter catalogue boundary.
-import 'package:flutter_application_1/core/data_processing/list_filters.dart';
+// Pattern 001: FilterBasic — display the Python-produced catalogue example.
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
+
 import 'model.dart';
 
 class Pattern001Service {
+  Pattern001Service({AssetBundle? bundle})
+      : _asset = JsonListAsset(
+          'assets/data_processing/filter_basic.json',
+          bundle: bundle,
+        );
+
+  final JsonListAsset _asset;
+
   Future<Pattern001Result> run() async {
-    final filtered = filterEquals<int>(const [1, 2, 1, 3], 1);
-    return Pattern001Result(message: 'FilterBasic: $filtered');
+    final values = await _asset.load();
+    return Pattern001Result(message: 'FilterBasic: $values');
   }
 }

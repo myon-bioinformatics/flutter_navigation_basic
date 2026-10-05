@@ -38,3 +38,4 @@ flutter:
     - assets/diagnostics/build_metadata.json
     - assets/display/app_text.json
     - assets/time/zone_table.json
+    - assets/data_processing/filter_basic.json
