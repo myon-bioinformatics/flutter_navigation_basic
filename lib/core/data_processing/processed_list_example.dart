@@ -47,7 +47,7 @@ class _ProcessedListExampleState extends State<ProcessedListExample> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Pythonで生成したフィルター結果を読み込む例。'),
+            const Text('Pythonで生成した処理結果を読み込む例。'),
             const SizedBox(height: 16),
             if (_loading)
               const Text('状態: 実行中...')
