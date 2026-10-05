@@ -330,6 +330,20 @@ jobs:
           python tool/python/test.py --pytest -- --oracle-mode=local
           --outcomes-json "$GITHUB_WORKSPACE/build/diagnostics/python-oracle/pytest_outcomes.json"
           --junitxml="$GITHUB_WORKSPACE/build/test-results/python-3.12.xml"
+
+      - name: Audit repository pattern stubs
+        run: |
+          mkdir -p build/diagnostics/pattern-stubs
+          python tool/python/pattern_stub_audit.py --json > build/diagnostics/pattern-stubs/baseline.json
+          python -m json.tool build/diagnostics/pattern-stubs/baseline.json
+      - name: Preserve pattern stub baseline
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pattern-stub-baseline
+          path: build/diagnostics/pattern-stubs/baseline.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Preserve junit-python-3.12
         if: always()
         uses: actions/upload-artifact@v7
@@ -394,9 +408,7 @@ jobs:
           name: python-vendor-candidate
           path: |
             tool/python/vendor.lock.json
-            tool/python/vendor/repository_metadata_contract.py
-            tool/python/vendor/repository_metadata_generator.py
-            tool/python/vendor/Ironmate-LICENSE
+            tool/python/vendor/
           if-no-files-found: error
           retention-days: 14
 
