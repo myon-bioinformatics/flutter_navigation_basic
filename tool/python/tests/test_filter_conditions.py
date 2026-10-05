@@ -8,7 +8,7 @@ import pytest
 
 PYTHON_DIR = Path(__file__).resolve().parents[1]
 ROOT = PYTHON_DIR.parents[1]
-CLI = PYTHON_DIR / "filter_basic.py"
+CLI = PYTHON_DIR / "list_selection.py"
 
 
 def _run(payload="", *args):
@@ -73,7 +73,7 @@ def test_filter_conditions_reject_bad_contract_even_for_empty_input(extra):
     result = _run(json.dumps({"values": [], **extra}))
     assert result.returncode == 2
     assert result.stdout == ""
-    assert "filter-basic:" in result.stderr
+    assert "list-selection:" in result.stderr
     assert "Traceback" not in result.stderr
 
 

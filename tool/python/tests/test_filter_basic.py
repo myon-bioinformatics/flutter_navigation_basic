@@ -8,7 +8,7 @@ import pytest
 
 PYTHON_DIR = Path(__file__).resolve().parents[1]
 ROOT = PYTHON_DIR.parents[1]
-CLI = PYTHON_DIR / "filter_basic.py"
+CLI = PYTHON_DIR / "list_selection.py"
 INPUT = PYTHON_DIR / "fixtures/filter_basic_input.json"
 ASSET = ROOT / "assets/data_processing/filter_basic.json"
 
@@ -41,7 +41,7 @@ def test_filter_basic_rejects_invalid_contract(payload):
     result = _run(payload)
     assert result.returncode == 2
     assert result.stdout == ""
-    assert "filter-basic:" in result.stderr
+    assert "list-selection:" in result.stderr
 
 
 def test_filter_basic_generated_asset_is_current():

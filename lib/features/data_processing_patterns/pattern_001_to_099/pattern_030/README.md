@@ -20,11 +20,11 @@ Navigator.of(context).push(
 ```
 
 ```sh
-python -S tool/python/filter_basic.py --input tool/python/fixtures/distinct_filter_input.json --output assets/data_processing/distinct_filter.json --check
+python -S tool/python/list_selection.py --input tool/python/fixtures/distinct_filter_input.json --output assets/data_processing/distinct_filter.json --check
 ```
 
 Remove `--check` to generate. The existing shared Flutter
 `filter_conditions_test.dart` covers this view as well; Python tests live in
 `tool/python/tests/test_distinct_filter.py`. No new processing/UI implementation
 is copied per pattern. 086/113 are inspected reuse candidates, not implemented
-by this change. See `docs/filter-basic.md` and Issue #144.
+by this change. See `docs/list-selection.md` and Issue #144.

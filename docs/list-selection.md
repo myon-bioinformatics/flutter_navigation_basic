@@ -1,19 +1,22 @@
 # List-selection examples: one Python producer, shared Flutter boundary
 
 Issue #144 / PR #145 implements FilterBasic (001), FilterMultiple (002),
-FilterNested (003) and DistinctFilter (030). The existing stdlib-only
-`filter_basic.py` command is retained for compatibility and shares validation,
-JSON I/O, asset generation and drift checking. No per-pattern Python copy.
-Flutter displays **generated catalogue examples, not arbitrary-input runtime
-filtering/deduplication**. No new route, Screen 199/200 or dependency is added.
+FilterNested (003) and DistinctFilter (030). The responsibility-named
+stdlib-only `list_selection.py` command shares validation, JSON I/O, asset
+generation and drift checking. No per-pattern Python copy.
+Flutter currently displays **generated catalogue examples, not arbitrary-input
+runtime filtering/deduplication**. The Python CLI itself is repository-independent
+and can be invoked from an isolated runtime location; wiring/packaging that runtime
+into Flutter targets is a separate measured step, not claimed by this slice.
+No new route, Screen 199/200 or dependency is added.
 
 ## Generate and verify
 
 ```sh
-python -S tool/python/filter_basic.py --input tool/python/fixtures/filter_basic_input.json --output assets/data_processing/filter_basic.json --check
-python -S tool/python/filter_basic.py --input tool/python/fixtures/filter_multiple_input.json --output assets/data_processing/filter_multiple.json --check
-python -S tool/python/filter_basic.py --input tool/python/fixtures/filter_nested_input.json --output assets/data_processing/filter_nested.json --check
-python -S tool/python/filter_basic.py --input tool/python/fixtures/distinct_filter_input.json --output assets/data_processing/distinct_filter.json --check
+python -S tool/python/list_selection.py --input tool/python/fixtures/filter_basic_input.json --output assets/data_processing/filter_basic.json --check
+python -S tool/python/list_selection.py --input tool/python/fixtures/filter_multiple_input.json --output assets/data_processing/filter_multiple.json --check
+python -S tool/python/list_selection.py --input tool/python/fixtures/filter_nested_input.json --output assets/data_processing/filter_nested.json --check
+python -S tool/python/list_selection.py --input tool/python/fixtures/distinct_filter_input.json --output assets/data_processing/distinct_filter.json --check
 ```
 
 Remove `--check` to generate; omit `--output` for stdout; `--input -` reads stdin.
@@ -77,6 +80,10 @@ Existing pytest collects basic/conditions/distinct tests and the native chain.
 The shared `filter_conditions_test.dart` remains in the existing pattern-shard
 path and covers real assets, unmodified result consumption, malformed/missing
 data, loading/duplicate-load prevention, errors/retry/empty results and disposal.
+The CLI is also covered by isolated `python -I -S` source-copy tests: the single
+file runs without repository, Flutter, site packages or generated assets for
+filter/distinct success and invalid-input exit 2. This demonstrates a portable
+stdlib processing boundary, not that every Flutter target already bundles Python.
 No local Flutter SDK or full checkout is available; local focused source copies
 are not full CI/audit evidence.
 

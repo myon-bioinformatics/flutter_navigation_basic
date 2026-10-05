@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Filter JSON values and generate/check Flutter result assets.
+"""Select JSON values and generate/check Flutter result assets.
 
 Equality filters and stable distinct selection share one producer and I/O.
 Flutter only displays generated results; it never evaluates predicates.
@@ -127,14 +127,14 @@ def main(argv: list[str] | None = None) -> int:
             if (not isinstance(current, dict) or "values" not in current or
                     json.dumps(current["values"], sort_keys=True) !=
                     json.dumps(result["values"], sort_keys=True)):
-                print("filter-basic: generated values are stale", file=sys.stderr)
+                print("list-selection: generated values are stale", file=sys.stderr)
                 return 1
         elif args.output is not None:
             args.output.write_text(rendered, encoding="utf-8")
         else:
             sys.stdout.write(rendered)
     except (OSError, UnicodeError, ValueError) as error:
-        print(f"filter-basic: {error}", file=sys.stderr)
+        print(f"list-selection: {error}", file=sys.stderr)
         return 2
     return 0
 

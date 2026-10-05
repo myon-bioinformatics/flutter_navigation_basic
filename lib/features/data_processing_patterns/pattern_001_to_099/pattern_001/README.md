@@ -16,7 +16,7 @@ Navigator.of(context).push(
 );
 ```
 
-Processing and generation commands: `docs/filter-basic.md`.
+Processing and generation commands: `docs/list-selection.md`.
 The shared Flutter suite is
 `test/features/data_processing_patterns/pattern_001_to_099/filter_conditions_test.dart`.
 It tests the real asset, malformed/missing data and UI loading/error/retry/disposal

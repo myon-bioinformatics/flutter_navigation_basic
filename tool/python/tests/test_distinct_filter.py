@@ -8,7 +8,7 @@ import pytest
 
 PYTHON_DIR = Path(__file__).resolve().parents[1]
 ROOT = PYTHON_DIR.parents[1]
-CLI = PYTHON_DIR / "filter_basic.py"
+CLI = PYTHON_DIR / "list_selection.py"
 INPUT = PYTHON_DIR / "fixtures/distinct_filter_input.json"
 ASSET = ROOT / "assets/data_processing/distinct_filter.json"
 
@@ -51,7 +51,7 @@ def test_distinct_rejects_invalid_or_ambiguous_contract(payload):
     result = _run(json.dumps(payload))
     assert result.returncode == 2
     assert not result.stdout
-    assert "filter-basic:" in result.stderr
+    assert "list-selection:" in result.stderr
 
 
 @pytest.mark.parametrize("payload", [

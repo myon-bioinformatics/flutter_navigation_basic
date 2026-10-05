@@ -33,11 +33,11 @@ def test_outcomes_success():
 def test_filter_invalid_input_is_not_success(label):
     print("STDOUT_SENTINEL")
     result = subprocess.run(
-        [sys.executable, "-S", os.environ["FILTER_BASIC_CLI"]],
+        [sys.executable, "-S", os.environ["LIST_SELECTION_CLI"]],
         input='{"values":[1e999],"equals":0}',
         capture_output=True, text=True, encoding="utf-8", timeout=5,
     )
-    Path(os.environ["FILTER_BASIC_EXIT"]).write_text(json.dumps({"exit_code": result.returncode}))
+    Path(os.environ["LIST_SELECTION_EXIT"]).write_text(json.dumps({"exit_code": result.returncode}))
     # Intentionally wrong: reject overflow even when filtering would select nothing.
     assert result.returncode == 0, "ASSERTION_SENTINEL"
 
@@ -53,8 +53,8 @@ def test_skip():
 ''', encoding="utf-8")
     env = dict(os.environ, PYTHONPATH=str(PYTHON_DIR),
                PYTEST_DISABLE_PLUGIN_AUTOLOAD="1", PYTEST_ADDOPTS="",
-               FILTER_BASIC_CLI=str(PYTHON_DIR / "filter_basic.py"),
-               FILTER_BASIC_EXIT=str(evidence / "filter-cli-exit.json"))
+               LIST_SELECTION_CLI=str(PYTHON_DIR / "list_selection.py"),
+               LIST_SELECTION_EXIT=str(evidence / "list-selection-cli-exit.json"))
     command = [sys.executable, str(PYTHON_DIR / "test.py"), "--pytest", "--",
                str(fixture), "-c", os.devnull, "--rootdir", str(tmp_path),
                "--confcutdir", str(tmp_path), "-p", "conftest", "--oracle-mode=local", "-q"]
@@ -72,7 +72,7 @@ def test_skip():
     assert plain.returncode == receipt["exit_code"] == 1
     assert wrapped.returncode == 0, wrapped.stdout + wrapped.stderr
     assert receipt["matched_expectation"] and not receipt["timed_out"]
-    cli_exit = json.loads((evidence / "filter-cli-exit.json").read_text())["exit_code"]
+    cli_exit = json.loads((evidence / "list-selection-cli-exit.json").read_text())["exit_code"]
     assert cli_exit == 2
     (evidence / "exit.json").write_text(json.dumps({
         "without_junit": plain.returncode, "with_junit": receipt["exit_code"],
@@ -85,7 +85,7 @@ def test_skip():
                                   "xfailed": 0, "xpassed": 0, "error": 1}
     raw = (evidence / "junit.xml").read_text(encoding="utf-8")
     imported = collect_failure_identity(raw, root=ROOT, repository=REPOSITORY,
-                                        report_id="controlled-filter-basic")
+                                        report_id="controlled-list-selection")
     assert imported["truncated"] is False
     cases = imported["cases"]
     assert {(c["value"]["test"], c["value"]["kind"]) for c in cases} == {
@@ -100,7 +100,7 @@ def test_skip():
     for suite in root.iter("testsuite"):
         suite[:] = list(reversed(list(suite)))
     reordered = collect_failure_identity(ET.tostring(root, encoding="unicode"), root=ROOT,
-                                         repository=REPOSITORY, report_id="controlled-filter-basic")
+                                         repository=REPOSITORY, report_id="controlled-list-selection")
     assert {c["id"] for c in reordered["cases"]} == {c["id"] for c in cases}
     later_report = collect_failure_identity(raw, root=ROOT, repository=REPOSITORY,
                                            report_id="another-run")
