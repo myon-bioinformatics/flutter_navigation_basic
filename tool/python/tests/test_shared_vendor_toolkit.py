@@ -1,3 +1,4 @@
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -17,16 +18,19 @@ MODULES = (
 )
 
 
-def test_shared_toolkit_compiles_and_imports_standalone():
-    for name in MODULES:
-        path = VENDOR / name
-        subprocess.run([sys.executable, "-m", "py_compile", str(path)], check=True)
-        subprocess.run(
-            [sys.executable, "-S", "-c",
-             "import sys; sys.path.insert(0, r'" + str(VENDOR) + "'); __import__('" + name[:-3] + "')"],
-            check=True,
-            cwd=ROOT,
-        )
+import pytest
+
+
+@pytest.mark.parametrize("name", MODULES)
+def test_shared_toolkit_compiles_and_imports_standalone(name):
+    path = VENDOR / name
+    subprocess.run([sys.executable, "-m", "py_compile", str(path)], check=True)
+    subprocess.run(
+        [sys.executable, "-S", "-c",
+         "import sys; sys.path.insert(0, r'" + str(VENDOR) + "'); __import__('" + name[:-3] + "')"],
+        check=True,
+        cwd=ROOT,
+    )
 
 
 def test_environment_probe_is_safe_no_argument_json():
@@ -38,7 +42,6 @@ def test_environment_probe_is_safe_no_argument_json():
         timeout=10,
     )
     assert result.returncode == 0, result.stderr
-    import json
     payload = json.loads(result.stdout)
     assert payload["schema_version"] == 1
     assert set(payload) == {"schema_version", "os", "runtime", "host", "directory"}
