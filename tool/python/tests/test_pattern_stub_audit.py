@@ -50,3 +50,8 @@ def test_non_utf8_service_does_not_abort_audit():
     assert result["api_patterns"] == [
         "lib/features/api_patterns/pattern_001_to_099/pattern_002/service.dart"
     ]
+    assert result["_summary"]["skipped_undecodable_count"] == 1
+    assert result["_summary"]["skipped_undecodable"] == [
+        "lib/features/api_patterns/pattern_001_to_099/pattern_001/service.dart"
+    ]
+    assert result["_summary"]["placeholder_total"] == 1
