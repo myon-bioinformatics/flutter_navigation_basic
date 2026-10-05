@@ -53,7 +53,9 @@ when their implementation slice needs them.
 ## Intentional-red child runs
 
 `tool/python/expected_child_failure.py` is the language-neutral process boundary
-for cases where the child is *supposed* to fail. It does not know Flutter,
+for cases where the child is *supposed* to fail.
+By default each child is bounded to 30 seconds, and captured stdout/stderr are
+capped at 1 MiB per stream; timeout and truncation are recorded in the receipt. It does not know Flutter,
 Playwright, Go or pytest semantics. It executes an explicit command with
 `shell=False`, records raw stdout/stderr plus a bounded JSON receipt, and returns
 0 only when the native child exit code is one of the explicitly expected codes.
