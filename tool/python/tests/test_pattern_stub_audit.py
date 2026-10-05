@@ -70,3 +70,17 @@ def test_missing_features_root_is_rejected():
             assert "missing pattern root" in str(error)
         else:
             raise AssertionError("missing pattern root must fail")
+
+
+def test_missing_pattern_family_is_rejected():
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        features = root / "lib/features"
+        for family in ("api_patterns", "data_processing_patterns", "navigation_patterns"):
+            (features / family).mkdir(parents=True, exist_ok=True)
+        try:
+            audit(root)
+        except ValueError as error:
+            assert "missing pattern families: ui_theme_patterns" in str(error)
+        else:
+            raise AssertionError("missing pattern family must fail")
