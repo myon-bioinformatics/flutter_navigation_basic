@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from pathlib import Path
 import sys
 from typing import Any
 
@@ -18,7 +19,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--input", default="-", help="JSON file path, or - for stdin")
     args = parser.parse_args(argv)
     try:
-        raw = sys.stdin.read() if args.input == "-" else open(args.input, encoding="utf-8").read()
+        raw = sys.stdin.read() if args.input == "-" else Path(args.input).read_text(encoding="utf-8")
         payload = json.loads(raw)
         if not isinstance(payload, dict):
             raise ValueError("input must be a JSON object")
