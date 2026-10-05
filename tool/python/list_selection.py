@@ -133,7 +133,7 @@ def main(argv: list[str] | None = None) -> int:
             args.output.write_text(rendered, encoding="utf-8")
         else:
             sys.stdout.write(rendered)
-    except (OSError, UnicodeError, ValueError) as error:
+    except (OSError, UnicodeError, ValueError, RecursionError) as error:
         print(f"list-selection: {error}", file=sys.stderr)
         return 2
     return 0
