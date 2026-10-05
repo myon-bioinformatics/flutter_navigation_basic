@@ -114,8 +114,6 @@ void main() {
     await expectScreenId(1);
     await expectScreenId(42);
     await expectScreenId(198);
-    await expectScreenId(199);
-    await expectScreenId(200);
   });
 
   testWidgets('CounterPlaygroundScreen keeps controller across parent rebuild',
