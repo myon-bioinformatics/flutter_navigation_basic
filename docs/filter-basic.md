@@ -1,9 +1,11 @@
-# Filtering examples: one Python producer, shared Flutter boundary
+# List-selection examples: one Python producer, shared Flutter boundary
 
-The #144 work in #145 implements FilterBasic (001), FilterMultiple (002) and
-FilterNested (003) with the same stdlib-only CLI. Existing catalogue views load
-Python-generated results: **generated examples, not arbitrary-input filtering
-at Flutter runtime**. No new route, Screen 199/200 or dependency is added.
+Issue #144 / PR #145 implements FilterBasic (001), FilterMultiple (002),
+FilterNested (003) and DistinctFilter (030). The existing stdlib-only
+`filter_basic.py` command is retained for compatibility and shares validation,
+JSON I/O, asset generation and drift checking. No per-pattern Python copy.
+Flutter displays **generated catalogue examples, not arbitrary-input runtime
+filtering/deduplication**. No new route, Screen 199/200 or dependency is added.
 
 ## Generate and verify
 
@@ -11,72 +13,74 @@ at Flutter runtime**. No new route, Screen 199/200 or dependency is added.
 python -S tool/python/filter_basic.py --input tool/python/fixtures/filter_basic_input.json --output assets/data_processing/filter_basic.json --check
 python -S tool/python/filter_basic.py --input tool/python/fixtures/filter_multiple_input.json --output assets/data_processing/filter_multiple.json --check
 python -S tool/python/filter_basic.py --input tool/python/fixtures/filter_nested_input.json --output assets/data_processing/filter_nested.json --check
+python -S tool/python/filter_basic.py --input tool/python/fixtures/distinct_filter_input.json --output assets/data_processing/distinct_filter.json --check
 ```
 
 Remove `--check` to generate; omit `--output` for stdout; `--input -` reads stdin.
 Exit **0** means success, **1** stale generated values, **2** invalid arguments,
-input or I/O. Check mode never rewrites assets. Only consumed `values` are
-compared, preserving JSON types but ignoring unrelated metadata and formatting.
+input or I/O. Checks never rewrite assets and compare only consumed `values`,
+preserving JSON types while ignoring unrelated metadata/formatting.
 
-## Processing contract
+## Processing contracts
 
-`values` is a list. Basic input uses required `equals` (any JSON value).
-Multiple/nested input instead uses a nonempty `conditions` list:
+`values` is a list. The default `operation` is `filter`, preserving existing
+inputs. Basic filtering uses required `equals` (any JSON value). Multiple/nested
+filtering instead uses a nonempty `conditions` list, with `match` set to `all`
+(default) or `any`. Each condition accepts required `equals` and optional `path`.
+An omitted/empty path selects the whole value. Paths contain literal object keys
+or non-negative integer list indices; `a.b` is a literal key, not dot notation.
+Missing keys, out-of-range indices and incompatible intermediate types do not
+match, even against null; explicit null can match. Invalid/ambiguous conditions
+are rejected before filtering, even for empty input. No expression evaluation.
+Filtering preserves order/duplicates using Python JSON-decoded equality,
+including its numeric/boolean equality.
 
-```json
-{"values":[{"profile":{"tags":["blue"]},"active":true}],"conditions":[{"path":["profile","tags",0],"equals":"blue"},{"path":["active"],"equals":true}],"match":"all"}
-```
+`{"operation":"distinct","values":[...]}` keeps each first occurrence by its
+canonical JSON representation (`sort_keys=True`, compact separators). Object
+key order is ignored; array order, boolean/integer/float encodings and signed
+floating-point zero remain distinct. The selected original values are returned,
+not reconstructed values. Distinct mode accepts only `operation` and `values`;
+filter conditions, key selectors and unknown options are rejected, not ignored.
+This in-memory operation retains full canonical keys; it is not a streaming or
+constant-memory implementation. 086/113 are inspected reuse candidates only.
 
-`match` is `all` (default) or `any`. Conditions contain required `equals` and
-optional `path`; an omitted/empty path selects the whole value. Paths contain
-literal object keys or non-negative integer list indices. `a.b` is a literal
-key, not dot notation. Missing keys, out-of-range indices and incompatible
-intermediate types do not match, even against null; explicit null can match.
-Negative/fractional/boolean indices, unknown condition fields, empty conditions,
-ambiguous equals+conditions and unknown match modes are rejected before
-filtering, even for an empty input. No expression/code evaluation is supported.
-
-Filtering retains order and duplicates using Python JSON-decoded equality
-(including numeric/boolean equality); non-finite JSON constants are rejected.
-Output is an object containing the selected original `values`.
+Both modes reject non-finite constants and numbers that overflow while decoding
+(e.g. `1e999`), even if no value would be selected. Before this fix the latter
+could incorrectly exit 0 with empty output; regression tests retain that case.
 
 ## Dart responsibility and consolidation
 
-Python owns filtering, validation, generation and drift checking. Shared
-`JsonListAsset` only loads/validates JSON; no predicate or synthetic fallback.
-The earlier duplicate Dart `list_filters.dart` was removed in this PR.
-
-All three examples now share `ProcessedListExample` loading/result/error/retry
-and disposal state. Their six duplicate model/controller files are deleted;
-services are asset-path constructors, and views configure presentation.
-No GetX binding, global registration or controller reset is needed. The old
-internal `run()`/message-model interfaces are intentionally replaced by
-`load()` values. Existing view names and const construction are preserved.
-The shared Flutter suite replaces all three former per-pattern test files;
-this does not claim the rest of the catalogue is consolidated or GetX-free.
+Python owns processing/validation/generation/drift checking. `JsonListAsset`
+only loads/validates the result shape. `ProcessedListExample` shares local
+loading/result/error/retry/disposal state across 001/002/003/030.
+Eight duplicate model/controller files are removed. Services select assets;
+views configure presentation, with no GetX registration or global reset.
+The old internal `run()`/message-model contract is replaced by `load()` values;
+view names and const construction remain. One shared Flutter suite replaces
+four former per-pattern test files. Other catalogue scaffolds are not claimed
+GetX-free. The earlier duplicate Dart `list_filters.dart` remains removed.
 
 ## Failure evidence and verification
 
-The real negative-path regression remains CLI invalid-input **exit 2** → native
-pytest **exit 1** with/without JUnit → existing expected-failure wrapper **exit 0**
-when the failure is expected → vendored xprobe. Native failure codes are kept;
-wrapper success is not normalized native success. Raw JUnit/receipts stay in
-the short-retention controlled artifact. Producer fingerprints exclude encounter
-order/run ID/commit/raw payloads and include repository context; corpus IDs
-retain canonical checkout/report scope.
+The existing intentional-red chain now exercises the reproduced numeric overflow:
+actual CLI **exit 2** → native pytest **exit 1** with/without JUnit → existing
+`expected_child_failure.py` wrapper **exit 0** for a matched expected failure →
+vendored xprobe. Ordinary invalid-type CLI tests remain covered separately.
+No new failure bootstrap or second heavy native run is added for this example.
+Raw JUnit/receipts stay in short-retention controlled artifacts. Producer cases
+have repository/canonical checkout context and run-order-independent fingerprints;
+raw messages/stdout/parameter sentinels do not enter the compact corpus.
+The unchanged shared downstream collector still needs context/fingerprint
+propagation, and unused `.junit-tools` checkouts remain cleanup work.
 
-The unchanged shared collector still needs downstream context/stable-identity
-propagation (earlier measured null commit context and ordinal IDs). Unused
-`.junit-tools` workflow checkouts also remain cleanup work. These gaps are not
-claimed fixed and do not require another tooling bootstrap.
+Existing pytest collects basic/conditions/distinct tests and the native chain.
+The shared `filter_conditions_test.dart` remains in the existing pattern-shard
+path and covers real assets, unmodified result consumption, malformed/missing
+data, loading/duplicate-load prevention, errors/retry/empty results and disposal.
+No local Flutter SDK or full checkout is available; local focused source copies
+are not full CI/audit evidence.
 
-Existing pytest collects `test_filter_basic.py`, `test_filter_conditions.py`
-and native `test_junit_evidence.py`. All three examples use the shared Flutter
-`filter_conditions_test.dart` in the existing pattern-shard directory, checking
-real assets, malformed/missing data, loading, duplicate-load prevention,
-errors/retry, empty results and completion after disposal without GetX.
-
-The repository-local CI audit is authoritative. Starting **790/792,
-undecodable 0** became **787/792** for 001–003. Removing 001's GetX scaffold
-changes the runtime file count, not that already-reduced placeholder count.
-Record current-head results in #144; older-head green is not current evidence.
+The authoritative audit starts at **790/792, undecodable 0**. 001–003 reduce it
+to **787/792**; their GetX consolidation changes file counts, not placeholders.
+030 should reduce it to **786/792**. Record measured current-head counts in #144,
+separately from merged-main counts; marker removal alone is not verification.

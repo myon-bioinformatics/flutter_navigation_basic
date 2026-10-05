@@ -34,11 +34,11 @@ def test_filter_invalid_input_is_not_success(label):
     print("STDOUT_SENTINEL")
     result = subprocess.run(
         [sys.executable, "-S", os.environ["FILTER_BASIC_CLI"]],
-        input='{"values":"not-a-list","equals":1}',
+        input='{"values":[1e999],"equals":0}',
         capture_output=True, text=True, encoding="utf-8", timeout=5,
     )
     Path(os.environ["FILTER_BASIC_EXIT"]).write_text(json.dumps({"exit_code": result.returncode}))
-    # Intentionally wrong: the real CLI must reject this input with native exit 2.
+    # Intentionally wrong: reject overflow even when filtering would select nothing.
     assert result.returncode == 0, "ASSERTION_SENTINEL"
 
 @pytest.fixture

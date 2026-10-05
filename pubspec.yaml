@@ -41,3 +41,4 @@ flutter:
     - assets/data_processing/filter_basic.json
     - assets/data_processing/filter_multiple.json
     - assets/data_processing/filter_nested.json
+    - assets/data_processing/distinct_filter.json

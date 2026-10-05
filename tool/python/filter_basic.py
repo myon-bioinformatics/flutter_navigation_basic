@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Filter JSON values and generate/check Flutter result assets.
 
-Basic equality and multiple/nested equality conditions share one producer.
-Input order and duplicates are retained; Flutter never evaluates predicates.
+Equality filters and stable distinct selection share one producer and I/O.
+Flutter only displays generated results; it never evaluates predicates.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 import sys
 from typing import Any
@@ -17,6 +18,23 @@ _MISSING = object()
 
 def filter_values(values: list[Any], *, equals: Any) -> list[Any]:
     return [value for value in values if value == equals]
+
+
+def distinct_values(values: list[Any]) -> list[Any]:
+    """Keep first occurrences by canonical JSON; object key order is ignored.
+
+    Boolean/integer/float encodings remain distinct, as do ordered arrays.
+    Store full keys rather than only hashes so collisions cannot lose values.
+    """
+    seen: set[str] = set()
+    result: list[Any] = []
+    for value in values:
+        key = json.dumps(value, sort_keys=True, ensure_ascii=False,
+                         allow_nan=False, separators=(",", ":"))
+        if key not in seen:
+            seen.add(key)
+            result.append(value)
+    return result
 
 
 def _at_path(value: Any, path: list[str | int]) -> Any:
@@ -37,6 +55,13 @@ def process(payload: Any) -> dict[str, list[Any]]:
     values = payload.get("values")
     if not isinstance(values, list):
         raise ValueError("values must be a JSON list")
+    operation = payload.get("operation", "filter")
+    if operation == "distinct":
+        if set(payload) - {"operation", "values"}:
+            raise ValueError("distinct accepts only operation and values")
+        return {"values": distinct_values(values)}
+    if operation != "filter":
+        raise ValueError("operation must be filter or distinct")
     if "conditions" not in payload:
         if "equals" not in payload:
             raise ValueError("equals is required")
@@ -75,6 +100,14 @@ def _reject_constant(value: str) -> None:
     raise ValueError(f"non-finite JSON constant is not supported: {value}")
 
 
+def _finite_float(value: str) -> float:
+    # parse_constant rejects NaN/Infinity, but not an overflowing exponent.
+    number = float(value)
+    if not math.isfinite(number):
+        raise ValueError("non-finite JSON number is not supported")
+    return number
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", default="-", help="JSON file path, or - for stdin")
@@ -85,11 +118,11 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--check requires --output")
     try:
         raw = sys.stdin.read() if args.input == "-" else Path(args.input).read_text(encoding="utf-8")
-        payload = json.loads(raw, parse_constant=_reject_constant)
+        payload = json.loads(raw, parse_constant=_reject_constant, parse_float=_finite_float)
         result = process(payload)
         rendered = json.dumps(result, ensure_ascii=False, allow_nan=False, separators=(",", ":")) + "\n"
         if args.check:
-            current = json.loads(args.output.read_text(encoding="utf-8"), parse_constant=_reject_constant)
+            current = json.loads(args.output.read_text(encoding="utf-8"), parse_constant=_reject_constant, parse_float=_finite_float)
             # Compare only the consumed contract, not unrelated metadata/formatting.
             if (not isinstance(current, dict) or "values" not in current or
                     json.dumps(current["values"], sort_keys=True) !=
