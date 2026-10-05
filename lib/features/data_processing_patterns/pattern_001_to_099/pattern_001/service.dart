@@ -1,11 +1,12 @@
 // Pattern 001: FilterBasic
-// リストのシンプルなフィルタリング実装。
+// UI catalogue boundary. Canonical filter behavior is implemented and tested
+// by tool/python/filter_basic.py; Flutter does not duplicate that data logic.
 import 'model.dart';
 
 class Pattern001Service {
   Future<Pattern001Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern001Result(message: 'FilterBasic executed successfully');
+    return const Pattern001Result(
+      message: 'FilterBasic: canonical stdlib Python filter is available',
+    );
   }
 }
