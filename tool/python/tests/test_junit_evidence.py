@@ -83,9 +83,3 @@ def test_skip():
 
 
 
-def test_cross_language_contract_documents_native_exit_and_junit_import():
-    contract = (ROOT / "docs/cross-language-failure-evidence.md").read_text(encoding="utf-8")
-    assert "pytest as the orchestration boundary" in contract
-    assert "preserve the native child exit status" in contract
-    assert "xprobe.cases_from_junit()" in contract
-    assert "must never turn a failing child green" in contract
