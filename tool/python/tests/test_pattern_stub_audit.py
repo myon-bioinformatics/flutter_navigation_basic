@@ -11,7 +11,10 @@ return Pattern001Result(message: 'HttpGet executed successfully');
 
 
 def _service(root: Path, pattern: str) -> Path:
-    path = root / "lib/features/api_patterns/pattern_001_to_099" / pattern / "service.dart"
+    features = root / "lib/features"
+    for family in ("api_patterns", "data_processing_patterns", "navigation_patterns", "ui_theme_patterns"):
+        (features / family).mkdir(parents=True, exist_ok=True)
+    path = features / "api_patterns/pattern_001_to_099" / pattern / "service.dart"
     path.parent.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -55,7 +58,7 @@ def test_non_utf8_service_does_not_abort_audit():
         "lib/features/api_patterns/pattern_001_to_099/pattern_001/service.dart"
     ]
     assert result["_summary"]["placeholder_total"] == 1
-    assert result["_summary"]["scanned_service_count"] == 2
+    assert result["_summary"]["scanned_service_total"] == 2
 
 
 def test_missing_features_root_is_rejected():
@@ -64,7 +67,7 @@ def test_missing_features_root_is_rejected():
         try:
             audit(root)
         except ValueError as error:
-            assert "expected pattern features directory" in str(error)
+            assert "missing pattern root" in str(error)
         else:
             raise AssertionError("missing features root must not look like an empty catalogue")
     assert result["_summary"]["scanned_service_total"] == 2
