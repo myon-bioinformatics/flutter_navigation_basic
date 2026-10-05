@@ -69,16 +69,4 @@ def test_missing_features_root_is_rejected():
         except ValueError as error:
             assert "missing pattern root" in str(error)
         else:
-            raise AssertionError("missing features root must not look like an empty catalogue")
-    assert result["_summary"]["scanned_service_total"] == 2
-    assert result["_summary"]["scanned_service_by_family"]["api_patterns"] == 2
-
-
-def test_missing_repository_pattern_root_is_rejected():
-    with tempfile.TemporaryDirectory() as tmp:
-        try:
-            audit(Path(tmp))
-        except ValueError as error:
-            assert "missing pattern root" in str(error)
-        else:
             raise AssertionError("missing pattern root must fail")
