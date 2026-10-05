@@ -1,4 +1,3 @@
-import importlib.util
 import subprocess
 import sys
 from pathlib import Path
@@ -21,10 +20,12 @@ def test_shared_toolkit_compiles_and_imports_standalone():
     for name in MODULES:
         path = VENDOR / name
         subprocess.run([sys.executable, "-m", "py_compile", str(path)], check=True)
-        spec = importlib.util.spec_from_file_location("vendored_" + name[:-3], path)
-        module = importlib.util.module_from_spec(spec)
-        assert spec.loader is not None
-        spec.loader.exec_module(module)
+        subprocess.run(
+            [sys.executable, "-S", "-c",
+             "import sys; sys.path.insert(0, r'" + str(VENDOR) + "'); __import__('" + name[:-3] + "')"],
+            check=True,
+            cwd=ROOT,
+        )
 
 
 def test_environment_probe_is_safe_no_argument_json():
