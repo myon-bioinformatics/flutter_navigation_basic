@@ -1,6 +1,5 @@
 // Pattern 001: Python-produced asset -> Flutter loading/result/error boundary.
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -62,8 +61,8 @@ void main() {
 
   testWidgets('FilterBasic UI shows loading then actual processed values', (tester) async {
     Get.testMode = true;
-    addTearDown(() async {
-      await Get.reset();
+    addTearDown(() {
+      Get.reset();
       Get.testMode = false;
     });
     final pending = Completer<String>();
@@ -83,8 +82,8 @@ void main() {
 
   testWidgets('FilterBasic UI exposes errors and permits retry', (tester) async {
     Get.testMode = true;
-    addTearDown(() async {
-      await Get.reset();
+    addTearDown(() {
+      Get.reset();
       Get.testMode = false;
     });
     var attempts = 0;
