@@ -1,68 +1,82 @@
-# FilterBasic: Python producer and Flutter asset boundary
+# Filtering examples: one Python producer, small Flutter boundaries
 
-This #144 slice implements the FilterBasic CLI for supplied JSON inputs and
-connects one generated example to the existing Pattern 001 catalogue view.
-It does **not** claim that arbitrary input is filtered at Flutter runtime, or
-that a new Screen 199/200 or new application route has been added.
+The #144 work in #145 implements FilterBasic (001), FilterMultiple (002) and
+FilterNested (003) with the same stdlib-only CLI. Existing catalogue views load
+Python-generated results: **generated examples, not arbitrary-input filtering
+at Flutter runtime**. No new route, Screen 199/200 or dependency is added.
 
-## Producer and consumer
+## Generate and verify
 
 ```sh
-python -S tool/python/filter_basic.py --input tool/python/fixtures/filter_basic_input.json --output assets/data_processing/filter_basic.json
 python -S tool/python/filter_basic.py --input tool/python/fixtures/filter_basic_input.json --output assets/data_processing/filter_basic.json --check
+python -S tool/python/filter_basic.py --input tool/python/fixtures/filter_multiple_input.json --output assets/data_processing/filter_multiple.json --check
+python -S tool/python/filter_basic.py --input tool/python/fixtures/filter_nested_input.json --output assets/data_processing/filter_nested.json --check
 ```
 
-The input is an object with `values` (list) and required `equals` (any JSON value).
-Filtering retains input order and duplicates using Python JSON-decoded equality
-(including Python's numeric/boolean equality); non-finite JSON is rejected.
-Stdout, or `--output`, is an object with the resulting `values`. Exit 0 means
-success, 1 means stale generated values in check mode, and 2 means invalid
-arguments/input or I/O failure. Check mode does not rewrite the asset and checks
-only the consumed `values` contract, not unrelated metadata or formatting.
+Remove `--check` to generate; omit `--output` for stdout; `--input -` reads stdin.
+Exit **0** means success, **1** stale generated values, **2** invalid arguments,
+input or I/O. Check mode never rewrites assets. Only consumed `values` are
+compared, preserving JSON types but ignoring unrelated metadata and formatting.
 
-Python owns filtering, input validation and asset generation. The shared
-`JsonListAsset` owns Flutter asset loading/JSON boundary validation only.
-`Pattern001Service` formats the loaded values, and the existing controller/view
-show loading, result, failure and retry. The duplicate Dart `list_filters.dart`
-introduced earlier in #145 is removed. Existing per-pattern model/controller
-public shapes remain for catalogue compatibility; this slice does not claim
-that all generated file duplication has been consolidated.
+## Processing contract
 
-## Failure evidence
+`values` is a list. Basic input uses required `equals` (any JSON value).
+Multiple/nested input instead uses a nonempty `conditions` list:
 
-The existing oracle-wrapper regression now invokes the actual FilterBasic CLI
-with invalid input (native exit 2), deliberately asserts that it succeeded, and
-retains native pytest exit 1 both with and without JUnit. The JUnit-enabled path
-runs under the existing `expected_child_failure.py`: its outer exit 0 indicates
-that native exit 1 was expected, not that the native test passed. Raw native
-receipts/output/JUnit remain in the existing short-retention controlled artifact.
+```json
+{"values":[{"profile":{"tags":["blue"]},"active":true}],"conditions":[{"path":["profile","tags",0],"equals":"blue"},{"path":["active"],"equals":true}],"match":"all"}
+```
 
-`failure_identity.py` imports the repository's vendored xprobe and uses canonical
-`record_from_checkout()` identity for compact cases. Fingerprints include only a
-schema, repository and xprobe-redacted class/test/kind; they exclude encounter
-order, run/report ID, commit and raw payloads. Corpus IDs remain scoped to the
-canonical checkout SHA/report to avoid cross-commit ID conflicts. The captured
-JUnit is reordered without rerunning the native command to verify stable IDs.
-The producer's compact corpus never includes traceback/messages/parameter labels.
+`match` is `all` (default) or `any`. Conditions contain required `equals` and
+optional `path`; an omitted/empty path selects the whole value. Paths contain
+literal object keys or non-negative integer list indices. `a.b` is a literal
+key, not dot notation. Missing keys, out-of-range indices and incompatible
+intermediate types do not match, even against null; explicit null can match.
+Negative/fractional/boolean indices, unknown condition fields, empty conditions,
+ambiguous equals+conditions and unknown match modes are rejected before
+filtering, even for an empty input. No expression/code evaluation is supported.
 
-The old test-only `.junit-tools` checkout is no longer consumed by this test.
-Its redundant workflow checkout step remains a cleanup candidate; the shared
-JUnit collector is unchanged and its output is not claimed to use the producer's
-new fingerprint field. This distinction must stay visible in #144 until that
-integration has been evaluated/changed in the appropriate scope.
+Filtering retains order and duplicates using Python JSON-decoded equality
+(including numeric/boolean equality); non-finite JSON constants are rejected.
+Output is an object containing the selected original `values`.
 
-## Verification boundary
+## Dart responsibility and consolidation
 
-`test_filter_basic.py` checks CLI exits, generated-asset drift, Unicode/null,
-file I/O and enrolment. `test_junit_evidence.py` exercises the native chain and
-redaction. Both are collected through the existing `tool/python/pytest.ini`.
-Pattern 001's Flutter test is under the existing
-`test/features/data_processing_patterns` pattern-shard path; it loads the real
-asset and checks malformed/missing assets plus UI loading/error/retry.
-Asset-only changes select the existing Flutter workflow, whose Python-oracle
-lane runs the drift check. No new CI bootstrap or package dependency is needed.
+Python owns filtering, validation, generation and drift checking. Shared
+`JsonListAsset` only loads/validates JSON; no predicate or synthetic fallback.
+The earlier duplicate Dart `list_filters.dart` was removed in this PR.
 
-The real repository stub audit is authoritative: before #145, 790/792 with 0
-undecodable files; expected after, 789/792 (one service). Count reduction alone
-is not proof of end-to-end behavior. Local focused tests do not replace the
-current-head CI, Flutter evidence or full-checkout audit.
+002/003 share `ProcessedListExample` for loading/result/error/retry state.
+Their four duplicate model/controller files are deleted and their two stub
+test files are replaced by one parametrized Flutter suite. Retained services
+are asset-path constructors and views are presentation configuration; no GetX
+binding is needed. Their old internal run/message-model contract is replaced
+by shared `load()` values. 001's compatibility model/controller/tests remain
+unchanged in this increment; full catalogue consolidation is not claimed.
+
+## Failure evidence and verification
+
+The real negative-path regression remains CLI invalid-input **exit 2** → native
+pytest **exit 1** with/without JUnit → existing expected-failure wrapper **exit 0**
+when the failure is expected → vendored xprobe. Native failure codes are kept;
+wrapper success is not normalized native success. Raw JUnit/receipts stay in
+the short-retention controlled artifact. Producer fingerprints exclude encounter
+order/run ID/commit/raw payloads and include repository context; corpus IDs
+retain canonical checkout/report scope.
+
+The unchanged shared collector still needs downstream context/stable-identity
+propagation (earlier measured null commit context and ordinal IDs). Unused
+`.junit-tools` workflow checkouts also remain cleanup work. These gaps are not
+claimed fixed and do not require another tooling bootstrap.
+
+The existing pytest path collects `test_filter_basic.py`,
+`test_filter_conditions.py` and the native `test_junit_evidence.py`. Flutter
+001 tests plus `filter_conditions_test.dart` use the existing pattern-shard
+path. 002/003 cover real assets, malformed/missing data, loading, duplicate-load
+prevention, errors/retry, empty results and completion after disposal.
+
+The repository-local CI audit is authoritative, not a partial local copy.
+Starting **790/792, undecodable 0** became **789/792** for 001. 002/003 should
+reduce this to **787/792** (three replaced services in this PR). Record actual
+current-head results in #144; removing markers or older-head green checks alone
+does not prove current end-to-end behavior.

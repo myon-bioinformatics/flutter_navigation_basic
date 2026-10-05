@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Filter JSON values; generate/check the same result consumed by Flutter assets.
+"""Filter JSON values and generate/check Flutter result assets.
 
-Equality follows Python's JSON-decoded value equality. Input order and duplicates
-are retained. This CLI is the sole filtering implementation; Flutter loads its
-result rather than evaluating the predicate again.
+Basic equality and multiple/nested equality conditions share one producer.
+Input order and duplicates are retained; Flutter never evaluates predicates.
 """
 from __future__ import annotations
 
@@ -13,9 +12,23 @@ from pathlib import Path
 import sys
 from typing import Any
 
+_MISSING = object()
+
 
 def filter_values(values: list[Any], *, equals: Any) -> list[Any]:
     return [value for value in values if value == equals]
+
+
+def _at_path(value: Any, path: list[str | int]) -> Any:
+    """Resolve literal object keys/list indices, never an expression or code."""
+    for part in path:
+        if isinstance(part, str) and isinstance(value, dict):
+            value = value.get(part, _MISSING)
+        elif type(part) is int and isinstance(value, list) and part < len(value):
+            value = value[part]
+        else:
+            return _MISSING
+    return value
 
 
 def process(payload: Any) -> dict[str, list[Any]]:
@@ -24,9 +37,38 @@ def process(payload: Any) -> dict[str, list[Any]]:
     values = payload.get("values")
     if not isinstance(values, list):
         raise ValueError("values must be a JSON list")
-    if "equals" not in payload:
-        raise ValueError("equals is required")
-    return {"values": filter_values(values, equals=payload["equals"])}
+    if "conditions" not in payload:
+        if "equals" not in payload:
+            raise ValueError("equals is required")
+        if "match" in payload:
+            raise ValueError("match requires conditions")
+        return {"values": filter_values(values, equals=payload["equals"])}
+    if "equals" in payload:
+        raise ValueError("use equals or conditions, not both")
+    conditions = payload["conditions"]
+    if not isinstance(conditions, list) or not conditions:
+        raise ValueError("conditions must be a non-empty list")
+    match = payload.get("match", "all")
+    if match not in ("all", "any"):
+        raise ValueError("match must be all or any")
+    # Validate every condition before filtering, even with no input values.
+    for condition in conditions:
+        if (not isinstance(condition, dict) or "equals" not in condition or
+                set(condition) - {"path", "equals"}):
+            raise ValueError("each condition accepts only path and required equals")
+        path = condition.get("path", [])
+        if not isinstance(path, list) or any(
+            not (isinstance(part, str) or (type(part) is int and part >= 0))
+            for part in path
+        ):
+            raise ValueError("path must contain literal keys or non-negative integer indices")
+    combine = all if match == "all" else any
+    def matches(value: Any, condition: dict[str, Any]) -> bool:
+        found = _at_path(value, condition.get("path", []))
+        return found is not _MISSING and found == condition["equals"]
+    return {"values": [value for value in values if combine(
+        matches(value, condition) for condition in conditions
+    )]}
 
 
 def _reject_constant(value: str) -> None:

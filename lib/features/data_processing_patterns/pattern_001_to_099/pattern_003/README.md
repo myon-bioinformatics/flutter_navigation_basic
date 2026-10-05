@@ -1,27 +1,20 @@
 # Pattern 003: FilterNested
 
-**カテゴリ**: 案D - データ処理パターン
+Python stdlibの共通CLI `tool/python/filter_basic.py` が実処理を行います。
+入力例 `tool/python/fixtures/filter_nested_input.json` から生成した
+`assets/data_processing/filter_nested.json` を既存の画面で読み込みます。
+この画面は生成済みの例の表示で、任意入力の実行時フィルターではありません。
 
-## 概要
-ネストしたデータ構造のフィルタリング。
+`service.dart` は共有 `JsonListAsset` のパス指定だけ、`view.dart` は共有
+`ProcessedListExample` の表示設定だけです。不要な `model.dart` と
+`controller.dart` は削除しました。GetX登録やbindingは不要です。
 
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
-
-## 使用例
 ```dart
-// GetX での画面遷移
-Get.to(() => const Pattern003View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern003Controller())));
+Navigator.of(context).push(MaterialPageRoute(
+  builder: (_) => const Pattern003View(),
+));
 ```
 
-## 関連パターン
-- 前: Pattern 002
-- 次: Pattern 004
+CLIの条件契約・生成/検査コマンドは `docs/filter-basic.md`、共通の実処理・
+エラー/再試行テストは `filter_conditions_test.dart` と
+`tool/python/tests/test_filter_conditions.py` を参照してください。
