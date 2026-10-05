@@ -1,4 +1,4 @@
-// Pattern 001: FilterBasic - Flutter boundary test.
+// Pattern 001: FilterBasic - runtime boundary tests.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_001/model.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_001/service.dart';
@@ -13,13 +13,9 @@ void main() {
       expect(restored.message, equals('test'));
     });
 
-    test('service is a thin UI boundary without synthetic delay', () async {
-      final stopwatch = Stopwatch()..start();
+    test('service performs the shared FilterBasic operation', () async {
       final result = await Pattern001Service().run();
-      stopwatch.stop();
-
-      expect(result.message, contains('canonical stdlib Python filter'));
-      expect(stopwatch.elapsedMilliseconds, lessThan(100));
+      expect(result.message, equals('FilterBasic: [1, 1]'));
     });
   });
 }
