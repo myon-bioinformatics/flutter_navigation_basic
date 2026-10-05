@@ -116,9 +116,9 @@ fixtures. Endpoints:
 - `/echo`
 - Auth scenario stubs (demo credentials only — never real secrets):
   - `GET /auth/bearer` — Bearer token (`demo-bearer-token`); also covers
-    missing/malformed/expired (`demo-expired-bearer-token`) / wrong-audience
+    missing/malformed/expired (`demo-expired-token`) / wrong-audience
     (`demo-wrong-aud-token` → 403)
-  - `GET /auth/api-key` — Header `X-API-Key` or `api_key` query (`demo-api-key`)
+  - `GET /auth/api-key` — `X-API-Key` header or `api_key` query (`demo-api-key`)
   - `GET /auth/basic` — HTTP Basic (`demo` / `s3cret`)
   - `GET /auth/digest` — Digest challenge/response (same demo user/password);
     requires `qop=auth` + `nc` + `cnonce`, binds `uri=` to the real
@@ -143,7 +143,8 @@ fixtures. Endpoints:
   - Unsupported *string* `protocolVersion` still yields a successful
     InitializeResult with the pinned `2025-03-26` (client may disconnect).
     Missing/non-string `protocolVersion`, `capabilities`, or `clientInfo`
-    must be non-empty objects or valid values as required by the handler.
+    → `invalidParams` (no session). `clientInfo.name` and `clientInfo.version`
+    must be non-empty strings.
     This foundation ships **dual-era** MCP: legacy `2025-03-26`
     (initialize + session) and current official `2026-07-28`
     (`server/discover`, stateless tools).
