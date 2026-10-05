@@ -1,5 +1,4 @@
-// Pattern 001: FilterBasic - テスト
-// リストのシンプルなフィルタリング実装。
+// Pattern 001: FilterBasic - Flutter boundary test.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_001/model.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_001/service.dart';
@@ -14,11 +13,13 @@ void main() {
       expect(restored.message, equals('test'));
     });
 
-    test('service run completes', () async {
-      final service = Pattern001Service();
-      final result = await service.run();
-      expect(result, isA<Pattern001Result>());
-      expect(result.message, isNotEmpty);
+    test('service is a thin UI boundary without synthetic delay', () async {
+      final stopwatch = Stopwatch()..start();
+      final result = await Pattern001Service().run();
+      stopwatch.stop();
+
+      expect(result.message, contains('canonical stdlib Python filter'));
+      expect(stopwatch.elapsedMilliseconds, lessThan(100));
     });
   });
 }
