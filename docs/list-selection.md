@@ -1,9 +1,9 @@
 # List-selection examples: one Python producer, shared Flutter boundary
 
 Issue #144 / PR #145 implements FilterBasic (001), FilterMultiple (002),
-FilterNested (003) and DistinctFilter (030). The responsibility-named
-stdlib-only `list_selection.py` command shares validation, JSON I/O, asset
-generation and drift checking. No per-pattern Python copy.
+FilterNested (003), DistinctFilter (030) and Deduplication (086). The
+responsibility-named stdlib-only `list_selection.py` command shares validation,
+JSON I/O, asset generation and drift checking. No per-pattern Python copy.
 Flutter currently displays **generated catalogue examples, not arbitrary-input
 runtime filtering/deduplication**. The Python CLI itself is repository-independent
 and can be invoked from an isolated runtime location; wiring/packaging that runtime
@@ -45,7 +45,14 @@ floating-point zero remain distinct. The selected original values are returned,
 not reconstructed values. Distinct mode accepts only `operation` and `values`;
 filter conditions, key selectors and unknown options are rejected, not ignored.
 This in-memory operation retains full canonical keys; it is not a streaming or
-constant-memory implementation. 086/113 are inspected reuse candidates only.
+constant-memory implementation.
+
+Patterns 030 and 086 deliberately reuse this same processor and the same
+`distinct_filter.json` catalogue result because their documented responsibility
+is the same stable deduplication operation. No second Python file or duplicate
+asset is created for 086. Pattern 113 is **not** folded into this contract yet:
+its catalogue description says “deduplication validation”, so its validation and
+reporting semantics must be defined before reuse is claimed.
 
 Both modes reject non-finite constants and numbers that overflow while decoding
 (e.g. `1e999`), even if no value would be selected. Before this fix the latter
@@ -55,21 +62,22 @@ could incorrectly exit 0 with empty output; regression tests retain that case.
 
 Python owns processing/validation/generation/drift checking. `JsonListAsset`
 only loads/validates the result shape. `ProcessedListExample` shares local
-loading/result/error/retry/disposal state across 001/002/003/030.
-Eight duplicate model/controller files are removed. Services select assets;
+loading/result/error/retry/disposal state across 001/002/003/030/086.
+Ten duplicate model/controller files are removed. Services select assets;
 views configure presentation, with no GetX registration or global reset.
 The old internal `run()`/message-model contract is replaced by `load()` values;
 view names and const construction remain. One shared Flutter suite replaces
-four former per-pattern test files. Other catalogue scaffolds are not claimed
+five former per-pattern test files. Other catalogue scaffolds are not claimed
 GetX-free. The earlier duplicate Dart `list_filters.dart` remains removed.
 
 ## Failure evidence and verification
 
-The existing intentional-red chain now exercises the reproduced numeric overflow:
+The existing intentional-red chain exercises the reproduced numeric overflow:
 actual CLI **exit 2** → native pytest **exit 1** with/without JUnit → existing
 `expected_child_failure.py` wrapper **exit 0** for a matched expected failure →
 vendored xprobe. Ordinary invalid-type CLI tests remain covered separately.
-No new failure bootstrap or second heavy native run is added for this example.
+No new failure bootstrap or second heavy native run is added for 086 because it
+reuses the already-tested distinct processor rather than introducing a new one.
 Raw JUnit/receipts stay in short-retention controlled artifacts. Producer cases
 have repository/canonical checkout context and run-order-independent fingerprints;
 raw messages/stdout/parameter sentinels do not enter the compact corpus.
@@ -88,6 +96,8 @@ No local Flutter SDK or full checkout is available; local focused source copies
 are not full CI/audit evidence.
 
 The authoritative audit starts at **790/792, undecodable 0**. 001–003 reduce it
-to **787/792**; their GetX consolidation changes file counts, not placeholders.
-030 should reduce it to **786/792**. Record measured current-head counts in #144,
-separately from merged-main counts; marker removal alone is not verification.
+to **787/792** and 030 to **786/792**; their GetX consolidation changes file
+counts separately from placeholder counts. The 086 reuse slice should reduce the
+PR value to **785/792** while leaving the service denominator unchanged. Record
+the measured current-head result from CI in #144 before calling that value
+verified; merged main remains a separate baseline until this PR is integrated.

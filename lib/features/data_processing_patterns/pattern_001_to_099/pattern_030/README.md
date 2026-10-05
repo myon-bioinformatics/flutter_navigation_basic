@@ -25,6 +25,7 @@ python -S tool/python/list_selection.py --input tool/python/fixtures/distinct_fi
 
 Remove `--check` to generate. The existing shared Flutter
 `filter_conditions_test.dart` covers this view as well; Python tests live in
-`tool/python/tests/test_distinct_filter.py`. No new processing/UI implementation
-is copied per pattern. 086/113 are inspected reuse candidates, not implemented
-by this change. See `docs/list-selection.md` and Issue #144.
+`tool/python/tests/test_distinct_filter.py`. Pattern 086 now deliberately
+reuses this exact processor/result asset because its documented responsibility
+is the same deduplication contract; Pattern 113 remains a separate validation
+candidate. See `docs/list-selection.md` and Issue #144.

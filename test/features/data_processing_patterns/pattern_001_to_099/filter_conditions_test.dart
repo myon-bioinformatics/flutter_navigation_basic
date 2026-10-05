@@ -1,4 +1,4 @@
-// Shared asset/UI contract for filtering and distinct-selection examples.
+// Shared asset/UI contract for list-selection catalogue examples.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -13,6 +13,8 @@ import 'package:flutter_application_1/features/data_processing_patterns/pattern_
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_003/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_030/service.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_030/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_086/service.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_086/view.dart';
 
 class _Bundle extends CachingAssetBundle {
   _Bundle(this.read);
@@ -27,25 +29,28 @@ class _Bundle extends CachingAssetBundle {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  for (final number in [1, 2, 3, 30]) {
+  for (final number in [1, 2, 3, 30, 86]) {
     final (name, file) = switch (number) {
       1 => ('FilterBasic', 'filter_basic'),
       2 => ('FilterMultiple', 'filter_multiple'),
       3 => ('FilterNested', 'filter_nested'),
-      _ => ('DistinctFilter', 'distinct_filter'),
+      30 => ('DistinctFilter', 'distinct_filter'),
+      _ => ('Deduplication', 'distinct_filter'),
     };
     final path = 'assets/data_processing/$file.json';
     JsonListAsset service(AssetBundle? bundle) => switch (number) {
           1 => Pattern001Service(bundle: bundle),
           2 => Pattern002Service(bundle: bundle),
           3 => Pattern003Service(bundle: bundle),
-          _ => Pattern030Service(bundle: bundle),
+          30 => Pattern030Service(bundle: bundle),
+          _ => Pattern086Service(bundle: bundle),
         };
     Widget view(AssetBundle bundle) => switch (number) {
           1 => Pattern001View(bundle: bundle),
           2 => Pattern002View(bundle: bundle),
           3 => Pattern003View(bundle: bundle),
-          _ => Pattern030View(bundle: bundle),
+          30 => Pattern030View(bundle: bundle),
+          _ => Pattern086View(bundle: bundle),
         };
 
     test('$name loads its real Python-produced asset', () async {

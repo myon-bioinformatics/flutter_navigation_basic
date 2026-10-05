@@ -1,4 +1,4 @@
-"""DistinctFilter shares the existing stdlib JSON producer and UI boundary."""
+"""Distinct selection backs both DistinctFilter and Deduplication."""
 import json
 from pathlib import Path
 import subprocess
@@ -86,14 +86,21 @@ def test_distinct_checked_in_asset_is_current():
     assert result.returncode == 0, result.stderr
 
 
-def test_distinct_asset_and_shared_flutter_test_are_enrolled():
-    assert "assets/data_processing/distinct_filter.json" in (ROOT / "pubspec.yaml").read_text(encoding="utf-8")
+def test_distinct_asset_and_shared_flutter_consumers_are_enrolled():
+    assert "assets/data_processing/distinct_filter.json" in (
+        ROOT / "pubspec.yaml"
+    ).read_text(encoding="utf-8")
     suite = ROOT / "test/features/data_processing_patterns/pattern_001_to_099/filter_conditions_test.dart"
-    assert "Pattern030Service" in suite.read_text(encoding="utf-8")
+    suite_text = suite.read_text(encoding="utf-8")
     paths = (ROOT / "tool/ci/flutter_pattern_test_paths.txt").read_text(encoding="utf-8").splitlines()
     assert "test/features/data_processing_patterns" in paths
-    pattern = ROOT / "lib/features/data_processing_patterns/pattern_001_to_099/pattern_030"
-    assert not (pattern / "model.dart").exists()
-    assert not (pattern / "controller.dart").exists()
-    for name in ("service.dart", "view.dart"):
-        assert "package:get/" not in (pattern / name).read_text(encoding="utf-8")
+    for number in (30, 86):
+        assert f"Pattern{number:03d}Service" in suite_text
+        pattern = ROOT / f"lib/features/data_processing_patterns/pattern_001_to_099/pattern_{number:03d}"
+        assert not (pattern / "model.dart").exists()
+        assert not (pattern / "controller.dart").exists()
+        service = (pattern / "service.dart").read_text(encoding="utf-8")
+        view = (pattern / "view.dart").read_text(encoding="utf-8")
+        assert "assets/data_processing/distinct_filter.json" in service
+        assert "package:get/" not in service
+        assert "package:get/" not in view
