@@ -38,3 +38,17 @@ def test_list_selection_runs_from_isolated_single_file(tmp_path, payload, exit_c
     else:
         assert json.loads(result.stdout)["values"] == expected
         assert result.stderr == ""
+
+
+def test_deeply_nested_json_is_invalid_input_not_stale(tmp_path):
+    depth = 1200
+    payload = "[" * depth + "0" + "]" * depth
+    result = subprocess.run(
+        [sys.executable, "-S", str(CLI)],
+        input='{"values":' + payload + ',"equals":0}',
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    assert result.returncode == 2
+    assert "list-selection:" in result.stderr
