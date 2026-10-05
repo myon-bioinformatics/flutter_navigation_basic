@@ -211,17 +211,29 @@ These commands require no repository Python package setup. If a proposed tool ne
 
 See [`MULTIPLATFORM_RUNTIME_OWNERSHIP.md`](./MULTIPLATFORM_RUNTIME_OWNERSHIP.md) for the current Dart/Python/browser-native/Deno decision rubric and the browser-first multi-platform verification plan. The invariant is platform reach and maintainability, not language preservation.
 
-### Canonical repository identity (#123)
+### Canonical repository identity and portable tooling (#123 / Ironmate #49)
 
 `dart run tool/dev.dart meta` (and Android size diagnostics) generates canonical
 JSON/JSONL using `tool/python/generate_repository_metadata.py`, then reads that
 record into the existing Flutter build diagnostics. Python 3 and Git are required
 for generation. The contract and producer are byte-for-byte pins of Ironmate
-`0aee64da2f8d0119a3ef9b955e5c3818f28aaf92`; source paths, Git blob IDs and SHA-256
-are recorded in `tool/python/vendor/repository_metadata_provenance.json`.
+`73157cb7fed236a4a941722a6dcddd69a33ab95a`; source paths, commit, Git blob IDs and
+SHA-256 for the producer, contract and license are recorded in
+`tool/python/vendor.lock.json`.
 
-Dart does not collect SHA, short SHA, branch, commit timestamp or subject. Missing
-canonical input fails generation; there is no independent Dart Git fallback.
+The Python adapter requests Python plus `git` / `gh` / `node` / `npm` / `npx`
+versions through canonical `record_from_checkout(include_python_tooling=True,
+tooling_commands=...)`, which delegates observations to `collect_portable_tooling()`.
+The v1 `tooling` object still contains only short string values. Unavailable,
+failed or malformed version observations are omitted, not represented by nulls;
+if every version observation is unavailable, `tooling` is `{}`. Optional version
+observation failure is nonfatal, but checkout identity still requires working Git.
+This implements the Flutter consumer slice of Ironmate #49; it does not imply
+completion of other consumers or closure of the parent issue.
+
+Dart does not collect SHA, short SHA, branch, commit timestamp or subject, and
+has no independent generic tool-version probe. Missing canonical input fails
+generation; there is no independent Dart Git fallback.
 Flutter keeps app/version/build/stage, platform/mode, artifact/analysis sizes,
 source/assets/screen/route measurements, checkout dirty evidence and commit-link
 presentation. The tracked `assets/diagnostics/build_metadata.json` remains a
@@ -234,8 +246,9 @@ before building the embedded diagnostics asset. SHA comes from checkout HEAD,
 not `GITHUB_SHA`. Branch follows the producer's `GITHUB_HEAD_REF`,
 `GITHUB_REF_NAME`, checkout branch order (`detached` outside GitHub when detached).
 
-To refresh the upstream pin, replace both vendored files from the same exact
-source commit and update both blob IDs and SHA-256 values in provenance. Run the
-Python repository metadata tests and Flutter build metadata adapter/model tests
-before changing the pin. Generic tool-version observations remain a later
-Ironmate #49 migration.
+To refresh the upstream pin, keep the producer, contract and license tied to the
+same exact source commit and update their identities in `tool/python/vendor.lock.json`.
+Run the Python repository metadata tests and Flutter build metadata adapter/model
+tests before changing the pin. The consumer regressions exercise all-present,
+partial and empty tooling with fixed observation inputs while preserving the
+checkout identity, Pages SHA gate and JSON/JSONL equivalence checks.
