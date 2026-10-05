@@ -135,6 +135,15 @@
       "destination": "tool/python/vendor/cli_args-LICENSE",
       "blob_sha": "4ec4989b801bf1a3df6184d21f79e6e7ed5931f6",
       "sha256": "15f66204c4a6a1ce0c94f0ed4319ff9400f872e85fd32c95f21695c2f231af59"
+    },
+    {
+      "repository": "myon-bioinformatics/browser-test-kit",
+      "ref": "refs/heads/main",
+      "commit": "de5bd0f5d81721bb54f0fbb8747d2f6b56d6b720",
+      "source": "scripts/check_png.py",
+      "destination": "tool/python/vendor/check_png.py",
+      "blob_sha": "ebce30b085065d0db752c4958144476d3d54848d",
+      "sha256": "5a8c6cb600f6e3f99d08420a4b9b05e3f32eb609b5a998dd2e06d32fc3036c93"
     }
   ]
 }
