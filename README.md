@@ -16,7 +16,7 @@ lib/
 ├── main.dart                      # Web・native共通エントリポイント（MaterialApp + bootstrap）
 ├── config/
 │   ├── app_config.dart            # アプリ名・テーマカラー等の設定（旧来版）
-│   └── routes.dart                # 200画面 + 意味ベースのexample routes
+│   └── routes.dart                # 198画面 + 意味ベースのexample routes
 ├── core/
 │   ├── config/
 │   │   └── app_config.dart        # 環境変数読み込み・環境切替（dev/prod）
@@ -42,9 +42,9 @@ lib/
 │   └── screen5/                   # URL Parameters
 ├── screens/
 │   ├── home_screen.dart
-│   ├── hub_screen.dart            # 200画面を検索・一覧表示
+│   ├── hub_screen.dart            # 198画面を検索・一覧表示
 │   ├── generic_screen.dart        # パターンデータとテンプレートを結合
-│   ├── pattern_template_screen.dart # 11 UI templates + 199/200 catalogue tail
+│   ├── pattern_template_screen.dart # 11 UI templates × 18 variants = 198
 │   ├── counter_playground_screen.dart
 │   ├── irony_generator_screen.dart
 │   └── composition_generator_screen.dart
@@ -67,7 +67,7 @@ lib/
 | Example | Counter Playground 👾 | `/examples/counter-playground` | カウンターの増減・履歴・undo。正の値ぶんダメージ／負の絶対値ぶん回復の軽いオーブ演出と、押し続けで連打できる +/-。 |
 | Example | Irony Generator 🥐 | `/examples/irony-generator` | `Ironies.ironicList` からランダムなフレーズを表示。 |
 | Example | Composition Generator 🎸 | `/examples/composition-generator` | キー／BPM 生成とビジュアルメトロノーム等の軽量プレ DAW。 |
-| Catalogue | Screen 1–200 | `/screen1`〜`/screen200` | `assets/screens.json` の200件を代表UIテンプレートで表示。199/200は設定テンプレートに明示固定。 |
+| Catalogue | Screen 1–198 | `/screen1`〜`/screen198` | `assets/screens.json` の198件を11種類の代表UIテンプレートに18件ずつ割り当てて表示。 |
 
 ### Counter Playground（PAD-lite）
 
@@ -75,11 +75,11 @@ lib/
 - **オーブ**: 炎・水・木・光・闇（攻撃）／ハート系（回復）の絵文字を軽い float アニメで表示（アセットなし）。
 - **+/-**: `HoldRepeatingButton`（Material ボタン + `Listener` + `Timer`）。短押しは1回、押し続けで連打。VoiceOver / キーボードは Material の `onPressed` 経由。
 
-元の `screen2/3/4` というファイル名・クラス名・featureディレクトリ名は意味ベースに変更しています。これらの手書きデモは `/examples/...` に分離し、`/screen1`〜`/screen200` はすべてパターンカタログ用として確保します。
+元の `screen2/3/4` というファイル名・クラス名・featureディレクトリ名は意味ベースに変更しています。これらの手書きデモは `/examples/...` に分離し、`/screen1`〜`/screen198` はすべてパターンカタログ用として確保します。
 
-### 200画面の代表テンプレート
+### 198画面の代表テンプレート
 
-`PatternScreenTemplate` は List / Detail / Form / Search / Tabs / Bottom Navigation / Drawer / Dialog / Grid / Async State / Settings の11種類です。Screen 1–198 は従来どおり18件単位で11テンプレートへ割り当て、Screen 199/200 は `templateOverride: settings` で設定テンプレートへ明示固定します。Navigation / API / Theme / Data のカタログデータは `assets/screens.json` を継続利用します。
+`PatternScreenTemplate` は List / Detail / Form / Search / Tabs / Bottom Navigation / Drawer / Dialog / Grid / Async State / Settings の11種類です。各テンプレートに18 Screen IDを割り当て、**11 × 18 = 198** 画面を構成します。Navigation / API / Theme / Data のパターンデータは `assets/screens.json` を継続利用します。
 
 ## URLパラメータ標準化（非機能）
 
@@ -106,14 +106,14 @@ lib/
 | 17 | `UrlParams.pathEnum('key', values, fallback: ...)` | パスパラメータ → Enum | `/mode/dark` |
 | 18 | `UrlParams.queryEnum('key', values, fallback: ...)` | クエリパラメータ → Enum | `?order=asc` |
 
-> 最大 200 ケースまで拡張済み。新しい取得パターンは `UrlParams` クラスにメソッドを追加し、`UrlParamsCases.cases` にエントリを追記するだけ。
+> 最大 198 ケースまで拡張可能。新しい取得パターンは `UrlParams` クラスにメソッドを追加し、`UrlParamsCases.cases` にエントリを追記するだけ。
 
 ### 設計方針
 
 - **テーマ管理**: `AppConfig` でカラースキームを一元管理。
-- **ルート管理**: `/screen1`〜`/screen200` はパターンカタログ専用。手書きデモは `/examples/...` に分離。
+- **ルート管理**: `/screen1`〜`/screen198` はパターンカタログ専用。手書きデモは `/examples/...` に分離。
 - **共通ウィジェット**: 共通UIを再利用しつつ、代表テンプレートで画面構造の違いを確認可能。
-- **データ分離**: 200件のパターン定義は `assets/screens.json` から読み込む。
+- **データ分離**: 198件のパターン定義は `assets/screens.json` から読み込む。
 - **Web対応**: Flutter Web / Chrome で同じルートと画面を確認可能。
 
 ## How to Run
