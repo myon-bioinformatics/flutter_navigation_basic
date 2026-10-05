@@ -11,6 +11,7 @@ MODULES = (
     "git_inspector.py",
     "gh_ops.py",
     "check_evidence.py",
+    "check_png.py",
     "jsonl_digest.py",
     "cli_args.py",
 )
@@ -37,4 +38,7 @@ def test_environment_probe_is_safe_no_argument_json():
         timeout=10,
     )
     assert result.returncode == 0, result.stderr
-    assert '"schema_version": 1' in result.stdout
+    import json
+    payload = json.loads(result.stdout)
+    assert payload["schema_version"] == 1
+    assert set(payload) == {"schema_version", "os", "runtime", "host", "directory"}
