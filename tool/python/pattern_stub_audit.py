@@ -20,8 +20,9 @@ FAMILIES = (
 )
 
 
-def audit(root: Path) -> dict[str, list[str]]:
-    result: dict[str, list[str]] = {}
+def audit(root: Path) -> dict[str, object]:
+    result: dict[str, object] = {}
+    skipped_undecodable: list[str] = []
     features = root / "lib" / "features"
     for family in FAMILIES:
         placeholders: list[str] = []
@@ -31,10 +32,16 @@ def audit(root: Path) -> dict[str, list[str]]:
                 try:
                     content = service.read_text(encoding="utf-8")
                 except UnicodeDecodeError:
+                    skipped_undecodable.append(service.relative_to(root).as_posix())
                     continue
                 if all(marker in content for marker in MARKERS):
                     placeholders.append(service.relative_to(root).as_posix())
         result[family] = placeholders
+    result["_summary"] = {
+        "placeholder_total": sum(len(result[family]) for family in FAMILIES),
+        "skipped_undecodable": skipped_undecodable,
+        "skipped_undecodable_count": len(skipped_undecodable),
+    }
     return result
 
 
@@ -56,6 +63,9 @@ def main() -> int:
             print(f"{family}: {len(paths)} placeholder service(s)")
             for path in paths:
                 print(f"  {path}")
+        summary = result["_summary"]
+        print(f"total: {summary['placeholder_total']} placeholder service(s)")
+        print(f"skipped undecodable: {summary['skipped_undecodable_count']}")
     return 0
 
 
