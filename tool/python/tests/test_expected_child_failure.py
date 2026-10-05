@@ -53,3 +53,52 @@ def test_unexpected_child_result_fails_outer_contract(tmp_path):
     )
     assert receipt["exit_code"] == 3
     assert receipt["matched_expectation"] is False
+
+
+def test_zero_cannot_be_declared_an_expected_failure(tmp_path):
+    result = _run(tmp_path, 0, "raise SystemExit(0)")
+    assert result.returncode == 2
+    assert "--expect-exit must be nonzero" in result.stderr
+
+
+def test_timeout_is_bounded_and_recorded(tmp_path):
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(RUNNER),
+            "--output-dir",
+            str(tmp_path / "evidence"),
+            "--expect-exit",
+            "7",
+            "--timeout",
+            "0.05",
+            "--",
+            sys.executable,
+            "-c",
+            "import time; time.sleep(1)",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    assert result.returncode == 1
+    receipt = json.loads(
+        (tmp_path / "evidence/receipt.json").read_text(encoding="utf-8")
+    )
+    assert receipt["timed_out"] is True
+    assert receipt["exit_code"] is None
+    assert receipt["matched_expectation"] is False
+    assert receipt["stream_limit_bytes"] > 0
+
+
+def test_large_output_is_truncated_and_marked(tmp_path):
+    result = _run(
+        tmp_path,
+        7,
+        "import sys; sys.stdout.write('x' * (2 * 1024 * 1024)); raise SystemExit(7)",
+    )
+    assert result.returncode == 0
+    evidence = tmp_path / "evidence"
+    receipt = json.loads((evidence / "receipt.json").read_text(encoding="utf-8"))
+    assert receipt["stdout_truncated"] is True
+    assert len((evidence / "stdout.bin").read_bytes()) == receipt["stream_limit_bytes"]
