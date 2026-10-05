@@ -323,6 +323,14 @@ jobs:
           persist-credentials: false
           sparse-checkout: xprobe.py
           sparse-checkout-cone-mode: false
+      - name: Run pytest
+        env:
+          FLUTTER_FAILURE_EVIDENCE: ${{ github.workspace }}/build/controlled-failure
+        run: >-
+          python tool/python/test.py --pytest -- --oracle-mode=local
+          --outcomes-json "$GITHUB_WORKSPACE/build/diagnostics/python-oracle/pytest_outcomes.json"
+          --junitxml="$GITHUB_WORKSPACE/build/test-results/python-3.12.xml"
+
       - name: Audit repository pattern stubs
         if: always()
         run: |
@@ -337,14 +345,6 @@ jobs:
           path: build/diagnostics/pattern-stubs/baseline.json
           if-no-files-found: warn
           retention-days: 14
-      - name: Run pytest
-        if: always()
-        env:
-          FLUTTER_FAILURE_EVIDENCE: ${{ github.workspace }}/build/controlled-failure
-        run: >-
-          python tool/python/test.py --pytest -- --oracle-mode=local
-          --outcomes-json "$GITHUB_WORKSPACE/build/diagnostics/python-oracle/pytest_outcomes.json"
-          --junitxml="$GITHUB_WORKSPACE/build/test-results/python-3.12.xml"
 
       - name: Preserve junit-python-3.12
         if: always()
