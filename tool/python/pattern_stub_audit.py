@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import sys
 
 MARKERS = (
     "TODO: 実装を追加してください",
@@ -66,7 +67,7 @@ def main() -> int:
     try:
         result = audit(args.root.resolve())
     except (OSError, ValueError) as error:
-        print(f"pattern-stub-audit: {error}", file=__import__("sys").stderr)
+        print(f"pattern-stub-audit: {error}", file=sys.stderr)
         return 2
     if args.json:
         print(json.dumps(result, ensure_ascii=False, indent=2))
