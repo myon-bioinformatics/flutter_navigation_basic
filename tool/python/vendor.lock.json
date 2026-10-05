@@ -143,7 +143,7 @@
       "source": "scripts/check_png.py",
       "destination": "tool/python/vendor/check_png.py",
       "blob_sha": "ebce30b085065d0db752c4958144476d3d54848d",
-      "sha256": "5a8c6cb600f6e3f99d08420a4b9b05e3f32eb609b5a998dd2e06d32fc3036c93"
+      "sha256": "12d5c7c0189b53540649ea26d57aeca827588b9118050d10b100b185845a2ad6"
     }
   ]
 }
