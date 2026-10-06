@@ -52,3 +52,28 @@ def test_deeply_nested_json_is_invalid_input_not_stale(tmp_path):
     )
     assert result.returncode == 2
     assert "list-selection:" in result.stderr
+
+
+def test_json_depth_boundary_is_explicit():
+    allowed_depth = 255
+    allowed = "[" * allowed_depth + "0" + "]" * allowed_depth
+    allowed_result = subprocess.run(
+        [sys.executable, "-S", str(CLI)],
+        input='{"values":[],"equals":' + allowed + '}',
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    assert allowed_result.returncode == 0
+
+    rejected_depth = 256
+    rejected = "[" * rejected_depth + "0" + "]" * rejected_depth
+    rejected_result = subprocess.run(
+        [sys.executable, "-S", str(CLI)],
+        input='{"values":[],"equals":' + rejected + '}',
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    assert rejected_result.returncode == 2
+    assert "maximum depth 256" in rejected_result.stderr
