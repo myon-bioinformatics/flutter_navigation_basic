@@ -1,4 +1,4 @@
-import { test, expect, Page, Route } from '@playwright/test';
+import { test, expect, Page, Route, Locator } from '@playwright/test';
 import { waitForFlutter } from '../utils/helpers';
 
 const endpoint = '**/__runtime__/curl-import';
@@ -16,11 +16,29 @@ async function submit(page: Page) {
     target.click();
   });
 }
-async function edit(page: Page, text: string) {
-  const field = input(page);
+// Flutter hydrates the active semantics editor from its TextEditingController.
+// Unfocused semantics inputs can be empty even when the canvas shows a value.
+// Focus and wait for rendering before writing/reading; never seed expected data.
+async function activate(field: Locator) {
   await expect(field).toBeEditable();
   await field.focus();
+  await expect(field).toBeFocused();
+  await field.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
+}
+async function editField(field: Locator, text: string) {
+  await activate(field);
   await field.fill(text);
+  await expect(field).toHaveValue(text);
+}
+async function edit(page: Page, text: string) {
+  await editField(input(page), text);
+}
+async function expectUrl(page: Page, expected: string) {
+  const field = url(page);
+  await activate(field);
+  await expect(field).toHaveValue(expected);
 }
 
 test.use({ trace: 'on', screenshot: 'only-on-failure' });
@@ -44,10 +62,12 @@ test.describe('Live Python curl import @portable', () => {
     const response = await reply;
     expect(response.status()).toBe(200);
     expect(response.headers()['x-curl-runtime']).toBe('python');
+    expect(response.request().postData()).toBe(raw);
     const payload = await response.json();
+    expect(payload.result.ok).toBe(true);
     expect(payload.result.draft.query.map((v: {name: string; value: string}) => [v.name, v.value]))
       .toEqual([['tag', 'a'], ['tag', 'b'], ['blank', ''], ['q', '猫']]);
-    await expect(url(page)).toHaveValue(address);
+    await expectUrl(page, address);
     await expect(state(page)).toHaveText('python:ready');
     await page.screenshot({ path: testInfo.outputPath('python-curl-import.png'), fullPage: true });
     await testInfo.attach('runtime-receipt', { body: JSON.stringify({
@@ -57,24 +77,24 @@ test.describe('Live Python curl import @portable', () => {
   });
 
   test('rejected input retains the existing draft', async ({ page }) => {
-    await url(page).fill('https://kept.example/');
+    await editField(url(page), 'https://kept.example/');
     await edit(page, 'curl https://example.test -d @not-a-file');
     await submit(page);
     await expect(state(page)).toHaveText(/error\.fileBody/);
-    await expect(url(page)).toHaveValue('https://kept.example/');
+    await expectUrl(page, 'https://kept.example/');
   });
 
   test('unavailable runtime never falls back, and retry can recover', async ({ page }, testInfo) => {
-    await url(page).fill('https://kept.example/');
+    await editField(url(page), 'https://kept.example/');
     await page.route(endpoint, (route) => route.abort('failed'));
     await edit(page, 'curl https://retry.example/');
     await submit(page);
     await expect(state(page)).toHaveText(/runtimeUnavailable/);
-    await expect(url(page)).toHaveValue('https://kept.example/');
+    await expectUrl(page, 'https://kept.example/');
     await page.screenshot({ path: testInfo.outputPath('runtime-unavailable.png'), fullPage: true });
     await page.unroute(endpoint);
     await submit(page);
-    await expect(url(page)).toHaveValue('https://retry.example/');
+    await expectUrl(page, 'https://retry.example/');
     await expect(state(page)).toHaveText('python:ready');
   });
 
@@ -87,7 +107,7 @@ test.describe('Live Python curl import @portable', () => {
     await expect(state(page)).toHaveText('python:loading');
     await expect(region(page, 'curl-import-action').getByRole('button')).toBeDisabled();
     await expect(state(page)).toHaveText(/runtimeTimeout/, { timeout: 8_000 });
-    await expect(url(page)).toHaveValue('');
+    await expectUrl(page, '');
     expect(calls).toBe(1);
     await held?.abort().catch(() => {});
   });
@@ -98,7 +118,7 @@ test.describe('Live Python curl import @portable', () => {
     await edit(page, 'curl https://never-applied.example/');
     await submit(page);
     await expect(state(page)).toHaveText(/runtimeResponse/);
-    await expect(url(page)).toHaveValue('');
+    await expectUrl(page, '');
   });
 
   test('editing while the real Python reply is delayed invalidates the result', async ({ page }) => {
@@ -112,9 +132,9 @@ test.describe('Live Python curl import @portable', () => {
     await edit(page, 'curl https://late.example/');
     await submit(page);
     await expect(state(page)).toHaveText('python:loading');
-    await url(page).fill('https://edited.example/');
+    await editField(url(page), 'https://edited.example/');
     release();
     await expect(state(page)).toHaveText('python:ready');
-    await expect(url(page)).toHaveValue('https://edited.example/');
+    await expectUrl(page, 'https://edited.example/');
   });
 });
