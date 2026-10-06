@@ -5,6 +5,7 @@ import '../../../core/navigation/route_names.dart';
 import '../../../core/utils/ascii_fullwidth.dart';
 import '../../../shared/display/display_scope.dart';
 import '../../../shared/http/auth_matrix.dart';
+import '../../../shared/http/curl_import.dart';
 import '../../../shared/http/curl_safe_subset.dart';
 import '../../../shared/http/live_request_executor.dart';
 import '../../../shared/http/mock_auth.dart';
@@ -18,7 +19,10 @@ import '../../../shared/widgets/tool_door_selector.dart';
 /// HTTP request draft editor: edit fields, apply auth presets, execute mock
 /// (and live IO where supported), and copy redacted receipts/curl.
 class HttpRequestDraftPage extends StatefulWidget {
-  const HttpRequestDraftPage({super.key});
+  const HttpRequestDraftPage({super.key, this.curlImporter});
+
+  /// Injectable async boundary for lifecycle tests; production uses importCurlText.
+  final Future<CurlImportResult> Function(String)? curlImporter;
 
   @override
   State<HttpRequestDraftPage> createState() => _HttpRequestDraftPageState();
@@ -44,6 +48,8 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
   List<RequestDraftIssue> _importWarnings = const [];
   AuthMatrixScenario _authScenario = AuthMatrixScenario.none;
   bool _executing = false;
+  bool _importing = false;
+  int _importRevision = 0;
   String _receipt = '';
   late final MockAuthRequestExecutor _mockExecutor;
 
@@ -137,6 +143,7 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
   }
 
   void _setDraft(RequestDraft draft, {bool syncTopLevelControllers = false}) {
+    _importRevision++;
     setState(() {
       _draft = draft;
       _syncFieldControllers();
@@ -161,17 +168,36 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
     );
   }
 
-  void _importCurl() {
-    final result = CurlSafeSubset.tryParse(
-      _curlImport.text,
-      newId: _nextId,
-    );
+  Future<void> _importCurl() async {
+    if (_importing) return;
+    final revision = ++_importRevision;
+    final raw = _curlImport.text;
     setState(() {
-      _importErrors = result.errors;
-      _importWarnings = result.warnings;
+      _importing = true;
+      _importErrors = const [];
+      _importWarnings = const [];
     });
-    if (result.draft == null) return;
-    _setDraft(result.draft!, syncTopLevelControllers: true);
+    try {
+      final result = await (widget.curlImporter?.call(raw) ??
+          importCurlText(raw, newId: _nextId));
+      // Editing/clearing/presets during an async import invalidate its reply.
+      if (!mounted || revision != _importRevision) return;
+      setState(() {
+        _importErrors = result.errors;
+        _importWarnings = result.warnings;
+      });
+      if (result.draft != null) {
+        _setDraft(result.draft!, syncTopLevelControllers: true);
+      }
+    } catch (_) {
+      if (mounted && revision == _importRevision) {
+        setState(() => _importErrors = const [
+          RequestDraftIssue('httpDraft.curl.error.runtimeUnavailable'),
+        ]);
+      }
+    } finally {
+      if (mounted) setState(() => _importing = false);
+    }
   }
 
   Future<void> _copy(String text, String label) async {
@@ -189,6 +215,7 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
 
 
   void _applyAuthScenario(AuthMatrixScenario scenario) {
+    _importRevision++;
     final next = scenario.applyTo(
       _draft,
       baseUrl: 'http://127.0.0.1:8787',
@@ -300,31 +327,47 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
           ),
           const SizedBox(height: 16),
           _sectionTitle(display.text('httpDraft.curlImport')),
-          TextField(
-            controller: _curlImport,
-            minLines: 3,
-            maxLines: 8,
-            inputFormatters: asciiFullwidthInputFormatters,
-            style: const TextStyle(
-              fontFamily: 'monospace',
-              letterSpacing: 0,
-              fontSize: 12,
-            ),
-            decoration: InputDecoration(
-              labelText: display.text('httpDraft.curlImportHint'),
-              border: const OutlineInputBorder(),
-              alignLabelWithHint: true,
+          Semantics(
+            identifier: 'curl-import-input',
+            child: TextField(
+              controller: _curlImport,
+              onChanged: (_) => _importRevision++,
+              minLines: 3,
+              maxLines: 8,
+              inputFormatters: asciiFullwidthInputFormatters,
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                letterSpacing: 0,
+                fontSize: 12,
+              ),
+              decoration: InputDecoration(
+                labelText: display.text('httpDraft.curlImportHint'),
+                border: const OutlineInputBorder(),
+                alignLabelWithHint: true,
+              ),
             ),
           ),
           const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerLeft,
-            child: FilledButton.icon(
-              onPressed: _importCurl,
-              icon: const Icon(Icons.upload_file_outlined),
-              label: Text(display.text('httpDraft.importCurl')),
+            child: Semantics(
+              identifier: 'curl-import-action',
+              child: FilledButton.icon(
+                key: const ValueKey('curl-import-button'),
+                onPressed: _importing ? null : _importCurl,
+                icon: const Icon(Icons.upload_file_outlined),
+                label: Text(display.text('httpDraft.importCurl')),
+              ),
             ),
           ),
+          Semantics(
+            container: true,
+            identifier: 'curl-runtime-state',
+            label: '${usePythonCurlRuntime ? "python" : "dart"}:'
+                '${_importing ? "loading" : _importErrors.isEmpty ? "ready" : _importErrors.map((e) => e.code).join(",")}',
+            child: const SizedBox(height: 1),
+          ),
+          if (_importing) const LinearProgressIndicator(),
           if (_importErrors.isNotEmpty) ...[
             const SizedBox(height: 8),
             for (final issue in _importErrors)
@@ -368,16 +411,19 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: TextField(
-                  controller: _url,
-                  inputFormatters: asciiFullwidthInputFormatters,
-                  style: const TextStyle(letterSpacing: 0),
-                  decoration: InputDecoration(
-                    labelText: display.text('httpDraft.url'),
-                    border: const OutlineInputBorder(),
+                child: Semantics(
+                  identifier: 'http-draft-url',
+                  child: TextField(
+                    controller: _url,
+                    inputFormatters: asciiFullwidthInputFormatters,
+                    style: const TextStyle(letterSpacing: 0),
+                    decoration: InputDecoration(
+                      labelText: display.text('httpDraft.url'),
+                      border: const OutlineInputBorder(),
+                    ),
+                    onChanged: (value) =>
+                        _setDraft(_draft.copyWith(url: value)),
                   ),
-                  onChanged: (value) =>
-                      _setDraft(_draft.copyWith(url: value)),
                 ),
               ),
             ],

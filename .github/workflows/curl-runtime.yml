@@ -1,0 +1,92 @@
+name: Python curl runtime browser contract
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tool/python/curl_*.py'
+      - 'tool/python/fixtures/curl_request_cases.json'
+      - 'tool/python/tests/test_curl*.py'
+      - 'lib/shared/http/**'
+      - 'lib/features/http_request_draft/**'
+      - 'test/shared/http/**'
+      - 'test/features/http_request_draft/**'
+      - 'e2e/tests/curl_runtime.spec.ts'
+      - 'e2e/utils/helpers.ts'
+      - 'e2e/playwright.config.ts'
+      - 'e2e/package*.json'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - '.github/workflows/curl-runtime.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tool/python/curl_*.py'
+      - 'lib/shared/http/**'
+      - 'lib/features/http_request_draft/**'
+      - 'e2e/tests/curl_runtime.spec.ts'
+      - 'pubspec.*'
+      - '.github/workflows/curl-runtime.yml'
+
+permissions:
+  contents: read
+concurrency:
+  group: curl-runtime-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  runtime-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.0'
+          cache: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Build actual Flutter UI with Python import enabled
+        run: |
+          flutter pub get
+          flutter build web --release -t lib/main.dart --base-href / --dart-define=E2E=true --dart-define=CURL_PYTHON_RUNTIME=true
+      - name: Install existing browser tooling
+        working-directory: e2e
+        run: |
+          npm install
+          npx playwright install --with-deps chromium firefox webkit
+      - name: Observe runtime environment with shared tooling
+        run: |
+          mkdir -p build/curl-runtime
+          python -S tool/python/vendor/yourself.py --minimal --format json > build/curl-runtime/environment.json
+      - name: Test real UI to local Python with Playwright
+        env:
+          CURL_RUNTIME_E2E: '1'
+          PLAYWRIGHT_JUNIT_OUTPUT_FILE: test-results/curl-runtime.xml
+        run: |
+          set -euo pipefail
+          python -S tool/python/curl_runtime_server.py --web-root build/web --port 8080 > build/curl-runtime/server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          ready=false
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/ >/dev/null; then ready=true; break; fi
+            sleep 1
+          done
+          test "$ready" = true
+          cd e2e
+          npx playwright test tests/curl_runtime.spec.ts --project chromium --project firefox --project webkit --project mobile-chromium --project mobile-webkit --reporter=line,junit
+      - name: Keep browser snapshots, traces and JUnit
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: curl-runtime-browser-evidence
+          path: |
+            e2e/test-results/
+            build/curl-runtime/
+          if-no-files-found: warn
+          retention-days: 14
