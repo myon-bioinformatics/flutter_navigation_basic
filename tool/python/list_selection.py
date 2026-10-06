@@ -14,6 +14,20 @@ import sys
 from typing import Any
 
 _MISSING = object()
+_MAX_JSON_DEPTH = 256
+
+
+def _validate_json_depth(value: Any, *, max_depth: int = _MAX_JSON_DEPTH) -> None:
+    """Reject pathologically deep JSON without relying on Python recursion."""
+    stack: list[tuple[Any, int]] = [(value, 0)]
+    while stack:
+        current, depth = stack.pop()
+        if isinstance(current, (list, dict)):
+            if depth >= max_depth:
+                raise ValueError(f"JSON nesting exceeds maximum depth {max_depth}")
+            children = current if isinstance(current, list) else current.values()
+            stack.extend((child, depth + 1) for child in children)
+
 
 
 def filter_values(values: list[Any], *, equals: Any) -> list[Any]:
@@ -119,10 +133,12 @@ def main(argv: list[str] | None = None) -> int:
     try:
         raw = sys.stdin.read() if args.input == "-" else Path(args.input).read_text(encoding="utf-8")
         payload = json.loads(raw, parse_constant=_reject_constant, parse_float=_finite_float)
+        _validate_json_depth(payload)
         result = process(payload)
         rendered = json.dumps(result, ensure_ascii=False, allow_nan=False, separators=(",", ":")) + "\n"
         if args.check:
             current = json.loads(args.output.read_text(encoding="utf-8"), parse_constant=_reject_constant, parse_float=_finite_float)
+            _validate_json_depth(current)
             # Compare only the consumed contract, not unrelated metadata/formatting.
             if (not isinstance(current, dict) or "values" not in current or
                     json.dumps(current["values"], sort_keys=True) !=
