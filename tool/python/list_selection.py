@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Select JSON values and generate/check Flutter result assets.
 
-Equality filters and stable distinct selection share one producer and I/O.
+Equality filters, stable distinct selection and deduplication reports share one producer and I/O.
 Flutter only displays generated results; it never evaluates predicates.
 """
 from __future__ import annotations
@@ -51,6 +51,18 @@ def distinct_values(values: list[Any]) -> list[Any]:
     return result
 
 
+def deduplication_report(values: list[Any]) -> list[dict[str, int | bool]]:
+    """Report duplicate presence without mutating or returning the input values."""
+    unique = distinct_values(values)
+    duplicate_count = len(values) - len(unique)
+    return [{
+        "input_count": len(values),
+        "unique_count": len(unique),
+        "duplicate_count": duplicate_count,
+        "has_duplicates": duplicate_count > 0,
+    }]
+
+
 def _at_path(value: Any, path: list[str | int]) -> Any:
     """Resolve literal object keys/list indices, never an expression or code."""
     for part in path:
@@ -70,12 +82,14 @@ def process(payload: Any) -> dict[str, list[Any]]:
     if not isinstance(values, list):
         raise ValueError("values must be a JSON list")
     operation = payload.get("operation", "filter")
-    if operation == "distinct":
+    if operation in ("distinct", "deduplicate_report"):
         if set(payload) - {"operation", "values"}:
-            raise ValueError("distinct accepts only operation and values")
-        return {"values": distinct_values(values)}
+            raise ValueError(f"{operation} accepts only operation and values")
+        if operation == "distinct":
+            return {"values": distinct_values(values)}
+        return {"values": deduplication_report(values)}
     if operation != "filter":
-        raise ValueError("operation must be filter or distinct")
+        raise ValueError("operation must be filter, distinct or deduplicate_report")
     if "conditions" not in payload:
         if "equals" not in payload:
             raise ValueError("equals is required")

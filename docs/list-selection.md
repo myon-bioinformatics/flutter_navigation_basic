@@ -1,7 +1,8 @@
 # List-selection examples: one Python producer, shared Flutter boundary
 
 Issue #144 / PR #145 implements FilterBasic (001), FilterMultiple (002),
-FilterNested (003), DistinctFilter (030) and Deduplication (086). The
+FilterNested (003), DistinctFilter (030), Deduplication (086) and
+DataDeduplicate (113). The
 responsibility-named stdlib-only `list_selection.py` command shares validation,
 JSON I/O, asset generation and drift checking. No per-pattern Python copy.
 Flutter currently displays **generated catalogue examples, not arbitrary-input
@@ -17,6 +18,7 @@ python -S tool/python/list_selection.py --input tool/python/fixtures/filter_basi
 python -S tool/python/list_selection.py --input tool/python/fixtures/filter_multiple_input.json --output assets/data_processing/filter_multiple.json --check
 python -S tool/python/list_selection.py --input tool/python/fixtures/filter_nested_input.json --output assets/data_processing/filter_nested.json --check
 python -S tool/python/list_selection.py --input tool/python/fixtures/distinct_filter_input.json --output assets/data_processing/distinct_filter.json --check
+python -S tool/python/list_selection.py --input tool/python/fixtures/deduplicate_report_input.json --output assets/data_processing/deduplicate_report.json --check
 ```
 
 Remove `--check` to generate; omit `--output` for stdout; `--input -` reads stdin.
@@ -50,9 +52,16 @@ constant-memory implementation.
 Patterns 030 and 086 deliberately reuse this same processor and the same
 `distinct_filter.json` catalogue result because their documented responsibility
 is the same stable deduplication operation. No second Python file or duplicate
-asset is created for 086. Pattern 113 is **not** folded into this contract yet:
-its catalogue description says “deduplication validation”, so its validation and
-reporting semantics must be defined before reuse is claimed.
+asset is created for 086.
+
+Pattern 113 remains a distinct **validation/reporting** contract instead of a
+third deduplication implementation. `{"operation":"deduplicate_report",...}`
+uses the same canonical identity rules to count input, unique and duplicate
+values and returns one report record through the existing `values` result
+boundary. The report includes `input_count`, `unique_count`,
+`duplicate_count` and `has_duplicates`; it does not mutate or return the
+source values. Duplicate presence is a report result (exit 0), while malformed
+or ambiguous input remains exit 2.
 
 Both modes reject non-finite constants, numbers that overflow while decoding,
 and JSON containers nested beyond the explicit 256-level input bound
@@ -63,12 +72,13 @@ could incorrectly exit 0 with empty output; regression tests retain that case.
 
 Python owns processing/validation/generation/drift checking. `JsonListAsset`
 only loads/validates the result shape. `ProcessedListExample` shares local
-loading/result/error/retry/disposal state across 001/002/003/030/086.
-Ten duplicate model/controller files are removed. Services select assets;
+loading/result/error/retry/disposal state across 001/002/003/030/086/113.
+Twelve duplicate model/controller files are removed. Services select assets;
 views configure presentation, with no GetX registration or global reset.
 The old internal `run()`/message-model contract is replaced by `load()` values;
 view names and const construction remain. One shared Flutter suite replaces
-five former per-pattern test files. Other catalogue scaffolds are not claimed
+five former per-pattern test files; 113 keeps a focused report-boundary test because
+its result meaning differs from list selection. Other catalogue scaffolds are not claimed
 GetX-free. The earlier duplicate Dart `list_filters.dart` remains removed.
 
 ## Failure evidence and verification
@@ -98,4 +108,4 @@ are not full CI/audit evidence.
 
 The authoritative audit starts at **790/792, undecodable 0**. 001–003 reduce it
 to **787/792** and 030 to **786/792**; their GetX consolidation changes file
-counts separately from placeholder counts. The 086 reuse slice is measured at **785/792, undecodable 0** on current-head CI, while leaving the service denominator unchanged. Merged main remains the separate **790/792, undecodable 0** baseline until this PR is integrated.
+counts separately from placeholder counts. The 086 reuse slice is measured at **785/792, undecodable 0** on its green head. Pattern 113 removes one additional service placeholder, so the expected audit is **784/792, undecodable 0** until current-head CI measures it. Merged main remains the separate **790/792, undecodable 0** baseline until this PR is integrated.
