@@ -67,8 +67,8 @@ test.describe('Live Python curl import @portable', () => {
     expect(payload.result.ok).toBe(true);
     expect(payload.result.draft.query.map((v: {name: string; value: string}) => [v.name, v.value]))
       .toEqual([['tag', 'a'], ['tag', 'b'], ['blank', ''], ['q', '猫']]);
-    await expectUrl(page, address);
     await expect(state(page)).toHaveText('python:ready');
+    await expectUrl(page, address);
     await page.screenshot({ path: testInfo.outputPath('python-curl-import.png'), fullPage: true });
     await testInfo.attach('runtime-receipt', { body: JSON.stringify({
       schema: 'curl-runtime-e2e/1', engine: 'python', project: testInfo.project.name,
@@ -94,8 +94,8 @@ test.describe('Live Python curl import @portable', () => {
     await page.screenshot({ path: testInfo.outputPath('runtime-unavailable.png'), fullPage: true });
     await page.unroute(endpoint);
     await submit(page);
-    await expectUrl(page, 'https://retry.example/');
     await expect(state(page)).toHaveText('python:ready');
+    await expectUrl(page, 'https://retry.example/');
   });
 
   test('timeout is bounded and duplicate submission is blocked', async ({ page }) => {
