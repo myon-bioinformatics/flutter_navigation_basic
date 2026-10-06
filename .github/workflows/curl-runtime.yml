@@ -4,83 +4,87 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'tool/python/curl_*.py'
-      - 'tool/python/fixtures/curl_request_cases.json'
-      - 'tool/python/tests/test_curl*.py'
-      - 'lib/shared/http/**'
-      - 'lib/features/http_request_draft/**'
-      - 'test/shared/http/**'
-      - 'test/features/http_request_draft/**'
-      - 'e2e/tests/curl_runtime.spec.ts'
-      - 'e2e/utils/helpers.ts'
-      - 'e2e/playwright.config.ts'
-      - 'e2e/package*.json'
-      - 'pubspec.yaml'
-      - 'pubspec.lock'
-      - '.github/workflows/curl-runtime.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'tool/python/curl_*.py'
-      - 'lib/shared/http/**'
-      - 'lib/features/http_request_draft/**'
-      - 'e2e/tests/curl_runtime.spec.ts'
-      - 'pubspec.*'
-      - '.github/workflows/curl-runtime.yml'
+      - "Dockerfile.e2e"
+      - ".dockerignore"
+      - "tool/docker/**"
+      - "tool/python/curl_*.py"
+      - "tool/python/playwright.py"
+      - "tool/python/vendor/**"
+      - "tool/python/tests/test_curl*.py"
+      - "tool/python/tests/test_docker_curl_runtime.py"
+      - "lib/shared/http/**"
+      - "lib/core/platform/**"
+      - "lib/features/http_request_draft/**"
+      - "test/features/http_request_draft/**"
+      - "test/shared/http/**"
+      - "e2e/tests/curl_runtime.spec.ts"
+      - "e2e/utils/helpers.ts"
+      - "e2e/playwright.config.ts"
+      - "e2e/package.json"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - ".github/workflows/curl-runtime.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
+
 concurrency:
-  group: curl-runtime-${{ github.event.pull_request.number || github.ref }}
+  group: curl-runtime-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   runtime-browser:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: docker/setup-buildx-action@v4
+      - name: Build shared toolchain and Python-enabled Flutter UI
+        uses: docker/build-push-action@v7
         with:
-          python-version: '3.12'
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.47.0'
-          cache: true
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '22'
-      - name: Build actual Flutter UI with Python import enabled
-        run: |
-          flutter pub get
-          flutter build web --release -t lib/main.dart --base-href / --dart-define=E2E=true --dart-define=CURL_PYTHON_RUNTIME=true
-      - name: Install existing browser tooling
-        working-directory: e2e
-        run: |
-          npm install
-          npx playwright install --with-deps chromium firefox webkit
-      - name: Observe runtime environment with shared tooling
-        run: |
-          mkdir -p build/curl-runtime
-          python -S tool/python/vendor/yourself.py --minimal --format json > build/curl-runtime/environment.json
-      - name: Test real UI to local Python with Playwright
-        env:
-          CURL_RUNTIME_E2E: '1'
-          PLAYWRIGHT_JUNIT_OUTPUT_FILE: test-results/curl-runtime.xml
+          context: .
+          file: Dockerfile.e2e
+          build-args: CURL_PYTHON_RUNTIME=true
+          load: true
+          push: false
+          tags: flutter-nav-curl-runtime:ci
+          cache-from: type=gha,scope=flutter-nav-curl-runtime
+          cache-to: type=gha,scope=flutter-nav-curl-runtime,mode=max
+      - name: Test real UI to local Python inside Docker
         run: |
           set -euo pipefail
-          python -S tool/python/curl_runtime_server.py --web-root build/web --port 8080 > build/curl-runtime/server.log 2>&1 &
-          server_pid=$!
-          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
-          ready=false
-          for _ in $(seq 1 30); do
-            if curl -fsS http://127.0.0.1:8080/ >/dev/null; then ready=true; break; fi
-            sleep 1
-          done
-          test "$ready" = true
-          cd e2e
-          npx playwright test tests/curl_runtime.spec.ts --project chromium --project firefox --project webkit --project mobile-chromium --project mobile-webkit --reporter=line,junit
-      - name: Keep browser snapshots, traces and JUnit
+          mkdir -p e2e/test-results build/curl-runtime
+          docker image inspect flutter-nav-curl-runtime:ci --format '{{.Id}}' > build/curl-runtime/image-id.txt
+          printf '%s\n' "$(git rev-parse HEAD)" > build/curl-runtime/checkout-sha.txt
+          # Browser and server share container loopback. No host port or Docker
+          # socket is exposed to the app. Use the same checked-in CLI wrapper.
+          docker run --rm --init --ipc=host \
+            -e PLAYWRIGHT_JUNIT_OUTPUT_FILE=test-results/curl-runtime.xml \
+            -v "$PWD/e2e/test-results:/repo/e2e/test-results" \
+            -v "$PWD/build/curl-runtime:/repo/build/curl-runtime" \
+            flutter-nav-curl-runtime:ci \
+            test --project chromium --project firefox --project webkit \
+            --project mobile-chromium --project mobile-webkit \
+            tests/curl_runtime.spec.ts --reporter=line,junit
+      - name: Verify executed cases and screenshot evidence
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          report = ET.parse("e2e/test-results/curl-runtime.xml")
+          cases = list(report.iter("testcase"))
+          assert len(cases) >= 30, f"runtime suite not fully collected: {len(cases)}"
+          assert not any(case.find(kind) is not None for case in cases for kind in ("failure", "error", "skipped"))
+          traces = list(Path("e2e/test-results").rglob("trace.zip"))
+          assert len(traces) >= len(cases), "missing browser traces"
+          print(f"Docker runtime E2E: {len(cases)} passed, {len(traces)} traces")
+          PY
+          mapfile -t snapshots < <(find e2e/test-results -name python-curl-import.png -type f)
+          test "${#snapshots[@]}" -ge 5
+          python3 -S tool/python/vendor/check_png.py "${snapshots[@]}"
+      - name: Keep browser snapshots, traces, JUnit and toolchain evidence
         if: always()
         uses: actions/upload-artifact@v7
         with:

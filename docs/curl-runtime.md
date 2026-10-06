@@ -1,20 +1,55 @@
-# Opt-in local Python curl import in the real Flutter web editor
+# Python curl import: shared Docker toolchain and real Flutter Web E2E
 
-This increment connects `HttpRequestDraftPage` to `curl_request.py` **at runtime**,
-not to a generated result asset. It is an explicitly selected development/CI
-configuration; the normal static Pages build continues to use the legacy Dart
-parser. The selected Python path has **no automatic Dart fallback**.
+`HttpRequestDraftPage` sends entered curl text to `curl_request.py` at runtime,
+not to a generated example. The Python path never silently falls back to Dart.
+The existing static Pages/native configuration remains separate until its runtime
+packaging is measured; this migration does not remove working offline behavior.
 
-## Build Python versus application Python
+## Canonical build/test container
 
-`actions/setup-python` installs Python on a CI runner. It does not put an
-interpreter in Flutter JavaScript, an Android APK, or an iOS application. Existing
-Python oracles and fixture generation are build/test-side use only.
+`Dockerfile.e2e` now owns the shared Flutter/Python/Node/npm/npx/Deno environment.
+It uses Ubuntu 24.04's Python 3.12, pinned Flutter 3.47.0, Node 22, and the official
+Deno 2.9.6 binary image. npm/npx ship with Node; TypeScript execution is proved by
+an offline, permission-free Deno smoke. Playwright's three browser engines are
+installed once and reused by the five desktop/mobile-emulation projects.
 
-This adapter uses a Python process on the same computer that serves the web build.
-It requires no public endpoint, account, paid service, extra Python package, curl
-execution, request proxy, or Python interpreter downloaded by a page. Browser-side
-Wasm Python and native app interpreter packaging remain distinct follow-ups.
+The existing npm range policy is retained (not falsely described as a fully
+byte-reproducible image). CI records the resolved tool versions and image ID.
+Dependency/browser layers are cached independently of application source and the
+late `CURL_PYTHON_RUNTIME` build argument. The checked-in Flutter lock must match
+`flutter pub get`; a changed lock is not silently accepted inside the image.
+
+```sh
+docker build -f Dockerfile.e2e --build-arg CURL_PYTHON_RUNTIME=true -t flutter-nav-curl-runtime .
+mkdir -p e2e/test-results build/curl-runtime
+docker run --rm --init --ipc=host \
+  -e PLAYWRIGHT_JUNIT_OUTPUT_FILE=test-results/curl-runtime.xml \
+  -v "$PWD/e2e/test-results:/repo/e2e/test-results" \
+  -v "$PWD/build/curl-runtime:/repo/build/curl-runtime" \
+  flutter-nav-curl-runtime \
+  test --project chromium --project firefox --project webkit \
+  --project mobile-chromium --project mobile-webkit \
+  tests/curl_runtime.spec.ts --reporter=line,junit
+```
+
+The server and browsers run **inside the same image** and communicate over its
+127.0.0.1. No published port or host Docker socket is required. Do not expose or
+tunnel this development server. The shared entrypoint preserves the native test
+exit code, bounds runtime tests to 15 minutes, and stops the child server on exit.
+Its required tool checks fail closed; missing Deno/Node/Python is not a pass.
+Without the build argument, the existing static Docker E2E entrypoint and default
+portable test list remain supported. Do not enable the runtime environment flag
+on an image that was built as a static application.
+
+This packages Python and the parser **with the tested Web build in the image**.
+It does not imply CPython is inside the browser JavaScript or an Android/iOS app.
+Native interpreter packaging and browser Wasm remain possible separate targets,
+not an excuse to retain Dart logic in this tested runtime path. This user-approved
+runtime slice supersedes older developer-tool-only Python wording in the general
+ownership rubric. Node/npx/Deno are build/test capabilities here, not new browser
+or mobile dependencies.
+
+## Non-container development
 
 ```sh
 flutter pub get
@@ -23,58 +58,52 @@ python -S tool/python/curl_runtime_server.py --web-root build/web --port 8080
 # Open http://127.0.0.1:8080/#/tools/http/request-draft (not localhost).
 ```
 
-The two Python modules must be kept together. This is a local development server,
-not production hosting. Do not publish or tunnel it. All other runtime modes stay
-unchanged. In particular, phones opening a hosted Pages URL do not acquire Python
-merely because a CI runner installed it.
+The Python parser and server modules stay together. This uses no paid service,
+account, public endpoint, extra Python package, curl execution or request proxy.
 
 ## Responsibilities and failure behavior
 
-The existing Python parser owns curl tokenization, safe-subset recognition,
-query/form decoding and Basic-header generation. `curl_import.dart` maps the reply
-into existing editor rows (including new row IDs and empty rows) and keeps later
-`RequestDraftValidator` warnings. The web transport is a small `dart:js_interop`
-XHR boundary. Native builds compile a stub, not a browser import.
+Python owns curl tokenization, safe-subset recognition, query/form decoding and
+Basic-header generation. Dart maps replies into editor rows/IDs and displays
+loading, errors and retry. The selected web transport is a small js_interop XHR
+boundary; native builds compile a transport stub, not a browser import.
+Diagnostic codes omit raw argument text. Full diagnostic-argument parity and
+remaining validator/export/auth logic are not represented as migrated.
 
-The current import-stage parser returns diagnostic codes without argument text;
-full error-message argument parity and the remaining Dart validator/export/auth
-semantics are not represented as migrated. The normal parser is deliberately
-retained until all deployment targets have an appropriate measured runtime.
+The endpoint is fixed to same-origin `/__runtime__/curl-import`. The transport
+rejects non-HTTP/non-127.0.0.1 origins. The server binds loopback and enforces exact
+Host/Origin, a custom header, content type and a single bounded Content-Length.
+No CORS opt-in, @file dereferencing or outbound HTTP request is provided.
+Input: 65,536 bytes; response: 1 MiB; server/XHR timeouts: 5 seconds; concurrency:
+eight handlers. Static serving prevents directory listings and symlink escapes.
+Values may contain credentials: no access/body logs or shared-corpus payloads.
+All browser fixtures are synthetic.
 
-On an opted-in build, click Import: raw curl text goes to the fixed same-origin
-`/__runtime__/curl-import` endpoint. The Dart transport refuses non-HTTP/non-127.0.0.1
-origins. The server binds 127.0.0.1 and enforces the exact Host and Origin, a custom
-request header, content type and a single bounded Content-Length; it provides no
-CORS opt-in. It never dereferences @file or sends the parsed HTTP request.
+Unavailable/slow/malformed replies leave the draft unchanged and display an
+error. Duplicate import is disabled while loading. Edits, Clear and preset changes
+invalidate late results. Disposed widgets never receive a late setState.
 
-Input is capped at 65,536 bytes; response at 1 MiB; server read and browser XHR
-timeouts are 5 seconds. Request concurrency is bounded to eight handlers. Static
-files are confined to the selected build root, without directory listings or
-symlink escapes. Parsed values may contain credentials: no body/access logging,
-no shared-corpus upload and no persistent storage. Browser test inputs are synthetic.
+## Evidence and migration gate
 
-Unavailable runtime, timeout and malformed reply leave the draft unchanged and
-show an error. Duplicate import is disabled while loading; edits, Clear and preset
-changes invalidate late replies. Completion after widget disposal does not setState.
+- Existing Python tests cover real loopback requests and security/error bounds.
+- Dart projection tests consume the 47-case contract fixture; widget tests cover
+  async loading, invalidation and disposal.
+- `curl-runtime.yml` builds this Dockerfile, then runs the actual editor and
+  Python process in the same container, using the existing Python Playwright CLI.
+- The browser suite covers success, rejected input, outage/retry, timeout,
+  malformed reply and editing during a delayed real reply in five projects.
+  It observes emitted semantics **text**, not an assumed parent `aria-label`;
+  disabled state belongs to the nested button. These boundaries were checked
+  against the preceding failed run's retained DOM traces.
+- CI verifies that at least 30 cases actually ran without skips/failures/errors,
+  that traces are retained, and that success screenshots exist in all projects.
+  It reuses vendored `check_png.py` rather than introducing another PNG validator.
+- Artifacts retain screenshots, traces, JUnit, synthetic receipts, `yourself.py`
+  minimal environment data, fixed-command tool versions, image ID and the real
+  CI checkout SHA (which can be a PR merge SHA rather than PR head).
 
-## Evidence
-
-- `test_curl_runtime_server.py` exercises the actual loopback server, including
-  origin/framing/size/UTF-8 guards, partial-body timeout/EOF, no credential logging
-  and restricted static serving. It is collected by existing Python CI.
-- `curl_python_runtime_test.dart` reuses the prior 47-case contract fixture for
-  editor projection and adds invalid-reply, unavailable and timeout cases.
-- Widget tests inject an async importer for duplicate-load, stale-edit and disposal.
-- `curl-runtime.yml` installs Python on the runner, builds Flutter with explicit
-  runtime activation, starts the real parser server and drives the real page via
-  existing Playwright/helper code. It tests real replies, refusals, outage/retry,
-  timeout, malformed responses and late replies on Chromium/Firefox/WebKit plus
-  mobile emulations. This is not physical-device or installed-mobile-runtime proof.
-- Browser artifacts contain screenshots, traces, JUnit, a compact receipt and the
-  existing `yourself.py --minimal` environment observation. Screenshots are review
-  evidence, **not yet checked-in pixel-golden comparisons**. No automatic baseline
-  acceptance hides a UI change. No Stagehand/model key is required by this lane.
-
-An implementation or previously green head does not establish success on a new
-head: record the new workflow's actual completion separately. No existing curl
-Dart file is removed in this increment, and the catalogue stub count is unchanged.
+Screenshots are review snapshots, not automatically accepted pixel goldens.
+Mobile profiles are browser emulations, not installed Android/iOS proof.
+A new implementation is not a green run: report actual Docker E2E completion
+before advancing the removal of the legacy Dart parser. Static/legacy modes are
+kept distinct, and this container/evidence slice does not change stub counts.
