@@ -54,8 +54,9 @@ asset is created for 086. Pattern 113 is **not** folded into this contract yet:
 its catalogue description says “deduplication validation”, so its validation and
 reporting semantics must be defined before reuse is claimed.
 
-Both modes reject non-finite constants and numbers that overflow while decoding
-(e.g. `1e999`), even if no value would be selected. Before this fix the latter
+Both modes reject non-finite constants, numbers that overflow while decoding,
+and JSON containers nested beyond the explicit 256-level input bound
+(e.g. `1e999` or pathologically deep arrays), even if no value would be selected. Before this fix the latter
 could incorrectly exit 0 with empty output; regression tests retain that case.
 
 ## Dart responsibility and consolidation
