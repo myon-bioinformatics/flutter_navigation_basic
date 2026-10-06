@@ -22,10 +22,11 @@ async function edit(page: Page, text: string) {
   await field.fill(text);
 }
 
+test.use({ trace: 'on', screenshot: 'only-on-failure' });
+
 // Opt-in runtime build only. Ordinary static Pages/portable tests remain separate.
 test.describe('Live Python curl import @portable', () => {
   test.skip(process.env.CURL_RUNTIME_E2E !== '1', 'requires explicit Python runtime build/server');
-  test.use({ trace: 'on', screenshot: 'only-on-failure' });
   test.beforeEach(async ({ page }) => {
     await page.goto('http://127.0.0.1:8080/#/tools/http/request-draft');
     await waitForFlutter(page);
