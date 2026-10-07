@@ -17,6 +17,7 @@ MODULES = (
     "check_png.py",
     "jsonl_digest.py",
     "cli_args.py",
+    "gh_identity.py",
 )
 
 
@@ -44,3 +45,16 @@ def test_environment_probe_is_safe_no_argument_json():
     payload = json.loads(result.stdout)
     assert payload["schema_version"] == 1
     assert set(payload) == {"schema_version", "os", "runtime", "host", "directory"}
+
+
+def test_gh_identity_local_contract_prefers_github_environment():
+    sys.path.insert(0, str(VENDOR))
+    import gh_identity
+    value = gh_identity.local_identity(env={
+        "GITHUB_SHA": "A" * 40,
+        "GITHUB_HEAD_REF": "feature/runtime",
+    })
+    assert value["schema"] == "gh-identity-local/1"
+    assert value["sha"] == "a" * 40
+    assert value["ref"] == "feature/runtime"
+    assert value["source"] == "github-env"
