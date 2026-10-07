@@ -38,6 +38,9 @@ def test_cli_shared_contract(case):
 def test_isolated_file_input_without_repository(tmp_path):
     standalone = tmp_path / "parser.py"
     shutil.copyfile(CLI, standalone)
+    vendor = tmp_path / "vendor"
+    vendor.mkdir()
+    shutil.copyfile(PYTHON_DIR / "vendor" / "cli_args.py", vendor / "cli_args.py")
     source = tmp_path / "入力 curl.txt"
     source.write_text("curl -G -d 'q=%E7%8C%AB' https://example.com/", encoding="utf-8")
     result = invoke(b"", "--input", str(source), script=standalone)
@@ -109,3 +112,22 @@ def test_help_has_no_input_side_effects():
     result = invoke(b"", "--help")
     assert result.returncode == 0
     assert b"--input" in result.stdout
+
+
+@pytest.mark.parametrize("args", [
+    ("--unknown", "SECRET_SENTINEL"),
+    ("unexpected-positional",),
+    ("--input",),
+])
+def test_invalid_cli_arguments_are_structured_and_secret_free(args):
+    result = invoke(b"", *args)
+    assert result.returncode == 2
+    assert result.stderr == b""
+    payload = json.loads(result.stdout)
+    assert payload == {
+        "ok": False,
+        "draft": None,
+        "errors": ["httpDraft.curl.error.arguments"],
+        "warnings": [],
+    }
+    assert b"SECRET_SENTINEL" not in result.stdout
