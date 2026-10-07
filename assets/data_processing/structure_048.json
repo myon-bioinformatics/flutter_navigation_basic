@@ -1,0 +1,1 @@
+{"mode":"flat","schema":"collection-structure/1","values":[{"depth":0,"id":"root","label":"Root"},{"depth":1,"id":"left","label":"Left"},{"depth":1,"id":"right","label":"Right"},{"depth":2,"id":"leaf","label":"Leaf"}]}
