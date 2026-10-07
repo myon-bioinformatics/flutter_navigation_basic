@@ -69,6 +69,4 @@ The opted-in Web build now uses the measured Flutter-to-Python runtime bridge
 (`CURL_PYTHON_RUNTIME=true`) and does **not** silently fall back to the legacy
 Dart parser. Docker browser E2E covers successful application, rejection,
 runtime outage/retry, timeout/duplicate submission, malformed replies and edits
-during delayed replies. Default static/native builds still retain the legacy
-parser until their runtime/packaging boundary is replaced and measured. This
-slice does not reduce the generated pattern-stub count.
+during delayed replies. Default static/native builds still retain the legacy parser until their runtime/packaging boundary is replaced and measured. The legacy implementation is now behind explicit `curl_import_legacy.dart` / `curl_import_web.dart` compatibility adapters; the shared async import surface no longer imports the parser directly, and the Python-enabled runtime path never falls back to it. This is a responsibility boundary, not a claim that static Web no longer ships the legacy parser. This slice does not reduce the generated pattern-stub count.
