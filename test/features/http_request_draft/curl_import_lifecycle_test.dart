@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/http_request_draft/presentation/http_request_draft_page.dart';
-import 'package:flutter_application_1/shared/http/curl_safe_subset.dart';
+import 'package:flutter_application_1/shared/http/curl_import_result.dart';
 import 'package:flutter_application_1/shared/http/request_draft.dart';
 import 'package:flutter_test/flutter_test.dart';
 
