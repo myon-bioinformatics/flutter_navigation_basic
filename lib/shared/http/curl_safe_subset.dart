@@ -3,7 +3,6 @@ import 'dart:convert';
 import '../../core/utils/ascii_fullwidth.dart';
 import 'curl_import_result.dart';
 import 'request_draft.dart';
-import 'request_draft_codec.dart';
 import 'request_field.dart';
 
 /// Parses / emits a **safe subset** of curl for [RequestDraft] round-trips.
@@ -414,12 +413,6 @@ class CurlSafeSubset {
     return CurlImportResult(draft: draft, warnings: warnings);
   }
 
-  /// Export uses the shared codec; secrets redacted by default.
-  static String export(
-    RequestDraft draft, {
-    bool redactSecrets = true,
-  }) =>
-      RequestDraftCodec.toCurl(draft, redactSecrets: redactSecrets);
 
   static var _seq = 0;
   static String _defaultId() => 'c${_seq++}';
