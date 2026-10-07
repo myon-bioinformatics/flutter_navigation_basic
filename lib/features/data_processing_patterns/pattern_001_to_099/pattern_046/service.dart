@@ -1,11 +1,5 @@
-// Pattern 046: SectionList
-// セクション分割リストの実装。
-import 'model.dart';
-
-class Pattern046Service {
-  Future<Pattern046Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern046Result(message: 'SectionList executed successfully');
-  }
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
+class Pattern046Service extends JsonListAsset {
+  Pattern046Service({AssetBundle? bundle}) : super('assets/data_processing/structure_046.json', bundle: bundle);
 }
