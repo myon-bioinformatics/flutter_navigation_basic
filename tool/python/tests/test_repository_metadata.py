@@ -173,8 +173,10 @@ def test_dart_has_no_independent_git_identity_collector():
         assert git_identity_command not in source
 
 
-def test_curl_runtime_uses_canonical_local_identity():
+def test_curl_runtime_uses_canonical_repository_metadata():
     workflow = (ROOT / ".github/workflows/curl-runtime.yml").read_text(encoding="utf-8")
-    assert "gh_identity.local_identity" in workflow
+    assert "tool/python/generate_repository_metadata.py" in workflow
+    assert "--output-dir build/curl-runtime/repository" in workflow
+    assert "gh_identity.local_identity" not in workflow
     assert "git rev-parse HEAD" not in workflow
-    assert "local-identity.json" in workflow
+    assert "local-identity.json" not in workflow
