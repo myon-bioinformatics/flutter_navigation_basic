@@ -15,6 +15,11 @@ import sys
 from typing import Any
 from urllib.parse import parse_qsl
 
+_VENDOR = Path(__file__).resolve().parent / "vendor"
+if str(_VENDOR) not in sys.path:
+    sys.path.insert(0, str(_VENDOR))
+from cli_args import Argument, make_parser
+
 MAX_INPUT_BYTES = 65_536
 MAX_TOKENS = 4_096
 _PREFIX = "httpDraft.curl."
@@ -250,10 +255,32 @@ def parse_curl(raw: str) -> dict[str, Any]:
         return {"ok": False, "draft": None, "errors": [str(error)], "warnings": warnings}
 
 
+def _argument_failure() -> dict[str, Any]:
+    return {
+        "ok": False,
+        "draft": None,
+        "errors": [_PREFIX + "error.arguments"],
+        "warnings": [],
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", default="-", help="UTF-8 curl text file; - reads stdin")
-    args = parser.parse_args(argv)
+    parser = make_parser(
+        [Argument(("--input",), {
+            "default": "-",
+            "help": "UTF-8 curl text file; - reads stdin",
+        })],
+        description=__doc__,
+        exit_on_error=False,
+    )
+    try:
+        args, extras = parser.parse_known_args(argv)
+    except argparse.ArgumentError:
+        print(json.dumps(_argument_failure(), ensure_ascii=False))
+        return 2
+    if extras:
+        print(json.dumps(_argument_failure(), ensure_ascii=False))
+        return 2
     try:
         if args.input == "-":
             data = sys.stdin.buffer.read(MAX_INPUT_BYTES + 1)
