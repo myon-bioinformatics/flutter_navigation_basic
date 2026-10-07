@@ -1,11 +1,5 @@
-// Pattern 047: TreeView
-// ツリー形式の階層リスト表示。
-import 'model.dart';
-
-class Pattern047Service {
-  Future<Pattern047Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern047Result(message: 'TreeView executed successfully');
-  }
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
+class Pattern047Service extends JsonListAsset {
+  Pattern047Service({AssetBundle? bundle}) : super('assets/data_processing/structure_047.json', bundle: bundle);
 }
