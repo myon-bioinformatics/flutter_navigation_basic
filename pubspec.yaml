@@ -53,3 +53,7 @@ flutter:
     - assets/data_processing/sorted_set.json
     - assets/data_processing/priority_queue.json
     - assets/data_processing/top_n.json
+    - assets/data_processing/window_034.json
+    - assets/data_processing/window_036.json
+    - assets/data_processing/window_038.json
+    - assets/data_processing/window_039.json
