@@ -43,3 +43,6 @@ flutter:
     - assets/data_processing/filter_nested.json
     - assets/data_processing/distinct_filter.json
     - assets/data_processing/deduplicate_report.json
+    - assets/data_processing/sort_basic.json
+    - assets/data_processing/sort_multi_key.json
+    - assets/data_processing/sort_reverse.json
