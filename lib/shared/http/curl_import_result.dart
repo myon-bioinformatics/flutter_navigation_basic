@@ -1,4 +1,5 @@
 import 'request_draft.dart';
+import 'request_draft_codec.dart';
 
 /// Result shared by legacy and external curl import implementations.
 class CurlImportResult {
