@@ -1,24 +1,19 @@
-// Pattern 047: TreeView - テスト
-// ツリー形式の階層リスト表示。
+import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_047/model.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_047/service.dart';
-
+class _Bundle extends CachingAssetBundle {
+  _Bundle(this.payload); final String payload;
+  @override Future<ByteData> load(String key) async => ByteData.sublistView(Uint8List.fromList(utf8.encode(payload)));
+  @override Future<String> loadString(String key, {bool cache = true}) async => payload;
+}
 void main() {
-  group('Pattern 047: TreeView', () {
-    test('model toJson and fromJson', () {
-      const result = Pattern047Result(message: 'test');
-      final json = result.toJson();
-      expect(json['message'], equals('test'));
-      final restored = Pattern047Result.fromJson(json);
-      expect(restored.message, equals('test'));
-    });
-
-    test('service run completes', () async {
-      final service = Pattern047Service();
-      final result = await service.run();
-      expect(result, isA<Pattern047Result>());
-      expect(result.message, isNotEmpty);
-    });
+  test('pattern 047 loads Python-generated structure', () async {
+    final service=Pattern047Service(bundle:_Bundle('{"schema":"collection-structure/1","values":["ok"]}'));
+    expect(await service.load(), equals(["ok"]));
+  });
+  test('pattern 047 rejects malformed data', () async {
+    final service=Pattern047Service(bundle:_Bundle('{"schema":"collection-structure/1"}'));
+    await expectLater(service.load(), throwsFormatException);
   });
 }
