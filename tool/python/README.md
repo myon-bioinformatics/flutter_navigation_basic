@@ -152,7 +152,7 @@ commit, Git blob and SHA-256 identities, plus the upstream LICENSE, are recorded
 in `tool/python/vendor.lock.json` (`vendor-lock/1`).
 
 Ordinary Non-Dart CI uses the shared stdlib-only `vendor_sync.py` pinned at
-`37f30d5acdc1906d4acbd103ce6f652bc13ca7eb`. A locked lane first recreates the checked-in files from their fixed
+`08dc3757deeb930c950bdcc6bd55ec3112ba49fc`. A locked lane first recreates the checked-in files from their fixed
 commit and runs the metadata regressions. The normal pytest lane then resolves
 `refs/heads/main` in a disposable checkout, verifies the candidate bytes and
 runs the existing Python suite against that candidate. The resolved lock and
