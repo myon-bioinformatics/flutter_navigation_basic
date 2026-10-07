@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter_application_1/shared/http/curl_export.dart';
 import 'package:flutter_application_1/shared/http/curl_safe_subset.dart';
 import 'package:flutter_application_1/shared/http/request_draft.dart';
 import 'package:flutter_application_1/shared/http/request_field.dart';
@@ -195,7 +196,7 @@ curl -X POST 'https://example.com/api' \
           ),
         ],
       );
-      final exported = CurlSafeSubset.export(draft);
+      final exported = exportCurl(draft);
       expect(exported, contains('***'));
       expect(exported, isNot(contains('leak-me')));
     });
@@ -210,7 +211,7 @@ curl -X POST 'https://example.com/api' \
         bodyMode: RequestBodyMode.raw,
         rawBody: 'payload',
       );
-      final curl = CurlSafeSubset.export(original, redactSecrets: false);
+      final curl = exportCurl(original, redactSecrets: false);
       final parsed = CurlSafeSubset.tryParse(curl, newId: newId);
       expect(parsed.isOk, isTrue);
       expect(parsed.draft!.method, HttpMethod.put);
