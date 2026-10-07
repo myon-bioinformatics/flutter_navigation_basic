@@ -3,20 +3,24 @@ import 'dart:convert';
 
 import 'curl_runtime_transport_stub.dart'
     if (dart.library.js_interop) 'curl_runtime_transport_web.dart';
+import 'curl_import_legacy.dart'
+    if (dart.library.js_interop) 'curl_import_python_only.dart';
 import 'curl_import_result.dart';
-import 'curl_safe_subset.dart';
 import 'request_draft.dart';
 import 'request_draft_codec.dart';
 import 'request_field.dart';
 
 const usePythonCurlRuntime = bool.fromEnvironment('CURL_PYTHON_RUNTIME');
 
-/// Default builds retain the old parser; opted-in builds never fall back to it.
+/// Python-enabled Web builds do not link the legacy Dart parser.
+///
+/// Native/static compatibility builds keep the legacy implementation until
+/// their runtime/packaging boundary is replaced and measured.
 Future<CurlImportResult> importCurlText(
   String raw, {
   required String Function() newId,
 }) async {
-  if (!usePythonCurlRuntime) return CurlSafeSubset.tryParse(raw, newId: newId);
+  if (!usePythonCurlRuntime) return importLegacyCurl(raw, newId: newId);
   return importPythonCurl(raw, newId: newId);
 }
 
