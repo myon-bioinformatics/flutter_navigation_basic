@@ -131,3 +131,12 @@ def test_invalid_cli_arguments_are_structured_and_secret_free(args):
         "warnings": [],
     }
     assert b"SECRET_SENTINEL" not in result.stdout
+
+
+def test_http_page_no_longer_depends_on_legacy_curl_parser_for_export():
+    page = (PYTHON_DIR.parents[1] / "lib/features/http_request_draft/presentation/http_request_draft_page.dart").read_text(
+        encoding="utf-8"
+    )
+    assert "curl_safe_subset.dart" not in page
+    assert "CurlSafeSubset." not in page
+    assert "RequestDraftCodec.toCurl" in page
