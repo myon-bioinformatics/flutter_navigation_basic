@@ -1,24 +1,19 @@
-// Pattern 046: SectionList - テスト
-// セクション分割リストの実装。
+import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_046/model.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_046/service.dart';
-
+class _Bundle extends CachingAssetBundle {
+  _Bundle(this.payload); final String payload;
+  @override Future<ByteData> load(String key) async => ByteData.sublistView(Uint8List.fromList(utf8.encode(payload)));
+  @override Future<String> loadString(String key, {bool cache = true}) async => payload;
+}
 void main() {
-  group('Pattern 046: SectionList', () {
-    test('model toJson and fromJson', () {
-      const result = Pattern046Result(message: 'test');
-      final json = result.toJson();
-      expect(json['message'], equals('test'));
-      final restored = Pattern046Result.fromJson(json);
-      expect(restored.message, equals('test'));
-    });
-
-    test('service run completes', () async {
-      final service = Pattern046Service();
-      final result = await service.run();
-      expect(result, isA<Pattern046Result>());
-      expect(result.message, isNotEmpty);
-    });
+  test('pattern 046 loads Python-generated structure', () async {
+    final service=Pattern046Service(bundle:_Bundle('{"schema":"collection-structure/1","values":["ok"]}'));
+    expect(await service.load(), equals(["ok"]));
+  });
+  test('pattern 046 rejects malformed data', () async {
+    final service=Pattern046Service(bundle:_Bundle('{"schema":"collection-structure/1"}'));
+    await expectLater(service.load(), throwsFormatException);
   });
 }
