@@ -13,6 +13,7 @@ MODULES = (
     "xprobe.py",
     "git_inspector.py",
     "gh_ops.py",
+    "gh_identity.py",
     "check_evidence.py",
     "check_png.py",
     "jsonl_digest.py",
