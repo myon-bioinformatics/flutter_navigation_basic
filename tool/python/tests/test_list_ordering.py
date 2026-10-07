@@ -25,6 +25,14 @@ def test_multi_key_ordering_is_group_ascending_score_descending():
     ]
 
 
+def test_collection_ordering_modes():
+    assert module.order_values("sorted-set", [5, 2, 5, 1, 3, 2]) == [1, 2, 3, 5]
+    assert [item["name"] for item in module.order_values("priority", module.EXAMPLES["priority"])] == [
+        "critical", "urgent", "normal", "later",
+    ]
+    assert module.order_values("top-n", [7, 1, 9, 3, 8, 2]) == [9, 8, 7]
+
+
 def test_invalid_shapes_fail_closed():
     import pytest
     with pytest.raises(ValueError):
@@ -38,6 +46,9 @@ def test_checked_in_assets_are_exact_cli_outputs(tmp_path):
         "basic": "sort_basic.json",
         "multi": "sort_multi_key.json",
         "reverse": "sort_reverse.json",
+        "sorted-set": "sorted_set.json",
+        "priority": "priority_queue.json",
+        "top-n": "top_n.json",
     }
     for mode, name in mapping.items():
         expected = ROOT / "assets/data_processing" / name
@@ -62,5 +73,22 @@ def test_three_sort_patterns_use_shared_asset_boundary_without_getx():
         assert "JsonListAsset" in service
         assert "ProcessedListExample" in view
         assert "get/get.dart" not in view
+        assert not (folder / "model.dart").exists()
+        assert not (folder / "controller.dart").exists()
+
+
+def test_collection_patterns_share_asset_boundary_without_getx():
+    mapping = {
+        "026": "sorted_set.json",
+        "027": "priority_queue.json",
+        "029": "top_n.json",
+    }
+    root = ROOT / "lib/features/data_processing_patterns/pattern_001_to_099"
+    for pattern, asset in mapping.items():
+        folder = root / f"pattern_{pattern}"
+        service = (folder / "service.dart").read_text(encoding="utf-8")
+        view = (folder / "view.dart").read_text(encoding="utf-8")
+        assert asset in service and "JsonListAsset" in service
+        assert "ProcessedListExample" in view and "get/get.dart" not in view
         assert not (folder / "model.dart").exists()
         assert not (folder / "controller.dart").exists()
