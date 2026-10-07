@@ -1,11 +1,5 @@
-// Pattern 037: PullRefresh
-// プルリフレッシュ (更新) 実装。
-import 'model.dart';
-
-class Pattern037Service {
-  Future<Pattern037Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern037Result(message: 'PullRefresh executed successfully');
-  }
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
+class Pattern037Service extends JsonListAsset {
+  Pattern037Service({AssetBundle? bundle}) : super('assets/data_processing/window_037.json', bundle: bundle);
 }
