@@ -4,13 +4,13 @@ from __future__ import annotations
 import argparse
 import json
 
-MODES = ("load-more", "lazy-list", "prefetch", "page-indicator")
+MODES = ("load-more", "lazy-list", "prefetch", "page-indicator", "page-size", "offset-limit", "keyset", "window")
 ITEMS = [f"item-{index:02d}" for index in range(1, 13)]
 
 def initial_state(mode: str) -> dict:
     if mode not in MODES:
         raise ValueError("unsupported mode")
-    return {"mode": mode, "offset": 0, "limit": 4, "total": len(ITEMS)}
+    state = {"mode": mode, "offset": 0, "limit": 4, "total": len(ITEMS)}\n    if mode == "keyset": state["cursor"] = None\n    return state
 
 def transition(state: dict, command: str) -> dict:
     if not isinstance(state, dict):
@@ -48,7 +48,7 @@ def render(state: dict) -> dict:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", choices=MODES, required=True)
-    parser.add_argument("--command", choices=("next","previous","load-more","prefetch","reset"), default="next")
+    parser.add_argument("--command", choices=("next","previous","load-more","prefetch","reset","page-size-3","offset-6"), default="next")
     parser.add_argument("--state-json")
     args = parser.parse_args(argv)
     state = json.loads(args.state_json) if args.state_json else initial_state(args.mode)
