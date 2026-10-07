@@ -1,37 +1,10 @@
-// Pattern 037: PullRefresh
-// プルリフレッシュ (更新) 実装。
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
-
-class Pattern037View extends GetView<Pattern037Controller> {
-  const Pattern037View({super.key});
-
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/processed_list_example.dart';
+import 'service.dart';
+class Pattern037View extends StatelessWidget {
+  const Pattern037View({super.key, this.bundle});
+  final AssetBundle? bundle;
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 037: PullRefresh'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'プルリフレッシュ (更新) 実装。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ProcessedListExample(title: 'Pattern 037: PullRefresh', asset: Pattern037Service(bundle: bundle));
 }
