@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter_application_1/shared/http/curl_import_legacy.dart';
 import 'package:flutter_application_1/shared/http/curl_import_result.dart';
-import 'package:flutter_application_1/shared/http/curl_safe_subset.dart';
 import 'package:flutter_application_1/shared/http/request_field.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -59,7 +59,7 @@ void main() {
       final data = item as Map<String, dynamic>;
       test(data['id'] as String, () {
         var seq = 0;
-        final result = CurlSafeSubset.tryParse(
+        final result = importLegacyCurl(
           data['input'] as String,
           newId: () => 'contract-${seq++}',
         );
