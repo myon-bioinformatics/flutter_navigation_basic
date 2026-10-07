@@ -133,6 +133,8 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
         ("myon-bioinformatics/myon-bioinformatics", "LICENSE", "tool/python/vendor/myon-bioinformatics-LICENSE"),
         ("myon-bioinformatics/cli_args", "cli_args.py", "tool/python/vendor/cli_args.py"),
         ("myon-bioinformatics/cli_args", "LICENSE", "tool/python/vendor/cli_args-LICENSE"),
+        ("myon-bioinformatics/gh_identity", "gh_identity.py", "tool/python/vendor/gh_identity.py"),
+        ("myon-bioinformatics/gh_identity", "LICENSE", "tool/python/vendor/gh_identity-LICENSE"),
     }
     entries = lock["files"]
     assert {(entry["repository"], entry["source"], entry["destination"]) for entry in entries} == expected
@@ -169,3 +171,10 @@ def test_dart_has_no_independent_git_identity_collector():
     assert "_gitOutput(['status', '--porcelain'])" in source
     for git_identity_command in ["rev-parse", "--format=%cI", "--format=%s", "--show-current"]:
         assert git_identity_command not in source
+
+
+def test_curl_runtime_uses_canonical_local_identity():
+    workflow = (ROOT / ".github/workflows/curl-runtime.yml").read_text(encoding="utf-8")
+    assert "gh_identity.local_identity" in workflow
+    assert "git rev-parse HEAD" not in workflow
+    assert "local-identity.json" in workflow
