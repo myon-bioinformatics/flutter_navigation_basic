@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'curl_runtime_transport_stub.dart'
     if (dart.library.js_interop) 'curl_runtime_transport_web.dart';
 import 'curl_import_legacy.dart'
-    if (dart.library.js_interop) 'curl_import_web.dart';
+    if (dart.library.js_interop) 'curl_import_web.dart' as legacy;
 import 'curl_import_result.dart';
 import 'request_draft.dart';
 import 'request_draft_codec.dart';
@@ -20,7 +20,7 @@ Future<CurlImportResult> importCurlText(
   String raw, {
   required String Function() newId,
 }) async {
-  if (!usePythonCurlRuntime) return importLegacyCurl(raw, newId: newId);
+  if (!usePythonCurlRuntime) return legacy.importLegacyCurl(raw, newId: newId);
   return importPythonCurl(raw, newId: newId);
 }
 
