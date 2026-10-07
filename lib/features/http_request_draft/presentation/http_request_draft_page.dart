@@ -6,7 +6,6 @@ import '../../../core/utils/ascii_fullwidth.dart';
 import '../../../shared/display/display_scope.dart';
 import '../../../shared/http/auth_matrix.dart';
 import '../../../shared/http/curl_import.dart';
-import '../../../shared/http/curl_safe_subset.dart';
 import '../../../shared/http/live_request_executor.dart';
 import '../../../shared/http/mock_auth.dart';
 import '../../../shared/http/request_draft.dart';
@@ -302,7 +301,7 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
         .prepareWireDraft(_draft, scenario: previewScenario)
         .draft;
     final redactedCurl =
-        CurlSafeSubset.export(previewWire, redactSecrets: true);
+        RequestDraftCodec.toCurl(previewWire, redactSecrets: true);
     final uri = RequestDraftCodec.buildUri(previewWire, redactSecrets: true);
     final headers =
         RequestDraftCodec.buildHeaders(previewWire, redactSecrets: true);
