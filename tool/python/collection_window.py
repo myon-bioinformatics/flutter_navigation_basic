@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 
-MODES = ("load-more", "lazy-list", "prefetch", "page-indicator", "page-size", "offset-limit", "keyset", "window")
+MODES = ("load-more", "lazy-list", "prefetch", "page-indicator", "page-size", "offset-limit", "keyset", "window", "bidirectional")
 ITEMS = [f"item-{index:02d}" for index in range(1, 13)]
 
 def initial_state(mode: str) -> dict:
@@ -36,6 +36,9 @@ def transition(state: dict, command: str) -> dict:
         result["offset"] = min((offset // 3) * 3, max(0, total - 3))
     elif command == "offset-6":
         result["offset"] = min(6, max(0, total - limit))
+    elif command == "refresh":
+        result["offset"] = 0
+        result["revision"] = state.get("revision", 0) + 1
     elif command == "previous":
         result["offset"] = max(0, offset - limit)
     elif command == "reset":
@@ -58,7 +61,7 @@ def render(state: dict) -> dict:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", choices=MODES, required=True)
-    parser.add_argument("--command", choices=("next","previous","load-more","prefetch","reset","page-size-3","offset-6"), default="next")
+    parser.add_argument("--command", choices=("next","previous","load-more","prefetch","reset","page-size-3","offset-6","refresh"), default="next")
     parser.add_argument("--state-json")
     args = parser.parse_args(argv)
     state = json.loads(args.state_json) if args.state_json else initial_state(args.mode)
