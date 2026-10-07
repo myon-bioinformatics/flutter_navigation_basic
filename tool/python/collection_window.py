@@ -10,7 +10,10 @@ ITEMS = [f"item-{index:02d}" for index in range(1, 13)]
 def initial_state(mode: str) -> dict:
     if mode not in MODES:
         raise ValueError("unsupported mode")
-    state = {"mode": mode, "offset": 0, "limit": 4, "total": len(ITEMS)}\n    if mode == "keyset": state["cursor"] = None\n    return state
+    state = {"mode": mode, "offset": 0, "limit": 4, "total": len(ITEMS)}
+    if mode == "keyset":
+        state["cursor"] = None
+    return state
 
 def transition(state: dict, command: str) -> dict:
     if not isinstance(state, dict):
