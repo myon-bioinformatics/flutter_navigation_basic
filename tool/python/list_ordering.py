@@ -16,6 +16,14 @@ EXAMPLES: dict[str, list[Any]] = {
         {"group": "b", "score": 1, "name": "B1"},
         {"group": "a", "score": 3, "name": "A3"},
     ],
+    "sorted-set": [5, 2, 5, 1, 3, 2],
+    "priority": [
+        {"priority": 2, "name": "normal"},
+        {"priority": 1, "name": "urgent"},
+        {"priority": 3, "name": "later"},
+        {"priority": 1, "name": "critical"},
+    ],
+    "top-n": [7, 1, 9, 3, 8, 2],
 }
 
 
@@ -34,6 +42,20 @@ def order_values(mode: str, values: list[Any]) -> list[Any]:
                    and not isinstance(value.get("score"), bool) for value in values):
             raise ValueError("multi ordering requires group/score records")
         return sorted(values, key=lambda value: (value["group"], -value["score"]))
+    if mode == "sorted-set":
+        if not all(isinstance(value, (int, float)) and not isinstance(value, bool) for value in values):
+            raise ValueError("sorted-set requires numbers")
+        return sorted(set(values))
+    if mode == "priority":
+        if not all(isinstance(value, dict) and isinstance(value.get("name"), str)
+                   and isinstance(value.get("priority"), int)
+                   and not isinstance(value.get("priority"), bool) for value in values):
+            raise ValueError("priority ordering requires name/priority records")
+        return sorted(values, key=lambda value: (value["priority"], value["name"]))
+    if mode == "top-n":
+        if not all(isinstance(value, (int, float)) and not isinstance(value, bool) for value in values):
+            raise ValueError("top-n requires numbers")
+        return sorted(values, reverse=True)[:3]
     raise ValueError("unsupported ordering mode")
 
 
