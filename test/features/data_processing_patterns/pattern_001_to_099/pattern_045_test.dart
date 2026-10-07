@@ -1,24 +1,19 @@
-// Pattern 045: StickyHeader - テスト
-// スティッキーヘッダー付きリスト。
+import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_045/model.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_045/service.dart';
-
+class _Bundle extends CachingAssetBundle {
+  _Bundle(this.payload); final String payload;
+  @override Future<ByteData> load(String key) async => ByteData.sublistView(Uint8List.fromList(utf8.encode(payload)));
+  @override Future<String> loadString(String key, {bool cache = true}) async => payload;
+}
 void main() {
-  group('Pattern 045: StickyHeader', () {
-    test('model toJson and fromJson', () {
-      const result = Pattern045Result(message: 'test');
-      final json = result.toJson();
-      expect(json['message'], equals('test'));
-      final restored = Pattern045Result.fromJson(json);
-      expect(restored.message, equals('test'));
-    });
-
-    test('service run completes', () async {
-      final service = Pattern045Service();
-      final result = await service.run();
-      expect(result, isA<Pattern045Result>());
-      expect(result.message, isNotEmpty);
-    });
+  test('pattern 045 loads Python-generated structure', () async {
+    final service=Pattern045Service(bundle:_Bundle('{"schema":"collection-structure/1","values":["ok"]}'));
+    expect(await service.load(), equals(["ok"]));
+  });
+  test('pattern 045 rejects malformed data', () async {
+    final service=Pattern045Service(bundle:_Bundle('{"schema":"collection-structure/1"}'));
+    await expectLater(service.load(), throwsFormatException);
   });
 }
