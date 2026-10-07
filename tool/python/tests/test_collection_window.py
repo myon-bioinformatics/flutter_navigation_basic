@@ -72,3 +72,19 @@ def test_page_size_offset_keyset_and_window_modes():
 
     window = module.transition(module.initial_state("window"), "next")
     assert module.render(window)["page"] == 2
+
+
+def test_refresh_command_resets_window_and_advances_revision():
+    state = module.transition(module.initial_state("load-more"), "next")
+    refreshed = module.transition(state, "refresh")
+    assert refreshed["offset"] == 0
+    assert refreshed["revision"] == 1
+    assert module.transition(refreshed, "refresh")["revision"] == 2
+
+
+def test_bidirectional_window_can_move_both_ways():
+    state = module.initial_state("bidirectional")
+    state = module.transition(state, "next")
+    assert module.render(state)["values"][0] == "item-05"
+    state = module.transition(state, "previous")
+    assert module.render(state)["values"][0] == "item-01"
