@@ -13,7 +13,10 @@ python -I -S tool/python/curl_request.py --input request.txt
 
 The CLI returns JSON with `ok`, `draft`, `errors` and `warnings`. Exit **0** is a
 successful import; exit **2** is rejected input, invalid arguments or a read
-failure. Read failures omit file paths. Parser diagnostics contain stable codes,
+failure. Its argv surface reuses the vendored stdlib-only `cli_args.py`;
+unknown options, extra positional arguments and missing option values return
+`httpDraft.curl.error.arguments` as JSON with empty stderr rather than exposing
+argparse usage or caller values. Read failures omit file paths. Parser diagnostics contain stable codes,
 not raw option values. Parsed fields, however, can include passwords/tokens:
 returning a sensitive field is not redaction. Do not publish arbitrary parser
 output as CI logs or shared failure corpus entries. Tests use synthetic examples.
@@ -62,10 +65,10 @@ python -m pytest tool/python/tests/test_curl_request.py --junitxml=curl-tests.xm
 flutter test test/shared/http/curl_request_contract_test.dart
 ```
 
-**The Flutter UI still calls the existing Dart parser.** The new Python parsing
-implementation and parity tests are real, but no Flutter-to-Python runtime
-bridge is claimed. Removing the Dart parser now would break pasted-command
-handling on targets with no Python runtime. The next migration boundary is a
-measured runtime adapter that preserves editor behavior and covers unavailable
-runtime, timeout and malformed reply paths; only then remove the old parser.
-This slice does not reduce the generated pattern-stub count.
+The opted-in Web build now uses the measured Flutter-to-Python runtime bridge
+(`CURL_PYTHON_RUNTIME=true`) and does **not** silently fall back to the legacy
+Dart parser. Docker browser E2E covers successful application, rejection,
+runtime outage/retry, timeout/duplicate submission, malformed replies and edits
+during delayed replies. Default static/native builds still retain the legacy
+parser until their runtime/packaging boundary is replaced and measured. This
+slice does not reduce the generated pattern-stub count.
