@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../../core/utils/ascii_fullwidth.dart';
 import 'curl_import_result.dart';
 import 'request_draft.dart';
+import 'request_draft_codec.dart';
 import 'request_field.dart';
 
 /// Parses / emits a **safe subset** of curl for [RequestDraft] round-trips.
