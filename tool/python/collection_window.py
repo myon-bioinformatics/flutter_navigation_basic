@@ -29,6 +29,13 @@ def transition(state: dict, command: str) -> dict:
     result = dict(state)
     if command in ("next", "load-more", "prefetch"):
         result["offset"] = min(offset + limit, max(0, total - limit))
+        if mode == "keyset":
+            result["cursor"] = ITEMS[result["offset"] - 1] if result["offset"] else None
+    elif command == "page-size-3":
+        result["limit"] = 3
+        result["offset"] = min((offset // 3) * 3, max(0, total - 3))
+    elif command == "offset-6":
+        result["offset"] = min(6, max(0, total - limit))
     elif command == "previous":
         result["offset"] = max(0, offset - limit)
     elif command == "reset":
