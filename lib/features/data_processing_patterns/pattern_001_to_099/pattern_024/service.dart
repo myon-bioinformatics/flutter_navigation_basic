@@ -1,11 +1,8 @@
-// Pattern 024: StopWord
-// ストップワード除去処理。
-import 'model.dart';
+// Pattern 024: StopWord — Python-generated text-processing result boundary.
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
 
-class Pattern024Service {
-  Future<Pattern024Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern024Result(message: 'StopWord executed successfully');
-  }
+class Pattern024Service extends JsonListAsset {
+  Pattern024Service({AssetBundle? bundle})
+      : super('assets/data_processing/stop_word.json', bundle: bundle);
 }
