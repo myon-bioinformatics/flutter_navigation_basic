@@ -1,11 +1,5 @@
-// Pattern 051: SelectableList
-// 複数選択可能リスト実装。
-import 'model.dart';
-
-class Pattern051Service {
-  Future<Pattern051Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern051Result(message: 'SelectableList executed successfully');
-  }
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
+class Pattern051Service extends JsonListAsset {
+  Pattern051Service({AssetBundle? bundle}) : super('assets/data_processing/command_051.json', bundle: bundle);
 }
