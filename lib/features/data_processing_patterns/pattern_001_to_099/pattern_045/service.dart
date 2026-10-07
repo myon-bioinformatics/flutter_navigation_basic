@@ -1,11 +1,5 @@
-// Pattern 045: StickyHeader
-// スティッキーヘッダー付きリスト。
-import 'model.dart';
-
-class Pattern045Service {
-  Future<Pattern045Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern045Result(message: 'StickyHeader executed successfully');
-  }
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
+class Pattern045Service extends JsonListAsset {
+  Pattern045Service({AssetBundle? bundle}) : super('assets/data_processing/structure_045.json', bundle: bundle);
 }
