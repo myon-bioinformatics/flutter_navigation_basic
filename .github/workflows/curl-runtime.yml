@@ -56,7 +56,20 @@ jobs:
           set -euo pipefail
           mkdir -p e2e/test-results build/curl-runtime
           docker image inspect flutter-nav-curl-runtime:ci --format '{{.Id}}' > build/curl-runtime/image-id.txt
-          printf '%s\n' "$(git rev-parse HEAD)" > build/curl-runtime/checkout-sha.txt
+          python3 -S - <<'PY'
+          import json
+          from pathlib import Path
+          import sys
+          sys.path.insert(0, "tool/python/vendor")
+          import gh_identity
+          identity = gh_identity.local_identity(cwd=".")
+          if not identity.get("sha"):
+              raise SystemExit("local checkout identity is unavailable")
+          Path("build/curl-runtime/local-identity.json").write_text(
+              json.dumps(identity, ensure_ascii=False, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
           # Browser and server share container loopback. No host port or Docker
           # socket is exposed to the app. Use the same checked-in CLI wrapper.
           docker run --rm --init --ipc=host \
