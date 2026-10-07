@@ -68,3 +68,7 @@ flutter:
     - assets/data_processing/structure_047.json
     - assets/data_processing/structure_048.json
     - assets/data_processing/structure_049.json
+    - assets/data_processing/command_051.json
+    - assets/data_processing/command_052.json
+    - assets/data_processing/command_053.json
+    - assets/data_processing/command_054.json
