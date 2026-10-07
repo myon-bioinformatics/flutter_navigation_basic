@@ -140,3 +140,13 @@ def test_http_page_no_longer_depends_on_legacy_curl_parser_for_export():
     assert "curl_safe_subset.dart" not in page
     assert "CurlSafeSubset." not in page
     assert "RequestDraftCodec.toCurl" in page
+
+
+def test_python_bridge_result_type_is_not_owned_by_legacy_parser():
+    root = PYTHON_DIR.parents[1]
+    legacy = (root / "lib/shared/http/curl_safe_subset.dart").read_text(encoding="utf-8")
+    bridge = (root / "lib/shared/http/curl_import.dart").read_text(encoding="utf-8")
+    shared = (root / "lib/shared/http/curl_import_result.dart").read_text(encoding="utf-8")
+    assert "class CurlImportResult" not in legacy
+    assert "class CurlImportResult" in shared
+    assert "curl_import_result.dart" in bridge
