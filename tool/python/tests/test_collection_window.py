@@ -88,3 +88,31 @@ def test_bidirectional_window_can_move_both_ways():
     assert module.render(state)["values"][0] == "item-05"
     state = module.transition(state, "previous")
     assert module.render(state)["values"][0] == "item-01"
+
+
+@pytest.mark.parametrize("mode,command,expected_items,expected_selected", [
+    ("selectable","select",["a","b","c","d"],["b"]),
+    ("swipe-delete","delete",["a","c","d"],[]),
+    ("reorderable","move-first",["b","a","c","d"],[]),
+    ("checklist","toggle",["a","b","c","d"],["b"]),
+])
+def test_collection_commands(mode,command,expected_items,expected_selected):
+    state=module.collection_command(module.initial_collection(mode),command)
+    assert state["items"]==expected_items
+    assert state["selected"]==expected_selected
+
+
+def test_collection_commands_reject_invalid_items():
+    with pytest.raises(ValueError):
+        module.collection_command(module.initial_collection("selectable"),"select","missing")
+    with pytest.raises(ValueError):
+        module.collection_command({"mode":"selectable","items":["a","a"],"selected":[]},"select","a")
+
+
+def test_collection_cli_runs_without_flutter():
+    result=subprocess.run(
+        [sys.executable,"-I","-S",str(SCRIPT),"--mode","reorderable"],
+        capture_output=True,text=True,timeout=5,
+    )
+    assert result.returncode==0
+    assert json.loads(result.stdout)["state"]["items"][0]=="b"
