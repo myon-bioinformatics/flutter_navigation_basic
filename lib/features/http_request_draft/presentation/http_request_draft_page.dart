@@ -6,6 +6,7 @@ import '../../../core/utils/ascii_fullwidth.dart';
 import '../../../shared/display/display_scope.dart';
 import '../../../shared/http/auth_matrix.dart';
 import '../../../shared/http/curl_import.dart';
+import '../../../shared/http/curl_import_result.dart';
 import '../../../shared/http/live_request_executor.dart';
 import '../../../shared/http/mock_auth.dart';
 import '../../../shared/http/request_draft.dart';
