@@ -56,3 +56,19 @@ def test_cli_runs_state_transition_without_flutter():
     assert payload["state"]["offset"] == 8
     assert payload["page"] == 3
     assert payload["values"][-1] == "item-12"
+
+
+def test_page_size_offset_keyset_and_window_modes():
+    page_size = module.transition(module.initial_state("page-size"), "page-size-3")
+    assert module.render(page_size)["values"] == ["item-01", "item-02", "item-03"]
+    assert module.render(page_size)["pages"] == 4
+
+    offset = module.transition(module.initial_state("offset-limit"), "offset-6")
+    assert module.render(offset)["values"] == ["item-07", "item-08", "item-09", "item-10"]
+
+    keyset = module.transition(module.initial_state("keyset"), "next")
+    assert keyset["cursor"] == "item-04"
+    assert module.render(keyset)["values"][0] == "item-05"
+
+    window = module.transition(module.initial_state("window"), "next")
+    assert module.render(window)["page"] == 2
