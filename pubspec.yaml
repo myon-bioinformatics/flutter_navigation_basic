@@ -50,3 +50,6 @@ flutter:
     - assets/data_processing/text_index.json
     - assets/data_processing/inverted_index.json
     - assets/data_processing/stop_word.json
+    - assets/data_processing/sorted_set.json
+    - assets/data_processing/priority_queue.json
+    - assets/data_processing/top_n.json
