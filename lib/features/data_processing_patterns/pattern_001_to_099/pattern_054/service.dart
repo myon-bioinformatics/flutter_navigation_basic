@@ -1,11 +1,5 @@
-// Pattern 054: ChecklistView
-// チェックリスト形式のリスト。
-import 'model.dart';
-
-class Pattern054Service {
-  Future<Pattern054Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern054Result(message: 'ChecklistView executed successfully');
-  }
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
+class Pattern054Service extends JsonListAsset {
+  Pattern054Service({AssetBundle? bundle}) : super('assets/data_processing/command_054.json', bundle: bundle);
 }
