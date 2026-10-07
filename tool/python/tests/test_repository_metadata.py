@@ -180,3 +180,13 @@ def test_curl_runtime_uses_canonical_repository_metadata():
     assert "gh_identity.local_identity" not in workflow
     assert "git rev-parse HEAD" not in workflow
     assert "local-identity.json" not in workflow
+
+
+def test_http_editor_does_not_depend_directly_on_legacy_curl_parser():
+    page = (ROOT / "lib/features/http_request_draft/presentation/http_request_draft_page.dart").read_text(encoding="utf-8")
+    exporter = (ROOT / "lib/shared/http/curl_export.dart").read_text(encoding="utf-8")
+    assert "curl_safe_subset.dart" not in page
+    assert "CurlSafeSubset" not in page
+    assert "curl_safe_subset.dart" not in exporter
+    assert "CurlSafeSubset" not in exporter
+    assert "exportCurl(" in page
