@@ -152,9 +152,6 @@ jobs:
       - name: Inspect repository with shared toolkit
         run: dart run tool/inspect.dart --json
 
-      - name: Verify direct packages are latest stable
-        run: dart run tool/check_versions.dart
-
       - name: Analyze project source
         run: flutter analyze --no-fatal-infos
 
@@ -294,7 +291,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  # Compatibility smoke on unpinned stable: core suites only.
+  # Compatibility smoke on unpinned stable SDK and upgraded packages: core suites only.
   # Pattern catalogues run in unit-tests-patterns when those paths change.
   latest-stable:
     name: Latest stable shard ${{ matrix.shard }}
@@ -318,8 +315,12 @@ jobs:
       - name: Show Flutter version
         run: flutter --version
 
-      - name: Resolve with latest stable toolchain
-        run: flutter pub get
+      - name: Resolve current stable packages with latest stable toolchain
+        run: flutter pub upgrade
+
+      - name: Verify resolved direct packages are latest stable
+        if: matrix.shard == 0
+        run: dart run tool/check_versions.dart
 
       - name: Analyze on latest stable
         if: matrix.shard == 0

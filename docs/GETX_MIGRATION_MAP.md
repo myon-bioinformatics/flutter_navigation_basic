@@ -57,9 +57,9 @@ At that point `get` can be removed from the root `pubspec.yaml` entirely while c
 The repository uses two CI compatibility lanes:
 
 1. a pinned stable Flutter version for reproducible lockfile/analyze/test/build results;
-2. the moving `stable` channel to detect compatibility problems with the newest stable Flutter SDK.
+2. the moving `stable` channel with `flutter pub upgrade` to detect compatibility problems with the newest stable Flutter SDK and packages allowed by `pubspec.yaml`.
 
-Tracked direct packages are also checked against the latest stable pub.dev versions. Prerelease/RC versions are not used merely to satisfy a "latest" label.
+The moving lane checks its resolved tracked direct packages against the latest stable versions reported by `dart pub outdated --json`, then analyzes, tests and builds those resolved dependencies. No expected package version is hardcoded. If the declared constraints prevent a tracked package from reaching latest stable, that lane still fails with the current/latest versions. The pinned lane checks the committed lockfile without requiring it to change whenever pub.dev publishes a release. Prerelease/RC versions are not used merely to satisfy a "latest" label.
 
 ## Completion criteria
 
