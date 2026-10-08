@@ -170,7 +170,6 @@ directory; adding a locked source or LICENSE needs no upload path-list edit.
 Artifact names and repository-relative paths inside each artifact are preserved.
 `vendor-evidence.json` is additional metadata with byte hashes and separate
 locked/candidate, runtime receipt, and legacy projection classifications.
-Earlier file counts in this document describe the pre-staging payload.
 
 Staging runs even after a failed test, verifies every locked byte, and fails
 nonzero on missing or modified members. It does not certify tests or promotion.
