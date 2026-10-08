@@ -150,11 +150,11 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
     assert not (vendor / "repository_metadata_provenance.json").exists()
 
     workflow = (ROOT / ".github/workflows/non-dart.yml").read_text(encoding="utf-8")
-    assert workflow.count("ref: 37f30d5acdc1906d4acbd103ce6f652bc13ca7eb") == 2
+    assert workflow.count("ref: 08dc3757deeb930c950bdcc6bd55ec3112ba49fc") == 2
     assert workflow.count("vendor_sync.py update --manifest tool/python/vendor.lock.json") == 1
     assert workflow.count("vendor_sync.py materialize --manifest tool/python/vendor.lock.json") == 1
     assert not any(token in workflow for token in ("VENDOR_UPDATE_TOKEN", "VENDOR_UPDATES_ENABLED", "GH_TOKEN"))
-    assert "37f30d5acdc1906d4acbd103ce6f652bc13ca7eb" in (PYTHON_DIR / "README.md").read_text(encoding="utf-8")
+    assert "08dc3757deeb930c950bdcc6bd55ec3112ba49fc" in (PYTHON_DIR / "README.md").read_text(encoding="utf-8")
 
 
 def test_pages_generates_only_after_checkout_gate_and_embeds_asset():
