@@ -85,10 +85,11 @@ The full mode includes the canonical release web entrypoint and prints its build
 ## Latest stable direct dependencies
 
 ```bash
+flutter pub upgrade
 dart run tool/check_versions.dart
 ```
 
-Uses `dart pub outdated --json` and parses the result in Dart. Packages omitted because they are already current are treated as non-stale.
+Uses `dart pub outdated --json` and parses the result in Dart. Packages omitted because they are already current are treated as non-stale. CI runs this after upgrading dependencies in the moving stable lane, so both the resolved version and latest version come from Pub. The pinned lane retains its committed lockfile. For local compatibility testing, run analyze/tests/build after the upgrade and review lockfile changes before committing them.
 
 ## Network probe
 
