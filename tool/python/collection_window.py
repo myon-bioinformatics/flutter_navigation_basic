@@ -94,14 +94,18 @@ def collection_command(state: dict, command: str, item: str = "b") -> dict:
     return result
 
 
+def render_collection(state: dict) -> dict:
+    return {"schema": "collection-command/1", "mode": state["mode"],
+            "state": state, "values": [
+                {"id": item, "selected": item in state["selected"]} for item in state["items"]
+            ]}
+
+
 def collection_payload(mode: str) -> dict:
     command = {"selectable": "select", "swipe-delete": "delete",
                "reorderable": "move-first", "checklist": "toggle"}[mode]
     state = collection_command(initial_collection(mode), command)
-    return {"schema": "collection-command/1", "mode": mode,
-            "state": state, "values": [
-                {"id": item, "selected": item in state["selected"]} for item in state["items"]
-            ]}
+    return render_collection(state)
 
 
 def main(argv=None) -> int:
@@ -111,9 +115,11 @@ def main(argv=None) -> int:
     parser.add_argument("--state-json")
     args = parser.parse_args(argv)
     if args.mode in INTERACTIVE_MODES:
-        state = json.loads(args.state_json) if args.state_json else initial_collection(args.mode)
-        command = args.command if args.state_json else {"selectable":"select","swipe-delete":"delete","reorderable":"move-first","checklist":"toggle"}[args.mode]
-        output = collection_payload(args.mode) if not args.state_json else {"schema":"collection-command/1","mode":args.mode,"state":collection_command(state, command),"values":[]}
+        if args.state_json:
+            state = json.loads(args.state_json)
+            output = render_collection(collection_command(state, args.command))
+        else:
+            output = collection_payload(args.mode)
     else:
         state = json.loads(args.state_json) if args.state_json else initial_state(args.mode)
         output = render(transition(state, args.command))

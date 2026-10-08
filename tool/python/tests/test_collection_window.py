@@ -109,10 +109,82 @@ def test_collection_commands_reject_invalid_items():
         module.collection_command({"mode":"selectable","items":["a","a"],"selected":[]},"select","a")
 
 
-def test_collection_cli_runs_without_flutter():
-    result=subprocess.run(
-        [sys.executable,"-I","-S",str(SCRIPT),"--mode","reorderable"],
-        capture_output=True,text=True,timeout=5,
+def collection_cli(mode, command=None, state=None):
+    args = [sys.executable, "-I", "-S", str(SCRIPT), "--mode", mode]
+    if command is not None:
+        args.extend(["--command", command])
+    if state is not None:
+        args.extend(["--state-json", json.dumps(state)])
+    result = subprocess.run(
+        args, capture_output=True, text=True, timeout=5,
     )
-    assert result.returncode==0
-    assert json.loads(result.stdout)["state"]["items"][0]=="b"
+    assert result.returncode == 0, result.stderr
+    assert result.stderr == ""
+    return json.loads(result.stdout)
+
+
+def assert_collection_display(payload, mode, items, selected):
+    assert payload["schema"] == "collection-command/1"
+    assert payload["mode"] == mode
+    assert payload["state"] == {"mode": mode, "items": items, "selected": selected}
+    assert [value["id"] for value in payload["values"]] == payload["state"]["items"]
+    assert payload["values"] == [
+        {"id": item, "selected": item in selected} for item in items
+    ]
+
+
+@pytest.mark.parametrize("mode,items,selected", [
+    ("selectable", ["a", "b", "c", "d"], ["b"]),
+    ("swipe-delete", ["a", "c", "d"], []),
+    ("reorderable", ["b", "a", "c", "d"], []),
+    ("checklist", ["a", "b", "c", "d"], ["b"]),
+])
+def test_collection_cli_without_state_renders_transition(mode, items, selected):
+    assert_collection_display(collection_cli(mode), mode, items, selected)
+
+
+@pytest.mark.parametrize("mode,command", [
+    ("selectable", "select"),
+    ("checklist", "toggle"),
+])
+def test_collection_cli_continues_selection(mode, command):
+    payload = collection_cli(mode)
+    items = ["a", "b", "c", "d"]
+    for selected in ([], ["b"], []):
+        payload = collection_cli(mode, command, payload["state"])
+        assert_collection_display(payload, mode, items, selected)
+
+
+def test_collection_cli_continues_reordering_custom_state():
+    mode = "reorderable"
+    payload = collection_cli(mode)
+    assert_collection_display(payload, mode, ["b", "a", "c", "d"], [])
+    for _ in range(2):
+        payload = collection_cli(mode, "move-first", payload["state"])
+        assert_collection_display(payload, mode, ["b", "a", "c", "d"], [])
+    state = {"mode": mode, "items": ["猫", "d", "b", "a"], "selected": ["d"]}
+    payload = collection_cli(mode, "move-first", state)
+    assert_collection_display(payload, mode, ["b", "猫", "d", "a"], ["d"])
+    payload = collection_cli(mode, "move-first", payload["state"])
+    assert_collection_display(payload, mode, ["b", "猫", "d", "a"], ["d"])
+
+
+def test_collection_cli_continues_swipe_delete_and_removes_selection():
+    mode = "swipe-delete"
+    payload = collection_cli(mode, "select", module.initial_collection(mode))
+    assert_collection_display(payload, mode, ["a", "b", "c", "d"], ["b"])
+    payload = collection_cli(mode, "delete", payload["state"])
+    assert_collection_display(payload, mode, ["a", "c", "d"], [])
+
+
+def test_swipe_delete_continues_until_empty_and_preserves_other_selection():
+    mode = "swipe-delete"
+    state = {"mode": mode, "items": ["a", "b", "c", "d"], "selected": ["b", "d"]}
+    for item, items, selected in [
+        ("b", ["a", "c", "d"], ["d"]),
+        ("c", ["a", "d"], ["d"]),
+        ("d", ["a"], []),
+        ("a", [], []),
+    ]:
+        state = module.collection_command(state, "delete", item)
+        assert_collection_display(module.render_collection(state), mode, items, selected)
