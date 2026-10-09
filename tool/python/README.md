@@ -152,10 +152,30 @@ commit, Git blob and SHA-256 identities, plus the upstream LICENSE, are recorded
 in `tool/python/vendor.lock.json` (`vendor-lock/1`).
 
 Ordinary Non-Dart CI uses the shared stdlib-only `vendor_sync.py` pinned at
-`08dc3757deeb930c950bdcc6bd55ec3112ba49fc`. A locked lane first recreates the checked-in files from their fixed
+`380d877cd85837f36cf6030d626ee8bb7dfa28cb`. A locked lane first recreates the checked-in files from their fixed
 commit and runs the metadata regressions. The normal pytest lane then resolves
 `refs/heads/main` in a disposable checkout, verifies the candidate bytes and
 runs the existing Python suite against that candidate. The resolved lock and
 files are retained as Actions artifacts. CI never writes back to the repository,
 pushes a branch, opens a PR, or requires an update token. Pages and application
 builds continue to use the checked-in baseline.
+
+
+## Lock-derived evidence staging
+
+Vendor artifact membership is now derived exclusively by the parent
+`vendor_stage.py`, checked out with `vendor_sync.py` at full commit
+`380d877cd85837f36cf6030d626ee8bb7dfa28cb`. Workflow uploads point to its generated
+directory; adding a locked source or LICENSE needs no upload path-list edit.
+Artifact names and repository-relative paths inside each artifact are preserved.
+`vendor-evidence.json` is additional metadata with byte hashes and separate
+locked/candidate, runtime receipt, and legacy projection classifications.
+
+Staging runs even after a failed test, verifies every locked byte, and fails
+nonzero on missing or modified members. It does not certify tests or promotion.
+Locked runs exclude promotion receipts; candidate runs include one when present.
+Legacy projection formats, when present, remain consumer-owned outputs of the
+lock. Exact source pins, LICENSEs, test-only dependencies and Pages/MCP/runtime
+behavior are unchanged. Central topology intent is owned by the parent's
+`vendor-consumers.json`; recommended baselines belong to `vendor-catalog.json`;
+this consumer's lock remains the authority for adopted bytes.
