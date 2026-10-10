@@ -50,12 +50,16 @@ class AppRoutes {
       );
     }
 
-    // E2E-only native interaction route, intentionally separate from /screenNNN
-    // (those routes render GenericScreen rather than the pattern View).
-    if (const bool.fromEnvironment('E2E', defaultValue: false)) {
+    // Real native interactions are available on their numbered catalogue routes.
+    // Keep the E2E aliases for existing browser test compatibility.
+    {
       for (final patternId in [171, 172, 173, 174, 175, 183, 184]) {
-        map['/examples/data-processing-interactions/$patternId'] =
+        map[screenRoute(patternId)] =
             (_) => InteractivePatternExample(patternId: patternId);
+        if (const bool.fromEnvironment('E2E', defaultValue: false)) {
+          map['/examples/data-processing-interactions/$patternId'] =
+              (_) => InteractivePatternExample(patternId: patternId);
+        }
       }
     }
 
