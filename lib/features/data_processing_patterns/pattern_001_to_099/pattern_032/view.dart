@@ -1,37 +1,23 @@
 // Pattern 032: CursorPagination
-// カーソル方式のページネーション。
+// Real processing is owned by Python; the Flutter runtime bridge is pending.
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
 
-class Pattern032View extends GetView<Pattern032Controller> {
+class Pattern032View extends StatelessWidget {
   const Pattern032View({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 032: CursorPagination'),
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Pattern 032: CursorPagination')),
+    body: const Padding(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('カーソル方式のページ取得はPython側で実装済みです。'),
+          SizedBox(height: 12),
+          Text('Flutter画面からの実行・結果表示は未接続です。'),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'カーソル方式のページネーション。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }
