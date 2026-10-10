@@ -116,7 +116,8 @@ class _InteractivePatternExampleState extends State<InteractivePatternExample> {
     children: [
       for (final item in _items)
         Semantics(
-          identifier: 'interaction-item-$item',
+          identifier: 'interaction-select-$item',
+          container: true,
           child: CheckboxListTile(
             key: ValueKey('select-$item'),
             title: Text(item),

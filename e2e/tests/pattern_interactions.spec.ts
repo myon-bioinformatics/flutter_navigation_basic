@@ -52,7 +52,11 @@ test('175 animated removal is externally operable @portable',async({page})=>{
 });
 test('183 selection and batch deletion are externally operable @portable',async({page})=>{
   await openInteraction(page,183);
-  await page.getByText('A',{exact:true}).click();
+  // Flutter Web exposes CheckboxListTile through semantics, not always as a
+  // standalone DOM text node. Click the stable selection target instead.
+  const item = page.locator('[flt-semantics-identifier="interaction-select-A"]');
+  await expect(item).toHaveCount(1,{timeout:5000});
+  await item.click({timeout:5000});
   await expect(page.getByText('選択数: 1')).toBeVisible();
   await page.getByRole('button',{name:'選択項目を削除'}).click();
   await expect(page.getByText('順序: B, C')).toBeVisible();
