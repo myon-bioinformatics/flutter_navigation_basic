@@ -497,6 +497,8 @@ jobs:
             sleep 1
           done
           python3 ../tool/python/playwright.py test --project chromium --project firefox --project webkit --project mobile-chromium --project mobile-webkit --grep @portable tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts tests/photo_studio_ingress.spec.ts tests/photo_studio_format_matrix.spec.ts
+          python3 ../tool/python/playwright.py interaction --project chromium --kind portable
+          python3 ../tool/python/playwright.py interaction --project chromium --kind gesture
 
       - name: Upload Playwright report
         if: always()
