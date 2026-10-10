@@ -44,7 +44,7 @@ def test_cursor_rejects_mutated_dataset():
                          "limit": 1, "cursor": first["next_cursor"]})
 
 
-@pytest.mark.parametrize("request", [
+@pytest.mark.parametrize("payload", [
     {"operation": "offset", "items": [], "limit": 0},
     {"operation": "offset", "items": [], "limit": True},
     {"operation": "offset", "items": [], "limit": 1, "offset": -1},
@@ -52,9 +52,9 @@ def test_cursor_rejects_mutated_dataset():
     {"operation": "infinite", "items": [], "limit": 1, "offset": 0},
     {"operation": "offset", "items": [], "limit": 1, "extra": True},
 ])
-def test_invalid_contracts_fail_closed(request):
+def test_invalid_contracts_fail_closed(payload):
     with pytest.raises(ValueError):
-        pagination.page(request)
+        pagination.page(payload)
 
 
 def test_cli_returns_json_and_nonzero_for_bad_input():
