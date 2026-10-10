@@ -113,3 +113,25 @@ def test_shared_producer_families_are_registered():
         assert record is not None, number
         assert record["source"].endswith("/" + filename)
         assert record["flutter_runtime_connected"] is False
+
+
+def test_duplicate_pattern_in_second_bucket_is_rejected():
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        setup(root, 1)
+        duplicate = root / "lib/features/data_processing_patterns/pattern_100_to_198/pattern_001"
+        duplicate.mkdir(parents=True)
+        result = audit.audit(root)
+        assert result["summary"]["patterns"] == 1
+        assert any("001: duplicate or misplaced" in error for error in result["errors"])
+
+
+def test_pattern_in_wrong_bucket_is_rejected():
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        folder = root / "lib/features/data_processing_patterns/pattern_001_to_099/pattern_100"
+        folder.mkdir(parents=True)
+        (folder / "README.md").write_text("# Pattern 100: Example", encoding="utf-8")
+        (folder / "view.dart").write_text("class Example {}", encoding="utf-8")
+        result = audit.audit(root)
+        assert any("100: duplicate or misplaced" in error for error in result["errors"])
