@@ -1,27 +1,10 @@
 # Pattern 147: EventLoop
 
-**カテゴリ**: 案D - データ処理パターン
-
-## 概要
 イベントループの理解と制御。
 
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
-
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern147View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern147Controller())));
-```
-
-## 関連パターン
-- 前: Pattern 146
-- 次: Pattern 148
+## 責務
+- 参照実装：`tool/javascript/event_loop_patterns.mjs`、mode `event_loop`
+- 回帰テスト：`tool/javascript/tests/*.test.mjs`（`node --test`）
+- 詳細：`docs/event-loop-patterns.md`
+- FlutterのViewは説明用。Node実行への接続は未実装。Dart Stream/Future固有動作の完全互換ではない。
+- 旧ダミーController/Model/Serviceは削除済み。

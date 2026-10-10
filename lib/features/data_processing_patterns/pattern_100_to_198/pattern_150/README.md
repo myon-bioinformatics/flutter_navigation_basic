@@ -1,27 +1,10 @@
 # Pattern 150: AsyncGenerator
 
-**カテゴリ**: 案D - データ処理パターン
-
-## 概要
 非同期ジェネレーター関数の実装。
 
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
-
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern150View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern150Controller())));
-```
-
-## 関連パターン
-- 前: Pattern 149
-- 次: Pattern 151
+## 責務
+- 参照実装：`tool/javascript/event_loop_patterns.mjs`、mode `async_generator`
+- 回帰テスト：`tool/javascript/tests/*.test.mjs`（`node --test`）
+- 詳細：`docs/event-loop-patterns.md`
+- FlutterのViewは説明用。Node実行への接続は未実装。Dart Stream/Future固有動作の完全互換ではない。
+- 旧ダミーController/Model/Serviceは削除済み。

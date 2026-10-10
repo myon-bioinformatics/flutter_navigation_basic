@@ -86,6 +86,13 @@ import 'package:flutter_application_1/features/data_processing_patterns/pattern_
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_141/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_142/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_143/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_144/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_145/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_146/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_147/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_148/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_149/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_150/view.dart';
 
 // One widget boundary test for catalogue entries with no executable producer.
 // Do not preserve old fake success messages or GetX controllers as test oracles.
@@ -177,6 +184,13 @@ void main() {
     ('141', 'Pattern 141: CancelableOp', 'キャンセル可能な非同期操作実装。', const Pattern141View()),
     ('142', 'Pattern 142: ParallelMap', 'リストの並列 map 処理。', const Pattern142View()),
     ('143', 'Pattern 143: ProgressStream', '進捗報告付き非同期処理。', const Pattern143View()),
+    ('144', 'Pattern 144: Debounce', 'デバウンス処理の汎用実装。', const Pattern144View()),
+    ('145', 'Pattern 145: Throttle', 'スロットリング処理の汎用実装。', const Pattern145View()),
+    ('146', 'Pattern 146: RxLike', 'RxDart 風の Reactive 実装 (標準 Stream)。', const Pattern146View()),
+    ('147', 'Pattern 147: EventLoop', 'イベントループの理解と制御。', const Pattern147View()),
+    ('148', 'Pattern 148: MicrotaskQueue', 'マイクロタスクキューの活用。', const Pattern148View()),
+    ('149', 'Pattern 149: SuspendResume', '非同期処理の一時停止と再開。', const Pattern149View()),
+    ('150', 'Pattern 150: AsyncGenerator', '非同期ジェネレーター関数の実装。', const Pattern150View()),
   ];
 
   for (final (id, title, description, view) in cases) {
