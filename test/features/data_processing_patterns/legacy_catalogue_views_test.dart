@@ -65,6 +65,12 @@ import 'package:flutter_application_1/features/data_processing_patterns/pattern_
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_118/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_119/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_120/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_121/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_122/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_123/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_124/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_125/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_126/view.dart';
 
 // One widget boundary test for catalogue entries with no executable producer.
 // Do not preserve old fake success messages or GetX controllers as test oracles.
@@ -135,6 +141,12 @@ void main() {
     ('118', 'Pattern 118: Flatten', 'ネストリストのフラット化処理。', const Pattern118View()),
     ('119', 'Pattern 119: Partition', '条件によるデータ分割処理。', const Pattern119View()),
     ('120', 'Pattern 120: Zip', '複数リストの Zip 結合処理。', const Pattern120View()),
+    ('121', 'Pattern 121: FutureBasic', '基本的な Future と async/await 実装。', const Pattern121View()),
+    ('122', 'Pattern 122: FutureChain', 'Future のチェーン (.then) 実装。', const Pattern122View()),
+    ('123', 'Pattern 123: FutureError', 'Future エラーハンドリング実装。', const Pattern123View()),
+    ('124', 'Pattern 124: FutureWait', 'Future.wait による並列実行。', const Pattern124View()),
+    ('125', 'Pattern 125: FutureAny', 'Future.any による最速レスポンス取得。', const Pattern125View()),
+    ('126', 'Pattern 126: FutureTimeout', 'Future.timeout によるタイムアウト制御。', const Pattern126View()),
   ];
 
   for (final (id, title, description, view) in cases) {
