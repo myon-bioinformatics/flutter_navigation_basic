@@ -1,27 +1,9 @@
 # Pattern 031: PaginationBasic
 
-**カテゴリ**: 案D - データ処理パターン
+## 責務と実装範囲
+- Python: `tool/python/pagination_patterns.py` の `offset` が独立処理を担当。
+- Dart: `view.dart` は説明表示のみ。旧GetXの固定成功実行は撤去。
+- 旧Controller・Service・Modelと旧Dartテストは削除済み。
+- 残課題: Flutterのページ操作未接続。
 
-## 概要
-オフセット方式のページネーション。
-
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
-
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern031View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern031Controller())));
-```
-
-## 関連パターン
-- 前: Pattern 030
-- 次: Pattern 032
+**対応状況: 限定実装。** 独立処理は実装済みだが、Flutter画面の完成機能としては扱わない。
