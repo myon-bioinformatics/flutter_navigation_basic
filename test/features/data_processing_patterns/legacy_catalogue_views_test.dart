@@ -71,6 +71,15 @@ import 'package:flutter_application_1/features/data_processing_patterns/pattern_
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_124/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_125/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_126/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_127/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_128/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_129/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_130/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_131/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_132/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_133/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_134/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_135/view.dart';
 
 // One widget boundary test for catalogue entries with no executable producer.
 // Do not preserve old fake success messages or GetX controllers as test oracles.
@@ -147,6 +156,15 @@ void main() {
     ('124', 'Pattern 124: FutureWait', 'Future.wait による並列実行。', const Pattern124View()),
     ('125', 'Pattern 125: FutureAny', 'Future.any による最速レスポンス取得。', const Pattern125View()),
     ('126', 'Pattern 126: FutureTimeout', 'Future.timeout によるタイムアウト制御。', const Pattern126View()),
+    ('127', 'Pattern 127: StreamBasic', '基本的な Stream の生成と購読。', const Pattern127View()),
+    ('128', 'Pattern 128: StreamController', 'StreamController による手動 Stream 制御。', const Pattern128View()),
+    ('129', 'Pattern 129: BroadcastStream', 'ブロードキャスト Stream の実装。', const Pattern129View()),
+    ('130', 'Pattern 130: StreamTransform', 'Stream の map/where/expand 変換。', const Pattern130View()),
+    ('131', 'Pattern 131: StreamMerge', '複数 Stream のマージ実装。', const Pattern131View()),
+    ('132', 'Pattern 132: StreamDebounce', 'Stream のデバウンス処理。', const Pattern132View()),
+    ('133', 'Pattern 133: StreamThrottle', 'Stream のスロットリング処理。', const Pattern133View()),
+    ('134', 'Pattern 134: StreamBuffer2', 'Stream のバッファリング処理。', const Pattern134View()),
+    ('135', 'Pattern 135: StreamWindow', 'Stream のウィンドウ集計処理。', const Pattern135View()),
   ];
 
   for (final (id, title, description, view) in cases) {
