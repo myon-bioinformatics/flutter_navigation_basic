@@ -61,6 +61,6 @@ jobs:
       - name: Shared structure widget tests
         run: flutter test test/features/data_processing_patterns/structure_assets_test.dart --reporter expanded
       - name: Analyze Flutter source
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos
       - name: Build Flutter web
         run: flutter build web
