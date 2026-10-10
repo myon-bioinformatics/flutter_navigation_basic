@@ -36,3 +36,12 @@ def test_rejects_missing_or_duplicate_id():
     data["patterns"][0]["id"] = 2
     with pytest.raises(ValueError):
         module.render(data, "a" * 40)
+
+
+def test_header_uses_real_code_spans_and_names_the_audited_tree():
+    content = module.render(fixture(), "a" * 40, "b" * 40)
+    assert "\\`" not in content
+    assert "- 監査対象コミット: `" + "a" * 40 + "`" in content
+    assert "- 監査したツリー: `" + "b" * 40 + "`（PR のマージ結果）" in content
+    # push runs check out the head itself; no second line then.
+    assert "監査したツリー" not in module.render(fixture(), "a" * 40, "a" * 40)

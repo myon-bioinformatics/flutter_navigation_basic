@@ -24,7 +24,7 @@ def completion(row):
     return "限定実装（統合未証明）"
 
 
-def render(report, head):
+def render(report, head, tree=None):
     records = report["patterns"]
     if len(records) != 198 or {r["id"] for r in records} != set(range(1, 199)):
         raise ValueError("not a complete 198-pattern inventory")
@@ -32,12 +32,13 @@ def render(report, head):
     lines = [
         "# データ処理198パターン 実装・責務分離ステータス",
         "",
-        f"- 監査対象コミット: \`{head}\`",
-        f"- 監査スキーマ: \`{report['schema']}\`",
+        f"- 監査対象コミット: `{head}`",
+        *([f"- 監査したツリー: `{tree}`（PR のマージ結果）"] if tree and tree != head else []),
+        f"- 監査スキーマ: `{report['schema']}`",
         f"- 対象: **{len(records)}件** / 本番Dart **{summary['dart_files']}ファイル** / 監査エラー **{summary['errors']}件**",
         "- **注意**: これは静的な証跡分類。完全実装・E2E成功を自動認定するものではない。",
         "- Python/JSのproducerが存在しても、Flutter画面からの実行接続は別途検証する。",
-        "- \`限定実装\` は完成を意味しない。実行可能範囲と残課題を必ず参照する。",
+        "- `限定実装` は完成を意味しない。実行可能範囲と残課題を必ず参照する。",
         "",
         "| ID | パターン | 実装証跡 | 完成度（保守的判定） | 責務 | Dart数 | producer / 次の課題 |",
         "|---:|---|---|---|---|---:|---|",
@@ -66,11 +67,12 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("inventory", type=Path)
     p.add_argument("output", type=Path)
-    p.add_argument("--head", required=True)
+    p.add_argument("--head", required=True, help="PR head SHA the report is about")
+    p.add_argument("--tree", help="checked-out commit, when it differs (pull_request merge ref)")
     args = p.parse_args()
     report = json.loads(args.inventory.read_text(encoding="utf-8"))
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(render(report, args.head), encoding="utf-8")
+    args.output.write_text(render(report, args.head, args.tree), encoding="utf-8")
 
 
 if __name__ == "__main__":

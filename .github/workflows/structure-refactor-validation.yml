@@ -45,7 +45,10 @@ jobs:
         run: python -S tool/python/pattern_responsibility_audit.py --json --check > pattern-responsibility.json
       - name: Render all 198 pattern statuses
         run: |
-          python3 -S tool/python/render_pattern_status.py pattern-responsibility.json pattern-status.md --head "${{ github.sha }}"
+          # On pull_request, github.sha is the merge ref; report the PR head and
+          # name the merged tree that was actually audited.
+          python3 -S tool/python/render_pattern_status.py pattern-responsibility.json pattern-status.md \
+            --head "${{ github.event.pull_request.head.sha || github.sha }}" --tree "$(git rev-parse HEAD)"
       - name: Upload readable 198-pattern status report
         if: always()
         uses: actions/upload-artifact@v4
