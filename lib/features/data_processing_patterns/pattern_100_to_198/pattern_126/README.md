@@ -5,23 +5,13 @@
 ## 概要
 Future.timeout によるタイムアウト制御。
 
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
+## 実装先・検証
+- 非同期の参照処理: `tool/javascript/future_patterns.mjs`, mode `timeout`
+- Node標準テスト: `tool/javascript/tests/future_patterns.test.mjs`
+- CLI仕様・Dartとの意味の違い: `docs/future-patterns.md`
+- Flutter: `view.dart` は説明用。NodeをFlutterで直接起動するわけではない。
+- 旧GetX Controller、ダミーService、message Modelは削除した。
 
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern126View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern126Controller())));
+```sh
+node tool/javascript/future_patterns.mjs --input input.json
 ```
-
-## 関連パターン
-- 前: Pattern 125
-- 次: Pattern 127

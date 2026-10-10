@@ -5,23 +5,13 @@
 ## 概要
 Future.wait による並列実行。
 
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
+## 実装先・検証
+- 非同期の参照処理: `tool/javascript/future_patterns.mjs`, mode `wait`
+- Node標準テスト: `tool/javascript/tests/future_patterns.test.mjs`
+- CLI仕様・Dartとの意味の違い: `docs/future-patterns.md`
+- Flutter: `view.dart` は説明用。NodeをFlutterで直接起動するわけではない。
+- 旧GetX Controller、ダミーService、message Modelは削除した。
 
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern124View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern124Controller())));
+```sh
+node tool/javascript/future_patterns.mjs --input input.json
 ```
-
-## 関連パターン
-- 前: Pattern 123
-- 次: Pattern 125

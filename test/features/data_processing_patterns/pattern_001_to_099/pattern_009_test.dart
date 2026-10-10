@@ -1,24 +1,31 @@
-// Pattern 009: SortBasic - テスト
-// 基本的なリストソート実装。
+import 'dart:convert';
+
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_009/model.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_009/service.dart';
 
-void main() {
-  group('Pattern 009: SortBasic', () {
-    test('model toJson and fromJson', () {
-      const result = Pattern009Result(message: 'test');
-      final json = result.toJson();
-      expect(json['message'], equals('test'));
-      final restored = Pattern009Result.fromJson(json);
-      expect(restored.message, equals('test'));
-    });
+class _Bundle extends CachingAssetBundle {
+  _Bundle(this.payload);
+  final String payload;
 
-    test('service run completes', () async {
-      final service = Pattern009Service();
-      final result = await service.run();
-      expect(result, isA<Pattern009Result>());
-      expect(result.message, isNotEmpty);
-    });
+  @override
+  Future<ByteData> load(String key) async =>
+      ByteData.sublistView(Uint8List.fromList(utf8.encode(payload)));
+
+  @override
+  Future<String> loadString(String key, {bool cache = true}) async => payload;
+}
+
+void main() {
+  test('pattern 009 loads the externally ordered values', () async {
+    final service = Pattern009Service(bundle: _Bundle(
+      '{"schema":"list-ordering/1","mode":"test","values":[3,2,1]}',
+    ));
+    expect(await service.load(), equals([3, 2, 1]));
+  });
+
+  test('pattern 009 rejects malformed generated data', () async {
+    final service = Pattern009Service(bundle: _Bundle('{"schema":"list-ordering/1"}'));
+    await expectLater(service.load(), throwsFormatException);
   });
 }

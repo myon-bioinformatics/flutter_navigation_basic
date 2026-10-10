@@ -12,6 +12,7 @@ on:
       - "tool/python/**"
       - "tool/time/**"
       - "assets/time/**"
+      - "assets/data_processing/**"
       - "test/fixtures/photo_studio/import_compat/**"
       - "e2e/**"
       - "**/requirements.txt"
@@ -25,6 +26,7 @@ on:
       - "tool/python/**"
       - "tool/time/**"
       - "assets/time/**"
+      - "assets/data_processing/**"
       - "test/fixtures/photo_studio/import_compat/**"
       - "e2e/**"
       - "**/requirements.txt"
@@ -38,7 +40,8 @@ on:
 
 concurrency:
   group: non-dart-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # Preserve the producer and its JUnit artifacts before downstream collection.
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -101,7 +104,7 @@ jobs:
           playwright=false
           for f in "${files[@]}"; do
             case "$f" in
-              tool/python/*|tool/time/*|assets/time/*|test/fixtures/photo_studio/import_compat/*|lib/features/*_patterns/*)
+              tool/python/*|tool/time/*|assets/time/*|assets/data_processing/*|test/fixtures/photo_studio/import_compat/*|lib/features/*_patterns/*)
                 python=true
                 ;;
               e2e/*)
@@ -495,6 +498,8 @@ jobs:
             sleep 1
           done
           python3 ../tool/python/playwright.py test --project chromium --project firefox --project webkit --project mobile-chromium --project mobile-webkit --grep @portable tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts tests/photo_studio_ingress.spec.ts tests/photo_studio_format_matrix.spec.ts
+          python3 ../tool/python/playwright.py interaction --project chromium --kind portable
+          python3 ../tool/python/playwright.py interaction --project chromium --kind gesture
 
       - name: Upload Playwright report
         if: always()

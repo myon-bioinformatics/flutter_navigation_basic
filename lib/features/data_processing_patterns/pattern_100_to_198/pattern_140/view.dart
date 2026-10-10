@@ -1,37 +1,11 @@
-// Pattern 140: Mutex
-// ミューテックスによる排他制御。
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
-
-class Pattern140View extends GetView<Pattern140Controller> {
+class Pattern140View extends StatelessWidget {
   const Pattern140View({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 140: Mutex'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'ミューテックスによる排他制御。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  @override Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Pattern 140: Mutex')),
+    body: const Padding(padding: EdgeInsets.all(16),child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,children: [
+      Text('ミューテックスによる排他制御。'),SizedBox(height: 12),Text('JS参照CLIに処理あり。Flutterでの直接実行は未接続。'),
+    ])),
+  );
 }

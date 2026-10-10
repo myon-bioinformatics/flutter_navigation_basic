@@ -1,27 +1,8 @@
 # Pattern 160: InheritedWidget
 
-**カテゴリ**: 案D - データ処理パターン
-
-## 概要
 InheritedWidget による状態伝播。
 
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
-
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern160View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern160Controller())));
-```
-
-## 関連パターン
-- 前: Pattern 159
-- 次: Pattern 161
+Flutter標準の `InheritedWidget` を `lib/core/data_processing/inherited_catalogue_example.dart`
+で実装。2つの値の状態伝播を `test/features/data_processing_patterns/inherited_catalogue_test.dart`
+で検証します。GetXと旧成功メッセージだけのダミーServiceは撤去。
+Python/JSにFlutterのWidget依存関係を移すことはしません。

@@ -1,37 +1,22 @@
-// Pattern 121: FutureBasic
-// 基本的な Future と async/await 実装。
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
 
-class Pattern121View extends GetView<Pattern121Controller> {
+/// JS Promise catalogue analogue: no Node runtime is bundled with Flutter.
+class Pattern121View extends StatelessWidget {
   const Pattern121View({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 121: FutureBasic'),
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Pattern 121: FutureBasic')),
+    body: const Padding(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('基本的な Future と async/await 実装。'),
+          SizedBox(height: 12),
+          Text('JS Promise参照実装あり。Flutterでの直接実行は未接続。'),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '基本的な Future と async/await 実装。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }

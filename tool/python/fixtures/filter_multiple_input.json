@@ -1,0 +1,1 @@
+{"values":[{"name":"猫","kind":"pet","active":true},{"name":"犬","kind":"pet","active":false},{"name":"猫","kind":"pet","active":true},{"name":"狐","kind":"wild","active":true}],"conditions":[{"path":["kind"],"equals":"pet"},{"path":["active"],"equals":true}]}

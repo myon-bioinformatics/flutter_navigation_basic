@@ -14,6 +14,7 @@ on:
       - 'lib/**'
       - 'test/**'
       - 'tool/python/**'
+      - 'tool/javascript/**'
       - 'assets/data_processing/**'
       - 'pubspec.yaml'
       - 'pubspec.lock'
@@ -38,8 +39,17 @@ jobs:
           python-version: '3.12'
       - name: Install pytest
         run: python -m pip install 'pytest>=8'
-      - name: Verify producer/asset parity
-        run: python -m pytest tool/python/tests/test_pattern_catalogue_boundary.py -q --junitxml=python-refactor-junit.xml
+      - name: Verify Python boundaries and producer/asset parity
+        run: python -m pytest tool/python/tests/test_pattern_catalogue_boundary.py tool/python/tests/test_collection_assets.py tool/python/tests/test_collection_transform.py tool/python/tests/test_state_reducer.py tool/python/tests/test_workflow_patterns.py tool/python/tests/test_pattern_responsibility_audit.py -q --junitxml=python-refactor-junit.xml
+      - name: Export responsibility inventory
+        run: python -S tool/python/pattern_responsibility_audit.py --json --check > pattern-responsibility.json
+      - name: Upload responsibility inventory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-pattern-responsibility
+          path: pattern-responsibility.json
+          if-no-files-found: ignore
       - name: Upload JUnit
         if: always()
         uses: actions/upload-artifact@v4
@@ -58,10 +68,10 @@ jobs:
           flutter-version: '3.47.0'
           cache: true
       - run: flutter pub get
-      - name: Shared structure widget tests
+      - name: Shared data-processing widget tests
         run: |
           mkdir -p build/test-results
-          flutter test test/features/data_processing_patterns/structure_assets_test.dart --reporter expanded --file-reporter json:build/test-results/flutter-events.jsonl
+          flutter test test/features/data_processing_patterns/structure_assets_test.dart test/features/data_processing_patterns/command_assets_test.dart test/features/data_processing_patterns/legacy_catalogue_views_test.dart test/features/data_processing_patterns/native_state_catalogue_test.dart test/features/data_processing_patterns/native_notifier_test.dart test/features/data_processing_patterns/inherited_catalogue_test.dart test/features/data_processing_patterns/state_architecture_test.dart test/features/data_processing_patterns/counter_architecture_test.dart test/features/data_processing_patterns/interactive_pattern_example_test.dart --reporter expanded --file-reporter json:build/test-results/flutter-events.jsonl
       - name: Convert and validate Flutter JUnit
         if: always()
         run: |
@@ -82,8 +92,8 @@ jobs:
       - name: Build Flutter web
         run: flutter build web
 
-  node-junit:
-    name: Node native JUnit evidence
+  node:
+    name: JavaScript async boundary
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

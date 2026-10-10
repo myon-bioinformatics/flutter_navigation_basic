@@ -1,11 +1,8 @@
-// Pattern 039: PageIndicator
-// ページインジケーター付きページング。
-import 'model.dart';
+// Pattern 039: PageIndicator — Python collection-window state boundary.
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
 
-class Pattern039Service {
-  Future<Pattern039Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern039Result(message: 'PageIndicator executed successfully');
-  }
+class Pattern039Service extends JsonListAsset {
+  Pattern039Service({AssetBundle? bundle})
+      : super('assets/data_processing/window_039.json', bundle: bundle);
 }

@@ -1,37 +1,18 @@
-// Pattern 002: FilterMultiple
-// 複数条件でのフィルタリング。
+// Pattern 002: FilterMultiple — generated example, not runtime processing.
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/processed_list_example.dart';
 
-class Pattern002View extends GetView<Pattern002Controller> {
-  const Pattern002View({super.key});
+import 'service.dart';
+
+class Pattern002View extends StatelessWidget {
+  const Pattern002View({super.key, this.bundle});
+
+  final AssetBundle? bundle;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 002: FilterMultiple'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '複数条件でのフィルタリング。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ProcessedListExample(
+        title: 'Pattern 002: FilterMultiple',
+        asset: Pattern002Service(bundle: bundle),
+      );
 }
