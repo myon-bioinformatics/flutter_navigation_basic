@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_navigation_basic/config/routes.dart';
+import '../../../lib/config/routes.dart';
 
 void main() {
   testWidgets('seven numbered catalogue routes expose real native interactions',
