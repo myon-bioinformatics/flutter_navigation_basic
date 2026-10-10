@@ -71,7 +71,7 @@ jobs:
           cache: true
       - run: flutter pub get
       - name: Shared data-processing widget tests
-        run: flutter test test/features/data_processing_patterns/structure_assets_test.dart test/features/data_processing_patterns/command_assets_test.dart test/features/data_processing_patterns/legacy_catalogue_views_test.dart test/features/data_processing_patterns/native_state_catalogue_test.dart test/features/data_processing_patterns/native_notifier_test.dart test/features/data_processing_patterns/inherited_catalogue_test.dart test/features/data_processing_patterns/state_architecture_test.dart test/features/data_processing_patterns/counter_architecture_test.dart --reporter expanded
+        run: flutter test test/features/data_processing_patterns/structure_assets_test.dart test/features/data_processing_patterns/command_assets_test.dart test/features/data_processing_patterns/legacy_catalogue_views_test.dart test/features/data_processing_patterns/native_state_catalogue_test.dart test/features/data_processing_patterns/native_notifier_test.dart test/features/data_processing_patterns/inherited_catalogue_test.dart test/features/data_processing_patterns/state_architecture_test.dart test/features/data_processing_patterns/counter_architecture_test.dart test/features/data_processing_patterns/interactive_pattern_example_test.dart --reporter expanded
       - name: Analyze Flutter source
         run: flutter analyze --no-fatal-infos
       - name: Build Flutter web

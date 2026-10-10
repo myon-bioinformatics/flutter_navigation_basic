@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/navigation/app_route_registry.dart';
+import '../core/data_processing/interactive_pattern_example.dart';
 import '../core/navigation/route_names.dart';
 import '../screens/generic_screen.dart';
 
@@ -47,6 +48,15 @@ class AppRoutes {
         name,
         () => (_) => GenericScreen(screenId: screenId),
       );
+    }
+
+    // E2E-only native interaction route, intentionally separate from /screenNNN
+    // (those routes render GenericScreen rather than the pattern View).
+    if (const bool.fromEnvironment('E2E', defaultValue: false)) {
+      for (final patternId in [171, 172, 173, 174, 175, 183, 184]) {
+        map['/examples/data-processing-interactions/$patternId'] =
+            (_) => InteractivePatternExample(patternId: patternId);
+      }
     }
 
     map.addAll(AppRouteRegistry.catalogueRoutes);
