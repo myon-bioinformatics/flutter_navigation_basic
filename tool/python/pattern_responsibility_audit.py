@@ -86,11 +86,15 @@ def inspect(root: Path, number: int) -> dict:
         status = "description_only"
     else:
         status = "needs_manual_review"
-    # Historical prose about removed files is not an active import.
+    # Match active Dart import/export/part statements, not historical prose.
+    active_imports = re.findall(
+        r"""(?m)^\s*(?:import|export|part)\s+['"]([^'"]+)['"]\s*;""",
+        readme,
+    )
     stale = any(
-        re.search(r"(?m)^\\s*(?:import|export|part)\\s+['\\\"][^'\\\"]*" + part + r"\\.dart", readme)
-        and part + ".dart" not in dart
-        for part in ("controller", "model", "service")
+        imported.rsplit("/", 1)[-1] in {"controller.dart", "model.dart", "service.dart"}
+        and imported.rsplit("/", 1)[-1] not in dart
+        for imported in active_imports
     )
     warnings=[]
     if stale:
