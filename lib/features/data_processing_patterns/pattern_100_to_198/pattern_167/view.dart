@@ -1,37 +1,11 @@
-// Pattern 167: MVVM
-// MVVM パターンの Flutter 実装。
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
+import 'package:flutter_application_1/core/data_processing/counter_architecture_example.dart';
 
-class Pattern167View extends GetView<Pattern167Controller> {
+class Pattern167View extends StatelessWidget {
   const Pattern167View({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 167: MVVM'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'MVVM パターンの Flutter 実装。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  @override Widget build(BuildContext context) => const CounterArchitectureExample(
+    title: 'Pattern 167: MVVM',
+    description: 'MVVM パターンの Flutter 実装。',
+    architecture: CounterArchitecture.mvvm,
+  );
 }

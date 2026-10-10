@@ -5,23 +5,13 @@
 ## 概要
 複数 Stream のマージ実装。
 
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
+## 実装先と検証
+- Node.js標準機能のみの参照CLI: `tool/javascript/stream_patterns.mjs` の `merge`
+- テスト: `tool/javascript/tests/stream_patterns.test.mjs`
+- 契約とDart Streamとの違い: `docs/stream-patterns.md`
+- Flutter `view.dart` は説明画面であり、Nodeへの実行連携は未接続。
+- 旧GetX Controller、ダミーService、message Modelは削除。
 
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern131View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern131Controller())));
+```sh
+node tool/javascript/stream_patterns.mjs --input input.json
 ```
-
-## 関連パターン
-- 前: Pattern 130
-- 次: Pattern 132

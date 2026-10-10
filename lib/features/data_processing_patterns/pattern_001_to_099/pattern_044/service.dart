@@ -1,11 +1,5 @@
-// Pattern 044: BidirectionalScroll
-// 双方向無限スクロール実装。
-import 'model.dart';
-
-class Pattern044Service {
-  Future<Pattern044Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern044Result(message: 'BidirectionalScroll executed successfully');
-  }
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
+class Pattern044Service extends JsonListAsset {
+  Pattern044Service({AssetBundle? bundle}) : super('assets/data_processing/window_044.json', bundle: bundle);
 }

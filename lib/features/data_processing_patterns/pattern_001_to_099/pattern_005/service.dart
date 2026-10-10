@@ -1,11 +1,8 @@
-// Pattern 005: SearchBasic
-// テキスト検索によるリストフィルタリング。
-import 'model.dart';
+// Pattern 005: SearchBasic — Python-generated text-processing result boundary.
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
 
-class Pattern005Service {
-  Future<Pattern005Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern005Result(message: 'SearchBasic executed successfully');
-  }
+class Pattern005Service extends JsonListAsset {
+  Pattern005Service({AssetBundle? bundle})
+      : super('assets/data_processing/search_basic.json', bundle: bundle);
 }

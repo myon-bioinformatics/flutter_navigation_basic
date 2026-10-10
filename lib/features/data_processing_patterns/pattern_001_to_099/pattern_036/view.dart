@@ -1,37 +1,17 @@
-// Pattern 036: LazyList
-// 遅延ロードリスト実装。
+// Pattern 036: LazyList — rendered Python state, no GetX controller.
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/processed_list_example.dart';
 
-class Pattern036View extends GetView<Pattern036Controller> {
-  const Pattern036View({super.key});
+import 'service.dart';
+
+class Pattern036View extends StatelessWidget {
+  const Pattern036View({super.key, this.bundle});
+  final AssetBundle? bundle;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 036: LazyList'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '遅延ロードリスト実装。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ProcessedListExample(
+        title: 'Pattern 036: LazyList',
+        asset: Pattern036Service(bundle: bundle),
+      );
 }

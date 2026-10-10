@@ -1,27 +1,9 @@
 # Pattern 162: StateNotifier
 
-**カテゴリ**: 案D - データ処理パターン
-
-## 概要
 StateNotifier パターン実装。
 
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
-
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern162View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern162Controller())));
-```
-
-## 関連パターン
-- 前: Pattern 161
-- 次: Pattern 163
+共有Flutter実装：`lib/core/data_processing/state_architecture_example.dart`。
+`StateNotifier`の基本的な状態通知・イベント処理をパッケージなしで実装した例。
+完全なStateNotifier/Riverpodライブラリや外部BLoCライブラリの互換実装ではない。
+共通Widgetテスト：`test/features/data_processing_patterns/state_architecture_test.dart`。
+旧GetX Controller、成功メッセージだけのModelとServiceは削除。

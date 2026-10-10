@@ -1,24 +1,29 @@
-// Pattern 038: Prefetch - テスト
-// スクロール位置検出による先読み。
+import 'dart:convert';
+
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_038/model.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_038/service.dart';
 
-void main() {
-  group('Pattern 038: Prefetch', () {
-    test('model toJson and fromJson', () {
-      const result = Pattern038Result(message: 'test');
-      final json = result.toJson();
-      expect(json['message'], equals('test'));
-      final restored = Pattern038Result.fromJson(json);
-      expect(restored.message, equals('test'));
-    });
+class _Bundle extends CachingAssetBundle {
+  _Bundle(this.payload);
+  final String payload;
+  @override
+  Future<ByteData> load(String key) async =>
+      ByteData.sublistView(Uint8List.fromList(utf8.encode(payload)));
+  @override
+  Future<String> loadString(String key, {bool cache = true}) async => payload;
+}
 
-    test('service run completes', () async {
-      final service = Pattern038Service();
-      final result = await service.run();
-      expect(result, isA<Pattern038Result>());
-      expect(result.message, isNotEmpty);
-    });
+void main() {
+  test('pattern 038 loads externally computed window state', () async {
+    final service = Pattern038Service(bundle: _Bundle(
+      '{"schema":"collection-window/1","mode":"test","values":["item-05"]}',
+    ));
+    expect(await service.load(), equals(["item-05"]));
+  });
+
+  test('pattern 038 rejects malformed generated data', () async {
+    final service = Pattern038Service(bundle: _Bundle('{"schema":"collection-window/1"}'));
+    await expectLater(service.load(), throwsFormatException);
   });
 }

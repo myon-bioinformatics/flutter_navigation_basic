@@ -1,37 +1,12 @@
 // Pattern 184: DragReorder
-// 長押し+ドラッグによる並び替え。
+// Native Flutter gesture UI; shared implementation owns widget state.
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
+import '../../../../core/data_processing/interactive_pattern_example.dart';
 
-class Pattern184View extends GetView<Pattern184Controller> {
+class Pattern184View extends StatelessWidget {
   const Pattern184View({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 184: DragReorder'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '長押し+ドラッグによる並び替え。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      const InteractivePatternExample(patternId: 184);
 }

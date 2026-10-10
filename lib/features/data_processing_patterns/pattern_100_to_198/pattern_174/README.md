@@ -1,27 +1,13 @@
 # Pattern 174: InsertItem
 
-**カテゴリ**: 案D - データ処理パターン
-
 ## 概要
 リストへのアイテム挿入アニメーション。
 
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
+## 責務分離
+- `view.dart`: 番号付きViewの互換入口。Flutterの実操作は共通の `lib/core/data_processing/interactive_pattern_example.dart` が担当する。
+- 旧 `controller.dart` / `service.dart` / `model.dart` は100ms待機・固定成功文言だけのダミー実装だったため削除。
+- データ処理・外部CLIの責務はFlutter UIとは独立させる。現状、この画面からPython CLIを実行する接続はない。
+- `/screen174` から実際の操作画面を開ける。E2E専用の旧エイリアスも互換維持する。
 
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern174View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern174Controller())));
-```
-
-## 関連パターン
-- 前: Pattern 173
-- 次: Pattern 175
+## 検証
+Flutter WidgetテストとPlaywrightの実操作検証を使用する。CIの同一headでの成功確認が必要。

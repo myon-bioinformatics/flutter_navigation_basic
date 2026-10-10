@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../core/navigation/app_route_registry.dart';
+import '../core/data_processing/native_parallel_pattern_example.dart';
+import '../core/data_processing/interactive_pattern_example.dart';
 import '../core/navigation/route_names.dart';
 import '../screens/generic_screen.dart';
 
@@ -47,6 +49,24 @@ class AppRoutes {
         name,
         () => (_) => GenericScreen(screenId: screenId),
       );
+    }
+
+    // Real native interactions are available on their numbered catalogue routes.
+    // Keep the E2E aliases for existing browser test compatibility.
+    {
+      for (final patternId in [171, 172, 173, 174, 175, 183, 184]) {
+        map[screenRoute(patternId)] =
+            (_) => InteractivePatternExample(patternId: patternId);
+        if (const bool.fromEnvironment('E2E', defaultValue: false)) {
+          map['/examples/data-processing-interactions/$patternId'] =
+              map[screenRoute(patternId)]!;
+        }
+      }
+    }
+
+    for (final id in [136, 137]) {
+      map[screenRoute(id)] =
+          (_) => NativeParallelPatternExample(patternId: id);
     }
 
     map.addAll(AppRouteRegistry.catalogueRoutes);

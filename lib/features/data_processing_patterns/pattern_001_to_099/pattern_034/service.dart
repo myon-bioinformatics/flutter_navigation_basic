@@ -1,11 +1,8 @@
-// Pattern 034: LoadMore
-// 「もっと読む」ボタン形式のページング。
-import 'model.dart';
+// Pattern 034: LoadMore — Python collection-window state boundary.
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
 
-class Pattern034Service {
-  Future<Pattern034Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern034Result(message: 'LoadMore executed successfully');
-  }
+class Pattern034Service extends JsonListAsset {
+  Pattern034Service({AssetBundle? bundle})
+      : super('assets/data_processing/window_034.json', bundle: bundle);
 }

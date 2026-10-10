@@ -1,11 +1,8 @@
-// Pattern 009: SortBasic
-// 基本的なリストソート実装。
-import 'model.dart';
+// Pattern 009: SortBasic — Python-generated ordering result boundary.
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
 
-class Pattern009Service {
-  Future<Pattern009Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern009Result(message: 'SortBasic executed successfully');
-  }
+class Pattern009Service extends JsonListAsset {
+  Pattern009Service({AssetBundle? bundle})
+      : super('assets/data_processing/sort_basic.json', bundle: bundle);
 }

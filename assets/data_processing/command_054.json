@@ -1,0 +1,1 @@
+{"mode":"checklist","schema":"collection-command/1","state":{"items":["a","b","c","d"],"mode":"checklist","selected":["b"]},"values":[{"id":"a","selected":false},{"id":"b","selected":true},{"id":"c","selected":false},{"id":"d","selected":false}]}

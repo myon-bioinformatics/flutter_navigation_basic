@@ -1,37 +1,12 @@
-// Pattern 152: GetxObservable
-// Rx 変数による Observable 状態管理。
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
+import 'package:flutter_application_1/core/data_processing/native_state_catalogue_example.dart';
 
-class Pattern152View extends GetView<Pattern152Controller> {
+class Pattern152View extends StatelessWidget {
   const Pattern152View({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 152: GetxObservable'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Rx 変数による Observable 状態管理。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => const NativeStateCatalogueExample(
+    title: 'Pattern 152: GetxObservable',
+    legacyDescription: 'Rx 変数による Observable 状態管理。',
+  );
 }

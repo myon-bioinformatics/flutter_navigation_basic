@@ -1,37 +1,17 @@
-// Pattern 039: PageIndicator
-// ページインジケーター付きページング。
+// Pattern 039: PageIndicator — rendered Python state, no GetX controller.
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/processed_list_example.dart';
 
-class Pattern039View extends GetView<Pattern039Controller> {
-  const Pattern039View({super.key});
+import 'service.dart';
+
+class Pattern039View extends StatelessWidget {
+  const Pattern039View({super.key, this.bundle});
+  final AssetBundle? bundle;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 039: PageIndicator'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'ページインジケーター付きページング。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ProcessedListExample(
+        title: 'Pattern 039: PageIndicator',
+        asset: Pattern039Service(bundle: bundle),
+      );
 }

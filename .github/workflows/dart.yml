@@ -185,7 +185,26 @@ jobs:
       - name: Run sharded core tests
         run: |
           mapfile -t paths < <(grep -vE '^\s*(#|$)' tool/ci/flutter_core_test_paths.txt)
-          flutter test --total-shards=2 --shard-index=${{ matrix.shard }} "${paths[@]}"
+          mkdir -p build/test-results
+          flutter test --total-shards=2 --shard-index=${{ matrix.shard }} "${paths[@]}" --file-reporter json:build/test-results/flutter-core-${{ matrix.shard }}.jsonl
+
+      - name: Convert and validate core shard JUnit
+        if: always()
+        run: |
+          set -euo pipefail
+          python3 -S tool/python/flutter_machine_junit.py build/test-results/flutter-core-${{ matrix.shard }}.jsonl build/test-results/flutter-core-${{ matrix.shard }}.xml
+          python3 -S tool/python/validate_runner_junit.py build/test-results/flutter-core-${{ matrix.shard }}.xml
+
+      - name: Preserve core shard JUnit and raw events
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: junit-flutter-core-${{ matrix.shard }}
+          path: |
+            build/test-results/flutter-core-${{ matrix.shard }}.xml
+            build/test-results/flutter-core-${{ matrix.shard }}.jsonl
+          if-no-files-found: error
+          retention-days: 14
 
   # Pattern catalogues (~792 files): suite-load dominated. Run only when
   # pattern sources/tests or the pattern path list change (always on main).
@@ -214,7 +233,26 @@ jobs:
       - name: Run sharded pattern catalogue tests
         run: |
           mapfile -t paths < <(grep -vE '^\s*(#|$)' tool/ci/flutter_pattern_test_paths.txt)
-          flutter test --total-shards=4 --shard-index=${{ matrix.shard }} "${paths[@]}"
+          mkdir -p build/test-results
+          flutter test --total-shards=4 --shard-index=${{ matrix.shard }} "${paths[@]}" --file-reporter json:build/test-results/flutter-patterns-${{ matrix.shard }}.jsonl
+
+      - name: Convert and validate patterns shard JUnit
+        if: always()
+        run: |
+          set -euo pipefail
+          python3 -S tool/python/flutter_machine_junit.py build/test-results/flutter-patterns-${{ matrix.shard }}.jsonl build/test-results/flutter-patterns-${{ matrix.shard }}.xml
+          python3 -S tool/python/validate_runner_junit.py build/test-results/flutter-patterns-${{ matrix.shard }}.xml
+
+      - name: Preserve patterns shard JUnit and raw events
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: junit-flutter-patterns-${{ matrix.shard }}
+          path: |
+            build/test-results/flutter-patterns-${{ matrix.shard }}.xml
+            build/test-results/flutter-patterns-${{ matrix.shard }}.jsonl
+          if-no-files-found: error
+          retention-days: 14
 
   python-oracle:
     name: Python pytest oracles (Flutter path)

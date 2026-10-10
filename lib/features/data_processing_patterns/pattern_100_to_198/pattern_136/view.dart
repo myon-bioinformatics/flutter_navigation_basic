@@ -1,37 +1,11 @@
-// Pattern 136: Isolate
-// Dart Isolate による並列処理。
+// Pattern 136: native parallel execution entry point.
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
+import '../../../../core/data_processing/native_parallel_pattern_example.dart';
 
-class Pattern136View extends GetView<Pattern136Controller> {
+class Pattern136View extends StatelessWidget {
   const Pattern136View({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 136: Isolate'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Dart Isolate による並列処理。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      const NativeParallelPatternExample(patternId: 136);
 }
