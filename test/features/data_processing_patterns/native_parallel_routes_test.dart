@@ -14,16 +14,15 @@ void main() {
 
       // Isolate.run/compute complete on the real event loop. pumpAndSettle
       // alone cannot guarantee completion of an external isolate's Future.
-      await tester.runAsync(() async {
-        for (var attempt = 0; attempt < 100; attempt++) {
-          final status = tester.widget<Text>(
-            find.byKey(const ValueKey('parallel-status')),
-          ).data ?? '';
-          if (status.contains('55') || status.startsWith('失敗:')) return;
-          await Future<void>.delayed(const Duration(milliseconds: 50));
-        }
-      });
-      await tester.pump();
+      for (var attempt = 0; attempt < 100; attempt++) {
+        await tester.runAsync(() =>
+            Future<void>.delayed(const Duration(milliseconds: 50)));
+        await tester.pump();
+        final status = tester.widget<Text>(
+          find.byKey(const ValueKey('parallel-status')),
+        ).data ?? '';
+        if (status.contains('55') || status.startsWith('失敗:')) break;
+      }
       final actualStatus = tester.widget<Text>(
         find.byKey(const ValueKey('parallel-status')),
       ).data ?? '';
