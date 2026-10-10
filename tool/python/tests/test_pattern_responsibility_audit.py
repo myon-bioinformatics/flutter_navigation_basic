@@ -135,3 +135,12 @@ def test_pattern_in_wrong_bucket_is_rejected():
         (folder / "view.dart").write_text("class Example {}", encoding="utf-8")
         result = audit.audit(root)
         assert any("100: duplicate or misplaced" in error for error in result["errors"])
+
+
+def test_seven_shared_gesture_views_are_not_description_only():
+    for number in sorted(audit.GESTURES):
+        row = audit.inspect(ROOT, number)
+        assert row["status"] == "native_flutter_shared_interaction", row
+        assert row["dart_files"] == ["view.dart"]
+        assert not row["stale_readme"]
+        assert not any("E2E-only" in warning for warning in row["warnings"])
