@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_157/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_160/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_161/view.dart';
 
 void main() {
   final examples = <(String, Widget)>[
+    ('ProviderBasic', const Pattern157View()),
     ('InheritedWidget', const Pattern160View()),
     ('InheritedModel', const Pattern161View()),
   ];
