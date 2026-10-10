@@ -138,7 +138,13 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
     }
     entries = lock["files"]
     assert {(entry["repository"], entry["source"], entry["destination"]) for entry in entries} == expected
-    assert {entry["ref"] for entry in entries} == {"refs/heads/main"}
+    for entry in entries:
+        if entry["repository"] == "myon-bioinformatics/Ironmate":
+            # The metadata sources were retired from Ironmate main. Resolve the
+            # already-adopted source/LICENSE snapshot instead of a deleted path.
+            assert entry["ref"] == entry["commit"] == "73157cb7fed236a4a941722a6dcddd69a33ab95a"
+        else:
+            assert entry["ref"] == "refs/heads/main"
     assert len({entry["destination"] for entry in entries}) == len(entries)
     for entry in entries:
         commit = entry["commit"]

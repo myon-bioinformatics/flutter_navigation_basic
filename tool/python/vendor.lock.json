@@ -3,7 +3,7 @@
   "files": [
     {
       "repository": "myon-bioinformatics/Ironmate",
-      "ref": "refs/heads/main",
+      "ref": "73157cb7fed236a4a941722a6dcddd69a33ab95a",
       "commit": "73157cb7fed236a4a941722a6dcddd69a33ab95a",
       "source": "repository_metadata_contract.py",
       "destination": "tool/python/vendor/repository_metadata_contract.py",
@@ -12,7 +12,7 @@
     },
     {
       "repository": "myon-bioinformatics/Ironmate",
-      "ref": "refs/heads/main",
+      "ref": "73157cb7fed236a4a941722a6dcddd69a33ab95a",
       "commit": "73157cb7fed236a4a941722a6dcddd69a33ab95a",
       "source": "repository_metadata_generator.py",
       "destination": "tool/python/vendor/repository_metadata_generator.py",
@@ -21,7 +21,7 @@
     },
     {
       "repository": "myon-bioinformatics/Ironmate",
-      "ref": "refs/heads/main",
+      "ref": "73157cb7fed236a4a941722a6dcddd69a33ab95a",
       "commit": "73157cb7fed236a4a941722a6dcddd69a33ab95a",
       "source": "LICENSE",
       "destination": "tool/python/vendor/Ironmate-LICENSE",
