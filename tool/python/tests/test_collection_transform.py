@@ -71,3 +71,33 @@ def test_cli_stdin_and_errors():
     bad = subprocess.run([sys.executable,"-I","-S",str(SCRIPT)],input='{"operation":"zip","values":[]}',
                          text=True,capture_output=True,timeout=5)
     assert bad.returncode == 2 and not bad.stdout
+
+
+@pytest.mark.parametrize("operation", ["constraint", "partition"])
+@pytest.mark.parametrize("condition", [
+    {"operator": "unknown"},
+    {"operator": "greater_than", "value": "bad"},
+    {"operator": "type", "type": "unknown"},
+    {"operator": "not_null", "value": 1},
+    {"operator": "equals"},
+])
+def test_empty_values_still_validate_condition(operation, condition):
+    payload = {"operation": operation, "values": [], "condition": condition}
+    with pytest.raises(ValueError):
+        producer.process(payload)
+    completed = subprocess.run(
+        [sys.executable, "-I", "-S", str(SCRIPT)],
+        input=json.dumps(payload), text=True, capture_output=True, timeout=5,
+    )
+    assert completed.returncode == 2
+    assert not completed.stdout
+
+
+@pytest.mark.parametrize("operation", ["constraint", "partition"])
+def test_empty_values_accept_valid_condition(operation):
+    result = producer.process({
+        "operation": operation, "values": [],
+        "condition": {"operator": "greater_than", "value": 1},
+    })
+    assert result["values"] == ([] if operation == "constraint" else
+                                {"matched": [], "unmatched": []})
