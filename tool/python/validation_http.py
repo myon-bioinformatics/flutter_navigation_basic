@@ -14,10 +14,30 @@ from validation_patterns import run
 
 
 OPERATIONS = ('required', 'email', 'password', 'phone', 'url', 'date', 'range', 'regex', 'form')
+FLUTTER_DEV_ORIGIN = "http://localhost:8080"
 
 
 class Handler(BaseHTTPRequestHandler):
+    def _loopback_names(self):
+        port = self.server.server_address[1]
+        return {f"127.0.0.1:{port}", f"localhost:{port}"}
+
+    def _trusted(self):
+        """Reject DNS-rebinding hosts and foreign origins.
+
+        The form is served from this server itself, and browsers send Origin on
+        same-origin POSTs too, so this server's own origin must be accepted.
+        """
+        if self.headers.get("Host") not in self._loopback_names():
+            return False
+        origin = self.headers.get("Origin")
+        return origin is None or origin == FLUTTER_DEV_ORIGIN or origin in {
+            "http://" + name for name in self._loopback_names()}
+
     def do_GET(self):
+        if not self._trusted():
+            self.send_error(403)
+            return
         if self.path != '/':
             self.send_error(404)
             return
@@ -37,7 +57,9 @@ document.getElementById('run').addEventListener('click', async () => {
  if (operation === 'regex') payload.options = {pattern:'ascii_identifier'};
  if (operation === 'form') payload = {operation, fields:[{name:'required',rule:'required',value}]};
  try { const response = await fetch('/validate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-   const data = await response.json(); output.textContent = JSON.stringify({http_status:response.status,...data},null,2);
+   const text = await response.text(); let data;
+   try { data = JSON.parse(text); } catch { data = {error: 'non-JSON response'}; }
+   output.textContent = JSON.stringify({http_status:response.status,...data},null,2);
  } catch (error) { output.textContent = '通信エラー: '+String(error); }
 });
 </script></html>''').encode('utf-8')
@@ -54,7 +76,7 @@ document.getElementById('run').addEventListener('click', async () => {
         self.end_headers()
 
     def _headers(self):
-        self.send_header("Access-Control-Allow-Origin", "http://localhost:8080")
+        self.send_header("Access-Control-Allow-Origin", FLUTTER_DEV_ORIGIN)
         self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.send_header("Cache-Control", "no-store")
@@ -63,8 +85,7 @@ document.getElementById('run').addEventListener('click', async () => {
         if self.path != "/validate":
             self.send_error(404)
             return
-        origin = self.headers.get("Origin")
-        if origin and origin != "http://localhost:8080":
+        if not self._trusted():
             self.send_error(403)
             return
         try:
@@ -75,7 +96,7 @@ document.getElementById('run').addEventListener('click', async () => {
             result = run(payload)
             body = json.dumps(result, ensure_ascii=False).encode()
             status = 200
-        except (ValueError, TypeError, UnicodeError, KeyError):
+        except (ValueError, TypeError, UnicodeError, KeyError, RecursionError):
             body = b'{"error":"invalid validation request"}'
             status = 400
         self.send_response(status)

@@ -49,3 +49,31 @@ def test_bad_payload_fails_closed(server):
     with pytest.raises(HTTPError) as error:
         urlopen(request)
     assert error.value.code == 400
+
+
+def _post(url, body, **headers):
+    return Request(url + "/validate", method="POST", data=body,
+                   headers={"Content-Type": "application/json", **headers})
+
+
+def test_same_origin_form_post_is_accepted(server):
+    # Browsers send Origin on same-origin POSTs; the served form must work.
+    with urlopen(_post(server, json.dumps({"operation": "email", "value": "x"}).encode(),
+                       Origin=server)) as response:
+        assert json.load(response) == {"valid": False}
+
+
+@pytest.mark.parametrize("headers", [
+    {"Origin": "http://evil.example"},
+    {"Host": "evil.example"},  # DNS rebinding to 127.0.0.1
+])
+def test_foreign_origin_or_host_is_rejected(server, headers):
+    with pytest.raises(HTTPError) as error:
+        urlopen(_post(server, b'{"operation":"required","value":"x"}', **headers))
+    assert error.value.code == 403
+
+
+def test_deeply_nested_payload_fails_closed(server):
+    with pytest.raises(HTTPError) as error:
+        urlopen(_post(server, b"[" * 60000))
+    assert error.value.code == 400
