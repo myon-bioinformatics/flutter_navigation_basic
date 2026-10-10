@@ -1,13 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/navigation/app_route_registry.dart';
-import '../features/data_processing_patterns/pattern_100_to_198/pattern_171/view.dart';
-import '../features/data_processing_patterns/pattern_100_to_198/pattern_172/view.dart';
-import '../features/data_processing_patterns/pattern_100_to_198/pattern_173/view.dart';
-import '../features/data_processing_patterns/pattern_100_to_198/pattern_174/view.dart';
-import '../features/data_processing_patterns/pattern_100_to_198/pattern_175/view.dart';
-import '../features/data_processing_patterns/pattern_100_to_198/pattern_183/view.dart';
-import '../features/data_processing_patterns/pattern_100_to_198/pattern_184/view.dart';
+import '../core/data_processing/interactive_pattern_example.dart';
 import '../core/navigation/route_names.dart';
 import '../screens/generic_screen.dart';
 
@@ -60,16 +54,8 @@ class AppRoutes {
     // Keep the E2E aliases for existing browser test compatibility.
     {
       for (final patternId in [171, 172, 173, 174, 175, 183, 184]) {
-        map[screenRoute(patternId)] = (_) => switch (patternId) {
-          171 => const Pattern171View(),
-          172 => const Pattern172View(),
-          173 => const Pattern173View(),
-          174 => const Pattern174View(),
-          175 => const Pattern175View(),
-          183 => const Pattern183View(),
-          184 => const Pattern184View(),
-          _ => throw StateError('Unsupported native pattern'),
-        };
+        map[screenRoute(patternId)] =
+            (_) => InteractivePatternExample(patternId: patternId);
         if (const bool.fromEnvironment('E2E', defaultValue: false)) {
           map['/examples/data-processing-interactions/$patternId'] =
               map[screenRoute(patternId)]!;
