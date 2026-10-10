@@ -93,6 +93,8 @@ import 'package:flutter_application_1/features/data_processing_patterns/pattern_
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_148/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_149/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_150/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_164/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_165/view.dart';
 
 // One widget boundary test for catalogue entries with no executable producer.
 // Do not preserve old fake success messages or GetX controllers as test oracles.
@@ -191,6 +193,8 @@ void main() {
     ('148', 'Pattern 148: MicrotaskQueue', 'マイクロタスクキューの活用。', const Pattern148View()),
     ('149', 'Pattern 149: SuspendResume', '非同期処理の一時停止と再開。', const Pattern149View()),
     ('150', 'Pattern 150: AsyncGenerator', '非同期ジェネレーター関数の実装。', const Pattern150View()),
+    ('164', 'Pattern 164: EventState', 'イベント→状態遷移パターン。', const Pattern164View()),
+    ('165', 'Pattern 165: Redux', 'Redux パターンの擬似実装。', const Pattern165View()),
   ];
 
   for (final (id, title, description, view) in cases) {
