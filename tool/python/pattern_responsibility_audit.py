@@ -18,6 +18,7 @@ FAKE = ("TODO: 実装を追加してください",
         "await Future.delayed(const Duration(milliseconds: 100));",
         "executed successfully")
 PRODUCERS = (
+    ((1, 2, 3, 30, 86, 113), "python", "tool/python/list_selection.py", "tool/python/tests/test_list_selection_runtime.py"),
     (range(114, 121), "python", "tool/python/collection_transform.py", "tool/python/tests/test_collection_transform.py"),
     (range(121, 127), "javascript", "tool/javascript/future_patterns.mjs", "tool/javascript/tests/future_patterns.test.mjs"),
     (range(127, 136), "javascript", "tool/javascript/stream_patterns.mjs", "tool/javascript/tests/stream_patterns.test.mjs"),
@@ -85,9 +86,12 @@ def inspect(root: Path, number: int) -> dict:
         status = "description_only"
     else:
         status = "needs_manual_review"
-    stale = any((part+".dart" in readme and part+".dart" not in dart)
-                for part in ("controller","model","service"))
-    stale = stale or ("Get.to(" in readme and "controller.dart" not in dart)
+    # Historical prose about removed files is not an active import.
+    stale = any(
+        re.search(r"(?m)^\\s*(?:import|export|part)\\s+['\\\"][^'\\\"]*" + part + r"\\.dart", readme)
+        and part + ".dart" not in dart
+        for part in ("controller", "model", "service")
+    )
     warnings=[]
     if stale:
         warnings.append("README mentions removed files or old GetX example")
