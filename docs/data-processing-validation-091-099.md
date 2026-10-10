@@ -25,3 +25,17 @@
 2. Add browser/Flutter UI wiring only when an actual execution path is defined; do not claim standalone CLI tests prove UI functionality.
 3. When changing Views, record production Dart/test Dart deletions, case-level JUnit, browser operation and actual output.
 4. Never present email/URL/password heuristics as authoritative security validation.
+
+## ブラウザからの実入力（新規）
+
+ローカルで以下を実行し、`http://127.0.0.1:8765/` を開く。
+
+```sh
+python3 -S tool/python/validation_http.py --port 8765
+```
+
+入力欄・検証種別・検証ボタンがあり、JavaScript `fetch` からPythonの `/validate` を呼び、実際の検証結果を表示する。サーバーは127.0.0.1にのみbindする開発用デモで、公開運用や個人情報の入力は想定しない。
+
+**重要な境界:** これはPythonで提供するブラウザ入力画面であり、Flutterの `/screen091`〜`/screen099` への組込みではない。Flutter画面への導線・Web配布環境でのAPI配置・Playwright E2Eは未実装。各パターンの完成度は引き続き**限定実装**。
+
+テスト: `tool/python/tests/test_validation_http.py`（HTTP入力画面、実API応答、不正入力）。ブラウザ自動操作は別途必要。
