@@ -123,14 +123,22 @@ def audit(root: Path) -> dict:
     base=root/"lib/features/data_processing_patterns"
     if not base.is_dir():
         raise ValueError("missing pattern catalogue")
-    numbers=sorted({int(path.name.removeprefix("pattern_"))
-        for path in base.glob("pattern_*_to_*/pattern_*")
-        if path.is_dir() and re.fullmatch(r"pattern_\d{3}",path.name)})
-    records=[inspect(root,i) for i in numbers]
-    expected=set(range(1,199))
-    observed=set(numbers)
-    errors=["%03d: missing catalogue pattern" % i for i in sorted(expected-observed)]
-    errors += ["%03d: unexpected catalogue pattern" % i for i in sorted(observed-expected)]
+    folders = sorted(path for path in base.glob("pattern_*_to_*/pattern_*")
+                     if path.is_dir() and re.fullmatch(r"pattern_\d{3}", path.name))
+    locations = {}
+    for folder in folders:
+        number = int(folder.name.removeprefix("pattern_"))
+        locations.setdefault(number, []).append(folder)
+    numbers = sorted(locations)
+    records = [inspect(root, i) for i in numbers]
+    expected = set(range(1, 199))
+    observed = set(numbers)
+    errors = ["%03d: missing catalogue pattern" % i for i in sorted(expected - observed)]
+    errors += ["%03d: unexpected catalogue pattern" % i for i in sorted(observed - expected)]
+    for number, paths in sorted(locations.items()):
+        if len(paths) != 1 or paths[0] != pattern_dir(root, number):
+            errors.append("%03d: duplicate or misplaced catalogue directory: %s" %
+                          (number, ", ".join(str(p.relative_to(base)) for p in paths)))
     counts=dict(sorted(Counter(item["status"] for item in records).items()))
     for row in records:
         if row["status"] in ("missing_catalogue_artifact", "getx_unreviewed", "needs_manual_review"):
