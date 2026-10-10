@@ -39,6 +39,22 @@ PRODUCERS = (
 )
 NATIVE = set(range(151,164)) | set(range(166,171))
 GESTURES = {171, 172, 173, 174, 175, 183, 184}
+ROUTES = "lib/config/routes.dart"
+
+def routed_interactions(root: Path) -> set[int]:
+    """Ids that the public route table really maps to InteractivePatternExample.
+
+    A View that merely contains the class name is not evidence: routes.dart must
+    build the shared widget inside the numbered-pattern loop.
+    """
+    path = root/ROUTES
+    if not path.is_file():
+        return set()
+    text = path.read_text(encoding="utf-8")
+    loop = re.search(r"for \(final patternId in \[([\d,\s]+)\]\)\s*\{(.*?)\n\s*\}\n", text, re.DOTALL)
+    if not loop or "InteractivePatternExample(patternId: patternId)" not in loop.group(2):
+        return set()
+    return {int(item) for item in re.findall(r"\d+", loop.group(1))}
 
 def pattern_dir(root: Path, number: int) -> Path:
     bucket = "pattern_001_to_099" if number <= 99 else "pattern_100_to_198"
@@ -86,7 +102,8 @@ def inspect(root: Path, number: int) -> dict:
         status = "standalone_cli_ui_unwired"
     elif asset:
         status = "precomputed_asset_view"
-    elif number in GESTURES and not getx and "InteractivePatternExample" in view:
+    elif (number in GESTURES and not getx and "InteractivePatternExample" in view
+          and number in routed_interactions(root)):
         status = "native_flutter_shared_interaction"
     elif number in NATIVE and not getx:
         status = "native_flutter_example"
@@ -120,7 +137,7 @@ def inspect(root: Path, number: int) -> dict:
     if number in (136,137):
         warnings.append("Dart Isolate/compute must be tested in native runtime")
     if number in GESTURES and status != "native_flutter_shared_interaction":
-        warnings.append("Native gesture View integration is not evidenced")
+        warnings.append("Native gesture View or its numbered route is not evidenced")
     elif number in GESTURES:
         warnings.append("Native interaction View exists; verify numbered route and browser gestures separately")
     if number in (187,191,192,195,196,198):

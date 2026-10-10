@@ -144,3 +144,35 @@ def test_seven_shared_gesture_views_are_not_description_only():
         assert row["dart_files"] == ["view.dart"]
         assert not row["stale_readme"]
         assert not any("E2E-only" in warning for warning in row["warnings"])
+
+
+def _gesture_root(td, routes_text):
+    root = Path(td)
+    setup(root, 171)
+    (audit.pattern_dir(root, 171)/"view.dart").write_text(
+        "const InteractivePatternExample(patternId: 171);\n", encoding="utf-8")
+    (root/"lib/config").mkdir(parents=True)
+    (root/audit.ROUTES).write_text(routes_text, encoding="utf-8")
+    return root
+
+
+ROUTED = """for (final patternId in [171, 172]) {
+  map[screenRoute(patternId)] =
+      (_) => InteractivePatternExample(patternId: patternId);
+}
+"""
+
+
+def test_gesture_view_needs_a_numbered_route_to_count_as_native():
+    with tempfile.TemporaryDirectory() as td:
+        row = audit.inspect(_gesture_root(td, ROUTED), 171)
+        assert row["status"] == "native_flutter_shared_interaction", row
+    for label, routes in (
+        ("id removed from the loop", ROUTED.replace("171, ", "")),
+        ("loop builds a different widget", ROUTED.replace("InteractivePatternExample", "GenericScreen")),
+        ("no routes.dart content", ""),
+    ):
+        with tempfile.TemporaryDirectory() as td:
+            row = audit.inspect(_gesture_root(td, routes), 171)
+            assert row["status"] != "native_flutter_shared_interaction", label
+            assert any("numbered route is not evidenced" in w for w in row["warnings"]), label
