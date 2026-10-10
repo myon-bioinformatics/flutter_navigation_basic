@@ -43,6 +43,16 @@ jobs:
         run: python -m pytest tool/python/tests/test_pattern_catalogue_boundary.py tool/python/tests/test_collection_assets.py tool/python/tests/test_collection_transform.py tool/python/tests/test_state_reducer.py tool/python/tests/test_workflow_patterns.py tool/python/tests/test_pattern_responsibility_audit.py -q --junitxml=python-refactor-junit.xml
       - name: Export responsibility inventory
         run: python -S tool/python/pattern_responsibility_audit.py --json --check > pattern-responsibility.json
+      - name: Render all 198 pattern statuses
+        run: |
+          python3 -S tool/python/render_pattern_status.py pattern-responsibility.json pattern-status.md --head "${{ github.sha }}"
+      - name: Upload readable 198-pattern status report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-pattern-status-198
+          path: pattern-status.md
+          if-no-files-found: error
       - name: Upload responsibility inventory
         if: always()
         uses: actions/upload-artifact@v4
