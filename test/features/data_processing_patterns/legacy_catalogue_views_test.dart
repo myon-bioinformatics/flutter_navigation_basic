@@ -58,6 +58,13 @@ import 'package:flutter_application_1/features/data_processing_patterns/pattern_
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_110/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_111/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_112/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_114/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_115/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_116/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_117/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_118/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_119/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_120/view.dart';
 
 // One widget boundary test for catalogue entries with no executable producer.
 // Do not preserve old fake success messages or GetX controllers as test oracles.
@@ -121,6 +128,13 @@ void main() {
     ('110', 'Pattern 110: DataMasking', '機密データのマスキング処理。', const Pattern110View()),
     ('111', 'Pattern 111: DataEnrich', '外部データによるデータ補完。', const Pattern111View()),
     ('112', 'Pattern 112: DataClean', '欠損値・外れ値のクリーニング処理。', const Pattern112View()),
+    ('114', 'Pattern 114: SchemaValidation', 'スキーマ定義によるバリデーション。', const Pattern114View()),
+    ('115', 'Pattern 115: Constraint', '制約定義によるデータ整合性チェック。', const Pattern115View()),
+    ('116', 'Pattern 116: Pipeline', 'データ変換パイプライン実装。', const Pattern116View()),
+    ('117', 'Pattern 117: MapReduce', 'MapReduce 風データ集計処理。', const Pattern117View()),
+    ('118', 'Pattern 118: Flatten', 'ネストリストのフラット化処理。', const Pattern118View()),
+    ('119', 'Pattern 119: Partition', '条件によるデータ分割処理。', const Pattern119View()),
+    ('120', 'Pattern 120: Zip', '複数リストの Zip 結合処理。', const Pattern120View()),
   ];
 
   for (final (id, title, description, view) in cases) {
