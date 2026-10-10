@@ -1,0 +1,26 @@
+name: Structure refactor validation
+
+on:
+  push:
+    branches:
+      - work/structure-service-consolidation-20261010
+
+permissions:
+  contents: read
+
+jobs:
+  structure-widget:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.0'
+          cache: true
+      - run: flutter pub get
+      - name: Verify structure widget and loader
+        run: flutter test test/features/data_processing_patterns/structure_assets_test.dart
+      - name: Analyze Flutter source
+        run: flutter analyze
+      - name: Build Flutter web
+        run: flutter build web
