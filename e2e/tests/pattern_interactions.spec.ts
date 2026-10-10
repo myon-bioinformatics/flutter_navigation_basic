@@ -1,8 +1,9 @@
 import {test,expect,Page} from '@playwright/test';
 import {waitForFlutter} from '../utils/helpers';
 
-// These routes are enabled only in flutter build --dart-define=E2E=true.
-// /screen171 etc instead render GenericScreen and cannot validate this widget.
+// The /examples/data-processing-interactions/<id> aliases exist only in
+// `flutter build --dart-define=E2E=true`. The numbered /screenNNN routes render
+// the same widget in every build (lib/config/routes.dart); the last test pins that.
 async function openInteraction(page:Page,id:number) {
   await page.goto('/#/examples/data-processing-interactions/'+id);
   await waitForFlutter(page);
@@ -65,4 +66,11 @@ test('184 long-press list drag is externally operable @gesture',async({page})=>{
   await openInteraction(page,184);
   await pointerDrag(page,'A','C',700);
   await expect(page.getByText('順序: A, B, C')).not.toBeVisible();
+});
+test('/screen171 opens the real interaction, not GenericScreen @portable',async({page})=>{
+  // Numbered catalogue route: exists in the non-E2E build too.
+  await page.goto('/#/screen171');
+  await waitForFlutter(page);
+  await expect(page.getByText('Pattern 171: SortableList',{exact:true})).toBeVisible();
+  await expect(page.getByText('順序: A, B, C')).toBeVisible();
 });
