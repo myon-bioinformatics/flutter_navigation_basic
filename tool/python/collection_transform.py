@@ -80,11 +80,28 @@ def _schema_spec(spec: object) -> None:
         _schema_spec(spec["items"])
 
 
-def _predicate(value: object, condition: object) -> bool:
+def _validate_condition(condition: object) -> dict:
+    """Validate the predicate contract even when there are no input values."""
     spec = _keys(condition, {"operator"}, {"value", "type"})
     op = spec["operator"]
-    _valid(op in {"equals", "not_equals", "greater_than", "less_than", "type", "not_null"},
+    _valid(isinstance(op, str) and op in
+           {"equals", "not_equals", "greater_than", "less_than", "type", "not_null"},
            "unknown constraint")
+    if op == "not_null":
+        _valid(set(spec) == {"operator"}, "not_null accepts no operand")
+    elif op == "type":
+        _valid("type" in spec and "value" not in spec, "type requires type")
+        _valid(isinstance(spec["type"], str) and spec["type"] in _TYPES, "invalid JSON type")
+    else:
+        _valid("value" in spec and "type" not in spec, "missing constraint value")
+        if op in ("greater_than", "less_than"):
+            _valid(type(spec["value"]) in (int, float), "ordered comparisons require numbers")
+    return spec
+
+
+def _predicate(value: object, condition: object) -> bool:
+    spec = _validate_condition(condition)
+    op = spec["operator"]
     if op == "not_null":
         _valid(set(spec) == {"operator"}, "not_null accepts no operand")
         return value is not None
@@ -154,9 +171,8 @@ def process(payload: object) -> dict:
         result = [_schema(x, obj["schema"]) for x in values]
     elif op == "constraint":
         _valid("condition" in obj, "condition is required")
+        _validate_condition(obj["condition"])
         result = [_predicate(x, obj["condition"]) for x in values]
-        if not values:
-            _predicate(None, obj["condition"]) if obj["condition"].get("operator") in ("not_null", "type", "equals", "not_equals") else _keys(obj["condition"], {"operator", "value"})
     elif op == "pipeline":
         _valid("steps" in obj, "steps is required")
         result = _pipeline(values, obj["steps"])
@@ -184,6 +200,7 @@ def process(payload: object) -> dict:
         result = _flatten(values)
     elif op == "partition":
         _valid("condition" in obj, "condition is required")
+        _validate_condition(obj["condition"])
         yes, no = [], []
         for item in values:
             (yes if _predicate(item, obj["condition"]) else no).append(item)
