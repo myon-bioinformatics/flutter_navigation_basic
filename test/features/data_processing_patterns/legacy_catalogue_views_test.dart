@@ -26,6 +26,15 @@ import 'package:flutter_application_1/features/data_processing_patterns/pattern_
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_078/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_079/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_080/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_081/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_082/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_083/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_084/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_085/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_087/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_088/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_089/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_090/view.dart';
 
 // One widget boundary test for catalogue entries with no executable producer.
 // Do not preserve old fake success messages or GetX controllers as test oracles.
@@ -57,6 +66,15 @@ void main() {
     ('078', 'Pattern 078: ComputeCache', '計算結果キャッシュ (メモ化)。', const Pattern078View()),
     ('079', 'Pattern 079: LazyInit', '遅延初期化パターン。', const Pattern079View()),
     ('080', 'Pattern 080: ObjectPool', 'オブジェクトプール実装。', const Pattern080View()),
+    ('081', 'Pattern 081: MemoryLimit', 'メモリ上限監視と解放。', const Pattern081View()),
+    ('082', 'Pattern 082: GcFriendly', 'GC フレンドリーなデータ管理。', const Pattern082View()),
+    ('083', 'Pattern 083: Dispose', '適切なリソース解放パターン。', const Pattern083View()),
+    ('084', 'Pattern 084: StreamBuffer', 'ストリームバッファリング実装。', const Pattern084View()),
+    ('085', 'Pattern 085: DataCompression', 'データ圧縮 (gzip 相当、擬似実装)。', const Pattern085View()),
+    ('087', 'Pattern 087: Denormalize', 'パフォーマンス向けデータ非正規化。', const Pattern087View()),
+    ('088', 'Pattern 088: SnapshotCache', 'スナップショットキャッシュパターン。', const Pattern088View()),
+    ('089', 'Pattern 089: DeltaCache', '差分 (Delta) キャッシュ更新。', const Pattern089View()),
+    ('090', 'Pattern 090: ReadThrough', 'Read-Through キャッシュ実装。', const Pattern090View()),
   ];
 
   for (final (id, title, description, view) in cases) {
