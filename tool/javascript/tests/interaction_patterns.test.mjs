@@ -13,7 +13,9 @@ test("debounce coalesces events and cancel prevents delivery", () => {
   trigger("first");
   trigger("last");
   assert.equal(callbacks.size, 1);
-  [...callbacks.values()][0]();
+  const [timerId, callback] = [...callbacks.entries()][0];
+  callbacks.delete(timerId);
+  callback();
   assert.deepEqual(seen, ["last"]);
   trigger("cancelled");
   trigger.cancel();
