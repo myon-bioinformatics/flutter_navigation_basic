@@ -116,8 +116,11 @@ def audit(root: Path) -> dict:
         for path in base.glob("pattern_*_to_*/pattern_*")
         if path.is_dir() and re.fullmatch(r"pattern_\d{3}",path.name)})
     records=[inspect(root,i) for i in numbers]
+    expected=set(range(1,199))
+    observed=set(numbers)
+    errors=["%03d: missing catalogue pattern" % i for i in sorted(expected-observed)]
+    errors += ["%03d: unexpected catalogue pattern" % i for i in sorted(observed-expected)]
     counts=dict(sorted(Counter(item["status"] for item in records).items()))
-    errors=[]
     for row in records:
         if row["status"] in ("missing_catalogue_artifact", "getx_unreviewed", "needs_manual_review"):
             errors.append("%03d: missing or unclassified implementation evidence" % row["id"])
