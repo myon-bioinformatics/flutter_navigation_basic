@@ -58,17 +58,6 @@ jobs:
           path: python-refactor-junit.xml
           if-no-files-found: error
 
-  node:
-    name: JavaScript async boundary
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Node built-in unit tests
-        run: node --test tool/javascript/tests/*.test.mjs
-
   flutter:
     name: Flutter shared boundary
     runs-on: ubuntu-latest
@@ -80,8 +69,53 @@ jobs:
           cache: true
       - run: flutter pub get
       - name: Shared data-processing widget tests
-        run: flutter test test/features/data_processing_patterns/structure_assets_test.dart test/features/data_processing_patterns/command_assets_test.dart test/features/data_processing_patterns/legacy_catalogue_views_test.dart test/features/data_processing_patterns/native_state_catalogue_test.dart test/features/data_processing_patterns/native_notifier_test.dart test/features/data_processing_patterns/inherited_catalogue_test.dart test/features/data_processing_patterns/state_architecture_test.dart test/features/data_processing_patterns/counter_architecture_test.dart test/features/data_processing_patterns/interactive_pattern_example_test.dart --reporter expanded
+        run: |
+          mkdir -p build/test-results
+          flutter test test/features/data_processing_patterns/structure_assets_test.dart test/features/data_processing_patterns/command_assets_test.dart test/features/data_processing_patterns/legacy_catalogue_views_test.dart test/features/data_processing_patterns/native_state_catalogue_test.dart test/features/data_processing_patterns/native_notifier_test.dart test/features/data_processing_patterns/inherited_catalogue_test.dart test/features/data_processing_patterns/state_architecture_test.dart test/features/data_processing_patterns/counter_architecture_test.dart test/features/data_processing_patterns/interactive_pattern_example_test.dart --reporter expanded --file-reporter json:build/test-results/flutter-events.jsonl
+      - name: Convert and validate Flutter JUnit
+        if: always()
+        run: |
+          set -euo pipefail
+          python3 -S tool/python/flutter_machine_junit.py build/test-results/flutter-events.jsonl build/test-results/flutter.xml
+          python3 -S tool/python/validate_runner_junit.py build/test-results/flutter.xml
+      - name: Preserve Flutter JUnit and raw events
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-flutter-refactor
+          path: |
+            build/test-results/flutter.xml
+            build/test-results/flutter-events.jsonl
+          if-no-files-found: error
       - name: Analyze Flutter source
         run: flutter analyze --no-fatal-infos
       - name: Build Flutter web
         run: flutter build web
+
+  node:
+    name: JavaScript async boundary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Execute real Node tests with native JUnit
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/test-results
+          node --test \
+            --test-reporter=spec --test-reporter-destination=stdout \
+            --test-reporter=junit --test-reporter-destination=build/test-results/node.xml \
+            tool/javascript/tests/*.test.mjs
+      - name: Validate native JUnit report
+        if: always()
+        run: python3 -S tool/python/validate_runner_junit.py build/test-results/node.xml
+      - name: Preserve Node JUnit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-node-refactor
+          path: build/test-results/node.xml
+          if-no-files-found: error
