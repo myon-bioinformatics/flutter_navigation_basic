@@ -497,9 +497,23 @@ jobs:
             fi
             sleep 1
           done
-          python3 ../tool/python/playwright.py test --project chromium --project firefox --project webkit --project mobile-chromium --project mobile-webkit --grep @portable tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts tests/photo_studio_ingress.spec.ts tests/photo_studio_format_matrix.spec.ts
-          python3 ../tool/python/playwright.py interaction --project chromium --kind portable
-          python3 ../tool/python/playwright.py interaction --project chromium --kind gesture
+          junit_dir="$GITHUB_WORKSPACE/build/test-results"
+          mkdir -p "$junit_dir"
+          PLAYWRIGHT_JUNIT_OUTPUT_FILE="$junit_dir/playwright-portable.xml" \
+            python3 ../tool/python/playwright.py test --project chromium --project firefox --project webkit --project mobile-chromium --project mobile-webkit --grep @portable tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts tests/photo_studio_ingress.spec.ts tests/photo_studio_format_matrix.spec.ts
+          PLAYWRIGHT_JUNIT_OUTPUT_FILE="$junit_dir/playwright-interaction-portable.xml" \
+            python3 ../tool/python/playwright.py interaction --project chromium --kind portable
+          PLAYWRIGHT_JUNIT_OUTPUT_FILE="$junit_dir/playwright-interaction-gesture.xml" \
+            python3 ../tool/python/playwright.py interaction --project chromium --kind gesture
+
+      - name: Preserve junit-playwright-e2e
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: junit-playwright-e2e
+          path: build/test-results/playwright-*.xml
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Upload Playwright report
         if: always()
@@ -514,12 +528,44 @@ jobs:
 
 
 
+  # The collector only sees artifacts of THIS workflow run, so the expectation
+  # must follow which producer jobs the path classifier actually selected.
+  junit-plan:
+    name: Plan expected JUnit reports
+    needs: changes
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.plan.outputs.run }}
+      reports: ${{ steps.plan.outputs.reports }}
+    steps:
+      - id: plan
+        env:
+          PYTHON: ${{ needs.changes.outputs.python == 'true' || needs.changes.outputs.workflow == 'true' }}
+          PLAYWRIGHT: ${{ needs.changes.outputs.playwright == 'true' }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+
+          reports = []
+          if os.environ["PYTHON"] == "true":
+              reports += ["junit-python-3.12/python-3.12.xml",
+                          "junit-controlled-python-3.12/junit.xml"]
+          if os.environ["PLAYWRIGHT"] == "true":
+              reports += ["junit-playwright-e2e/playwright-portable.xml",
+                          "junit-playwright-e2e/playwright-interaction-portable.xml",
+                          "junit-playwright-e2e/playwright-interaction-gesture.xml"]
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write("run=" + ("true" if reports else "false") + "\n")
+              output.write("reports=" + json.dumps(reports) + "\n")
+          PY
+
   junit-identity:
-    needs: [changes, python-pytest]
-    if: always() && (needs.changes.outputs.python == 'true' || needs.changes.outputs.workflow == 'true')
+    needs: [changes, junit-plan, python-pytest, playwright]
+    if: always() && needs.junit-plan.outputs.run == 'true'
     permissions:
       contents: read
       actions: read
     uses: myon-bioinformatics/myon-bioinformatics/.github/workflows/reusable-junit-identity.yml@4dfda95d6573250477f991a0421fa6acb9bc0258
     with:
-      expected-reports: '["junit-python-3.12/python-3.12.xml", "junit-controlled-python-3.12/junit.xml"]'
+      expected-reports: ${{ needs.junit-plan.outputs.reports }}

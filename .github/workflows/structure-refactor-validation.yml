@@ -67,7 +67,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: python-refactor-junit
+          name: junit-python-refactor
           path: python-refactor-junit.xml
           if-no-files-found: error
 
@@ -132,3 +132,17 @@ jobs:
           name: junit-node-refactor
           path: build/test-results/node.xml
           if-no-files-found: error
+
+  # The shared collector reads only junit-* artifacts of this run, so every lane
+  # above is named junit-<lane>-refactor. A lane that produced no XML (or one that
+  # failed before writing it) makes collection fail instead of looking green.
+  junit-identity:
+    name: Refactor JUnit identity
+    needs: [python, flutter, node]
+    if: always()
+    permissions:
+      contents: read
+      actions: read
+    uses: myon-bioinformatics/myon-bioinformatics/.github/workflows/reusable-junit-identity.yml@4dfda95d6573250477f991a0421fa6acb9bc0258
+    with:
+      expected-reports: '["junit-python-refactor/python-refactor-junit.xml", "junit-node-refactor/node.xml", "junit-flutter-refactor/flutter.xml"]'
