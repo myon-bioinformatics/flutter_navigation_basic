@@ -81,6 +81,8 @@ def inspect(root: Path, number: int) -> dict:
         status = "standalone_cli_ui_unwired"
     elif asset:
         status = "precomputed_asset_view"
+    elif number in GESTURES and not getx and "InteractivePatternExample" in view:
+        status = "native_flutter_shared_interaction"
     elif number in NATIVE and not getx:
         status = "native_flutter_example"
     elif getx:
@@ -112,8 +114,10 @@ def inspect(root: Path, number: int) -> dict:
         warnings.append("XSS requires contextual encoding; SQL requires parameterized statements")
     if number in (136,137):
         warnings.append("Dart Isolate/compute must be tested in native runtime")
-    if number in GESTURES:
-        warnings.append("E2E-only direct gesture route is not /screenNNN catalogue screen")
+    if number in GESTURES and status != "native_flutter_shared_interaction":
+        warnings.append("Native gesture View integration is not evidenced")
+    elif number in GESTURES:
+        warnings.append("Native interaction View exists; verify numbered route and browser gestures separately")
     if number in (187,191,192,195,196,198):
         warnings.append("In-memory reference does not prove durable/distributed service semantics")
     return {"id":number,"name":name,"status":status,"target_owner":responsibility(number),
