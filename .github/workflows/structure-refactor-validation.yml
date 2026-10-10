@@ -40,7 +40,7 @@ jobs:
       - name: Install pytest
         run: python -m pip install 'pytest>=8'
       - name: Verify Python boundaries and producer/asset parity
-        run: python -m pytest tool/python/tests/test_pattern_catalogue_boundary.py tool/python/tests/test_collection_assets.py tool/python/tests/test_collection_transform.py tool/python/tests/test_state_reducer.py tool/python/tests/test_workflow_patterns.py tool/python/tests/test_validation_patterns.py tool/python/tests/test_pattern_responsibility_audit.py tool/python/tests/test_render_pattern_status.py -q --junitxml=python-refactor-junit.xml
+        run: python -m pytest tool/python/tests/test_pattern_catalogue_boundary.py tool/python/tests/test_collection_assets.py tool/python/tests/test_collection_transform.py tool/python/tests/test_state_reducer.py tool/python/tests/test_workflow_patterns.py tool/python/tests/test_validation_patterns.py tool/python/tests/test_validation_http.py tool/python/tests/test_pattern_responsibility_audit.py tool/python/tests/test_render_pattern_status.py -q --junitxml=python-refactor-junit.xml
       - name: Export responsibility inventory
         run: python -S tool/python/pattern_responsibility_audit.py --json --check > pattern-responsibility.json
       - name: Render all 198 pattern statuses
