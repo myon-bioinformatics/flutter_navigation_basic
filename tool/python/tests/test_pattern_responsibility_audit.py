@@ -47,3 +47,30 @@ def test_repository_inventory_is_dynamic_and_well_formed():
         len(record["dart_files"]) for record in result["patterns"])
     assert not result["errors"],result["errors"]
     assert "implemented" not in result["summary"]["statuses"]
+
+
+def test_missing_catalogue_id_fails_check():
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        setup(root, 1)
+        result = audit.audit(root)
+        assert result["summary"]["patterns"] == 1
+        assert "002: missing catalogue pattern" in result["errors"]
+        assert result["summary"]["errors"] >= 197
+
+
+def test_empty_catalogue_fails_check():
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        (root / "lib/features/data_processing_patterns").mkdir(parents=True)
+        result = audit.audit(root)
+        assert result["summary"]["patterns"] == 0
+        assert len(result["errors"]) == 198
+
+
+def test_unexpected_catalogue_id_is_reported():
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        setup(root, 199)
+        result = audit.audit(root)
+        assert "199: unexpected catalogue pattern" in result["errors"]
