@@ -12,7 +12,7 @@ is not regarded as implemented behavior.
 | 127–135 Stream/buffering | JavaScript async iterator / event stream | actual Dart Stream semantics only if required by UI | planned |
 | 136–137 Isolate/compute | Flutter (native runtime) | Isolate scheduling, compute behavior | retain until real test |
 | 138–150 queue, locks, throttling, async generator | JS / Node for event-loop concepts; Python asyncio for backend work | only platform-specific scheduling if present | planned |
-| 151–156 GetX examples | Flutter standard primitives or JS events, **not GetX** | meaningful native replacement or explicitly retire samples | planned |
+| 151–156 GetX catalogue | Flutter ValueNotifier shared native UI; GetX-specific samples explicitly retired | native state/lifecycle only, no false GetX parity | implemented; Flutter widget tests |
 | 157–170 notifier/inherited/state/MVC | Flutter for widgets/notifiers; Python or JS for pure state transitions | widget propagation, lifecycle and rendering | planned |
 | 171–175 drag, reorder, animation | Flutter | touch/drag/animation, widget-specific interactions | planned |
 | 176–179 swap/move/sorted insert | Python | render lists / forward user commands | planned |

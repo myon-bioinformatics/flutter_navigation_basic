@@ -1,37 +1,12 @@
-// Pattern 151: GetxState
-// GetX を使った基本的な状態管理。
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
+import 'package:flutter_application_1/core/data_processing/native_state_catalogue_example.dart';
 
-class Pattern151View extends GetView<Pattern151Controller> {
+class Pattern151View extends StatelessWidget {
   const Pattern151View({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 151: GetxState'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'GetX を使った基本的な状態管理。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => const NativeStateCatalogueExample(
+    title: 'Pattern 151: GetxState',
+    legacyDescription: 'GetX を使った基本的な状態管理。',
+  );
 }
