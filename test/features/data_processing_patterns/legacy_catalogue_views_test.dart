@@ -95,6 +95,27 @@ import 'package:flutter_application_1/features/data_processing_patterns/pattern_
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_150/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_164/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_165/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_176/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_177/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_178/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_179/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_180/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_181/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_182/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_185/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_186/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_187/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_188/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_189/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_190/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_191/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_192/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_193/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_194/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_195/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_196/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_197/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_198/view.dart';
 
 // One widget boundary test for catalogue entries with no executable producer.
 // Do not preserve old fake success messages or GetX controllers as test oracles.
@@ -195,6 +216,27 @@ void main() {
     ('150', 'Pattern 150: AsyncGenerator', '非同期ジェネレーター関数の実装。', const Pattern150View()),
     ('164', 'Pattern 164: EventState', 'イベント→状態遷移パターン。', const Pattern164View()),
     ('165', 'Pattern 165: Redux', 'Redux パターンの擬似実装。', const Pattern165View()),
+    ('176', 'Pattern 176: SwapItems', 'リスト内アイテムの入れ替え実装。', const Pattern176View()),
+    ('177', 'Pattern 177: MoveToTop', 'アイテムをリスト先頭に移動。', const Pattern177View()),
+    ('178', 'Pattern 178: MoveToBottom', 'アイテムをリスト末尾に移動。', const Pattern178View()),
+    ('179', 'Pattern 179: InsertSorted', 'ソート順を維持した挿入処理。', const Pattern179View()),
+    ('180', 'Pattern 180: UndoRedo', '操作の Undo/Redo 実装。', const Pattern180View()),
+    ('181', 'Pattern 181: CommandPattern', 'Command パターンによる操作履歴管理。', const Pattern181View()),
+    ('182', 'Pattern 182: MementoPattern', 'Memento パターンによる状態保存。', const Pattern182View()),
+    ('185', 'Pattern 185: PositionSwap', '指定位置間でのアイテム入れ替え。', const Pattern185View()),
+    ('186', 'Pattern 186: BatchProcess', 'バッチ処理の実装とスケジューリング。', const Pattern186View()),
+    ('187', 'Pattern 187: Transaction', 'トランザクション処理の擬似実装。', const Pattern187View()),
+    ('188', 'Pattern 188: EventDriven', 'イベント駆動アーキテクチャの実装。', const Pattern188View()),
+    ('189', 'Pattern 189: PubSub', 'Pub/Sub パターンの実装。', const Pattern189View()),
+    ('190', 'Pattern 190: MessageQueue', 'メッセージキューの実装。', const Pattern190View()),
+    ('191', 'Pattern 191: Saga', 'Saga パターンによる分散トランザクション (擬似)。', const Pattern191View()),
+    ('192', 'Pattern 192: Outbox', 'Outbox パターンの擬似実装。', const Pattern192View()),
+    ('193', 'Pattern 193: EventSourcing', 'Event Sourcing パターンの擬似実装。', const Pattern193View()),
+    ('194', 'Pattern 194: CQRS', 'CQRS パターンの Flutter 実装例。', const Pattern194View()),
+    ('195', 'Pattern 195: Scheduler', '定期実行スケジューラの実装。', const Pattern195View()),
+    ('196', 'Pattern 196: Worker', 'バックグラウンドワーカーの実装。', const Pattern196View()),
+    ('197', 'Pattern 197: Checkpoint', '処理チェックポイントと再開実装。', const Pattern197View()),
+    ('198', 'Pattern 198: FullPipeline', '全パターンを統合したデータパイプライン例。', const Pattern198View()),
   ];
 
   for (final (id, title, description, view) in cases) {
