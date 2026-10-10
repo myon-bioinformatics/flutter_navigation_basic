@@ -1,24 +1,19 @@
-// Pattern 051: SelectableList - テスト
-// 複数選択可能リスト実装。
+import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_051/model.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_051/service.dart';
-
+class _Bundle extends CachingAssetBundle {
+  _Bundle(this.payload); final String payload;
+  @override Future<ByteData> load(String key) async => ByteData.sublistView(Uint8List.fromList(utf8.encode(payload)));
+  @override Future<String> loadString(String key, {bool cache = true}) async => payload;
+}
 void main() {
-  group('Pattern 051: SelectableList', () {
-    test('model toJson and fromJson', () {
-      const result = Pattern051Result(message: 'test');
-      final json = result.toJson();
-      expect(json['message'], equals('test'));
-      final restored = Pattern051Result.fromJson(json);
-      expect(restored.message, equals('test'));
-    });
-
-    test('service run completes', () async {
-      final service = Pattern051Service();
-      final result = await service.run();
-      expect(result, isA<Pattern051Result>());
-      expect(result.message, isNotEmpty);
-    });
+  test('pattern 051 loads Python command result', () async {
+    final service=Pattern051Service(bundle:_Bundle('{"schema":"collection-command/1","values":["ok"]}'));
+    expect(await service.load(), equals(["ok"]));
+  });
+  test('pattern 051 rejects malformed data', () async {
+    final service=Pattern051Service(bundle:_Bundle('{"schema":"collection-command/1"}'));
+    await expectLater(service.load(), throwsFormatException);
   });
 }

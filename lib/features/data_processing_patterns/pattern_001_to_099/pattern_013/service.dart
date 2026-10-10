@@ -1,11 +1,8 @@
-// Pattern 013: SortReverse
-// 昇順/降順切り替えソート。
-import 'model.dart';
+// Pattern 013: SortReverse — Python-generated ordering result boundary.
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
 
-class Pattern013Service {
-  Future<Pattern013Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern013Result(message: 'SortReverse executed successfully');
-  }
+class Pattern013Service extends JsonListAsset {
+  Pattern013Service({AssetBundle? bundle})
+      : super('assets/data_processing/sort_reverse.json', bundle: bundle);
 }

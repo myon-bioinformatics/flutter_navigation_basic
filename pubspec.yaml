@@ -38,3 +38,37 @@ flutter:
     - assets/diagnostics/build_metadata.json
     - assets/display/app_text.json
     - assets/time/zone_table.json
+    - assets/data_processing/filter_basic.json
+    - assets/data_processing/filter_multiple.json
+    - assets/data_processing/filter_nested.json
+    - assets/data_processing/distinct_filter.json
+    - assets/data_processing/deduplicate_report.json
+    - assets/data_processing/sort_basic.json
+    - assets/data_processing/sort_multi_key.json
+    - assets/data_processing/sort_reverse.json
+    - assets/data_processing/search_basic.json
+    - assets/data_processing/text_index.json
+    - assets/data_processing/inverted_index.json
+    - assets/data_processing/stop_word.json
+    - assets/data_processing/sorted_set.json
+    - assets/data_processing/priority_queue.json
+    - assets/data_processing/top_n.json
+    - assets/data_processing/window_034.json
+    - assets/data_processing/window_036.json
+    - assets/data_processing/window_038.json
+    - assets/data_processing/window_039.json
+    - assets/data_processing/window_040.json
+    - assets/data_processing/window_041.json
+    - assets/data_processing/window_042.json
+    - assets/data_processing/window_043.json
+    - assets/data_processing/window_037.json
+    - assets/data_processing/window_044.json
+    - assets/data_processing/structure_045.json
+    - assets/data_processing/structure_046.json
+    - assets/data_processing/structure_047.json
+    - assets/data_processing/structure_048.json
+    - assets/data_processing/structure_049.json
+    - assets/data_processing/command_051.json
+    - assets/data_processing/command_052.json
+    - assets/data_processing/command_053.json
+    - assets/data_processing/command_054.json

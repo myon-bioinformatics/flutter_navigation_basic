@@ -1,24 +1,19 @@
-// Pattern 052: SwipeToDelete - テスト
-// スワイプで削除するリスト実装。
+import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_052/model.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_052/service.dart';
-
+class _Bundle extends CachingAssetBundle {
+  _Bundle(this.payload); final String payload;
+  @override Future<ByteData> load(String key) async => ByteData.sublistView(Uint8List.fromList(utf8.encode(payload)));
+  @override Future<String> loadString(String key, {bool cache = true}) async => payload;
+}
 void main() {
-  group('Pattern 052: SwipeToDelete', () {
-    test('model toJson and fromJson', () {
-      const result = Pattern052Result(message: 'test');
-      final json = result.toJson();
-      expect(json['message'], equals('test'));
-      final restored = Pattern052Result.fromJson(json);
-      expect(restored.message, equals('test'));
-    });
-
-    test('service run completes', () async {
-      final service = Pattern052Service();
-      final result = await service.run();
-      expect(result, isA<Pattern052Result>());
-      expect(result.message, isNotEmpty);
-    });
+  test('pattern 052 loads Python command result', () async {
+    final service=Pattern052Service(bundle:_Bundle('{"schema":"collection-command/1","values":["ok"]}'));
+    expect(await service.load(), equals(["ok"]));
+  });
+  test('pattern 052 rejects malformed data', () async {
+    final service=Pattern052Service(bundle:_Bundle('{"schema":"collection-command/1"}'));
+    await expectLater(service.load(), throwsFormatException);
   });
 }

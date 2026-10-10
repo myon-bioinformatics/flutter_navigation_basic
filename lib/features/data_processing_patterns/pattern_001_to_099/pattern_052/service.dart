@@ -1,11 +1,5 @@
-// Pattern 052: SwipeToDelete
-// スワイプで削除するリスト実装。
-import 'model.dart';
-
-class Pattern052Service {
-  Future<Pattern052Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern052Result(message: 'SwipeToDelete executed successfully');
-  }
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
+class Pattern052Service extends JsonListAsset {
+  Pattern052Service({AssetBundle? bundle}) : super('assets/data_processing/command_052.json', bundle: bundle);
 }

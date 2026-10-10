@@ -1,37 +1,18 @@
-// Pattern 003: FilterNested
-// ネストしたデータ構造のフィルタリング。
+// Pattern 003: FilterNested — generated example, not runtime processing.
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/processed_list_example.dart';
 
-class Pattern003View extends GetView<Pattern003Controller> {
-  const Pattern003View({super.key});
+import 'service.dart';
+
+class Pattern003View extends StatelessWidget {
+  const Pattern003View({super.key, this.bundle});
+
+  final AssetBundle? bundle;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 003: FilterNested'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'ネストしたデータ構造のフィルタリング。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ProcessedListExample(
+        title: 'Pattern 003: FilterNested',
+        asset: Pattern003Service(bundle: bundle),
+      );
 }

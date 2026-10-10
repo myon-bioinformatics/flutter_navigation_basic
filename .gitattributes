@@ -10,6 +10,8 @@ tool/python/vendor/gh_ops.py -text
 tool/python/vendor/check_evidence.py -text
 tool/python/vendor/jsonl_digest.py -text
 tool/python/vendor/cli_args.py -text
+tool/python/vendor/gh_identity.py -text
+tool/python/vendor/gh_identity-LICENSE -text
 tool/python/vendor/yourself-LICENSE -text
 tool/python/vendor/xprobe-LICENSE -text
 tool/python/vendor/browser-test-kit-LICENSE -text

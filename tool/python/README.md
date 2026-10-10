@@ -151,10 +151,16 @@ inputs copied from public `myon-bioinformatics/Ironmate`. Their exact upstream
 commit, Git blob and SHA-256 identities, plus the upstream LICENSE, are recorded
 in `tool/python/vendor.lock.json` (`vendor-lock/1`).
 
+Ironmate has retired these modules from its moving `main` branch. Their update
+refs and the corresponding LICENSE ref therefore use the already-verified
+`73157cb7fed236a4a941722a6dcddd69a33ab95a` snapshot. This preserves the adopted
+source bytes, blob identities and SHA-256 hashes while keeping candidate
+resolution valid. Other upstream entries continue to track `refs/heads/main`.
+
 Ordinary Non-Dart CI uses the shared stdlib-only `vendor_sync.py` pinned at
 `380d877cd85837f36cf6030d626ee8bb7dfa28cb`. A locked lane first recreates the checked-in files from their fixed
 commit and runs the metadata regressions. The normal pytest lane then resolves
-`refs/heads/main` in a disposable checkout, verifies the candidate bytes and
+each configured ref in a disposable checkout, verifies the candidate bytes and
 runs the existing Python suite against that candidate. The resolved lock and
 files are retained as Actions artifacts. CI never writes back to the repository,
 pushes a branch, opens a PR, or requires an update token. Pages and application

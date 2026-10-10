@@ -138,7 +138,13 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
     }
     entries = lock["files"]
     assert {(entry["repository"], entry["source"], entry["destination"]) for entry in entries} == expected
-    assert {entry["ref"] for entry in entries} == {"refs/heads/main"}
+    for entry in entries:
+        if entry["repository"] == "myon-bioinformatics/Ironmate":
+            # The metadata sources were retired from Ironmate main. Resolve the
+            # already-adopted source/LICENSE snapshot instead of a deleted path.
+            assert entry["ref"] == entry["commit"] == "73157cb7fed236a4a941722a6dcddd69a33ab95a"
+        else:
+            assert entry["ref"] == "refs/heads/main"
     assert len({entry["destination"] for entry in entries}) == len(entries)
     for entry in entries:
         commit = entry["commit"]
@@ -171,3 +177,20 @@ def test_dart_has_no_independent_git_identity_collector():
     assert "_gitOutput(['status', '--porcelain'])" in source
     for git_identity_command in ["rev-parse", "--format=%cI", "--format=%s", "--show-current"]:
         assert git_identity_command not in source
+
+
+def test_curl_runtime_uses_canonical_repository_metadata():
+    workflow = (ROOT / ".github/workflows/curl-runtime.yml").read_text(encoding="utf-8")
+    assert "tool/python/generate_repository_metadata.py" in workflow
+    assert "--output-dir build/curl-runtime/repository" in workflow
+    assert "gh_identity.local_identity" not in workflow
+    assert "git rev-parse HEAD" not in workflow
+    assert "local-identity.json" not in workflow
+
+
+def test_http_editor_does_not_depend_directly_on_legacy_curl_parser():
+    page = (ROOT / "lib/features/http_request_draft/presentation/http_request_draft_page.dart").read_text(encoding="utf-8")
+    assert "curl_safe_subset.dart" not in page
+    assert "CurlSafeSubset" not in page
+    assert "RequestDraftCodec.toCurl(" in page
+    assert not (ROOT / "lib/shared/http/curl_export.dart").exists()
