@@ -19,6 +19,9 @@ FAKE = ("TODO: 実装を追加してください",
         "executed successfully")
 PRODUCERS = (
     ((1, 2, 3, 30, 86, 113), "python", "tool/python/list_selection.py", "tool/python/tests/test_list_selection_runtime.py"),
+    (range(34, 45), "python", "tool/python/collection_window.py", "tool/python/tests/test_collection_window.py"),
+    (range(45, 50), "python", "tool/python/collection_structure.py", "tool/python/tests/test_collection_structure.py"),
+    (range(51, 55), "python", "tool/python/collection_window.py", "tool/python/tests/test_collection_window.py"),
     (range(114, 121), "python", "tool/python/collection_transform.py", "tool/python/tests/test_collection_transform.py"),
     (range(121, 127), "javascript", "tool/javascript/future_patterns.mjs", "tool/javascript/tests/future_patterns.test.mjs"),
     (range(127, 136), "javascript", "tool/javascript/stream_patterns.mjs", "tool/javascript/tests/stream_patterns.test.mjs"),
