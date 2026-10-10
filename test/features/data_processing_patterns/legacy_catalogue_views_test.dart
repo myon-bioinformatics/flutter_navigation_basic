@@ -16,6 +16,16 @@ import 'package:flutter_application_1/features/data_processing_patterns/pattern_
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_068/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_069/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_070/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_071/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_072/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_073/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_074/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_075/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_076/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_077/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_078/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_079/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_080/view.dart';
 
 // One widget boundary test for catalogue entries with no executable producer.
 // Do not preserve old fake success messages or GetX controllers as test oracles.
@@ -37,6 +47,16 @@ void main() {
     ('068', 'Pattern 068: ReadAside', 'Read-Aside (Cache-Aside) パターン。', const Pattern068View()),
     ('069', 'Pattern 069: RefreshAhead', 'Refresh-Ahead キャッシュ戦略。', const Pattern069View()),
     ('070', 'Pattern 070: CacheWarmup', '起動時キャッシュウォームアップ。', const Pattern070View()),
+    ('071', 'Pattern 071: CacheKey', '効果的なキャッシュキー生成戦略。', const Pattern071View()),
+    ('072', 'Pattern 072: CacheShard', 'キャッシュシャーディング実装 (擬似)。', const Pattern072View()),
+    ('073', 'Pattern 073: CacheEviction', 'キャッシュ立ち退き (Eviction) 実装。', const Pattern073View()),
+    ('074', 'Pattern 074: CacheStats2', 'キャッシュ統計情報収集。', const Pattern074View()),
+    ('075', 'Pattern 075: CacheSerialization', 'キャッシュのシリアライズ/デシリアライズ。', const Pattern075View()),
+    ('076', 'Pattern 076: ImageCache', '画像専用キャッシュ管理。', const Pattern076View()),
+    ('077', 'Pattern 077: ApiCache', 'API レスポンスキャッシュ。', const Pattern077View()),
+    ('078', 'Pattern 078: ComputeCache', '計算結果キャッシュ (メモ化)。', const Pattern078View()),
+    ('079', 'Pattern 079: LazyInit', '遅延初期化パターン。', const Pattern079View()),
+    ('080', 'Pattern 080: ObjectPool', 'オブジェクトプール実装。', const Pattern080View()),
   ];
 
   for (final (id, title, description, view) in cases) {
