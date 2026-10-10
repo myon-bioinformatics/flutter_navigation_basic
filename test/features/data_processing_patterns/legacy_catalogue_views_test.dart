@@ -80,6 +80,12 @@ import 'package:flutter_application_1/features/data_processing_patterns/pattern_
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_133/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_134/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_135/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_138/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_139/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_140/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_141/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_142/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_143/view.dart';
 
 // One widget boundary test for catalogue entries with no executable producer.
 // Do not preserve old fake success messages or GetX controllers as test oracles.
@@ -165,6 +171,12 @@ void main() {
     ('133', 'Pattern 133: StreamThrottle', 'Stream のスロットリング処理。', const Pattern133View()),
     ('134', 'Pattern 134: StreamBuffer2', 'Stream のバッファリング処理。', const Pattern134View()),
     ('135', 'Pattern 135: StreamWindow', 'Stream のウィンドウ集計処理。', const Pattern135View()),
+    ('138', 'Pattern 138: WorkQueue', 'ワークキューによるタスク順次実行。', const Pattern138View()),
+    ('139', 'Pattern 139: Semaphore', 'セマフォによる並列数制御。', const Pattern139View()),
+    ('140', 'Pattern 140: Mutex', 'ミューテックスによる排他制御。', const Pattern140View()),
+    ('141', 'Pattern 141: CancelableOp', 'キャンセル可能な非同期操作実装。', const Pattern141View()),
+    ('142', 'Pattern 142: ParallelMap', 'リストの並列 map 処理。', const Pattern142View()),
+    ('143', 'Pattern 143: ProgressStream', '進捗報告付き非同期処理。', const Pattern143View()),
   ];
 
   for (final (id, title, description, view) in cases) {
