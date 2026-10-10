@@ -93,3 +93,23 @@ def test_active_readme_import_of_removed_file_is_stale():
         readme.write_text(readme.read_text(encoding="utf-8") +
                           "\nimport 'controller.dart';\n", encoding="utf-8")
         assert audit.inspect(root, 2)["stale_readme"]
+
+
+def test_shared_producer_families_are_registered():
+    expected = {
+        1: "list_selection.py",
+        34: "collection_window.py",
+        44: "collection_window.py",
+        45: "collection_structure.py",
+        49: "collection_structure.py",
+        51: "collection_window.py",
+        54: "collection_window.py",
+        86: "list_selection.py",
+        113: "list_selection.py",
+        114: "collection_transform.py",
+    }
+    for number, filename in expected.items():
+        record = audit.producer(number)
+        assert record is not None, number
+        assert record["source"].endswith("/" + filename)
+        assert record["flutter_runtime_connected"] is False
