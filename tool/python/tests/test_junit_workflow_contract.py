@@ -12,6 +12,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[3]
 WORKFLOW = ROOT / ".github/workflows/non-dart.yml"
 REFACTOR = ROOT / ".github/workflows/structure-refactor-validation.yml"
+DART = ROOT / ".github/workflows/dart.yml"
 COLLECTOR = (
     "myon-bioinformatics/myon-bioinformatics/.github/workflows/"
     "reusable-junit-identity.yml@4dfda95d6573250477f991a0421fa6acb9bc0258"
@@ -233,3 +234,69 @@ def test_refactor_smoke_collector_matches_its_producers():
         assert step.get("if") == "always()", artifact
         assert step["with"]["if-no-files-found"] == "error", artifact
         assert filename in step["with"]["path"], artifact
+
+
+FLUTTER_LANES = {  # job -> (report lane, shard count)
+    "unit-tests": ("core", 2),
+    "latest-stable": ("latest", 2),
+    "unit-tests-patterns": ("patterns", 4),
+}
+
+
+def _run_plan(job, env):
+    step = next(item for item in job["steps"] if item.get("id") == "plan")
+    with tempfile.TemporaryDirectory() as directory:
+        output = Path(directory) / "outputs"
+        output.write_text("", encoding="utf-8")
+        subprocess.run(["bash", "-c", step["run"]], check=True, capture_output=True, text=True,
+                       env={**os.environ, "GITHUB_OUTPUT": str(output), **env}, timeout=10)
+        values = dict(line.split("=", 1) for line in output.read_text(encoding="utf-8").splitlines())
+    return values["run"], json.loads(values["reports"])
+
+
+def _lane_reports(lane):
+    _, shards = next(value for value in FLUTTER_LANES.values() if value[0] == lane)
+    return [f"junit-flutter-{lane}-{n}/flutter-{lane}-{n}.xml" for n in range(shards)]
+
+
+def test_flutter_workflow_collects_every_selected_shard():
+    workflow = yaml.safe_load(DART.read_text(encoding="utf-8"))
+    jobs = workflow["jobs"]
+    shard = "${{ matrix.shard }}"
+    for name, (lane, shards) in FLUTTER_LANES.items():
+        job = jobs[name]
+        assert job["strategy"]["matrix"]["shard"] == list(range(shards)), name
+        assert job["strategy"]["fail-fast"] is False, name
+        run = next(step for step in job["steps"] if "flutter test" in step.get("run", ""))
+        assert f"--file-reporter json:build/test-results/flutter-{lane}-{shard}.jsonl" in run["run"], name
+        assert run.get("continue-on-error", False) is False, name
+        convert = _step(job, next(step["name"] for step in job["steps"]
+                                  if "flutter_machine_junit.py" in step.get("run", "")))
+        assert convert.get("if") == "always()", name
+        assert "validate_runner_junit.py" in convert["run"], name
+        upload = _upload(job, f"junit-flutter-{lane}-{shard}")
+        assert job["steps"].index(run) < job["steps"].index(convert) < job["steps"].index(upload)
+        assert upload.get("if") == "always()", name
+        assert upload["with"]["if-no-files-found"] == "error", name
+        assert f"build/test-results/flutter-{lane}-{shard}.xml" in upload["with"]["path"], name
+    flutter = "needs.changes.outputs.flutter == 'true'"
+    assert jobs["unit-tests"]["if"] == flutter
+    assert jobs["latest-stable"]["if"] == flutter
+    assert jobs["unit-tests-patterns"]["if"] == flutter + " && needs.changes.outputs.patterns == 'true'"
+    plan = jobs["junit-plan"]
+    assert plan["needs"] == "changes"
+    assert next(step for step in plan["steps"] if step.get("id") == "plan")["env"] == {
+        "FLUTTER": "${{ " + flutter + " }}",
+        "PATTERNS": "${{ " + flutter + " && needs.changes.outputs.patterns == 'true' }}",
+    }
+    always = _lane_reports("core") + _lane_reports("latest")
+    assert _run_plan(plan, {"FLUTTER": "true", "PATTERNS": "true"}) == ("true", always + _lane_reports("patterns"))
+    assert _run_plan(plan, {"FLUTTER": "true", "PATTERNS": "false"}) == ("true", always)
+    assert _run_plan(plan, {"FLUTTER": "false", "PATTERNS": "false"}) == ("false", [])
+    collector = jobs["junit-identity"]
+    assert collector["needs"][:2] == ["changes", "junit-plan"]
+    assert set(collector["needs"][2:]) == set(FLUTTER_LANES)
+    assert collector["if"] == "always() && needs.junit-plan.outputs.run == 'true'"
+    assert collector.get("continue-on-error", False) is False
+    assert collector["uses"] == COLLECTOR
+    assert collector["with"]["expected-reports"] == "${{ needs.junit-plan.outputs.reports }}"

@@ -367,11 +367,71 @@ jobs:
       - name: Run core (non-pattern) sharded tests on latest stable
         run: |
           mapfile -t paths < <(grep -vE '^\s*(#|$)' tool/ci/flutter_core_test_paths.txt)
-          flutter test --total-shards=2 --shard-index=${{ matrix.shard }} "${paths[@]}"
+          mkdir -p build/test-results
+          flutter test --total-shards=2 --shard-index=${{ matrix.shard }} "${paths[@]}" --file-reporter json:build/test-results/flutter-latest-${{ matrix.shard }}.jsonl
+
+      - name: Convert and validate latest stable shard JUnit
+        if: always()
+        run: |
+          set -euo pipefail
+          python3 -S tool/python/flutter_machine_junit.py build/test-results/flutter-latest-${{ matrix.shard }}.jsonl build/test-results/flutter-latest-${{ matrix.shard }}.xml
+          python3 -S tool/python/validate_runner_junit.py build/test-results/flutter-latest-${{ matrix.shard }}.xml
+
+      - name: Preserve latest stable shard JUnit and raw events
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: junit-flutter-latest-${{ matrix.shard }}
+          path: |
+            build/test-results/flutter-latest-${{ matrix.shard }}.xml
+            build/test-results/flutter-latest-${{ matrix.shard }}.jsonl
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Build canonical web entrypoint on latest stable
         if: matrix.shard == 0
         run: flutter build web --release -t lib/main.dart --base-href "/flutter_navigation_basic/"
+
+  # The shared collector reads junit-* artifacts of this run only. Plan the
+  # expected reports from the same path-filter outputs the shard jobs use, so a
+  # skipped lane is not "missing" and a selected lane cannot go unchecked.
+  junit-plan:
+    name: Plan expected Flutter JUnit reports
+    needs: changes
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.plan.outputs.run }}
+      reports: ${{ steps.plan.outputs.reports }}
+    steps:
+      - id: plan
+        env:
+          FLUTTER: ${{ needs.changes.outputs.flutter == 'true' }}
+          PATTERNS: ${{ needs.changes.outputs.flutter == 'true' && needs.changes.outputs.patterns == 'true' }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+
+          reports = []
+          if os.environ["FLUTTER"] == "true":
+              reports += [f"junit-flutter-core-{n}/flutter-core-{n}.xml" for n in range(2)]
+              reports += [f"junit-flutter-latest-{n}/flutter-latest-{n}.xml" for n in range(2)]
+          if os.environ["PATTERNS"] == "true":
+              reports += [f"junit-flutter-patterns-{n}/flutter-patterns-{n}.xml" for n in range(4)]
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write("run=" + ("true" if reports else "false") + "\n")
+              output.write("reports=" + json.dumps(reports) + "\n")
+          PY
+
+  junit-identity:
+    needs: [changes, junit-plan, unit-tests, unit-tests-patterns, latest-stable]
+    if: always() && needs.junit-plan.outputs.run == 'true'
+    permissions:
+      contents: read
+      actions: read
+    uses: myon-bioinformatics/myon-bioinformatics/.github/workflows/reusable-junit-identity.yml@4dfda95d6573250477f991a0421fa6acb9bc0258
+    with:
+      expected-reports: ${{ needs.junit-plan.outputs.reports }}
 
   # Flutter + Gradle startup is expensive; skip on PRs that cannot affect size.
   android-size:
