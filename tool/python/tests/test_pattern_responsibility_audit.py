@@ -176,3 +176,32 @@ def test_gesture_view_needs_a_numbered_route_to_count_as_native():
             row = audit.inspect(_gesture_root(td, routes), 171)
             assert row["status"] != "native_flutter_shared_interaction", label
             assert any("numbered route is not evidenced" in w for w in row["warnings"]), label
+
+
+def test_route_loop_survives_reformatting_and_fails_loudly_when_unreadable():
+    reformatted = """for (final patternId in [
+  171,
+  172,
+]) {
+  if (true) { map['x'] = (_) => const SizedBox(); }
+  map[screenRoute(patternId)] = (_) => InteractivePatternExample(
+        patternId: patternId,
+      );
+}
+"""
+    with tempfile.TemporaryDirectory() as td:
+        root = _gesture_root(td, reformatted)
+        assert audit.routed_interactions(root) == {171, 172}
+        assert audit.inspect(root, 171)["status"] == "native_flutter_shared_interaction"
+    with tempfile.TemporaryDirectory() as td:
+        root = _gesture_root(td, "final ids = [171]; // no recognisable loop\n")
+        assert audit.routed_interactions(root) is None
+        assert "lib/config/routes.dart: numbered interaction loop not recognised" in audit.audit(root)["errors"]
+
+
+def test_real_routes_are_read_once_per_audit(monkeypatch):
+    calls = []
+    original = audit.routed_interactions
+    monkeypatch.setattr(audit, "routed_interactions", lambda root: calls.append(root) or original(root))
+    audit.audit(ROOT)
+    assert len(calls) == 1

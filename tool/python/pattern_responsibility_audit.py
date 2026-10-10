@@ -41,19 +41,30 @@ NATIVE = set(range(151,164)) | set(range(166,171))
 GESTURES = {171, 172, 173, 174, 175, 183, 184}
 ROUTES = "lib/config/routes.dart"
 
-def routed_interactions(root: Path) -> set[int]:
+_LOOP = re.compile(r"for\s*\(\s*final\s+patternId\s+in\s*\[([\d,\s]*)\]\s*\)\s*\{")
+_BUILD = re.compile(r"InteractivePatternExample\(\s*patternId:\s*patternId\s*,?\s*\)")
+
+def routed_interactions(root: Path) -> set[int] | None:
     """Ids that the public route table really maps to InteractivePatternExample.
 
     A View that merely contains the class name is not evidence: routes.dart must
-    build the shared widget inside the numbered-pattern loop.
+    build the shared widget inside the numbered-pattern loop. Returns None when
+    routes.dart exists but that loop cannot be recognised, so a formatting change
+    surfaces as an audit error instead of silently demoting all seven patterns.
     """
     path = root/ROUTES
     if not path.is_file():
         return set()
     text = path.read_text(encoding="utf-8")
-    loop = re.search(r"for \(final patternId in \[([\d,\s]+)\]\)\s*\{(.*?)\n\s*\}\n", text, re.DOTALL)
-    if not loop or "InteractivePatternExample(patternId: patternId)" not in loop.group(2):
-        return set()
+    loop = _LOOP.search(text)
+    if not loop:
+        return None
+    depth, index = 1, loop.end()
+    while index < len(text) and depth:  # brace-balanced loop body
+        depth += {"{": 1, "}": -1}.get(text[index], 0)
+        index += 1
+    if depth or not _BUILD.search(text[loop.end():index]):
+        return None
     return {int(item) for item in re.findall(r"\d+", loop.group(1))}
 
 def pattern_dir(root: Path, number: int) -> Path:
@@ -82,7 +93,7 @@ def responsibility(number: int) -> str:
         return "python_validation / flutter_form"
     return "undecided"
 
-def inspect(root: Path, number: int) -> dict:
+def inspect(root: Path, number: int, routed: set[int] | None = None) -> dict:
     folder = pattern_dir(root,number)
     readme = (folder/"README.md").read_text(encoding="utf-8") if (folder/"README.md").is_file() else ""
     view = (folder/"view.dart").read_text(encoding="utf-8") if (folder/"view.dart").is_file() else ""
@@ -103,7 +114,7 @@ def inspect(root: Path, number: int) -> dict:
     elif asset:
         status = "precomputed_asset_view"
     elif (number in GESTURES and not getx and "InteractivePatternExample" in view
-          and number in routed_interactions(root)):
+          and number in (routed if routed is not None else routed_interactions(root) or set())):
         status = "native_flutter_shared_interaction"
     elif number in NATIVE and not getx:
         status = "native_flutter_example"
@@ -156,11 +167,14 @@ def audit(root: Path) -> dict:
         number = int(folder.name.removeprefix("pattern_"))
         locations.setdefault(number, []).append(folder)
     numbers = sorted(locations)
-    records = [inspect(root, i) for i in numbers]
+    routed = routed_interactions(root)
+    records = [inspect(root, i, routed or set()) for i in numbers]
     expected = set(range(1, 199))
     observed = set(numbers)
     errors = ["%03d: missing catalogue pattern" % i for i in sorted(expected - observed)]
     errors += ["%03d: unexpected catalogue pattern" % i for i in sorted(observed - expected)]
+    if routed is None:
+        errors.append("%s: numbered interaction loop not recognised" % ROUTES)
     for number, paths in sorted(locations.items()):
         if len(paths) != 1 or paths[0] != pattern_dir(root, number):
             errors.append("%03d: duplicate or misplaced catalogue directory: %s" %
