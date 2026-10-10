@@ -14,6 +14,7 @@ on:
       - 'lib/**'
       - 'test/**'
       - 'tool/python/**'
+      - 'tool/javascript/**'
       - 'assets/data_processing/**'
       - 'pubspec.yaml'
       - 'pubspec.lock'
