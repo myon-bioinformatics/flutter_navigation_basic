@@ -35,6 +35,29 @@ import 'package:flutter_application_1/features/data_processing_patterns/pattern_
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_088/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_089/view.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_090/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_050/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_091/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_092/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_093/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_094/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_095/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_096/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_097/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_098/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_099/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_100/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_101/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_102/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_103/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_104/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_105/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_106/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_107/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_108/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_109/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_110/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_111/view.dart';
+import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_112/view.dart';
 
 // One widget boundary test for catalogue entries with no executable producer.
 // Do not preserve old fake success messages or GetX controllers as test oracles.
@@ -75,6 +98,29 @@ void main() {
     ('088', 'Pattern 088: SnapshotCache', 'スナップショットキャッシュパターン。', const Pattern088View()),
     ('089', 'Pattern 089: DeltaCache', '差分 (Delta) キャッシュ更新。', const Pattern089View()),
     ('090', 'Pattern 090: ReadThrough', 'Read-Through キャッシュ実装。', const Pattern090View()),
+    ('050', 'Pattern 050: ThumbnailList', 'サムネイル付きリスト実装。', const Pattern050View()),
+    ('091', 'Pattern 091: ValidationBasic', '基本的な入力バリデーション実装。', const Pattern091View()),
+    ('092', 'Pattern 092: EmailValidation', 'メールアドレスバリデーション。', const Pattern092View()),
+    ('093', 'Pattern 093: PasswordStrength', 'パスワード強度チェック実装。', const Pattern093View()),
+    ('094', 'Pattern 094: PhoneValidation', '電話番号バリデーション。', const Pattern094View()),
+    ('095', 'Pattern 095: UrlValidation', 'URL バリデーション実装。', const Pattern095View()),
+    ('096', 'Pattern 096: DateValidation', '日付形式バリデーション。', const Pattern096View()),
+    ('097', 'Pattern 097: RangeValidation', '数値レンジバリデーション。', const Pattern097View()),
+    ('098', 'Pattern 098: RegexValidation', '正規表現バリデーション実装。', const Pattern098View()),
+    ('099', 'Pattern 099: FormValidation', 'フォーム全体のバリデーション管理。', const Pattern099View()),
+    ('100', 'Pattern 100: AsyncValidation', '非同期バリデーション (サーバー確認)。', const Pattern100View()),
+    ('101', 'Pattern 101: CrossField', 'クロスフィールドバリデーション。', const Pattern101View()),
+    ('102', 'Pattern 102: SanitizeInput', 'XSS/SQLインジェクション防止の入力サニタイズ。', const Pattern102View()),
+    ('103', 'Pattern 103: DataNormalize', 'データ正規化 (文字列トリム、大文字小文字統一等)。', const Pattern103View()),
+    ('104', 'Pattern 104: TypeCoercion', '型強制変換処理の安全な実装。', const Pattern104View()),
+    ('105', 'Pattern 105: DateConvert', '日付フォーマット変換処理。', const Pattern105View()),
+    ('106', 'Pattern 106: CurrencyConvert', '通貨変換処理 (擬似実装)。', const Pattern106View()),
+    ('107', 'Pattern 107: UnitConvert', '単位変換処理 (長さ、重量等)。', const Pattern107View()),
+    ('108', 'Pattern 108: TimeZone', 'タイムゾーン変換処理。', const Pattern108View()),
+    ('109', 'Pattern 109: Encoding', '文字エンコーディング変換処理。', const Pattern109View()),
+    ('110', 'Pattern 110: DataMasking', '機密データのマスキング処理。', const Pattern110View()),
+    ('111', 'Pattern 111: DataEnrich', '外部データによるデータ補完。', const Pattern111View()),
+    ('112', 'Pattern 112: DataClean', '欠損値・外れ値のクリーニング処理。', const Pattern112View()),
   ];
 
   for (final (id, title, description, view) in cases) {

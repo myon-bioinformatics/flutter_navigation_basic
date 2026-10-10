@@ -1,37 +1,14 @@
-// Pattern 111: DataEnrich
-// 外部データによるデータ補完。
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
 
-class Pattern111View extends GetView<Pattern111Controller> {
+class Pattern111View extends StatelessWidget {
   const Pattern111View({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 111: DataEnrich'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '外部データによるデータ補完。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Pattern 111: DataEnrich')),
+    body: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Text('外部データによるデータ補完。'),
+    ),
+  );
 }
