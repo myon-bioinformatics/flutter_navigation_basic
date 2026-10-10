@@ -48,6 +48,17 @@ jobs:
           path: python-refactor-junit.xml
           if-no-files-found: error
 
+  node:
+    name: JavaScript async boundary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Node built-in unit tests
+        run: node --test tool/javascript/tests/*.test.mjs
+
   flutter:
     name: Flutter shared boundary
     runs-on: ubuntu-latest
