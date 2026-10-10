@@ -91,5 +91,5 @@ def test_active_readme_import_of_removed_file_is_stale():
         setup(root, 2)
         readme = audit.pattern_dir(root, 2) / "README.md"
         readme.write_text(readme.read_text(encoding="utf-8") +
-                          "\\nimport 'controller.dart';\n", encoding="utf-8")
+                          "\nimport 'controller.dart';\n", encoding="utf-8")
         assert audit.inspect(root, 2)["stale_readme"]
