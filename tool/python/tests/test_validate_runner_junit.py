@@ -18,6 +18,14 @@ def test_native_junit_cases_are_counted(tmp_path):
     assert module.inspect(report) == {"tests": 3, "failures": 1, "errors": 0, "skipped": 1}
 
 
+def test_nested_suites_under_testsuite_root_are_counted(tmp_path):
+    report = tmp_path / "nested.xml"
+    report.write_text('<testsuite name="root"><testsuite name="group">'
+                      '<testcase name="inner"/></testsuite><testcase name="top"/></testsuite>',
+                      encoding="utf-8")
+    assert module.inspect(report)["tests"] == 2
+
+
 @pytest.mark.parametrize("xml", [
     "<testsuite/>",
     "<testsuite><testcase/></testsuite>",

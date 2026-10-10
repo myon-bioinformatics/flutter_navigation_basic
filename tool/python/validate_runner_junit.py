@@ -18,9 +18,9 @@ def inspect(path: Path) -> dict[str, int]:
     root = ET.fromstring(path.read_bytes())
     if root.tag not in ("testsuite", "testsuites"):
         raise ValueError("not a JUnit testsuite")
+    # Node nests describe() blocks as child <testsuite>s, so search recursively
+    # for both root shapes; direct-children-only would undercount.
     cases = root.findall(".//testcase")
-    if root.tag == "testsuite":
-        cases = root.findall("testcase")
     if not cases:
         raise ValueError("JUnit report contains no testcases")
     failures = sum(bool(c.findall("failure")) for c in cases)
