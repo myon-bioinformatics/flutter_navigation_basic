@@ -1,9 +1,6 @@
 """Guard the shipped transitions, provenance, and asset-only CI routing."""
 import importlib.util
 import json
-import os
-import re
-import subprocess
 from pathlib import Path
 
 import pytest
@@ -68,31 +65,11 @@ def _workflow(name):
     return yaml.load((ROOT / ".github/workflows" / name).read_text(), Loader=yaml.BaseLoader)
 
 
-def _classify_asset(workflow, tmp_path):
-    step = next(step for step in workflow["jobs"]["changes"]["steps"] if step.get("id") == "filter")
-    replacements = {
-        "github.event_name": "pull_request",
-        "github.event.pull_request.base.sha": "base",
-        "github.event.pull_request.head.sha": "head",
-        "github.event.before": "before",
-        "github.sha": "head",
-    }
-    script = re.sub(r"\$\{\{\s*(.*?)\s*\}\}", lambda m: replacements[m[1]], step["run"])
-    # Feed an asset-only diff into the real classifier, without its GitHub
-    # expressions or a remote checkout. Preserve all case arms and outputs.
-    output = tmp_path / "outputs"
-    if output.exists():
-        output.unlink()
-    script = "git() { printf '%s\\n' 'assets/time/zone_table.json'; }\n" + script
-    subprocess.run(["bash", "-c", script], env={**os.environ, "GITHUB_OUTPUT": str(output)}, check=True)
-    return dict(line.split("=", 1) for line in output.read_text().splitlines())
-
-
-def test_asset_only_change_selects_python_flutter_and_preserves_auto_playwright(tmp_path):
+def test_asset_only_change_selects_python_flutter_and_preserves_auto_playwright(classify_workflow_asset):
     non_dart = _workflow("non-dart.yml")
     for event in ("push", "pull_request"):
         assert "assets/time/**" in non_dart["on"][event]["paths"]
-    outputs = _classify_asset(non_dart, tmp_path)
+    outputs = classify_workflow_asset(non_dart, "assets/time/zone_table.json")
     assert outputs["python"] == "true"
     assert outputs["playwright"] == "false"
     checks = non_dart["jobs"]["python-stdlib"]["steps"]
@@ -106,7 +83,7 @@ def test_asset_only_change_selects_python_flutter_and_preserves_auto_playwright(
     assert "pull_request" in flutter["on"]
     assert "paths" not in flutter["on"]["pull_request"]
     assert "paths-ignore" not in flutter["on"]["pull_request"]
-    assert _classify_asset(flutter, tmp_path)["flutter"] == "true"
+    assert classify_workflow_asset(flutter, "assets/time/zone_table.json")["flutter"] == "true"
     assert "test/now_timeline" in (ROOT / "tool/ci/flutter_core_test_paths.txt").read_text().splitlines()
     assert any("flutter_core_test_paths.txt" in step.get("run", "") and "flutter test" in step["run"]
                for job in flutter["jobs"].values() for step in job.get("steps", []))

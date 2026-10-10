@@ -12,6 +12,7 @@ on:
       - "tool/python/**"
       - "tool/time/**"
       - "assets/time/**"
+      - "assets/data_processing/**"
       - "test/fixtures/photo_studio/import_compat/**"
       - "e2e/**"
       - "**/requirements.txt"
@@ -25,6 +26,7 @@ on:
       - "tool/python/**"
       - "tool/time/**"
       - "assets/time/**"
+      - "assets/data_processing/**"
       - "test/fixtures/photo_studio/import_compat/**"
       - "e2e/**"
       - "**/requirements.txt"
@@ -101,7 +103,7 @@ jobs:
           playwright=false
           for f in "${files[@]}"; do
             case "$f" in
-              tool/python/*|tool/time/*|assets/time/*|test/fixtures/photo_studio/import_compat/*|lib/features/*_patterns/*)
+              tool/python/*|tool/time/*|assets/time/*|assets/data_processing/*|test/fixtures/photo_studio/import_compat/*|lib/features/*_patterns/*)
                 python=true
                 ;;
               e2e/*)

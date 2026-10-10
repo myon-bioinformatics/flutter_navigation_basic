@@ -12,6 +12,9 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import shlex
+import subprocess
 import sys
 from pathlib import Path
 
@@ -112,6 +115,35 @@ def actions_summary(pytestconfig: pytest.Config):
         workflow=pytestconfig.getoption("--actions-workflow") or None,
     )
     return summary_to_dict(summary, allow_stale=False)
+
+
+@pytest.fixture
+def classify_workflow_asset(tmp_path):
+    """Run a workflow's real path classifier with one asset-only Git diff."""
+    def classify(workflow, asset_path, event="pull_request"):
+        step = next(step for step in workflow["jobs"]["changes"]["steps"]
+                    if step.get("id") == "filter")
+        replacements = {
+            "github.event_name": event,
+            "github.event.pull_request.base.sha": "base",
+            "github.event.pull_request.head.sha": "head",
+            "github.event.before": "before",
+            "github.sha": "head",
+        }
+        script = re.sub(r"\$\{\{\s*(.*?)\s*\}\}",
+                        lambda match: replacements[match[1]], step["run"])
+        # Only the diff source is substituted; execute the actual case arms and
+        # output writes so an omitted CI selector cannot pass a text-only check.
+        script = "git() { printf '%s\\n' " + shlex.quote(asset_path) + "; }\n" + script
+        output = tmp_path / "workflow-outputs"
+        output.write_text("", encoding="utf-8")
+        subprocess.run(
+            ["bash", "-c", script], check=True, capture_output=True, text=True,
+            env={**os.environ, "GITHUB_OUTPUT": str(output)}, timeout=5,
+        )
+        return dict(line.split("=", 1) for line in output.read_text(encoding="utf-8").splitlines())
+
+    return classify
 
 
 def _outcomes_path(config: pytest.Config) -> Path | None:

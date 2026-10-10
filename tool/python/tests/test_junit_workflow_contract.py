@@ -75,6 +75,27 @@ def test_failure_evidence_workflow_contract():
     _assert_contract(yaml.safe_load(WORKFLOW.read_text(encoding="utf-8")))
 
 
+@pytest.mark.parametrize("event", ["pull_request", "push"])
+@pytest.mark.parametrize("asset", ["window_034.json", "structure_045.json", "command_051.json"])
+def test_collection_asset_only_changes_select_python_junit_without_browser(
+    event, asset, classify_workflow_asset,
+):
+    # BaseLoader keeps `on` as a key instead of YAML 1.1's boolean True.
+    workflow = yaml.load(WORKFLOW.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
+    assert "assets/data_processing/**" in workflow["on"][event]["paths"]
+    outputs = classify_workflow_asset(workflow, f"assets/data_processing/{asset}", event)
+    assert outputs["python"] == "true"
+    assert outputs["workflow"] == "false"
+    assert outputs["playwright"] == "false"
+    assert outputs["e2e"] == "false"
+    assert workflow["jobs"]["python-pytest"]["if"] == (
+        "needs.changes.outputs.python == 'true' || needs.changes.outputs.workflow == 'true'"
+    )
+    # The existing contract verifies that this selected producer emits JUnit
+    # and that the collector still runs even when a drift assertion fails.
+    _assert_contract(yaml.safe_load(WORKFLOW.read_text(encoding="utf-8")))
+
+
 def test_failure_evidence_contract_rejects_unsafe_mutations():
     workflow = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
     _assert_contract(workflow)  # A broken baseline must not make all mutants pass.

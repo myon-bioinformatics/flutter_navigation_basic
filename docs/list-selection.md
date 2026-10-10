@@ -81,6 +81,53 @@ five former per-pattern test files; 113 keeps a focused report-boundary test bec
 its result meaning differs from list selection. Other catalogue scaffolds are not claimed
 GetX-free. The earlier duplicate Dart `list_filters.dart` remains removed.
 
+## Collection assets and test ownership
+
+`tool/python/tests/test_collection_assets.py` uses one explicit recipe table for
+all checked-in outputs of the two collection producers:
+
+| Producer | Checked-in assets | Cases |
+| --- | --- | ---: |
+| `collection_window.py` | `window_034.json`, `window_036.json` through `window_044.json` | 10 |
+| `collection_structure.py` | `structure_045.json` through `structure_049.json` | 5 |
+| `collection_window.py` | `command_051.json` through `command_054.json` | 4 |
+
+Each case runs the real CLI with `python -I -S`, parses its stdout and the saved
+asset, and compares the complete JSON structure. Schema, mode, state, nested
+values, array order and JSON value types all participate; whitespace and object
+key order do not. In particular, `true`, `1` and `1.0` remain distinct. Recipes
+are independent of the saved payload, so changing an asset's mode cannot select
+a different invocation and conceal drift. An inventory assertion requires a
+recipe when another `window_*`, `structure_*` or `command_*` asset is added.
+The comparison is read-only; it never regenerates a stale asset during a test.
+
+Run the shared drift check and the existing producer behavior tests with:
+
+```sh
+python tool/python/test.py --pytest -- tests/test_collection_assets.py tests/test_collection_window.py tests/test_collection_structure.py --junitxml=../../build/test-results/collection-assets.xml
+```
+
+Data-processing asset-only changes now select Non-Dart's existing Python/JUnit
+jobs on both pull requests and pushes to main. The workflow classifier is
+executed in a shared pytest fixture also used by the timezone asset tests;
+collection routing cases verify that this selection leaves Playwright off.
+Existing workflow-change and browser-surface rules still select browser tests
+when appropriate.
+
+The ownership boundary for continuing #144/#145 is:
+
+| Layer | Verification responsibility |
+| --- | --- |
+| Python / pytest | Processing, input validation, JSON I/O, generated-asset drift and data combinations. Producer behavior tests retain their independent expected values. |
+| Dart / widget tests | Asset selection and loading, result shape, display, loading/error/retry, platform boundaries and lifecycle. |
+| Node | JavaScript-specific behavior when such logic exists. |
+| Playwright | Representative real rendering, input, navigation and browser-specific asynchronous interactions. |
+
+Keep native exit statuses and the existing pytest/Playwright JUnit collection
+paths. Pure JSON comparisons belong in pytest. A future consolidation of Dart
+or browser tests must preserve their distinct boundary assertions and document
+the coverage moved; this drift guard does not replace those assertions.
+
 ## Failure evidence and verification
 
 The existing intentional-red chain exercises the reproduced numeric overflow:
@@ -103,8 +150,8 @@ The CLI is also covered by isolated `python -I -S` source-copy tests: the single
 file runs without repository, Flutter, site packages or generated assets for
 filter/distinct success and invalid-input exit 2. This demonstrates a portable
 stdlib processing boundary, not that every Flutter target already bundles Python.
-No local Flutter SDK or full checkout is available; local focused source copies
-are not full CI/audit evidence.
+Isolated source-copy checks do not replace same-head Flutter CI and the
+full-checkout audit.
 
 The authoritative audit starts at **790/792, undecodable 0**. 001–003 reduce it
 to **787/792** and 030 to **786/792**; their GetX consolidation changes file
