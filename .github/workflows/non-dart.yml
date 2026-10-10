@@ -40,7 +40,8 @@ on:
 
 concurrency:
   group: non-dart-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # Preserve the producer and its JUnit artifacts before downstream collection.
+  cancel-in-progress: false
 
 permissions:
   contents: read
