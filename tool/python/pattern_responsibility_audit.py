@@ -18,6 +18,7 @@ FAKE = ("TODO: 実装を追加してください",
         "await Future.delayed(const Duration(milliseconds: 100));",
         "executed successfully")
 PRODUCERS = (
+    ((31, 32, 33), "python", "tool/python/pagination_patterns.py", "tool/python/tests/test_pagination_patterns.py"),
     ((1, 2, 3, 30, 86, 113), "python", "tool/python/list_selection.py", "tool/python/tests/test_list_selection_runtime.py"),
     (range(34, 45), "python", "tool/python/collection_window.py", "tool/python/tests/test_collection_window.py"),
     (range(45, 50), "python", "tool/python/collection_structure.py", "tool/python/tests/test_collection_structure.py"),
