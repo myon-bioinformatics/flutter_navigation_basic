@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/navigation/app_route_registry.dart';
+import '../core/data_processing/native_parallel_pattern_example.dart';
 import '../core/data_processing/interactive_pattern_example.dart';
 import '../core/navigation/route_names.dart';
 import '../screens/generic_screen.dart';
@@ -61,6 +62,11 @@ class AppRoutes {
               map[screenRoute(patternId)]!;
         }
       }
+    }
+
+    for (final id in [136, 137]) {
+      map[screenRoute(id)] =
+          (_) => NativeParallelPatternExample(patternId: id);
     }
 
     map.addAll(AppRouteRegistry.catalogueRoutes);
