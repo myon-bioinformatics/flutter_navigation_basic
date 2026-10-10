@@ -64,3 +64,28 @@ jobs:
         run: flutter analyze --no-fatal-infos
       - name: Build Flutter web
         run: flutter build web
+
+  node-junit:
+    name: Node native JUnit evidence
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Execute real Node tests with native JUnit
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/test-results
+          node --test --test-reporter=junit --test-reporter-destination=build/test-results/node.xml tool/javascript/tests/*.test.mjs
+      - name: Validate native JUnit report
+        if: always()
+        run: python3 -S tool/python/validate_runner_junit.py build/test-results/node.xml
+      - name: Preserve Node JUnit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-node-refactor
+          path: build/test-results/node.xml
+          if-no-files-found: error
