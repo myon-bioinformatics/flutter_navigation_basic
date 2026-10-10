@@ -22,7 +22,7 @@ def test_fake_service_remains_unimplemented():
               "return 'executed successfully';")
         value=audit.inspect(root,4)
         assert value["status"]=="fake_delayed_success"
-        assert value["stale_readme"]
+        assert not value["stale_readme"]
 
 def test_external_cli_not_connected_to_flutter():
     with tempfile.TemporaryDirectory() as td:
@@ -74,3 +74,22 @@ def test_unexpected_catalogue_id_is_reported():
         setup(root, 199)
         result = audit.audit(root)
         assert "199: unexpected catalogue pattern" in result["errors"]
+
+
+def test_removed_file_mentioned_in_prose_is_not_stale():
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        setup(root, 2)
+        row = audit.inspect(root, 2)
+        assert not row["stale_readme"]
+        assert row["producer"]["source"] == "tool/python/list_selection.py"
+
+
+def test_active_readme_import_of_removed_file_is_stale():
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        setup(root, 2)
+        readme = audit.pattern_dir(root, 2) / "README.md"
+        readme.write_text(readme.read_text(encoding="utf-8") +
+                          "\\nimport 'controller.dart';\n", encoding="utf-8")
+        assert audit.inspect(root, 2)["stale_readme"]
