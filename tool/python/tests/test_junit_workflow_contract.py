@@ -204,7 +204,10 @@ def test_browser_adapter_changes_select_e2e_junit(path, classify_workflow_asset)
     workflow = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
     outputs = classify_workflow_asset(workflow, path)
     assert outputs["e2e"] == "true"
-    assert outputs["python"] == "true" if path.startswith("tool/python/") else outputs["playwright"] == "true"
+    if path.startswith("tool/python/"):
+        assert outputs["python"] == "true"
+    else:
+        assert outputs["playwright"] == "true"
     _assert_adapter_producer(workflow)
     assert _plan(workflow, python=False, playwright=False, e2e=True) == (
         "true", ADAPTER_REPORTS)
