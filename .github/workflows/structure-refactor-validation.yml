@@ -83,12 +83,18 @@ jobs:
           cache: true
       - run: flutter pub get
       - name: Shared data-processing widget tests
+        env:
+          ROUTE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          ROUTE_RUN_ID: ${{ github.run_id }}
         run: |
           mkdir -p build/test-results
           flutter test test/features/data_processing_patterns/structure_assets_test.dart test/features/data_processing_patterns/command_assets_test.dart test/features/data_processing_patterns/legacy_catalogue_views_test.dart test/features/data_processing_patterns/native_state_catalogue_test.dart test/features/data_processing_patterns/native_notifier_test.dart test/features/data_processing_patterns/inherited_catalogue_test.dart test/features/data_processing_patterns/state_architecture_test.dart test/features/data_processing_patterns/counter_architecture_test.dart test/features/data_processing_patterns/interactive_pattern_example_test.dart test/features/data_processing_patterns/validation_pattern_links_test.dart test/features/data_processing_patterns/conversion_pattern_links_test.dart test/core/navigation/numbered_routes_observation_test.dart --reporter expanded --file-reporter json:build/test-results/flutter-events.jsonl
       - name: Compare observed numbered routes with the hand-written TOML
         if: always()
-        run: python3 -S tool/python/check_route_observations.py build/test-results/route-observations.json
+        run: python3 -S tool/python/check_route_observations.py build/test-results/route-observations.json \\
+            --head-sha "${{ github.event.pull_request.head.sha || github.sha }}" \\
+            --run-id "${{ github.run_id }}" \\
+            --receipt build/test-results/route-verification.json
       - name: Commit-pinned validation link widget tests
         if: always()
         run: |
@@ -114,6 +120,7 @@ jobs:
             build/test-results/flutter-pinned.xml
             build/test-results/flutter-pinned-events.jsonl
             build/test-results/route-observations.json
+            build/test-results/route-verification.json
             build/test-results/flutter-events.jsonl
           if-no-files-found: error
       - name: Analyze Flutter source
