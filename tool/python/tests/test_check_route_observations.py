@@ -56,6 +56,9 @@ def test_cli_exit_codes(tmp_path):
     assert check.main([str(good), "--head-sha", "a" * 40, "--run-id", "123", "--receipt", str(receipt)]) == 0
     saved = json.loads(receipt.read_text(encoding="utf-8"))
     assert saved["head_sha"] == "a" * 40 and saved["run_id"] == "123" and saved["result"] == "success"
+    no_identity_receipt = tmp_path / "no-identity.json"
+    assert check.main([str(good), "--receipt", str(no_identity_receipt)]) == 2
+    assert not no_identity_receipt.exists()
     assert check.main([str(bad)]) == 1
     assert check.main([str(tmp_path / "missing.json")]) == 2
 
