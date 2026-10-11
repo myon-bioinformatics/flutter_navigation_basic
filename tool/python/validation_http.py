@@ -141,12 +141,34 @@ document.getElementById('run').addEventListener('click', async () => {
         self.send_header("Content-Length", "0")
         self.end_headers()
 
+    def _method_not_allowed(self):
+        if not self._trusted():
+            self._json(403, {"error": "origin not allowed"})
+            return
+        body = b'{"error":"method not allowed"}'
+        self.send_response(405)
+        self.send_header("Allow", "GET, POST, OPTIONS")
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
+
+    do_PUT = _method_not_allowed
+    do_PATCH = _method_not_allowed
+    do_DELETE = _method_not_allowed
+    do_HEAD = _method_not_allowed
+
     def do_POST(self):
         if self.path != "/validate":
             self.send_error(404)
             return
         if not self._trusted():
             self._json(403, {"error": "origin not allowed"})
+            return
+        content_type = self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+        if content_type != "application/json":
+            self._json(415, {"error": "unsupported media type"}, cors=True)
             return
         try:
             size = int(self.headers.get("Content-Length", "0"))
@@ -194,7 +216,10 @@ def build_server(argv=None):
         origins = [explicit_origin(origin) for origin in raw_origins]
     except ValueError:
         parser.error("allow-origin must be scheme://host[:port] and must not contain *")
-    http = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
+    try:
+        http = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
+    except OSError as exc:
+        parser.error(f"cannot bind 127.0.0.1:{args.port}: {exc.strerror or exc}")
     http.allowed_origins = frozenset(origins)
     return http
 
