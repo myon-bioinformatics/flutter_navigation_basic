@@ -7,11 +7,16 @@ stdlib-only, read-only, deterministic, CI-friendly.
 from __future__ import annotations
 
 import argparse
+import hashlib
 from collections import Counter
 import json
 from pathlib import Path
 import re
 import sys
+import tomllib
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from check_route_observations import known_widgets  # noqa: E402  single source of widget kinds
 
 ROOT = Path(__file__).resolve().parents[2]
 FAKE = ("TODO: 実装を追加してください",
@@ -41,33 +46,42 @@ PRODUCERS = (
 )
 NATIVE = set(range(151,164)) | set(range(166,171))
 GESTURES = {171, 172, 173, 174, 175, 183, 184}
-ROUTES = "lib/config/routes.dart"
+MANIFEST = "tool/ci/numbered_routes.toml"
+# Provision = what the app really shows on /screenNNN. The hand-written TOML is
+# checked against runtime observations (numbered_routes_observation_test.dart
+# + check_route_observations.py) in CI, so it is evidence, not a guess.
+PROVISION = {
+    "InteractivePatternExample": "shared_interaction",
+    "NativeParallelPatternExample": "shared_native_example",
+    "ValidationPatternLinks": "shared_source_links",
+    "ConversionPatternLinks": "shared_source_links",
+    "GenericScreen": "generic_catalogue",
+    "Screen5Page": "dedicated_feature_page",
+}
 
-_LOOP = re.compile(r"for\s*\(\s*final\s+patternId\s+in\s*\[([\d,\s]*)\]\s*\)\s*\{")
-_BUILD = re.compile(r"InteractivePatternExample\(\s*patternId:\s*patternId\s*,?\s*\)")
-
-def routed_interactions(root: Path) -> set[int] | None:
-    """Ids that the public route table really maps to InteractivePatternExample.
-
-    A View that merely contains the class name is not evidence: routes.dart must
-    build the shared widget inside the numbered-pattern loop. Returns None when
-    routes.dart exists but that loop cannot be recognised, so a formatting change
-    surfaces as an audit error instead of silently demoting all seven patterns.
-    """
-    path = root/ROUTES
+def load_routes(root: Path) -> tuple[dict[int, str], dict[str, set[str]], list[str]]:
+    """Read the hand-written route expectations; return (id -> widget, kinds, errors)."""
+    path = root/MANIFEST
     if not path.is_file():
-        return set()
-    text = path.read_text(encoding="utf-8")
-    loop = _LOOP.search(text)
-    if not loop:
-        return None
-    depth, index = 1, loop.end()
-    while index < len(text) and depth:  # brace-balanced loop body
-        depth += {"{": 1, "}": -1}.get(text[index], 0)
-        index += 1
-    if depth or not _BUILD.search(text[loop.end():index]):
-        return None
-    return {int(item) for item in re.findall(r"\d+", loop.group(1))}
+        return {}, {}, [f"{MANIFEST}: missing"]
+    try:
+        doc = tomllib.loads(path.read_text(encoding="utf-8"))
+        shared, generic = set(doc["shared_widgets"]), doc["generic_widget"]
+        dedicated = set(doc.get("dedicated_widgets", {}))
+        routes = doc["routes"]
+    except (ValueError, KeyError, TypeError) as error:
+        return {}, {}, [f"{MANIFEST}: unreadable ({type(error).__name__})"]
+    errors = []
+    if doc.get("schema") != "numbered-routes/1":
+        errors.append(f"{MANIFEST}: unexpected schema")
+    if list(routes) != ["%03d" % i for i in range(1, 199)]:
+        errors.append(f"{MANIFEST}: must list 001-198 in order")
+    known = known_widgets(doc)
+    unknown = sorted({w for w in routes.values() if w not in known} | known - set(PROVISION))
+    if unknown:
+        errors.append(f"{MANIFEST}: unknown widget kinds {unknown}")
+    parsed = {int(k): v for k, v in routes.items() if k.isdigit()}
+    return parsed, {"shared": shared, "dedicated": dedicated, "generic": {generic}}, errors
 
 def pattern_dir(root: Path, number: int) -> Path:
     bucket = "pattern_001_to_099" if number <= 99 else "pattern_100_to_198"
@@ -95,7 +109,8 @@ def responsibility(number: int) -> str:
         return "python_validation / flutter_form"
     return "undecided"
 
-def inspect(root: Path, number: int, routed: set[int] | None = None) -> dict:
+def inspect(root: Path, number: int, routes: dict[int, str] | None = None,
+            kinds: dict[str, set[str]] | None = None) -> dict:
     folder = pattern_dir(root,number)
     readme = (folder/"README.md").read_text(encoding="utf-8") if (folder/"README.md").is_file() else ""
     view = (folder/"view.dart").read_text(encoding="utf-8") if (folder/"view.dart").is_file() else ""
@@ -107,7 +122,17 @@ def inspect(root: Path, number: int, routed: set[int] | None = None) -> dict:
     asset = "ProcessedListExample" in view or "JsonListAsset" in (view+service)
     getx = "package:get/get.dart" in view or "extends GetView" in view
     proof = producer(number)
-    if not view or not readme:
+    if routes is None:
+        routes, kinds, _ = load_routes(root)
+    route = routes.get(number)
+    kinds = kinds or {}
+    reachability = ("shared" if route in kinds.get("shared", ()) else
+                    "dedicated" if route in kinds.get("dedicated", ()) else
+                    "generic" if route in kinds.get("generic", ()) else "unknown")
+    # Public code may not import *_patterns (test_pattern_catalogue_boundary), so a
+    # pattern view.dart is never reachable from the app; count it as legacy.
+    legacy_view = "unreachable" if view else "absent"
+    if not readme or (not view and reachability != "shared"):
         status = "missing_catalogue_artifact"
     elif is_fake:
         status = "fake_delayed_success"
@@ -115,13 +140,14 @@ def inspect(root: Path, number: int, routed: set[int] | None = None) -> dict:
         status = "standalone_cli_ui_unwired"
     elif asset:
         status = "precomputed_asset_view"
-    elif (number in GESTURES and not getx and "InteractivePatternExample" in view
-          and number in (routed if routed is not None else routed_interactions(root) or set())):
+    elif number in GESTURES and not getx and route == "InteractivePatternExample":
         status = "native_flutter_shared_interaction"
     elif number in NATIVE and not getx:
         status = "native_flutter_example"
     elif getx:
         status = "getx_unreviewed"
+    elif not view:
+        status = "shared_widget_route"
     elif dart == ["view.dart"]:
         status = "description_only"
     else:
@@ -150,15 +176,17 @@ def inspect(root: Path, number: int, routed: set[int] | None = None) -> dict:
     if number in (136,137):
         warnings.append("Dart Isolate/compute must be tested in native runtime")
     if number in GESTURES and status != "native_flutter_shared_interaction":
-        warnings.append("Native gesture View or its numbered route is not evidenced")
+        warnings.append("Numbered route does not build the shared native interaction")
     elif number in GESTURES:
-        warnings.append("Native interaction View exists; verify numbered route and browser gestures separately")
+        warnings.append("Numbered route proven by the Flutter manifest test; verify browser gestures separately")
     if number in (187,191,192,195,196,198):
         warnings.append("In-memory reference does not prove durable/distributed service semantics")
     return {"id":number,"name":name,"status":status,"target_owner":responsibility(number),
+            "route":route,"reachability":reachability,
+            "provision":PROVISION.get(route, "unknown"),"legacy_view":legacy_view,
             "dart_files":dart,"stale_readme":stale,"producer":proof,"warnings":warnings}
 
-def audit(root: Path) -> dict:
+def audit(root: Path, verification: dict | None = None) -> dict:
     base=root/"lib/features/data_processing_patterns"
     if not base.is_dir():
         raise ValueError("missing pattern catalogue")
@@ -169,14 +197,13 @@ def audit(root: Path) -> dict:
         number = int(folder.name.removeprefix("pattern_"))
         locations.setdefault(number, []).append(folder)
     numbers = sorted(locations)
-    routed = routed_interactions(root)
-    records = [inspect(root, i, routed or set()) for i in numbers]
+    routes, kinds, route_errors = load_routes(root)
+    records = [inspect(root, i, routes, kinds) for i in numbers]
     expected = set(range(1, 199))
     observed = set(numbers)
     errors = ["%03d: missing catalogue pattern" % i for i in sorted(expected - observed)]
     errors += ["%03d: unexpected catalogue pattern" % i for i in sorted(observed - expected)]
-    if routed is None:
-        errors.append("%s: numbered interaction loop not recognised" % ROUTES)
+    errors += route_errors
     for number, paths in sorted(locations.items()):
         if len(paths) != 1 or paths[0] != pattern_dir(root, number):
             errors.append("%03d: duplicate or misplaced catalogue directory: %s" %
@@ -191,21 +218,52 @@ def audit(root: Path) -> dict:
                 if not (root/source).is_file():
                     errors.append("%03d: missing %s %s" % (row["id"],field,source))
     return {"schema":"pattern-responsibility/1",
+            # Explicit status instead of null: a report without a receipt is unverified.
+            "route_verification": ({"status": "verified", **verification} if verification
+                                   else {"status": "unverified"}),
             "summary":{"patterns":len(records),
                        "dart_files":sum(len(x["dart_files"]) for x in records),
                        "statuses":counts,
+                       "provisions":dict(sorted(Counter(x["provision"] for x in records).items())),
+                       "reachability":dict(sorted(Counter(x["reachability"] for x in records).items())),
+                       "legacy_views":dict(sorted(Counter(x["legacy_view"] for x in records).items())),
                        "stale_readmes":sum(x["stale_readme"] for x in records),
                        "errors":len(errors)},
             "errors":errors,"patterns":records}
+
+def verify_receipt(root: Path, path: Path, head_sha: str | None, run_id: str | None) -> dict:
+    """Accept a route receipt only for this head, this run and the current TOML bytes."""
+    receipt = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(receipt, dict) or receipt.get("schema") != "route-verification/1" \
+            or receipt.get("result") != "success":
+        raise ValueError("invalid route verification receipt")
+    if not head_sha or not run_id:
+        raise ValueError("route verification requires expected head SHA and run ID")
+    if receipt.get("head_sha") != head_sha:
+        raise ValueError("route verification head SHA does not match expected head")
+    if receipt.get("run_id") != run_id:
+        raise ValueError("route verification run ID does not match expected run")
+    if receipt.get("routes") != 198:
+        raise ValueError("route verification receipt does not cover 198 routes")
+    if receipt.get("expected_sha256") != hashlib.sha256((root/MANIFEST).read_bytes()).hexdigest():
+        raise ValueError(f"route verification was made against a different {MANIFEST}")
+    return receipt
 
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root",type=Path,default=ROOT)
     parser.add_argument("--json",action="store_true")
     parser.add_argument("--check",action="store_true")
+    parser.add_argument("--route-verification",type=Path)
+    parser.add_argument("--route-head-sha")
+    parser.add_argument("--route-run-id")
     args=parser.parse_args(argv)
     try:
-        result=audit(args.root.resolve())
+        verification = None
+        if args.route_verification:
+            verification = verify_receipt(args.root.resolve(), args.route_verification,
+                                          args.route_head_sha, args.route_run_id)
+        result=audit(args.root.resolve(), verification)
     except (ValueError,OSError) as error:
         print("audit: "+str(error),file=sys.stderr)
         return 2

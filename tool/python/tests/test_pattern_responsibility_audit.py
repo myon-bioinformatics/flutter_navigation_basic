@@ -1,3 +1,4 @@
+import pytest
 import pattern_responsibility_audit as audit
 from pathlib import Path
 import tempfile
@@ -65,7 +66,8 @@ def test_empty_catalogue_fails_check():
         (root / "lib/features/data_processing_patterns").mkdir(parents=True)
         result = audit.audit(root)
         assert result["summary"]["patterns"] == 0
-        assert len(result["errors"]) == 198
+        missing = [e for e in result["errors"] if e.endswith("missing catalogue pattern")]
+        assert len(missing) == 198  # plus the missing route manifest error
 
 
 def test_unexpected_catalogue_id_is_reported():
@@ -146,62 +148,140 @@ def test_seven_shared_gesture_views_are_not_description_only():
         assert not any("E2E-only" in warning for warning in row["warnings"])
 
 
-def _gesture_root(td, routes_text):
+import json
+
+
+def _manifest(root, overrides=None, **changes):
+    routes = {"%03d" % i: "GenericScreen" for i in range(1, 199)}
+    routes.update({"%03d" % k: v for k, v in (overrides or {}).items()})
+    doc = {"schema": "numbered-routes/1", "generic_widget": "GenericScreen",
+           "shared_widgets": {"InteractivePatternExample": "x", "ValidationPatternLinks": "x"},
+           "routes": routes, **changes}
+    lines = [f'schema = "{doc["schema"]}"', f'generic_widget = "{doc["generic_widget"]}"',
+             "[shared_widgets]", *[f'{k} = "{v}"' for k, v in doc["shared_widgets"].items()],
+             "[routes]", *[f'"{k}" = "{v}"' for k, v in doc["routes"].items()]]
+    (root/"tool/ci").mkdir(parents=True, exist_ok=True)
+    (root/audit.MANIFEST).write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _gesture_root(td, route):
     root = Path(td)
     setup(root, 171)
     (audit.pattern_dir(root, 171)/"view.dart").write_text(
         "const InteractivePatternExample(patternId: 171);\n", encoding="utf-8")
-    (root/"lib/config").mkdir(parents=True)
-    (root/audit.ROUTES).write_text(routes_text, encoding="utf-8")
+    _manifest(root, {171: route})
     return root
 
 
-ROUTED = """for (final patternId in [171, 172]) {
-  map[screenRoute(patternId)] =
-      (_) => InteractivePatternExample(patternId: patternId);
-}
-"""
-
-
-def test_gesture_view_needs_a_numbered_route_to_count_as_native():
+def test_gesture_status_follows_the_proven_route_not_the_view_text():
     with tempfile.TemporaryDirectory() as td:
-        row = audit.inspect(_gesture_root(td, ROUTED), 171)
+        row = audit.inspect(_gesture_root(td, "InteractivePatternExample"), 171)
         assert row["status"] == "native_flutter_shared_interaction", row
-    for label, routes in (
-        ("id removed from the loop", ROUTED.replace("171, ", "")),
-        ("loop builds a different widget", ROUTED.replace("InteractivePatternExample", "GenericScreen")),
-        ("no routes.dart content", ""),
-    ):
-        with tempfile.TemporaryDirectory() as td:
-            row = audit.inspect(_gesture_root(td, routes), 171)
-            assert row["status"] != "native_flutter_shared_interaction", label
-            assert any("numbered route is not evidenced" in w for w in row["warnings"]), label
-
-
-def test_route_loop_survives_reformatting_and_fails_loudly_when_unreadable():
-    reformatted = """for (final patternId in [
-  171,
-  172,
-]) {
-  if (true) { map['x'] = (_) => const SizedBox(); }
-  map[screenRoute(patternId)] = (_) => InteractivePatternExample(
-        patternId: patternId,
-      );
-}
-"""
+        assert (row["reachability"], row["provision"], row["legacy_view"]) == (
+            "shared", "shared_interaction", "unreachable")
     with tempfile.TemporaryDirectory() as td:
-        root = _gesture_root(td, reformatted)
-        assert audit.routed_interactions(root) == {171, 172}
-        assert audit.inspect(root, 171)["status"] == "native_flutter_shared_interaction"
+        row = audit.inspect(_gesture_root(td, "GenericScreen"), 171)
+        assert row["status"] != "native_flutter_shared_interaction"
+        assert row["reachability"] == "generic"
+        assert any("does not build the shared native interaction" in w for w in row["warnings"])
+
+
+def test_shared_route_makes_view_optional_but_generic_route_does_not():
     with tempfile.TemporaryDirectory() as td:
-        root = _gesture_root(td, "final ids = [171]; // no recognisable loop\n")
-        assert audit.routed_interactions(root) is None
-        assert "lib/config/routes.dart: numbered interaction loop not recognised" in audit.audit(root)["errors"]
+        root = Path(td)
+        for number in (136, 137):  # no producer, not a gesture pattern
+            setup(root, number)
+            (audit.pattern_dir(root, number)/"view.dart").unlink()
+        _manifest(root, {136: "ValidationPatternLinks"})
+        shared, generic = audit.inspect(root, 136), audit.inspect(root, 137)
+        assert (shared["status"], shared["legacy_view"]) == ("shared_widget_route", "absent")
+        assert generic["status"] == "missing_catalogue_artifact"
 
 
-def test_real_routes_are_read_once_per_audit(monkeypatch):
-    calls = []
-    original = audit.routed_interactions
-    monkeypatch.setattr(audit, "routed_interactions", lambda root: calls.append(root) or original(root))
-    audit.audit(ROOT)
-    assert len(calls) == 1
+@pytest.mark.parametrize(("change", "message"), [
+    ({"routes": {"001": "GenericScreen"}}, "must list 001-198 in order"),
+    ({"schema": "numbered-routes/0"}, "unexpected schema"),
+    ({"shared_widgets": {"MysteryWidget": "x"}}, "unknown widget kinds"),
+])
+def test_malformed_manifest_is_an_audit_error(change, message):
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        setup(root, 1)
+        _manifest(root, **change)
+        assert any(message in error for error in audit.audit(root)["errors"])
+
+
+def test_missing_manifest_is_an_audit_error():
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        setup(root, 1)
+        assert "tool/ci/numbered_routes.toml: missing" in audit.audit(root)["errors"]
+
+
+def test_real_repository_reachability_is_complete():
+    summary = audit.audit(ROOT)["summary"]
+    assert sum(summary["reachability"].values()) == 198
+    assert "unknown" not in summary["reachability"]
+    assert "unknown" not in summary["provisions"]
+
+
+def test_cli_rejects_route_receipt_without_external_identity(tmp_path):
+    receipt = tmp_path / "receipt.json"
+    receipt.write_text(json.dumps({
+        "schema": "route-verification/1", "head_sha": "a" * 40,
+        "run_id": "123", "routes": 198, "result": "success"
+    }), encoding="utf-8")
+    assert audit.main(["--root", str(ROOT), "--route-verification", str(receipt),
+                       "--json"]) == 2
+
+
+@pytest.mark.parametrize(("head", "run"), [("b" * 40, "123"), ("a" * 40, "999")])
+def test_cli_rejects_route_receipt_for_other_head_or_run(tmp_path, head, run):
+    receipt = tmp_path / "receipt.json"
+    receipt.write_text(json.dumps({
+        "schema": "route-verification/1", "head_sha": "a" * 40,
+        "run_id": "123", "routes": 198, "result": "success"
+    }), encoding="utf-8")
+    assert audit.main(["--root", str(ROOT), "--route-verification", str(receipt),
+                       "--route-head-sha", head, "--route-run-id", run, "--json"]) == 2
+
+
+
+def test_malformed_receipt_is_rejected_without_traceback(tmp_path):
+    path = tmp_path / "receipt.json"
+    path.write_text("[]", encoding="utf-8")
+    assert audit.main(["--check", "--route-verification", str(path),
+                       "--route-head-sha", "a" * 40, "--route-run-id", "123"]) == 2
+
+
+def _bound_receipt(tmp_path, digest=None):
+    import hashlib
+    data = {"schema": "route-verification/1", "result": "success", "routes": 198,
+            "head_sha": "a" * 40, "run_id": "123",
+            "expected_sha256": digest or hashlib.sha256((ROOT / audit.MANIFEST).read_bytes()).hexdigest()}
+    path = tmp_path / "bound-receipt.json"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    return path
+
+
+def test_receipt_is_accepted_only_for_the_current_toml_bytes(tmp_path):
+    assert audit.verify_receipt(ROOT, _bound_receipt(tmp_path), "a" * 40, "123")["run_id"] == "123"
+    with pytest.raises(ValueError, match="different tool/ci/numbered_routes.toml"):
+        audit.verify_receipt(ROOT, _bound_receipt(tmp_path, "0" * 64), "a" * 40, "123")
+    assert audit.main(["--check", "--route-verification", str(_bound_receipt(tmp_path)),
+                       "--route-head-sha", "a" * 40, "--route-run-id", "123"]) == 0
+
+
+def test_audit_without_receipt_says_unverified_not_null():
+    assert audit.audit(ROOT)["route_verification"] == {"status": "unverified"}
+
+
+def test_receipt_must_cover_all_198_routes(tmp_path):
+    import hashlib
+    path = tmp_path / "short.json"
+    path.write_text(json.dumps({"schema": "route-verification/1", "result": "success", "routes": 197,
+                                "head_sha": "a" * 40, "run_id": "123",
+                                "expected_sha256": hashlib.sha256((ROOT / audit.MANIFEST).read_bytes()).hexdigest()}),
+                    encoding="utf-8")
+    with pytest.raises(ValueError, match="198 routes"):
+        audit.verify_receipt(ROOT, path, "a" * 40, "123")

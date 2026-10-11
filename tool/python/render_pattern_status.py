@@ -15,6 +15,10 @@ def escape(value):
     return str(value).replace("|", "\\|").replace("\n", " ").replace("\r", " ")
 
 
+def _counts(mapping):
+    return "、".join(f"{key} {value}" for key, value in mapping.items())
+
+
 def completion(row):
     status = row["status"]
     if status in ("fake_delayed_success", "description_only", "missing_catalogue_artifact"):
@@ -39,9 +43,13 @@ def render(report, head, tree=None):
         "- **注意**: これは静的な証跡分類。完全実装・E2E成功を自動認定するものではない。",
         "- Python/JSのproducerが存在しても、Flutter画面からの実行接続は別途検証する。",
         "- `限定実装` は完成を意味しない。実行可能範囲と残課題を必ず参照する。",
+        "- **提供形態**は `/screenNNN` が実際に表示する Widget（`tool/ci/numbered_routes.toml`、CI で実行時の観測と照合）。"
+        "**実装証跡**はパターンのディレクトリ内のコードの分類で、旧 `view.dart` はアプリから到達しない。",
+        *([f"- 提供形態: {_counts(summary['provisions'])} / 旧 view.dart: {_counts(summary['legacy_views'])}"]
+          if summary.get("provisions") else []),
         "",
-        "| ID | パターン | 実装証跡 | 完成度（保守的判定） | 責務 | Dart数 | producer / 次の課題 |",
-        "|---:|---|---|---|---|---:|---|",
+        "| ID | パターン | 提供形態（route） | 実装証跡 | 完成度（保守的判定） | 責務 | Dart数 | producer / 次の課題 |",
+        "|---:|---|---|---|---|---|---:|---|",
     ]
     for row in sorted(records, key=lambda r: r["id"]):
         prod = row.get("producer")
@@ -49,7 +57,9 @@ def render(report, head, tree=None):
         if prod and not prod.get("flutter_runtime_connected", False):
             evidence += "（Flutter未接続）"
         lines.append("| " + " | ".join([
-            f"{row['id']:03d}", escape(row["name"]), escape(row["status"]),
+            f"{row['id']:03d}", escape(row["name"]),
+            escape(f"{row['provision']}（{row['route']}）" if row.get("route") else "—"),
+            escape(row["status"]),
             completion(row), escape(row["target_owner"]), str(len(row["dart_files"])),
             escape(evidence),
         ]) + " |")
