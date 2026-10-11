@@ -63,6 +63,8 @@ def run_node(*, root: Path, files: list[str], report: Path,
     report = report.resolve()
     report.parent.mkdir(parents=True, exist_ok=True)
     report.unlink(missing_ok=True)
+    if receipt is not None:
+        receipt.unlink(missing_ok=True)
     cmd = [node, "--test", "--test-reporter=spec",
            "--test-reporter-destination=stdout", "--test-reporter=junit",
            f"--test-reporter-destination={report}"]
@@ -81,6 +83,9 @@ def run_node(*, root: Path, files: list[str], report: Path,
         summary = read_junit(report)
     except NodeEvidenceError as exc:
         print(f"node runner: {exc}", file=sys.stderr)
+        return code if code != 0 else 1
+    if summary["passed"] + summary["failed"] == 0:
+        print("node runner: no executed tests (all skipped)", file=sys.stderr)
         return code if code != 0 else 1
     summary.update({"runner": "node", "exit_code": code,
                     "ok": code == 0 and summary["failed"] == 0,
