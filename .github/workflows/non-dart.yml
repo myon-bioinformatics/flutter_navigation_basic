@@ -115,15 +115,17 @@ jobs:
                 e2e=true
                 playwright=true
                 ;;
-              tool/python/multi_test_runner.py|tool/python/test.py)
-                # The browser adapter must be exercised when its own runner
-                # changes, even without a change under e2e/.
-                e2e=true
-                ;;
               .github/workflows/non-dart.yml)
                 workflow=true
                 python=true
                 playwright=true
+                ;;
+            esac
+            # Independent classifier: tool/python/* already matches in the
+            # previous case, so these exact files need their own case block.
+            case "$f" in
+              tool/python/multi_test_runner.py|tool/python/test.py)
+                e2e=true
                 ;;
             esac
             case "$f" in
