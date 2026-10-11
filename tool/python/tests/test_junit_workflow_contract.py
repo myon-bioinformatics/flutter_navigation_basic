@@ -50,9 +50,10 @@ PLAYWRIGHT_REPORTS = [
 VALIDATION_BROWSER_REPORTS = [
     "junit-validation-browser/validation-browser.xml",
 ]
+ADAPTER_REPORTS = ["junit-playwright-adapter-smoke/playwright-adapter.xml"]
 
 
-def _plan(workflow, *, python, playwright, validation_browser=False):
+def _plan(workflow, *, python, playwright, validation_browser=False, e2e=False):
     """Run the real planning step the way Actions would, minus ${{ }} expressions."""
     step = next(item for item in workflow["jobs"]["junit-plan"]["steps"]
                 if item.get("id") == "plan")
@@ -63,6 +64,7 @@ def _plan(workflow, *, python, playwright, validation_browser=False):
             ["bash", "-c", step["run"]], check=True, capture_output=True, text=True,
             env={**os.environ, "GITHUB_OUTPUT": str(output),
                  "PYTHON": str(python).lower(), "PLAYWRIGHT": str(playwright).lower(),
+                 "E2E": str(e2e).lower(),
                  "VALIDATION_BROWSER": str(validation_browser).lower()},
             timeout=10,
         )
@@ -83,6 +85,25 @@ def _assert_playwright_producer(workflow):
     assert upload.get("if") == "always()"
     assert upload.get("continue-on-error", False) is False
     assert upload["with"]["path"].strip() == "build/test-results/playwright-*.xml"
+    assert upload["with"]["if-no-files-found"] == "error"
+    assert upload["with"]["retention-days"] == 14
+
+
+def _assert_adapter_producer(workflow):
+    producer = workflow["jobs"]["playwright-adapter-smoke"]
+    assert producer["if"] == "needs.changes.outputs.e2e == 'true'"
+    assert producer.get("continue-on-error", False) is False
+    run = _step(producer, "Run real browser through shared Python Playwright adapter")
+    assert run.get("continue-on-error", False) is False
+    assert "--external-runner playwright-node" in run["run"]
+    assert "--test-file e2e/tests/runner_adapter_smoke.spec.ts" in run["run"]
+    assert "--test-report build/test-results/playwright-adapter.xml" in run["run"]
+    assert "validate_runner_junit.py build/test-results/playwright-adapter.xml" in run["run"]
+    upload = _upload(producer, "junit-playwright-adapter-smoke")
+    assert producer["steps"].index(run) < producer["steps"].index(upload)
+    assert upload.get("if") == "always()"
+    assert upload.get("continue-on-error", False) is False
+    assert upload["with"]["path"].strip() == "build/test-results/playwright-adapter.xml"
     assert upload["with"]["if-no-files-found"] == "error"
     assert upload["with"]["retention-days"] == 14
 
@@ -130,6 +151,7 @@ def _assert_contract(workflow):
         assert upload["with"]["if-no-files-found"] == "error"
         assert upload["with"]["retention-days"] == 14
     _assert_playwright_producer(workflow)
+    _assert_adapter_producer(workflow)
     _assert_validation_browser_producer(workflow)
     plan = workflow["jobs"]["junit-plan"]
     assert plan["needs"] == "changes"
@@ -137,6 +159,7 @@ def _assert_contract(workflow):
     assert plan_step["env"] == {
         "PYTHON": "${{ needs.changes.outputs.python == 'true' || needs.changes.outputs.workflow == 'true' }}",
         "PLAYWRIGHT": "${{ needs.changes.outputs.playwright == 'true' }}",
+        "E2E": "${{ needs.changes.outputs.e2e == 'true' }}",
         "VALIDATION_BROWSER": "${{ needs.changes.outputs.validation_browser == 'true' }}",
     }
     # The plan must mirror the producers' own `if:` so that a skipped lane is not
@@ -145,6 +168,10 @@ def _assert_contract(workflow):
         "needs.changes.outputs.python == 'true' || needs.changes.outputs.workflow == 'true'"
     )
     assert workflow["jobs"]["playwright"]["if"] == "needs.changes.outputs.playwright == 'true'"
+    assert workflow["jobs"]["playwright-adapter-smoke"]["if"] == "needs.changes.outputs.e2e == 'true'"
+    assert _plan(workflow, python=False, playwright=False, e2e=True) == ("true", ADAPTER_REPORTS)
+    assert _plan(workflow, python=True, playwright=False, e2e=True) == (
+        "true", ADAPTER_REPORTS + PYTHON_REPORTS)
     assert _plan(workflow, python=True, playwright=False) == ("true", PYTHON_REPORTS)
     assert _plan(workflow, python=False, playwright=True) == ("true", PLAYWRIGHT_REPORTS)
     assert _plan(workflow, python=True, playwright=True) == ("true", PYTHON_REPORTS + PLAYWRIGHT_REPORTS)
@@ -155,7 +182,7 @@ def _assert_contract(workflow):
         "true", PYTHON_REPORTS + PLAYWRIGHT_REPORTS + VALIDATION_BROWSER_REPORTS)
     collector = workflow["jobs"]["junit-identity"]
     assert collector["needs"] == [
-        "changes", "junit-plan", "python-pytest", "playwright", "validation-browser"]
+        "changes", "junit-plan", "python-pytest", "playwright-adapter-smoke", "playwright", "validation-browser"]
     assert collector["if"] == "always() && needs.junit-plan.outputs.run == 'true'"
     assert collector.get("continue-on-error", False) is False
     assert collector["uses"] == COLLECTOR
@@ -166,6 +193,24 @@ def _assert_contract(workflow):
 
 def test_failure_evidence_workflow_contract():
     _assert_contract(yaml.safe_load(WORKFLOW.read_text(encoding="utf-8")))
+
+
+@pytest.mark.parametrize("path", [
+    "tool/python/test.py",
+    "tool/python/multi_test_runner.py",
+    "e2e/tests/runner_adapter_smoke.spec.ts",
+])
+def test_browser_adapter_changes_select_e2e_junit(path, classify_workflow_asset):
+    workflow = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
+    outputs = classify_workflow_asset(workflow, path)
+    assert outputs["e2e"] == "true"
+    if path.startswith("tool/python/"):
+        assert outputs["python"] == "true"
+    else:
+        assert outputs["playwright"] == "true"
+    _assert_adapter_producer(workflow)
+    assert _plan(workflow, python=False, playwright=False, e2e=True) == (
+        "true", ADAPTER_REPORTS)
 
 
 def test_validation_sources_select_the_browser_contract_without_flutter_e2e(classify_workflow_asset):
@@ -231,6 +276,9 @@ def test_failure_evidence_contract_rejects_unsafe_mutations():
          ["changes", "junit-plan", "python-pytest"]),
         ("collector runs without a plan", collector_path + ("if",), "always()"),
         ("plan ignores playwright selection", ("jobs", "junit-plan", "steps", 0, "env", "PLAYWRIGHT"), "false"),
+        ("plan ignores adapter selection", ("jobs", "junit-plan", "steps", 0, "env", "E2E"), "false"),
+        ("collector drops adapter dependency", collector_path + ("needs",),
+         ["changes", "junit-plan", "python-pytest", "playwright", "validation-browser"]),
     ]
     for name in ("junit-python-3.12", "junit-controlled-python-3.12"):
         index = producer["steps"].index(_upload(producer, name))
@@ -249,6 +297,15 @@ def test_failure_evidence_contract_rejects_unsafe_mutations():
             (name + " ignores missing XML", path + ("with", "if-no-files-found"), "ignore"),
             (name + " retains raw for 90 days", path + ("with", "retention-days"), 90),
         ])
+    adapter = workflow["jobs"]["playwright-adapter-smoke"]
+    adapter_upload = _upload(adapter, "junit-playwright-adapter-smoke")
+    adapter_index = adapter["steps"].index(adapter_upload)
+    adapter_path = ("jobs", "playwright-adapter-smoke", "steps", adapter_index)
+    mutations.extend([
+        ("adapter loses always", adapter_path + ("if",), None),
+        ("adapter ignores missing JUnit", adapter_path + ("with", "if-no-files-found"), "ignore"),
+        ("adapter retains raw for 90 days", adapter_path + ("with", "retention-days"), 90),
+    ])
     validation = workflow["jobs"]["validation-browser"]
     for name in ("junit-validation-browser",):
         index = validation["steps"].index(_upload(validation, name))
