@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_navigation_basic/shared/catalog/catalog_search.dart';
-import 'package:flutter_navigation_basic/screens/generic_screen.dart';
+import 'package:flutter_application_1/shared/catalog/catalog_search.dart';
+import 'package:flutter_application_1/screens/generic_screen.dart';
 
 void main() {
   final screens = [
