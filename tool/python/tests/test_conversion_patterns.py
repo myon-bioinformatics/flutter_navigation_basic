@@ -95,3 +95,38 @@ def test_unit_conversion_overflow_fails_closed():
 def test_unit_conversion_rejects_integers_too_large_for_float():
     with pytest.raises(ValueError):
         m.run({"operation":"unit","from":"km","to":"m","value":10 ** 400})
+
+
+
+# Boundary behaviour pinned as contract (review N14-N17).
+@pytest.mark.parametrize(("payload", "message"), [
+    ({"operation":"encoding","mode":"base64_to_utf8","value":"YQ"}, "invalid base64 utf8"),       # no padding
+    ({"operation":"encoding","mode":"base64_to_utf8","value":"YQ==="}, "invalid base64 utf8"),
+    ({"operation":"encoding","mode":"base64_to_utf8","value":"-_-_"}, "invalid base64 utf8"),     # urlsafe alphabet
+    ({"operation":"encoding","mode":"base64_to_utf8","value":"/w=="}, "invalid base64 utf8"),     # not UTF-8
+    ({"operation":"encoding","mode":"utf8_to_base64","value":"\ud800"}, "invalid utf8 input"),
+    ({"operation":"coerce","target":"int","value":"0x10"}, "invalid integer"),
+    ({"operation":"coerce","target":"int","value":"9" * 5000}, "invalid integer"),               # CPython digit cap
+    ({"operation":"date","source":"iso","value":"2100-02-29"}, None),
+    ({"operation":"date","source":"iso","value":"0000-01-01"}, None),
+    ({"operation":"unit","from":"km","to":"cm","value":-1e306}, "unit conversion overflow"),
+    ({"operation":"unit","from":"cm","to":"km","value":5e-324}, "unit conversion underflow"),
+])
+def test_boundaries_fail_closed_with_stable_messages(payload, message):
+    with pytest.raises(ValueError) as error:
+        m.run(payload)
+    if message:
+        assert str(error.value) == message
+
+
+@pytest.mark.parametrize(("payload", "expected"), [
+    ({"operation":"coerce","target":"int","value":"007"}, 7),
+    ({"operation":"encoding","mode":"base64_to_utf8","value":"YQ=="}, "a"),
+    ({"operation":"date","source":"compact","target":"compact","value":"00010101"}, "00010101"),
+    ({"operation":"unit","from":"cm","to":"km","value":0}, 0.0),
+    # Code-point masking: a ZWJ emoji sequence is split, and length stays visible.
+    ({"operation":"mask","keep_last":2,"value":"\U0001F468\u200d\U0001F469\u200d\U0001F467x"},
+     "****\U0001F467x"),
+])
+def test_boundaries_that_are_accepted(payload, expected):
+    assert m.run(payload) == {"value": expected}

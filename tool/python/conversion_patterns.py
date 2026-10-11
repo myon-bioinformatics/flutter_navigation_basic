@@ -43,7 +43,10 @@ def run(req):
             text = str(value)
             if not re.fullmatch(r"[+-]?[0-9]+", text):
                 raise ValueError("invalid integer")
-            return {"value": int(text)}
+            try:  # CPython caps int(str) at 4300 digits; keep our own message
+                return {"value": int(text)}
+            except ValueError as exc:
+                raise ValueError("invalid integer") from exc
         if target == "float":
             if isinstance(value, bool) or not isinstance(value, (str, int, float)):
                 raise ValueError("unsafe float coercion")
@@ -106,13 +109,19 @@ def run(req):
             raise ValueError("unit conversion overflow") from exc
         if not math.isfinite(result):
             raise ValueError("unit conversion overflow")
+        if value != 0 and result == 0:
+            raise ValueError("unit conversion underflow")
         return {"value": result}
     if op == "encoding":
         if not isinstance(value, str):
             raise ValueError("encoding expects string")
         mode = req.get("mode")
         if mode == "utf8_to_base64":
-            return {"value": base64.b64encode(value.encode("utf-8")).decode("ascii")}
+            try:  # lone surrogates cannot be UTF-8 encoded
+                raw = value.encode("utf-8")
+            except UnicodeError as exc:
+                raise ValueError("invalid utf8 input") from exc
+            return {"value": base64.b64encode(raw).decode("ascii")}
         if mode == "base64_to_utf8":
             try:
                 raw = base64.b64decode(value, validate=True)
