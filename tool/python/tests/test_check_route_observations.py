@@ -91,7 +91,7 @@ def test_toml_naming_an_unknown_widget_fails():
     assert "001: TOML names unknown widget 'TypoScreen'" in check.compare(broken, _observed())
 
 
-@pytest.mark.parametrize("key", ["1a", "", "abc"])
+@pytest.mark.parametrize("key", ["1a", "", "abc", "\u0661\u0662\u0663", "\u00b2", "\uff10\uff10\uff11"])
 def test_non_numeric_route_keys_fail_without_traceback(key):
     broken = _observed()
     broken["routes"][key] = {"widget": "GenericScreen", "id": 1}

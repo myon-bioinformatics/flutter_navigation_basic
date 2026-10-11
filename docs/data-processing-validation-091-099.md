@@ -4,8 +4,7 @@
 
 - `tool/python/validation_patterns.py`: standalone Python 3 stdlib-only CLI, JSON stdin/stdout.
 - `tool/python/tests/test_validation_patterns.py`: normal, invalid, boundary, and form aggregation contracts.
-- Existing Flutter `view.dart` files remain unchanged. **No Flutter→Python execution bridge or interactive validation form is wired yet.**
-- No production/test Dart files were removed in this slice. This is a new producer, not a completed UI migration.
+- Flutter `/screen091`–`/screen099` show the shared `ValidationPatternLinks` (source links only). The nine legacy `view.dart` files were never reachable from a route and have been removed. **No Flutter→Python execution bridge is wired yet;** interactive input runs in the local browser form below.
 
 | Pattern | Operation | Contract / limitation |
 |---|---|---|

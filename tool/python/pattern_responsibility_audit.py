@@ -80,7 +80,7 @@ def load_routes(root: Path) -> tuple[dict[int, str], dict[str, set[str]], list[s
     unknown = sorted({w for w in routes.values() if w not in known} | known - set(PROVISION))
     if unknown:
         errors.append(f"{MANIFEST}: unknown widget kinds {unknown}")
-    parsed = {int(k): v for k, v in routes.items() if k.isdigit()}
+    parsed = {int(k): v for k, v in routes.items() if k.isascii() and k.isdigit()}
     return parsed, {"shared": shared, "dedicated": dedicated, "generic": {generic}}, errors
 
 def pattern_dir(root: Path, number: int) -> Path:

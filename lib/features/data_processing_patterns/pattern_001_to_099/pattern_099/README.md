@@ -1,26 +1,16 @@
 # Pattern 099: FormValidation
 
-**カテゴリ**: 案D - データ処理パターン
-
 ## 概要
 フォーム全体のバリデーション管理。
 
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
+## 責務と実装範囲
+- Python: `tool/python/validation_patterns.py` の `form` が処理を担当。
+- テスト: `tool/python/tests/test_validation_patterns.py`。契約と制約は `docs/data-processing-validation-091-099.md`。
+- ブラウザ: `tool/python/validation_http.py` のローカル入力画面から実際に検証できる。
+- Flutter: `/screen099` は共通の `ValidationPatternLinks` で、実装・テスト・入力画面・契約への GitHub リンクを表示・コピーできる。
+- 旧カタログの `view.dart` は、どの route からも使われていなかったため削除した。旧 Controller・Service・Model はない。
 
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern099View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern099Controller())));
-```
+**対応状況: 限定実装。** Python とローカルブラウザでは実行できるが、Flutter 画面からの検証実行は未接続。
 
 ## 関連パターン
 - 前: Pattern 098

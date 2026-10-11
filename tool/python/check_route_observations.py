@@ -48,7 +48,8 @@ def compare(expected: dict, observed: dict, *, head_sha: str | None = None, run_
         return ["routes must be tables keyed by 001-198"]
     known = known_widgets(expected)
     keys = set(want) | set(seen)
-    if any(not (isinstance(key, str) and key.isdigit()) for key in keys):  # int(key) below
+    # isdigit() alone accepts "١٢٣" (int() parses it) and "²" (int() raises).
+    if any(not (isinstance(key, str) and key.isascii() and key.isdigit()) for key in keys):
         return ["route keys must be zero-padded numbers such as 001"]
     problems = [f"{key}: TOML names unknown widget {value!r}"
                 for key, value in sorted(want.items()) if not isinstance(value, str) or value not in known]
