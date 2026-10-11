@@ -161,7 +161,7 @@ def _assert_contract(workflow):
     assert collector["uses"] == COLLECTOR
     assert collector["with"]["expected-reports"] == "${{ needs.junit-plan.outputs.reports }}"
     # Identities name the checkout that produced the reports (parent collector input).
-    assert collector["with"]["commit-sha"] == "${{ github.sha }}"
+    assert collector["with"]["commit-sha"] == "${{ github.event.pull_request.head.sha || github.sha }}"
 
 
 def test_failure_evidence_workflow_contract():
@@ -271,15 +271,14 @@ def test_failure_evidence_contract_rejects_unsafe_mutations():
         pytest.fail(f"unsafe workflow mutation escaped: {label}")
 
 
-def test_refactor_smoke_collector_matches_its_producers():
-    workflow = yaml.safe_load(REFACTOR.read_text(encoding="utf-8"))
+def _assert_refactor_smoke_collector(workflow):
     collector = workflow["jobs"]["junit-identity"]
     assert collector["uses"] == COLLECTOR
     assert collector["if"] == "always()"
     assert set(collector["needs"]) == {"python", "flutter", "node"}
     assert collector.get("continue-on-error", False) is False
     reports = json.loads(collector["with"]["expected-reports"])
-    assert collector["with"]["commit-sha"] == "${{ github.sha }}"
+    assert collector["with"]["commit-sha"] == "${{ github.event.pull_request.head.sha || github.sha }}"
     uploads = {
         step["with"]["name"]: step
         for job in workflow["jobs"].values() for step in job.get("steps", [])
@@ -295,6 +294,10 @@ def test_refactor_smoke_collector_matches_its_producers():
         assert step.get("if") == "always()", artifact
         assert step["with"]["if-no-files-found"] == "error", artifact
         assert filename in step["with"]["path"], artifact
+
+
+def test_refactor_smoke_collector_matches_its_producers():
+    _assert_refactor_smoke_collector(yaml.safe_load(REFACTOR.read_text(encoding="utf-8")))
 
 
 FLUTTER_LANES = {  # job -> (report lane, shard count)
@@ -320,8 +323,7 @@ def _lane_reports(lane):
     return [f"junit-flutter-{lane}-{n}/flutter-{lane}-{n}.xml" for n in range(shards)]
 
 
-def test_flutter_workflow_collects_every_selected_shard():
-    workflow = yaml.safe_load(DART.read_text(encoding="utf-8"))
+def _assert_flutter_workflow_collector(workflow):
     jobs = workflow["jobs"]
     shard = "${{ matrix.shard }}"
     for name, (lane, shards) in FLUTTER_LANES.items():
@@ -362,4 +364,32 @@ def test_flutter_workflow_collects_every_selected_shard():
     assert collector["uses"] == COLLECTOR
     assert collector["with"]["expected-reports"] == "${{ needs.junit-plan.outputs.reports }}"
     # Identities name the checkout that produced the reports (parent collector input).
-    assert collector["with"]["commit-sha"] == "${{ github.sha }}"
+    assert collector["with"]["commit-sha"] == "${{ github.event.pull_request.head.sha || github.sha }}"
+
+
+def test_flutter_workflow_collects_every_selected_shard():
+    _assert_flutter_workflow_collector(yaml.safe_load(DART.read_text(encoding="utf-8")))
+
+
+PROVENANCE_MUTATIONS = [
+    ("collector names PR merge checkout", "${{ github.sha }}"),
+    ("collector drops provenance", ""),
+    ("collector loses push fallback", "${{ github.event.pull_request.head.sha }}"),
+]
+
+
+@pytest.mark.parametrize("workflow_path, contract", [
+    (WORKFLOW, _assert_contract),
+    (REFACTOR, _assert_refactor_smoke_collector),
+    (DART, _assert_flutter_workflow_collector),
+])
+@pytest.mark.parametrize("label, bad_input", PROVENANCE_MUTATIONS)
+def test_real_collector_contract_rejects_provenance_mutations(
+    workflow_path, contract, label, bad_input,
+):
+    workflow = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
+    contract(workflow)  # The actual production contract must accept the baseline.
+    mutant = deepcopy(workflow)
+    mutant["jobs"]["junit-identity"]["with"]["commit-sha"] = bad_input
+    with pytest.raises(AssertionError):
+        contract(mutant)

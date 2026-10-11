@@ -632,4 +632,4 @@ jobs:
     uses: myon-bioinformatics/myon-bioinformatics/.github/workflows/reusable-junit-identity.yml@b78d3cb5432281a9b2bd532d4511499a0f1e2a10
     with:
       expected-reports: ${{ needs.junit-plan.outputs.reports }}
-      commit-sha: ${{ github.sha }}
+      commit-sha: ${{ github.event.pull_request.head.sha || github.sha }}
