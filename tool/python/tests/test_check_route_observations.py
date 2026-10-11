@@ -89,3 +89,15 @@ def test_malformed_observations_fail_without_traceback(tmp_path, payload):
 def test_toml_naming_an_unknown_widget_fails():
     broken = {**EXPECTED, "routes": {**EXPECTED["routes"], "001": "TypoScreen"}}
     assert "001: TOML names unknown widget 'TypoScreen'" in check.compare(broken, _observed())
+
+
+@pytest.mark.parametrize("key", ["1a", "", "abc"])
+def test_non_numeric_route_keys_fail_without_traceback(key):
+    broken = _observed()
+    broken["routes"][key] = {"widget": "GenericScreen", "id": 1}
+    assert check.compare(EXPECTED, broken) == ["route keys must be zero-padded numbers such as 001"]
+
+
+def test_audit_and_checker_share_one_definition_of_widget_kinds():
+    import pattern_responsibility_audit as audit
+    assert audit.known_widgets is check.known_widgets

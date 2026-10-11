@@ -14,6 +14,9 @@ import re
 import sys
 import tomllib
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from check_route_observations import known_widgets  # noqa: E402  single source of widget kinds
+
 ROOT = Path(__file__).resolve().parents[2]
 FAKE = ("TODO: 実装を追加してください",
         "await Future.delayed(const Duration(milliseconds: 100));",
@@ -72,7 +75,7 @@ def load_routes(root: Path) -> tuple[dict[int, str], dict[str, set[str]], list[s
         errors.append(f"{MANIFEST}: unexpected schema")
     if list(routes) != ["%03d" % i for i in range(1, 199)]:
         errors.append(f"{MANIFEST}: must list 001-198 in order")
-    known = shared | dedicated | {generic}
+    known = known_widgets(doc)
     unknown = sorted({w for w in routes.values() if w not in known} | known - set(PROVISION))
     if unknown:
         errors.append(f"{MANIFEST}: unknown widget kinds {unknown}")

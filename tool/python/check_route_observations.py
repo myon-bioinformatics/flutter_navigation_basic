@@ -17,6 +17,12 @@ import tomllib
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def known_widgets(expected: dict) -> set[str]:
+    """Widget kinds the TOML declares; shared by this checker and the audit."""
+    return (set(expected.get("shared_widgets", {})) | set(expected.get("dedicated_widgets", {}))
+            | {expected.get("generic_widget")})
+
+
 def compare(expected: dict, observed: dict, *, head_sha: str | None = None, run_id: str | None = None) -> list[str]:
     want = expected.get("routes", {})
     seen = observed.get("routes", {})
@@ -31,11 +37,13 @@ def compare(expected: dict, observed: dict, *, head_sha: str | None = None, run_
         return [f"observations: run ID {provenance.get('run_id')!r} != expected {run_id!r}"]
     if not isinstance(want, dict) or not isinstance(seen, dict):
         return ["routes must be tables keyed by 001-198"]
-    known = (set(expected.get("shared_widgets", {})) | set(expected.get("dedicated_widgets", {}))
-             | {expected.get("generic_widget")})
+    known = known_widgets(expected)
+    keys = set(want) | set(seen)
+    if any(not (isinstance(key, str) and key.isdigit()) for key in keys):  # int(key) below
+        return ["route keys must be zero-padded numbers such as 001"]
     problems = [f"{key}: TOML names unknown widget {value!r}"
                 for key, value in sorted(want.items()) if value not in known]
-    for key in sorted(set(want) | set(seen)):
+    for key in sorted(keys):
         if key in seen and not isinstance(seen[key], dict):
             problems.append(f"{key}: observation is not an object")
             continue
