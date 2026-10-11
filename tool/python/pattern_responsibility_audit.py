@@ -182,7 +182,7 @@ def inspect(root: Path, number: int, routes: dict[int, str] | None = None,
             "provision":PROVISION.get(route, "unknown"),"legacy_view":legacy_view,
             "dart_files":dart,"stale_readme":stale,"producer":proof,"warnings":warnings}
 
-def audit(root: Path) -> dict:
+def audit(root: Path, verification: dict | None = None) -> dict:
     base=root/"lib/features/data_processing_patterns"
     if not base.is_dir():
         raise ValueError("missing pattern catalogue")
@@ -214,6 +214,7 @@ def audit(root: Path) -> dict:
                 if not (root/source).is_file():
                     errors.append("%03d: missing %s %s" % (row["id"],field,source))
     return {"schema":"pattern-responsibility/1",
+            "route_verification": verification,
             "summary":{"patterns":len(records),
                        "dart_files":sum(len(x["dart_files"]) for x in records),
                        "statuses":counts,
@@ -229,9 +230,15 @@ def main(argv=None):
     parser.add_argument("--root",type=Path,default=ROOT)
     parser.add_argument("--json",action="store_true")
     parser.add_argument("--check",action="store_true")
+    parser.add_argument("--route-verification",type=Path)
     args=parser.parse_args(argv)
     try:
-        result=audit(args.root.resolve())
+        verification = None
+        if args.route_verification:
+            verification = json.loads(args.route_verification.read_text(encoding="utf-8"))
+            if verification.get("schema") != "route-verification/1" or verification.get("result") != "success":
+                raise ValueError("invalid route verification receipt")
+        result=audit(args.root.resolve(), verification)
     except (ValueError,OSError) as error:
         print("audit: "+str(error),file=sys.stderr)
         return 2
