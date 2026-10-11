@@ -129,6 +129,56 @@ test.describe('Screen Navigation', () => {
     await expect(page).toHaveURL(/#\/screen5$/);
   });
 
+
+  test('Hub use-case filtering, zero results, clear and Screen5 route @portable', async ({ page }) => {
+    await navigateToHub(page);
+    await page.getByTitle('List view').click();
+    const region = page.locator('[flt-semantics-identifier="hub-search"]');
+    await expect(region).toHaveCount(1);
+    const search = region.getByRole('textbox');
+    await expect(search).toBeEditable();
+    await search.click();
+    await expect(search).toBeFocused();
+    await expect(search).toHaveAttribute('autocorrect', 'on');
+    await search.pressSequentially('Transformed Result List', { delay: 50 });
+    await expect(page.locator('[key="screen-item-5"]')).toHaveCount(1);
+    await expect(page.locator('[key="screen-item-6"]')).toHaveCount(0);
+    await search.fill('no_such_use_case_144');
+    await expect(page.locator('[key="screen-item-5"]')).toHaveCount(0);
+    await search.fill('');
+    await expect(page.locator('[key="screen-item-5"]')).toHaveCount(1);
+    await expect(page.locator('[key="screen-item-6"]')).toHaveCount(1);
+    await search.fill('Transformed Result List');
+    await page.locator('[key="screen-item-5"]').click();
+    await waitForFlutter(page);
+    await expect(page).toHaveURL(/#\\/screen5$/);
+  });
+
+  test('Screen6 excludes unrelated results, handles zero matches and clear @portable', async ({ page }) => {
+    await navigateToScreen(page, 6);
+    const region = page.locator('[flt-semantics-identifier="screen6-search"]');
+    const search = region.getByRole('textbox');
+    await search.click();
+    await expect(search).toBeFocused();
+    await expect(search).toHaveAttribute('autocorrect', 'on');
+    await search.pressSequentially('Transformed Result List', { delay: 50 });
+    await expect(page.locator('[flt-semantics-identifier="screen6-result-5"]')).toHaveCount(1);
+    await expect(page.locator('[flt-semantics-identifier="screen6-result-6"]')).toHaveCount(0);
+    await search.fill('no_such_use_case_144');
+    await expect(page.locator('[flt-semantics-identifier="screen6-result-count"]')).toContainText('0 / 198');
+    const clear = page.getByRole('button', { name: /clear/i });
+    // Clear control is locale-sensitive, so its absence in some locales must
+    // not prevent testing the underlying editable-input clear contract.
+    if (await clear.count()) {
+      await clear.first().click();
+    } else {
+      await search.fill('');
+    }
+    await expect(page.locator('[flt-semantics-identifier="screen6-result-count"]')).toContainText('198 / 198');
+    await expect(page.locator('[flt-semantics-identifier="screen6-result-5"]')).toHaveCount(1);
+    await expect(page.locator('[flt-semantics-identifier="screen6-result-6"]')).toHaveCount(1);
+  });
+
   for (const screenId of testData.sampleScreenIds) {
     test(`navigates to Screen${screenId} via direct URL`, async ({ page }) => {
       await navigateToScreen(page, screenId);
