@@ -134,7 +134,10 @@ jobs:
         run: dart run tool/dev.dart meta --platform web --repository-metadata build/diagnostics/repository/repository-metadata.json
 
       - name: Build Flutter web
-        run: flutter build web --release --base-href "/flutter_navigation_basic/"
+        env:
+          GATED_SHA: ${{ steps.gated.outputs.sha }}
+        # SOURCE_REF pins in-app GitHub source links to the deployed commit.
+        run: flutter build web --release --base-href "/flutter_navigation_basic/" --dart-define=SOURCE_REF="$GATED_SHA"
 
       - name: Configure Pages
         uses: actions/configure-pages@v6

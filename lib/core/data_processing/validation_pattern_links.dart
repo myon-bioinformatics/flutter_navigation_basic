@@ -13,8 +13,13 @@ class ValidationPatternLinks extends StatelessWidget {
     'PhoneValidation', 'UrlValidation', 'DateValidation',
     'RangeValidation', 'RegexValidation', 'FormValidation',
   ];
+  // GitHub Pages builds pass the deployed commit (flutter-pages.yml), so the
+  // links stay valid after the work branch is deleted. Other builds point at
+  // the PR branch, where these files exist before merge.
+  static const _ref = String.fromEnvironment(
+      'SOURCE_REF', defaultValue: 'work/pattern-filter-basic-python');
   static const _repo =
-      'https://github.com/myon-bioinformatics/flutter_navigation_basic/blob/work/pattern-filter-basic-python/';
+      'https://github.com/myon-bioinformatics/flutter_navigation_basic/blob/$_ref/';
 
   @override
   Widget build(BuildContext context) {
