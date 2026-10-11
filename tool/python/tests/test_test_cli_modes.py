@@ -66,3 +66,19 @@ def test_nonzero_result_not_masked_by_other_runner(monkeypatch):
     monkeypatch.setattr(entry, "_run_pytest", lambda args: 1)
     monkeypatch.setattr(entry, "_run_node_tests", lambda args: 0)
     assert entry.main(["--python", "--node"]) == 1
+
+
+@pytest.mark.parametrize("node_exit,python_exit,expected", [
+    (1, 0, 1),   # A passing pytest run must not hide a failed Node run.
+    (0, 1, 1),   # A passing Node run must not hide a failed pytest run.
+    (7, 3, 7),   # Both fail: retain the first nonzero exit code.
+    (0, 0, 0),
+])
+def test_combined_runner_preserves_failure(monkeypatch, node_exit, python_exit, expected):
+    calls = []
+    monkeypatch.setattr(entry, "_run_node_tests",
+                        lambda args: calls.append("node") or node_exit)
+    monkeypatch.setattr(entry, "_run_pytest",
+                        lambda args: calls.append("python") or python_exit)
+    assert entry.main(["--node", "--python"]) == expected
+    assert calls == ["node", "python"]
