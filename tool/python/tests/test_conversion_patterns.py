@@ -84,3 +84,9 @@ def test_float_accepts_plain_ascii_notation():
 def test_lenient_or_overflowing_coercions_fail_closed(payload):
     with pytest.raises(ValueError):
         m.run(payload)
+
+
+def test_unit_conversion_overflow_fails_closed():
+    # finite input can still overflow after applying a conversion factor.
+    with pytest.raises(ValueError, match="overflow"):
+        m.run({"operation":"unit","from":"km","to":"cm","value":1e308})
