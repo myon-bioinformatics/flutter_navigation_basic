@@ -15,7 +15,7 @@ REFACTOR = ROOT / ".github/workflows/structure-refactor-validation.yml"
 DART = ROOT / ".github/workflows/dart.yml"
 COLLECTOR = (
     "myon-bioinformatics/myon-bioinformatics/.github/workflows/"
-    "reusable-junit-identity.yml@4dfda95d6573250477f991a0421fa6acb9bc0258"
+    "reusable-junit-identity.yml@b78d3cb5432281a9b2bd532d4511499a0f1e2a10"
 )
 COMMAND = (
     'python tool/python/test.py --pytest -- --oracle-mode=local --outcomes-json '
@@ -160,6 +160,8 @@ def _assert_contract(workflow):
     assert collector.get("continue-on-error", False) is False
     assert collector["uses"] == COLLECTOR
     assert collector["with"]["expected-reports"] == "${{ needs.junit-plan.outputs.reports }}"
+    # Identities name the checkout that produced the reports (parent collector input).
+    assert collector["with"]["commit-sha"] == "${{ github.sha }}"
 
 
 def test_failure_evidence_workflow_contract():
@@ -277,6 +279,7 @@ def test_refactor_smoke_collector_matches_its_producers():
     assert set(collector["needs"]) == {"python", "flutter", "node"}
     assert collector.get("continue-on-error", False) is False
     reports = json.loads(collector["with"]["expected-reports"])
+    assert collector["with"]["commit-sha"] == "${{ github.sha }}"
     uploads = {
         step["with"]["name"]: step
         for job in workflow["jobs"].values() for step in job.get("steps", [])
@@ -358,3 +361,5 @@ def test_flutter_workflow_collects_every_selected_shard():
     assert collector.get("continue-on-error", False) is False
     assert collector["uses"] == COLLECTOR
     assert collector["with"]["expected-reports"] == "${{ needs.junit-plan.outputs.reports }}"
+    # Identities name the checkout that produced the reports (parent collector input).
+    assert collector["with"]["commit-sha"] == "${{ github.sha }}"
