@@ -103,6 +103,8 @@ jobs:
         run: |
           python3 -S tool/python/pattern_responsibility_audit.py --json --check \
             --route-verification build/test-results/route-verification.json \
+            --route-head-sha "${{ github.event.pull_request.head.sha || github.sha }}" \
+            --route-run-id "${{ github.run_id }}" \
             > build/test-results/pattern-responsibility-verified.json
 
       - name: Commit-pinned validation link widget tests
