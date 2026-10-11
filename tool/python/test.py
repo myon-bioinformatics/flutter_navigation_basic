@@ -63,13 +63,17 @@ def _run_external_tests(args) -> int:
     if not args.test_file:
         print("external runner requires --test-file", file=sys.stderr)
         return 2
-    return run_suite(
-        runner, root=ROOT, files=args.test_file,
-        report=ROOT / args.test_report,
-        history=ROOT / args.test_history,
-        retry_failed=args.retry_failed,
-        timeout=args.test_timeout,
-    )
+    try:
+        return run_suite(
+            runner, root=ROOT, files=args.test_file,
+            report=ROOT / args.test_report,
+            history=ROOT / args.test_history,
+            retry_failed=args.retry_failed,
+            timeout=args.test_timeout,
+        )
+    except (ValueError, OSError) as exc:
+        print(f"external runner: {exc}", file=sys.stderr)
+        return 2
 
 
 def _run_actions_latest(argv: list[str]) -> int:
