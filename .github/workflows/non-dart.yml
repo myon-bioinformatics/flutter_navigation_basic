@@ -467,10 +467,17 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-adapter-smoke
-          path: |
-            build/test-results/playwright-adapter.xml
-            build/test-results/playwright-adapter-attempts.json
+          name: junit-playwright-adapter-smoke
+          path: build/test-results/playwright-adapter.xml
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Preserve shared Playwright attempt history
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-adapter-attempts
+          path: build/test-results/playwright-adapter-attempts.json
           if-no-files-found: error
           retention-days: 14
 
@@ -616,6 +623,7 @@ jobs:
       - id: plan
         env:
           PYTHON: ${{ needs.changes.outputs.python == 'true' || needs.changes.outputs.workflow == 'true' }}
+          E2E: ${{ needs.changes.outputs.e2e == 'true' }}
           PLAYWRIGHT: ${{ needs.changes.outputs.playwright == 'true' }}
           VALIDATION_BROWSER: ${{ needs.changes.outputs.validation_browser == 'true' }}
         run: |
@@ -624,6 +632,8 @@ jobs:
           import os
 
           reports = []
+          if os.environ["E2E"] == "true":
+              reports += ["junit-playwright-adapter-smoke/playwright-adapter.xml"]
           if os.environ["PYTHON"] == "true":
               reports += ["junit-python-3.12/python-3.12.xml",
                           "junit-controlled-python-3.12/junit.xml"]
@@ -639,7 +649,7 @@ jobs:
           PY
 
   junit-identity:
-    needs: [changes, junit-plan, python-pytest, playwright, validation-browser]
+    needs: [changes, junit-plan, python-pytest, playwright-adapter-smoke, playwright, validation-browser]
     if: always() && needs.junit-plan.outputs.run == 'true'
     permissions:
       contents: read
