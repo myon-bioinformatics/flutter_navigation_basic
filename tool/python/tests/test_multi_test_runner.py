@@ -85,3 +85,19 @@ def test_real_node_retry_never_masks_first_failure(tmp_path):
     data = json.loads(history.read_text())
     assert data["initial_failed"] and data["flaky_recovered"]
     assert len(data["attempts"]) == 2
+
+
+def test_failure_ledger_accumulates_and_rejects_corruption(tmp_path):
+    from multi_test_runner import update_failure_ledger
+    path = tmp_path / "patterns.json"
+    failure = {"kind": "failure", "message_sha256": "a" * 64}
+    attempts = [{"failures": [failure]}]
+    update_failure_ledger(path, "node", attempts)
+    update_failure_ledger(path, "node", attempts)
+    data = json.loads(path.read_text())
+    assert data["schema"] == "failure-patterns/1"
+    assert next(iter(data["patterns"].values()))["occurrences"] == 2
+    path.write_text("{broken")
+    with pytest.raises(ValueError):
+        update_failure_ledger(path, "node", attempts)
+    assert path.read_text() == "{broken"
