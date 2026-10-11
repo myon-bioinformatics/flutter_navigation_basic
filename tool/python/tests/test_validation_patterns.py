@@ -50,3 +50,12 @@ def test_invalid_request_fails_closed():
         v.run({"operation": "form", "fields": []})
     with pytest.raises(ValueError):
         v.run({"operation": "missing", "value": "x"})
+
+
+def test_huge_integers_are_compared_exactly_not_crashed():
+    from validation_patterns import run
+    bounds = {"minimum": 0, "maximum": 100}
+    assert run({"operation": "range", "value": 10 ** 400, "options": bounds}) == {"valid": False}
+    assert run({"operation": "range", "value": -(10 ** 400), "options": bounds}) == {"valid": False}
+    assert run({"operation": "range", "value": 5, "options": {"minimum": 0, "maximum": 10 ** 400}}) == {"valid": True}
+    assert run({"operation": "range", "value": True, "options": bounds}) == {"valid": False}

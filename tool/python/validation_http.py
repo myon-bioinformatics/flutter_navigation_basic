@@ -18,6 +18,10 @@ FLUTTER_DEV_ORIGIN = "http://localhost:8080"
 
 
 class Handler(BaseHTTPRequestHandler):
+    # Socket read timeout: a client that never sends its body is dropped instead
+    # of holding a worker forever (http.server closes on TimeoutError).
+    timeout = 10
+
     def _loopback_names(self):
         port = self.server.server_address[1]
         return {f"127.0.0.1:{port}", f"localhost:{port}"}
@@ -96,7 +100,7 @@ document.getElementById('run').addEventListener('click', async () => {
             result = run(payload)
             body = json.dumps(result, ensure_ascii=False).encode()
             status = 200
-        except (ValueError, TypeError, UnicodeError, KeyError, RecursionError):
+        except (ValueError, TypeError, UnicodeError, KeyError, RecursionError, OverflowError):
             body = b'{"error":"invalid validation request"}'
             status = 400
         self.send_response(status)

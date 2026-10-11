@@ -20,6 +20,11 @@ NAMED_PATTERNS = {
 }
 
 
+def _number(value) -> bool:
+    """JSON number check without float conversion: huge ints are exact, not errors."""
+    return type(value) is int or (type(value) is float and math.isfinite(value))
+
+
 def validate(operation: str, value, options=None):
     options = options or {}
     if not isinstance(options, dict):
@@ -52,9 +57,9 @@ def validate(operation: str, value, options=None):
             return False
     if operation == "range":
         low, high = options.get("minimum"), options.get("maximum")
-        if any(type(x) not in (int, float) or not math.isfinite(x) for x in (low, high)) or low > high:
+        if not (_number(low) and _number(high)) or low > high:
             raise ValueError("invalid numeric range")
-        return type(value) in (int, float) and math.isfinite(value) and low <= value <= high
+        return _number(value) and low <= value <= high
     if operation == "regex":
         name = options.get("pattern")
         if name not in NAMED_PATTERNS:

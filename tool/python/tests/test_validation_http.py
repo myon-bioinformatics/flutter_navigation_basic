@@ -1,6 +1,8 @@
 """Real local HTTP input and validation integration contract."""
 import importlib.util
 import json
+import socket
+import time
 from pathlib import Path
 from threading import Thread
 from urllib.request import Request, urlopen
@@ -77,3 +79,32 @@ def test_deeply_nested_payload_fails_closed(server):
     with pytest.raises(HTTPError) as error:
         urlopen(_post(server, b"[" * 60000))
     assert error.value.code == 400
+
+
+@pytest.mark.parametrize("body", [
+    b"{not json",                      # malformed JSON
+    b"x" * 65537,                      # over the 64 KiB limit
+    b'{"operation":"range","value":' + b"9" * 401 + b',"options":{"minimum":0,"maximum":1}}',
+])
+def test_abnormal_bodies_get_a_response_not_a_dropped_connection(server, body):
+    if len(body) > 65536:
+        with pytest.raises(HTTPError) as error:
+            urlopen(_post(server, body))
+        assert error.value.code == 400
+        return
+    try:
+        with urlopen(_post(server, body)) as response:
+            assert response.status == 200 and json.load(response) == {"valid": False}
+    except HTTPError as error:
+        assert error.code == 400
+
+
+def test_client_that_never_sends_its_body_is_dropped(server, monkeypatch):
+    monkeypatch.setattr(Handler, "timeout", 0.5)
+    port = int(server.rsplit(":", 1)[1])
+    with socket.create_connection(("127.0.0.1", port), timeout=5) as client:
+        client.sendall(b"POST /validate HTTP/1.1\r\nHost: 127.0.0.1:%d\r\n"
+                       b"Content-Type: application/json\r\nContent-Length: 10\r\n\r\n" % port)
+        started = time.monotonic()
+        assert client.recv(1024) == b""  # server closed the connection
+        assert time.monotonic() - started < 4
