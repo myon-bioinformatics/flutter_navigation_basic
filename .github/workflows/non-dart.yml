@@ -142,7 +142,7 @@ jobs:
             # Chromium contract for the loopback validation page. It does not
             # boot Flutter, so keep it off the portable five-project suite.
             case "$f" in
-              tool/python/validation_http.py|tool/python/validation_patterns.py|tool/python/tests/test_validation_http.py|tool/python/tests/test_validation_patterns.py|e2e/tests/validation_http.spec.ts|.github/workflows/non-dart.yml)
+              tool/python/validation_http.py|tool/python/validation_patterns.py|tool/python/tests/test_validation_http.py|tool/python/tests/test_validation_patterns.py|e2e/tests/validation_http.spec.ts|e2e/playwright.config.ts|.github/workflows/non-dart.yml)
                 validation_browser=true
                 ;;
             esac
