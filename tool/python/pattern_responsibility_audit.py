@@ -247,6 +247,18 @@ def verify_receipt(root: Path, path: Path, head_sha: str | None, run_id: str | N
         raise ValueError("route verification receipt does not cover 198 routes")
     if receipt.get("expected_sha256") != hashlib.sha256((root/MANIFEST).read_bytes()).hexdigest():
         raise ValueError(f"route verification was made against a different {MANIFEST}")
+    # The checker records the observation file it judged (repo-relative, or
+    # absolute when it lay outside the repo); its bytes must still be the same.
+    observed = receipt.get("observed")
+    if not isinstance(observed, str) or not observed:
+        raise ValueError("route verification receipt names no observation file")
+    observed_path = Path(observed) if Path(observed).is_absolute() else root/observed
+    try:
+        digest = hashlib.sha256(observed_path.read_bytes()).hexdigest()
+    except OSError as error:
+        raise ValueError(f"route observations {observed} cannot be read") from error
+    if receipt.get("observed_sha256") != digest:
+        raise ValueError(f"route observations {observed} changed after verification")
     return receipt
 
 def main(argv=None):
