@@ -3,6 +3,13 @@
 
 Run separately: python3 -S tool/python/validation_http.py --port 8765
 Bind loopback only; do not expose this development endpoint publicly.
+
+Browsers send Origin on same-origin POSTs, so the bound host and port are
+always accepted for both 127.0.0.1 and localhost (including --port and port 0).
+Extra origins are an explicit allowlist. The default extra origin is the
+Flutter web dev server at http://localhost:8080, where `flutter run -d
+web-server --web-port=8080` and the portable Playwright suite serve the app.
+That allowance is not a Flutter screen integration. There is no wildcard CORS.
 """
 from __future__ import annotations
 
@@ -10,11 +17,30 @@ import argparse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from html import escape
+from urllib.parse import urlsplit
 from validation_patterns import run
 
 
 OPERATIONS = ('required', 'email', 'password', 'phone', 'url', 'date', 'range', 'regex', 'form')
-FLUTTER_DEV_ORIGIN = "http://localhost:8080"
+# Flutter web dev server. Kept as the default extra origin, not the only one.
+DEFAULT_EXTRA_ORIGINS = ("http://localhost:8080",)
+
+
+def explicit_origin(value):
+    """Return a browser Origin (scheme://host[:port]) or raise ValueError.
+
+    Wildcard and path-bearing values are refused so CORS cannot be opened up.
+    """
+    if not isinstance(value, str) or "*" in value or any(c.isspace() for c in value):
+        raise ValueError(value)
+    parts = urlsplit(value)
+    if (parts.scheme not in ("http", "https") or not parts.hostname
+            or parts.path not in ("",) or parts.query or parts.fragment
+            or parts.username or parts.password):
+        raise ValueError(value)
+    port = f":{parts.port}" if parts.port else ""
+    host = parts.hostname
+    return f"{parts.scheme}://{host}{port}"
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -26,21 +52,52 @@ class Handler(BaseHTTPRequestHandler):
         port = self.server.server_address[1]
         return {f"127.0.0.1:{port}", f"localhost:{port}"}
 
+    def _extra_origins(self):
+        configured = getattr(self.server, "allowed_origins", None)
+        if configured is None:
+            return set(DEFAULT_EXTRA_ORIGINS)
+        return set(configured)
+
+    def _own_origins(self):
+        return {"http://" + name for name in self._loopback_names()}
+
+    def _allowed_origins(self):
+        return self._extra_origins() | self._own_origins()
+
     def _trusted(self):
         """Reject DNS-rebinding hosts and foreign origins.
 
         The form is served from this server itself, and browsers send Origin on
         same-origin POSTs too, so this server's own origin must be accepted.
+        127.0.0.1 and localhost are the same loopback origin for the bound port.
         """
         if self.headers.get("Host") not in self._loopback_names():
             return False
         origin = self.headers.get("Origin")
-        return origin is None or origin == FLUTTER_DEV_ORIGIN or origin in {
-            "http://" + name for name in self._loopback_names()}
+        return origin is None or origin in self._allowed_origins()
+
+    def _cors_headers(self):
+        origin = self.headers.get("Origin")
+        if origin is not None and origin in self._allowed_origins():
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Vary", "Origin")
+        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+
+    def _json(self, status, payload, *, cors=False):
+        body = json.dumps(payload, ensure_ascii=False).encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        if cors:
+            self._cors_headers()
+        self.end_headers()
+        self.wfile.write(body)
 
     def do_GET(self):
         if not self._trusted():
-            self.send_error(403)
+            self._json(403, {"error": "origin not allowed"})
             return
         if self.path != '/':
             self.send_error(404)
@@ -75,22 +132,21 @@ document.getElementById('run').addEventListener('click', async () => {
         self.wfile.write(body)
 
     def do_OPTIONS(self):
+        if not self._trusted():
+            self._json(403, {"error": "origin not allowed"})
+            return
         self.send_response(204)
-        self._headers()
-        self.end_headers()
-
-    def _headers(self):
-        self.send_header("Access-Control-Allow-Origin", FLUTTER_DEV_ORIGIN)
-        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self._cors_headers()
         self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", "0")
+        self.end_headers()
 
     def do_POST(self):
         if self.path != "/validate":
             self.send_error(404)
             return
         if not self._trusted():
-            self.send_error(403)
+            self._json(403, {"error": "origin not allowed"})
             return
         try:
             size = int(self.headers.get("Content-Length", "0"))
@@ -98,24 +154,47 @@ document.getElementById('run').addEventListener('click', async () => {
                 raise ValueError("invalid request size")
             payload = json.loads(self.rfile.read(size))
             result = run(payload)
-            body = json.dumps(result, ensure_ascii=False).encode()
-            status = 200
+            status, body = 200, result
         except (ValueError, TypeError, UnicodeError, KeyError, RecursionError, OverflowError):
-            body = b'{"error":"invalid validation request"}'
-            status = 400
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self._headers()
-        self.end_headers()
-        self.wfile.write(body)
+            status, body = 400, {"error": "invalid validation request"}
+        self._json(status, body, cors=True)
 
 
-def main():
-    parser = argparse.ArgumentParser()
+def build_server(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, default=8765)
-    args = parser.parse_args()
-    ThreadingHTTPServer(("127.0.0.1", args.port), Handler).serve_forever()
+    parser.add_argument(
+        "--allow-origin",
+        action="append",
+        default=None,
+        dest="allow_origins",
+        metavar="ORIGIN",
+        help=(
+            "Extra browser origin allowed to call this server, besides its own "
+            "loopback origin. Repeat for more than one. When omitted, the Flutter "
+            "web dev server at http://localhost:8080 is allowed. Wildcards are refused."
+        ),
+    )
+    args = parser.parse_args(argv)
+    if not 0 <= args.port <= 65535:
+        parser.error("port must be between 0 and 65535")
+    raw_origins = args.allow_origins if args.allow_origins is not None else list(DEFAULT_EXTRA_ORIGINS)
+    try:
+        origins = [explicit_origin(origin) for origin in raw_origins]
+    except ValueError:
+        parser.error("allow-origin must be scheme://host[:port] and must not contain *")
+    http = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
+    http.allowed_origins = frozenset(origins)
+    return http
+
+
+def main(argv=None):
+    http = build_server(argv)
+    print(f"listening http://127.0.0.1:{http.server_address[1]}/", flush=True)
+    try:
+        http.serve_forever()
+    finally:
+        http.server_close()
 
 
 if __name__ == "__main__":

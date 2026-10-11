@@ -91,7 +91,7 @@ def main():
         if len(raw) > 2_000_000:
             raise ValueError("input too large")
         print(json.dumps(run(json.loads(raw)), ensure_ascii=False))
-    except (ValueError, TypeError) as exc:
+    except (ValueError, TypeError, OverflowError) as exc:
         print(f"invalid validation request: {exc}", file=sys.stderr)
         return 2
     return 0

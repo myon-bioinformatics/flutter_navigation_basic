@@ -1,5 +1,8 @@
 """Regression contracts for 091-099 validation producers."""
 import importlib.util
+import json
+import subprocess
+import sys
 from pathlib import Path
 import pytest
 
@@ -59,3 +62,18 @@ def test_huge_integers_are_compared_exactly_not_crashed():
     assert run({"operation": "range", "value": -(10 ** 400), "options": bounds}) == {"valid": False}
     assert run({"operation": "range", "value": 5, "options": {"minimum": 0, "maximum": 10 ** 400}}) == {"valid": True}
     assert run({"operation": "range", "value": True, "options": bounds}) == {"valid": False}
+
+
+def test_cli_huge_integer_exits_cleanly():
+    script = Path(__file__).resolve().parents[1] / "validation_patterns.py"
+    payload = json.dumps({
+        "operation": "range",
+        "value": 10 ** 400,
+        "options": {"minimum": 0, "maximum": 100},
+    })
+    proc = subprocess.run(
+        [sys.executable, "-S", str(script)],
+        input=payload, capture_output=True, text=True, check=False,
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert json.loads(proc.stdout) == {"valid": False}
