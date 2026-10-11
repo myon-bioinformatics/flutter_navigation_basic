@@ -48,3 +48,15 @@ prints multiple messages; by itself it runs no tests. It deliberately does
 **not** interpret Python expressions, execute `python -c`, or inject text into
 shell commands. Use `python3 -c` separately for deliberate scripting; the
 common test CLI remains an execution-safe test orchestrator.
+
+## Diagnostic privacy
+
+Node's failure message (up to 2,000 characters per failed testcase) is
+written to the optional JSON receipt and echoed to stderr. Native JUnit and
+Node's spec output can also contain stack traces, test input, or secrets;
+treat all of these as sensitive CI artifacts, apply short retention, and do
+not paste raw private results into public PR comments.
+
+Node owns the `--node-name-pattern` JavaScript regex (including suite/describe
+names and `/pattern/flags`). A JUnit response consisting only of synthetic
+file-level testcases means no selected tests ran and is rejected.
