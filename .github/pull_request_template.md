@@ -8,11 +8,14 @@
 - Executed tests and observable behavior:
 - Known gaps, skipped environments and limitations:
 
-## #144 tracking handoff (complete only when related)
+<!--
+#144 HANDOFF: OPTIONAL / OPT-IN ONLY.
+For PRs related to #144, remove the enclosing HTML comment markers and
+complete the fields below. For unrelated PRs leave this block commented;
+it must not create an active Related: #144 reference.
+Never auto-close #144 for partial work.
 
-<!-- For work related to #144, keep this section and link the policy.
-     For unrelated PRs, remove this section. Never auto-close #144
-     for a partial implementation slice. -->
+## #144 tracking handoff (complete only when related)
 
 Related: #144
 Policy: https://github.com/myon-bioinformatics/flutter_navigation_basic/issues/144
@@ -26,6 +29,7 @@ Baseline: https://github.com/myon-bioinformatics/flutter_navigation_basic/pull/1
 - Remaining work and unverified environments:
 - #144 ledger update link after merge:
 
-<!-- Do not use "Closes #144" until the whole tracking issue is complete.
-     A priority:high or type:tracking label is issue metadata, not proof
-     that the tracked work is implemented or finished. -->
+Do not use "Closes #144" until the whole tracking issue is complete.
+A priority:high or type:tracking label is issue metadata, not proof
+that the tracked work is implemented or finished.
+--> 
