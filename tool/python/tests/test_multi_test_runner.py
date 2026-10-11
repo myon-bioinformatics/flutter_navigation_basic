@@ -101,3 +101,32 @@ def test_failure_ledger_accumulates_and_rejects_corruption(tmp_path):
     with pytest.raises(ValueError):
         update_failure_ledger(path, "node", attempts)
     assert path.read_text() == "{broken"
+
+
+def test_first_success_removes_previous_retry_junit(tmp_path):
+    (tmp_path / "test_pw.py").write_text("test")
+    report = tmp_path / "r.xml"
+    retry = tmp_path / "r.retry.xml"
+    retry.write_text('<testsuites><testcase name="old-retry"/></testsuites>')
+    history = tmp_path / "history.json"
+    def invoke(cmd, **kwargs):
+        report.write_text('<testsuites><testcase name="ok"/></testsuites>')
+        return SimpleNamespace(returncode=0)
+    assert run_suite("playwright-python", root=tmp_path, files=["test_pw.py"],
+                     report=report, history=history, retry_failed=True, invoke=invoke) == 0
+    assert not retry.exists()
+    assert len(json.loads(history.read_text())["attempts"]) == 1
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node unavailable")
+def test_node_first_success_removes_previous_retry_junit(tmp_path):
+    js = tmp_path / "success.test.mjs"
+    js.write_text("import test from 'node:test'; test('ok', () => {});")
+    report = tmp_path / "node.xml"
+    retry = tmp_path / "node.retry.xml"
+    retry.write_text('<testsuites><testcase name="stale"/></testsuites>')
+    history = tmp_path / "history.json"
+    assert run_node_retries(root=tmp_path, files=[js.name], report=report,
+                            history=history, retry_failed=True) == 0
+    assert not retry.exists()
+    assert len(json.loads(history.read_text())["attempts"]) == 1
