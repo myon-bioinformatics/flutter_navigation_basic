@@ -29,11 +29,13 @@ def read_junit(path: Path) -> dict:
     if not cases:
         raise NodeEvidenceError("Node JUnit contains no test cases")
     failed = []
+    names = []
     counts = {"passed": 0, "failed": 0, "skipped": 0, "total": len(cases)}
     for case in cases:
         name = case.get("name")
         if not name:
             raise NodeEvidenceError("Node JUnit testcase without name")
+        names.append(name)
         problem = case.find("failure")
         if problem is None:
             problem = case.find("error")
@@ -44,7 +46,7 @@ def read_junit(path: Path) -> dict:
             counts["skipped"] += 1
         else:
             counts["passed"] += 1
-    return {**counts, "failures": failed}
+    return {**counts, "failures": failed, "names": names}
 
 
 def run_node(*, root: Path, files: list[str], report: Path,
@@ -86,6 +88,9 @@ def run_node(*, root: Path, files: list[str], report: Path,
         return code if code != 0 else 1
     if summary["passed"] + summary["failed"] == 0:
         print("node runner: no executed tests (all skipped)", file=sys.stderr)
+        return code if code != 0 else 1
+    if name_pattern is not None and not any(re.search(name_pattern, name) for name in summary["names"]):
+        print("node runner: no JUnit testcase matched requested name pattern", file=sys.stderr)
         return code if code != 0 else 1
     summary.update({"runner": "node", "exit_code": code,
                     "ok": code == 0 and summary["failed"] == 0,
