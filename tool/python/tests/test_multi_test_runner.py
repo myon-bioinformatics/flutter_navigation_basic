@@ -130,3 +130,31 @@ def test_node_first_success_removes_previous_retry_junit(tmp_path):
                             history=history, retry_failed=True) == 0
     assert not retry.exists()
     assert len(json.loads(history.read_text())["attempts"]) == 1
+
+
+def test_corrupt_ledger_does_not_mask_external_test_failure(tmp_path, capsys):
+    (tmp_path / "test_pw.py").write_text("test")
+    ledger = tmp_path / "ledger.json"
+    ledger.write_text("{broken")
+    report = tmp_path / "external.xml"
+    def invoke(cmd, **kwargs):
+        report.write_text(
+            '<testsuites><testcase name="bad"><failure message="expected"/></testcase></testsuites>')
+        return SimpleNamespace(returncode=1)
+    assert run_suite("playwright-python", root=tmp_path, files=["test_pw.py"],
+                     report=report, history=tmp_path / "history.json",
+                     ledger=ledger, invoke=invoke) == 1
+    assert ledger.read_text() == "{broken"
+    assert "warning: failure ledger update skipped" in capsys.readouterr().err
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node unavailable")
+def test_corrupt_ledger_does_not_mask_node_failure(tmp_path, capsys):
+    js = tmp_path / "failure.test.mjs"
+    js.write_text("import test from 'node:test'; test('bad', () => {throw Error('expected')});")
+    ledger = tmp_path / "ledger.json"
+    ledger.write_text("{broken")
+    assert run_node_retries(root=tmp_path, files=[js.name], report=tmp_path / "node.xml",
+                            history=tmp_path / "history.json", ledger=ledger) == 1
+    assert ledger.read_text() == "{broken"
+    assert "warning: failure ledger update skipped" in capsys.readouterr().err
