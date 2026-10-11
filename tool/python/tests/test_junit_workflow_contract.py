@@ -375,7 +375,11 @@ def test_collector_pr_head_provenance_rejects_unsafe_inputs(workflow_path, bad_i
     workflow = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
     collector = workflow["jobs"]["junit-identity"]
     expected = "${{ github.event.pull_request.head.sha || github.sha }}"
-    assert collector["with"]["commit-sha"] == expected
+    def require_provenance(value):
+        assert value == expected
+
+    require_provenance(collector["with"]["commit-sha"])
     mutant = deepcopy(workflow)
     mutant["jobs"]["junit-identity"]["with"]["commit-sha"] = bad_input
-    assert mutant["jobs"]["junit-identity"]["with"]["commit-sha"] != expected
+    with pytest.raises(AssertionError):
+        require_provenance(mutant["jobs"]["junit-identity"]["with"]["commit-sha"])
