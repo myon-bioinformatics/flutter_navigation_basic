@@ -1,4 +1,4 @@
-import '../screens/generic_screen.dart';
+import '../../screens/generic_screen.dart';
 
 /// One catalog search contract shared by Hub and Screen6.
 ///
