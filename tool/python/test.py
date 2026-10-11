@@ -145,7 +145,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--test-history", type=Path,
                         default=Path("build/test-results/test-attempts.json"),
                         help="JSON record of initial and retry attempts")
-    parser.add_argument("--failure-ledger", type=Path,\n                        help="Optional bounded cross-run failure fingerprint ledger")\n    parser.add_argument("--test-timeout", type=int, default=300,
+    parser.add_argument("--failure-ledger", type=Path,
+                        help="Optional bounded cross-run failure fingerprint ledger")
+    parser.add_argument("--test-timeout", type=int, default=300,
                         help="Per-attempt subprocess timeout in seconds")
     parser.add_argument("--retry-failed", action="store_true",
                         help="Retry selected files once after failure; preserve original failure")
