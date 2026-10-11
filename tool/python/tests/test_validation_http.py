@@ -223,3 +223,30 @@ def _exchange(port, head, body=b""):
     status = int(data.split(b" ", 2)[1])
     _head, _, raw = data.partition(b"\r\n\r\n")
     return status, raw
+
+
+def test_non_json_media_type_returns_415(server):
+    request = Request(server + "/validate", method="POST",
+                      data=b'{"operation":"required","value":"x"}',
+                      headers={"Content-Type": "text/plain"})
+    with pytest.raises(HTTPError) as error:
+        urlopen(request)
+    assert error.value.code == 415
+    assert json.loads(error.value.read()) == {"error": "unsupported media type"}
+
+
+@pytest.mark.parametrize("method", ["PUT", "PATCH", "DELETE", "HEAD"])
+def test_unsupported_methods_return_405_and_allow(server, method):
+    request = Request(server + "/validate", method=method)
+    with pytest.raises(HTTPError) as error:
+        urlopen(request)
+    assert error.value.code == 405
+    assert error.value.headers["Allow"] == "GET, POST, OPTIONS"
+
+
+def test_occupied_port_has_actionable_error():
+    with running() as url:
+        port = url.rsplit(":", 1)[1]
+        with pytest.raises(SystemExit) as error:
+            build_server(["--port", port])
+        assert error.value.code == 2
