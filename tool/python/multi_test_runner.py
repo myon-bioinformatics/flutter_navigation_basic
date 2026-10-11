@@ -32,7 +32,8 @@ def command_for(runner: str, *, root: Path, files: list[str], report: Path):
         e2e = base / "e2e"
         if not all(Path(p).is_relative_to(e2e) for p in paths):
             raise ValueError("Node Playwright test files must be under e2e")
-        return ["npx", "--no-install", "playwright", "test", "--reporter=junit",\n                *[str(Path(p).relative_to(e2e)) for p in paths]], e2e, {
+        return ["npx", "--no-install", "playwright", "test", "--reporter=junit",
+                *[str(Path(p).relative_to(e2e)) for p in paths]], e2e, {
             "PLAYWRIGHT_JUNIT_OUTPUT_FILE": str(report)}
     return [sys.executable, "-m", "pytest", "--junitxml=" + str(report), *paths], base, {}
 
@@ -105,7 +106,8 @@ def update_failure_ledger(path: Path, runner: str, attempts: list[dict]) -> None
 
 
 def run_suite(runner: str, *, root: Path, files: list[str], report: Path,
-              history: Path, retry_failed: bool = False, timeout: int = 300,\n              ledger: Path | None = None,
+              history: Path, retry_failed: bool = False, timeout: int = 300,
+              ledger: Path | None = None,
               invoke=None) -> int:
     if timeout <= 0:
         raise ValueError("timeout must be positive")
