@@ -76,7 +76,7 @@ def main(argv=None) -> int:
                 "result": "success",
             }
             args.receipt.parent.mkdir(parents=True, exist_ok=True)
-            args.receipt.write_text(json.dumps(receipt, sort_keys=True, indent=2) + "\\n", encoding="utf-8")
+            args.receipt.write_text(json.dumps(receipt, sort_keys=True, indent=2) + "\n", encoding="utf-8")
     return 1 if problems else 0
 
 

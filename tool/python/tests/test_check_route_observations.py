@@ -58,3 +58,16 @@ def test_cli_exit_codes(tmp_path):
     assert saved["head_sha"] == "a" * 40 and saved["run_id"] == "123" and saved["result"] == "success"
     assert check.main([str(bad)]) == 1
     assert check.main([str(tmp_path / "missing.json")]) == 2
+
+
+def test_refactor_smoke_check_step_parses_as_one_command():
+    import shlex
+    import yaml
+    workflow = yaml.safe_load((ROOT / ".github/workflows/structure-refactor-validation.yml").read_text(encoding="utf-8"))
+    runs = [step["run"] for job in workflow["jobs"].values() for step in job.get("steps", [])
+            if step.get("run", "").startswith("python3 -S tool/python/check_route_observations.py")]
+    assert len(runs) == 1
+    argv = shlex.split(runs[0].replace("${{ github.event.pull_request.head.sha || github.sha }}", "h")
+                       .replace("${{ github.run_id }}", "1"))
+    assert "\\" not in argv, argv  # stray backslash arguments break argparse
+    assert argv[argv.index("--head-sha") + 1] == "h" and argv[argv.index("--run-id") + 1] == "1"
