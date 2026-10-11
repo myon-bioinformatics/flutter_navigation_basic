@@ -20,7 +20,7 @@ def _observed(**changes):
             routes.pop(key)
         else:
             routes[key] = value
-    return {"schema": "route-observations/1", "routes": routes}
+    return {"schema": "route-observations/2", "provenance": {"head_sha": "a" * 40, "run_id": "123"}, "routes": routes}
 
 
 def test_hand_written_expectations_cover_all_198_routes():
@@ -30,7 +30,12 @@ def test_hand_written_expectations_cover_all_198_routes():
 
 
 def test_matching_observations_pass():
-    assert check.compare(EXPECTED, _observed()) == []
+    assert check.compare(EXPECTED, _observed(), head_sha="a" * 40, run_id="123") == []
+
+
+def test_wrong_head_or_run_provenance_fails():
+    assert "head SHA" in check.compare(EXPECTED, _observed(), head_sha="b" * 40, run_id="123")[0]
+    assert "run ID" in check.compare(EXPECTED, _observed(), head_sha="a" * 40, run_id="999")[0]
 
 
 @pytest.mark.parametrize(("changes", "fragment"), [
@@ -47,6 +52,9 @@ def test_cli_exit_codes(tmp_path):
     good, bad = tmp_path / "good.json", tmp_path / "bad.json"
     good.write_text(json.dumps(_observed()), encoding="utf-8")
     bad.write_text(json.dumps(_observed(**{"171": {"widget": "GenericScreen", "id": 171}})), encoding="utf-8")
-    assert check.main([str(good)]) == 0
+    receipt = tmp_path / "receipt.json"
+    assert check.main([str(good), "--head-sha", "a" * 40, "--run-id", "123", "--receipt", str(receipt)]) == 0
+    saved = json.loads(receipt.read_text(encoding="utf-8"))
+    assert saved["head_sha"] == "a" * 40 and saved["run_id"] == "123" and saved["result"] == "success"
     assert check.main([str(bad)]) == 1
     assert check.main([str(tmp_path / "missing.json")]) == 2
