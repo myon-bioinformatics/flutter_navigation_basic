@@ -117,6 +117,10 @@ def run_suite(runner: str, *, root: Path, files: list[str], report: Path,
     report.parent.mkdir(parents=True, exist_ok=True)
     history.parent.mkdir(parents=True, exist_ok=True)
     history.unlink(missing_ok=True)
+    # Invalidate both report slots before attempting the first run. A prior
+    # retry must not masquerade as evidence for a fresh first-attempt success.
+    report.unlink(missing_ok=True)
+    report.with_name(report.stem + ".retry" + report.suffix).unlink(missing_ok=True)
     invoke = invoke or subprocess.run
     attempts = []
     for number in (1, 2) if retry_failed else (1,):
@@ -157,6 +161,9 @@ def run_node_retries(*, root: Path, files: list[str], report: Path, history: Pat
     history = history.resolve()
     history.parent.mkdir(parents=True, exist_ok=True)
     history.unlink(missing_ok=True)
+    report.parent.mkdir(parents=True, exist_ok=True)
+    report.unlink(missing_ok=True)
+    report.with_name(report.stem + ".retry" + report.suffix).unlink(missing_ok=True)
     attempts = []
     for number in (1, 2) if retry_failed else (1,):
         output = report if number == 1 else report.with_name(report.stem + ".retry" + report.suffix)
