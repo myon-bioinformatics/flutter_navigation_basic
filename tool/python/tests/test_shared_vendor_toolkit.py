@@ -58,3 +58,12 @@ def test_gh_identity_local_contract_prefers_github_environment():
     assert value["sha"] == "a" * 40
     assert value["ref"] == "feature/runtime"
     assert value["source"] == "github-env"
+
+
+def test_gh_identity_provides_the_git_inspection_api_that_replaced_git_inspector():
+    sys.path.insert(0, str(VENDOR))
+    import gh_identity
+    for name in ("status", "ls_files", "diff", "log", "log_numstat", "show", "blame", "grep", "check_ignore"):
+        assert callable(getattr(gh_identity, "git_" + name)), name
+    observed = gh_identity.git_status(ROOT)
+    assert isinstance(observed, dict)
