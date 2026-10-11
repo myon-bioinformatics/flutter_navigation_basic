@@ -52,6 +52,7 @@ PROVISION = {
     "ValidationPatternLinks": "shared_source_links",
     "ConversionPatternLinks": "shared_source_links",
     "GenericScreen": "generic_catalogue",
+    "Screen5Page": "dedicated_feature_page",
 }
 
 def load_routes(root: Path) -> tuple[dict[int, str], dict[str, set[str]], list[str]]:
@@ -62,6 +63,7 @@ def load_routes(root: Path) -> tuple[dict[int, str], dict[str, set[str]], list[s
     try:
         doc = tomllib.loads(path.read_text(encoding="utf-8"))
         shared, generic = set(doc["shared_widgets"]), doc["generic_widget"]
+        dedicated = set(doc.get("dedicated_widgets", {}))
         routes = doc["routes"]
     except (ValueError, KeyError, TypeError) as error:
         return {}, {}, [f"{MANIFEST}: unreadable ({type(error).__name__})"]
@@ -70,11 +72,12 @@ def load_routes(root: Path) -> tuple[dict[int, str], dict[str, set[str]], list[s
         errors.append(f"{MANIFEST}: unexpected schema")
     if list(routes) != ["%03d" % i for i in range(1, 199)]:
         errors.append(f"{MANIFEST}: must list 001-198 in order")
-    unknown = sorted({w for w in routes.values() if w not in shared | {generic}} | (shared | {generic}) - set(PROVISION))
+    known = shared | dedicated | {generic}
+    unknown = sorted({w for w in routes.values() if w not in known} | known - set(PROVISION))
     if unknown:
         errors.append(f"{MANIFEST}: unknown widget kinds {unknown}")
     parsed = {int(k): v for k, v in routes.items() if k.isdigit()}
-    return parsed, {"shared": shared, "generic": {generic}}, errors
+    return parsed, {"shared": shared, "dedicated": dedicated, "generic": {generic}}, errors
 
 def pattern_dir(root: Path, number: int) -> Path:
     bucket = "pattern_001_to_099" if number <= 99 else "pattern_100_to_198"
@@ -120,6 +123,7 @@ def inspect(root: Path, number: int, routes: dict[int, str] | None = None,
     route = routes.get(number)
     kinds = kinds or {}
     reachability = ("shared" if route in kinds.get("shared", ()) else
+                    "dedicated" if route in kinds.get("dedicated", ()) else
                     "generic" if route in kinds.get("generic", ()) else "unknown")
     # Public code may not import *_patterns (test_pattern_catalogue_boundary), so a
     # pattern view.dart is never reachable from the app; count it as legacy.

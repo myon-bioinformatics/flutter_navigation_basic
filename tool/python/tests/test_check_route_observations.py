@@ -25,7 +25,8 @@ def _observed(**changes):
 
 def test_hand_written_expectations_cover_all_198_routes():
     assert list(EXPECTED["routes"]) == ["%03d" % i for i in range(1, 199)]
-    assert set(EXPECTED["routes"].values()) <= set(EXPECTED["shared_widgets"]) | {EXPECTED["generic_widget"]}
+    known = set(EXPECTED["shared_widgets"]) | set(EXPECTED.get("dedicated_widgets", {})) | {EXPECTED["generic_widget"]}
+    assert set(EXPECTED["routes"].values()) <= known
 
 
 def test_matching_observations_pass():

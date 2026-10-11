@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 import sys
 import tomllib
@@ -47,8 +48,11 @@ def main(argv=None) -> int:
         print(f"route check: cannot read input: {error}", file=sys.stderr)
         return 2
     problems = compare(expected, observed)
+    annotate = os.environ.get("GITHUB_ACTIONS") == "true"
     for problem in problems:
         print("route mismatch: " + problem, file=sys.stderr)
+        if annotate:  # visible on the check run without downloading logs
+            print(f"::error title=route mismatch::{problem}")
     if not problems:
         print(f"routes: {len(observed['routes'])} observed, all match {args.expected.name}")
     return 1 if problems else 0

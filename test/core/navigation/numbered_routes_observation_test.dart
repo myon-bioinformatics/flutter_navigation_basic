@@ -7,6 +7,7 @@ import 'package:flutter_application_1/core/data_processing/conversion_pattern_li
 import 'package:flutter_application_1/core/data_processing/interactive_pattern_example.dart';
 import 'package:flutter_application_1/core/data_processing/native_parallel_pattern_example.dart';
 import 'package:flutter_application_1/core/data_processing/validation_pattern_links.dart';
+import 'package:flutter_application_1/features/screen5/presentation/screen5_page.dart';
 import 'package:flutter_application_1/screens/generic_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -22,6 +23,8 @@ import 'package:flutter_test/flutter_test.dart';
         ('ConversionPatternLinks', patternId),
       NativeParallelPatternExample(:final patternId) =>
         ('NativeParallelPatternExample', patternId),
+      // Dedicated page bound to one route (RouteNames.screen5); it has no id field.
+      Screen5Page() => ('Screen5Page', 5),
       _ => (widget.runtimeType.toString(), -1),
     };
 

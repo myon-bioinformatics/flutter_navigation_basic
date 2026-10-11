@@ -46,8 +46,8 @@ python3 -S tool/python/render_pattern_status.py pattern-responsibility.json patt
   `build/route-observations.json` に Widget の種別と id を書き出す（**機械が書く**。期待値は読まない）。
 - 判定: `tool/python/check_route_observations.py` が TOML と JSON を照合し、件数・種別・id の
   どれかが違えば失敗する。Refactor smoke で実測の直後に実行する。
-- 監査: `route`（Widget）、`reachability`（`shared` / `generic`）、`provision`
-  （`shared_interaction` / `shared_source_links` / `shared_native_example` / `generic_catalogue`）、
+- 監査: `route`（Widget）、`reachability`（`shared` / `dedicated` / `generic`）、`provision`
+  （`shared_interaction` / `shared_source_links` / `shared_native_example` / `dedicated_feature_page` / `generic_catalogue`）、
   `legacy_view`（`unreachable` / `absent`）を各行に出す。routes.dart の正規表現解析は撤去した。
 - `status`（下の分類）はディレクトリ内コードの証跡として**従来どおり**残す。たとえば
   `native_flutter_example` は「アプリから到達しない Flutter の例」であり、route の行き先は `generic_catalogue`。

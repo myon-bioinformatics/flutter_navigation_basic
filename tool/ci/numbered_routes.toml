@@ -17,12 +17,16 @@ ValidationPatternLinks = "Python 検証 producer へのソースリンク（Page
 ConversionPatternLinks = "Python 変換 producer へのソースリンク"
 NativeParallelPatternExample = "Dart Isolate / compute のネイティブ例"
 
+# 専用の機能ページ（AppRouteRegistry.canonicalRoutes が /screenN より優先される）
+[dedicated_widgets]
+Screen5Page = "RouteNames.screen5 の専用ページ（lib/features/screen5）"
+
 [routes]
 "001" = "GenericScreen"
 "002" = "GenericScreen"
 "003" = "GenericScreen"
 "004" = "GenericScreen"
-"005" = "GenericScreen"
+"005" = "Screen5Page"
 "006" = "GenericScreen"
 "007" = "GenericScreen"
 "008" = "GenericScreen"
