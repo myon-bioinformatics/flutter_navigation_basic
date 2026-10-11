@@ -68,6 +68,7 @@ def _run_external_tests(args) -> int:
             runner, root=ROOT, files=args.test_file,
             report=ROOT / args.test_report,
             history=ROOT / args.test_history,
+            ledger=ROOT / args.failure_ledger if args.failure_ledger else None,
             retry_failed=args.retry_failed,
             timeout=args.test_timeout,
         )
@@ -267,7 +268,8 @@ def main(argv: list[str] | None = None) -> int:
             code = run_node_retries(
                 root=ROOT, files=files, report=ROOT / args.node_report,
                 history=ROOT / args.test_history, name_pattern=args.node_name_pattern,
-                timeout=args.node_timeout, retry_failed=True,\n                ledger=ROOT / args.failure_ledger if args.failure_ledger else None)
+                timeout=args.node_timeout, retry_failed=True,
+                ledger=ROOT / args.failure_ledger if args.failure_ledger else None)
         else:
             code = _run_node_tests(args)
         if code != 0:
