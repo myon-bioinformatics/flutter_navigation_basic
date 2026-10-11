@@ -105,6 +105,16 @@ def update_failure_ledger(path: Path, runner: str, attempts: list[dict]) -> None
     temp.replace(path)
 
 
+def _update_ledger_best_effort(ledger: Path | None, runner: str, attempts: list[dict]) -> None:
+    """A secondary diagnostic write must never replace the test exit status."""
+    if ledger is None:
+        return
+    try:
+        update_failure_ledger(ledger, runner, attempts)
+    except (OSError, ValueError, TypeError) as exc:
+        print(f"warning: failure ledger update skipped: {exc}", file=sys.stderr)
+
+
 def run_suite(runner: str, *, root: Path, files: list[str], report: Path,
               history: Path, retry_failed: bool = False, timeout: int = 300,
               ledger: Path | None = None,
@@ -148,8 +158,7 @@ def run_suite(runner: str, *, root: Path, files: list[str], report: Path,
         if code == 0:
             break
     _save_history(history, runner, files, attempts)
-    if ledger is not None:
-        update_failure_ledger(ledger, runner, attempts)
+    _update_ledger_best_effort(ledger, runner, attempts)
     return attempts[0]["exit_code"]
 
 
@@ -181,6 +190,5 @@ def run_node_retries(*, root: Path, files: list[str], report: Path, history: Pat
         if code == 0:
             break
     _save_history(history, "node", files, attempts, "same-selected-files-and-filter")
-    if ledger is not None:
-        update_failure_ledger(ledger, "node", attempts)
+    _update_ledger_best_effort(ledger, "node", attempts)
     return attempts[0]["exit_code"]
