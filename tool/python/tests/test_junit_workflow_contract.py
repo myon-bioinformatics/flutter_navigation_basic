@@ -161,7 +161,7 @@ def _assert_contract(workflow):
     assert collector["uses"] == COLLECTOR
     assert collector["with"]["expected-reports"] == "${{ needs.junit-plan.outputs.reports }}"
     # Identities name the checkout that produced the reports (parent collector input).
-    assert collector["with"]["commit-sha"] == "${{ github.sha }}"
+    assert collector["with"]["commit-sha"] == "${{ github.event.pull_request.head.sha || github.sha }}"
 
 
 def test_failure_evidence_workflow_contract():
@@ -279,7 +279,7 @@ def test_refactor_smoke_collector_matches_its_producers():
     assert set(collector["needs"]) == {"python", "flutter", "node"}
     assert collector.get("continue-on-error", False) is False
     reports = json.loads(collector["with"]["expected-reports"])
-    assert collector["with"]["commit-sha"] == "${{ github.sha }}"
+    assert collector["with"]["commit-sha"] == "${{ github.event.pull_request.head.sha || github.sha }}"
     uploads = {
         step["with"]["name"]: step
         for job in workflow["jobs"].values() for step in job.get("steps", [])
@@ -362,4 +362,20 @@ def test_flutter_workflow_collects_every_selected_shard():
     assert collector["uses"] == COLLECTOR
     assert collector["with"]["expected-reports"] == "${{ needs.junit-plan.outputs.reports }}"
     # Identities name the checkout that produced the reports (parent collector input).
-    assert collector["with"]["commit-sha"] == "${{ github.sha }}"
+    assert collector["with"]["commit-sha"] == "${{ github.event.pull_request.head.sha || github.sha }}"
+
+
+@pytest.mark.parametrize("workflow_path", [DART, WORKFLOW, REFACTOR])
+@pytest.mark.parametrize("bad_input", [
+    "${{ github.sha }}",  # PR merge checkout is not the durable PR head.
+    "",                   # Missing provenance must never pass the caller contract.
+    "${{ github.event.pull_request.head.sha }}",  # Missing push fallback.
+])
+def test_collector_pr_head_provenance_rejects_unsafe_inputs(workflow_path, bad_input):
+    workflow = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
+    collector = workflow["jobs"]["junit-identity"]
+    expected = "${{ github.event.pull_request.head.sha || github.sha }}"
+    assert collector["with"]["commit-sha"] == expected
+    mutant = deepcopy(workflow)
+    mutant["jobs"]["junit-identity"]["with"]["commit-sha"] = bad_input
+    assert mutant["jobs"]["junit-identity"]["with"]["commit-sha"] != expected
