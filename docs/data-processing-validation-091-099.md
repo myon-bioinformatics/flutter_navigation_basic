@@ -59,3 +59,16 @@ Flutter Webから `http://127.0.0.1:8765/` を直接開くことを正式導線�
 
 完了条件: 091〜099の各画面で入力・検証結果・異常時表示を操作でき、
 Pythonの実処理と一致することをPlaywright/JUnitで確認する。
+
+## GitHub Pages向け番号付きルート（PR #145）
+
+`/screen091`〜`/screen099` は共通 `ValidationPatternLinks` を表示し、
+対応するPython実装・テスト・ローカル入力画面・利用方法へのGitHub URLを
+選択・コピーできる。Dartの処理重複やGitHub Pages上のPython常駐は不要。
+
+リンクはPR #145の作業ブランチを指す。mainへマージ後にブランチを削除する際は、
+リンク先をmainへ変更する必要がある。**現時点では外部ブラウザを直接開くボタンではなく、
+URLのコピー操作**である。
+
+テスト: `test/features/data_processing_patterns/validation_pattern_links_test.dart`。
+9ルートの表示とコピー操作をFlutter smoke/JUnitで検証する。
