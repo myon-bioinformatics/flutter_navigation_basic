@@ -38,6 +38,6 @@ python3 -S tool/python/validation_http.py --port 8765
 
 ブラウザは同一オリジンの POST にも `Origin` を付ける。許可するのは、実際に bind したポートの `http://127.0.0.1:<port>` と `http://localhost:<port>`（`--port` やポート 0 でも、割り当て後のポート）に加え、明示的な追加オリジンだけである。追加オリジンの既定は Flutter Web 開発サーバーの `http://localhost:8080`（`flutter run -d web-server --web-port=8080` や portable Playwright が使う配信元）である。`--allow-origin` を省略するとこの既定が使われ、指定した場合はその値だけが追加オリジンになる（複数回指定できる）。`*` は拒否する。これは Flutter の `/screen091`〜`/screen099` への組込みではなく、その開発サーバーから API を呼ぶための CORS 許可だけを残したもの。許可しない Origin は、ほかの失敗と同じ形の JSON 403（`{"error":"origin not allowed"}`）になる。
 
-**重要な境界:** これはPythonで提供するブラウザ入力画面であり、Flutterの `/screen091`〜`/screen099` への組込みではない。Flutter画面への導線・Web配布環境でのAPI配置・Playwright E2Eは未実装。各パターンの完成度は引き続き**限定実装**。
+**重要な境界:** これはPythonで提供するブラウザ入力画面であり、Flutterの `/screen091`〜`/screen099` への組込みではない。Flutter画面への導線と Web 配布環境での API 配置は未実装。各パターンの完成度は引き続き**限定実装**。
 
-テスト: `tool/python/tests/test_validation_http.py`（HTTP入力画面、実API応答、不正入力）。ブラウザ自動操作は別途必要。
+テスト: `tool/python/tests/test_validation_http.py`（HTTP入力画面、実API応答、不正入力）。ブラウザ操作は `e2e/tests/validation_http.spec.ts` が空いているポートでこのサーバーを起動し、Chromium で検証ボタンから結果表示まで確認する。Non-Dart checks の Validation browser contract が、その JUnit を collector の必須レポートにする。portable の Flutter E2E とは別ジョブ。

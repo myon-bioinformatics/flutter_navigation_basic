@@ -47,9 +47,12 @@ PLAYWRIGHT_REPORTS = [
     "junit-playwright-e2e/playwright-interaction-portable.xml",
     "junit-playwright-e2e/playwright-interaction-gesture.xml",
 ]
+VALIDATION_BROWSER_REPORTS = [
+    "junit-validation-browser/validation-browser.xml",
+]
 
 
-def _plan(workflow, *, python, playwright):
+def _plan(workflow, *, python, playwright, validation_browser=False):
     """Run the real planning step the way Actions would, minus ${{ }} expressions."""
     step = next(item for item in workflow["jobs"]["junit-plan"]["steps"]
                 if item.get("id") == "plan")
@@ -59,7 +62,8 @@ def _plan(workflow, *, python, playwright):
         subprocess.run(
             ["bash", "-c", step["run"]], check=True, capture_output=True, text=True,
             env={**os.environ, "GITHUB_OUTPUT": str(output),
-                 "PYTHON": str(python).lower(), "PLAYWRIGHT": str(playwright).lower()},
+                 "PYTHON": str(python).lower(), "PLAYWRIGHT": str(playwright).lower(),
+                 "VALIDATION_BROWSER": str(validation_browser).lower()},
             timeout=10,
         )
         values = dict(line.split("=", 1) for line in output.read_text(encoding="utf-8").splitlines())
@@ -79,6 +83,26 @@ def _assert_playwright_producer(workflow):
     assert upload.get("if") == "always()"
     assert upload.get("continue-on-error", False) is False
     assert upload["with"]["path"].strip() == "build/test-results/playwright-*.xml"
+    assert upload["with"]["if-no-files-found"] == "error"
+    assert upload["with"]["retention-days"] == 14
+
+
+def _assert_validation_browser_producer(workflow):
+    producer = workflow["jobs"]["validation-browser"]
+    assert producer["if"] == "needs.changes.outputs.validation_browser == 'true'"
+    assert producer.get("continue-on-error", False) is False
+    run = _step(producer, "Run validation page browser contract")
+    assert run.get("continue-on-error", False) is False
+    assert "--project=chromium" in run["run"]
+    assert "tests/validation_http.spec.ts" in run["run"]
+    assert run["run"].count(
+        'PLAYWRIGHT_JUNIT_OUTPUT_FILE="$GITHUB_WORKSPACE/build/test-results/validation-browser.xml"'
+    ) == 1
+    upload = _upload(producer, "junit-validation-browser")
+    assert producer["steps"].index(run) < producer["steps"].index(upload)
+    assert upload.get("if") == "always()"
+    assert upload.get("continue-on-error", False) is False
+    assert upload["with"]["path"].strip() == "build/test-results/validation-browser.xml"
     assert upload["with"]["if-no-files-found"] == "error"
     assert upload["with"]["retention-days"] == 14
 
@@ -106,12 +130,14 @@ def _assert_contract(workflow):
         assert upload["with"]["if-no-files-found"] == "error"
         assert upload["with"]["retention-days"] == 14
     _assert_playwright_producer(workflow)
+    _assert_validation_browser_producer(workflow)
     plan = workflow["jobs"]["junit-plan"]
     assert plan["needs"] == "changes"
     plan_step = next(item for item in plan["steps"] if item.get("id") == "plan")
     assert plan_step["env"] == {
         "PYTHON": "${{ needs.changes.outputs.python == 'true' || needs.changes.outputs.workflow == 'true' }}",
         "PLAYWRIGHT": "${{ needs.changes.outputs.playwright == 'true' }}",
+        "VALIDATION_BROWSER": "${{ needs.changes.outputs.validation_browser == 'true' }}",
     }
     # The plan must mirror the producers' own `if:` so that a skipped lane is not
     # reported as a missing report, and a selected lane can never go unchecked.
@@ -123,8 +149,13 @@ def _assert_contract(workflow):
     assert _plan(workflow, python=False, playwright=True) == ("true", PLAYWRIGHT_REPORTS)
     assert _plan(workflow, python=True, playwright=True) == ("true", PYTHON_REPORTS + PLAYWRIGHT_REPORTS)
     assert _plan(workflow, python=False, playwright=False) == ("false", [])
+    assert _plan(workflow, python=False, playwright=False, validation_browser=True) == (
+        "true", VALIDATION_BROWSER_REPORTS)
+    assert _plan(workflow, python=True, playwright=True, validation_browser=True) == (
+        "true", PYTHON_REPORTS + PLAYWRIGHT_REPORTS + VALIDATION_BROWSER_REPORTS)
     collector = workflow["jobs"]["junit-identity"]
-    assert collector["needs"] == ["changes", "junit-plan", "python-pytest", "playwright"]
+    assert collector["needs"] == [
+        "changes", "junit-plan", "python-pytest", "playwright", "validation-browser"]
     assert collector["if"] == "always() && needs.junit-plan.outputs.run == 'true'"
     assert collector.get("continue-on-error", False) is False
     assert collector["uses"] == COLLECTOR
@@ -133,6 +164,24 @@ def _assert_contract(workflow):
 
 def test_failure_evidence_workflow_contract():
     _assert_contract(yaml.safe_load(WORKFLOW.read_text(encoding="utf-8")))
+
+
+def test_validation_sources_select_the_browser_contract_without_flutter_e2e(classify_workflow_asset):
+    workflow = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
+    text = WORKFLOW.read_text(encoding="utf-8")
+    assert text.count('echo "validation_browser=true"') == 2
+    http = classify_workflow_asset(workflow, "tool/python/validation_http.py")
+    assert http["validation_browser"] == "true"
+    assert http["python"] == "true"
+    assert http["playwright"] == "false"
+    spec = classify_workflow_asset(workflow, "e2e/tests/validation_http.spec.ts")
+    assert spec["validation_browser"] == "true"
+    assert spec["e2e"] == "true"
+    assert spec["playwright"] == "true"
+    unrelated = classify_workflow_asset(workflow, "tool/python/curl_request.py")
+    assert unrelated["python"] == "true"
+    assert unrelated["validation_browser"] == "false"
+    assert unrelated["playwright"] == "false"
 
 
 @pytest.mark.parametrize("event", ["pull_request", "push"])
@@ -193,6 +242,15 @@ def test_failure_evidence_contract_rejects_unsafe_mutations():
     for name in ("junit-playwright-e2e",):
         index = playwright["steps"].index(_upload(playwright, name))
         path = ("jobs", "playwright", "steps", index)
+        mutations.extend([
+            (name + " loses always", path + ("if",), None),
+            (name + " ignores missing XML", path + ("with", "if-no-files-found"), "ignore"),
+            (name + " retains raw for 90 days", path + ("with", "retention-days"), 90),
+        ])
+    validation = workflow["jobs"]["validation-browser"]
+    for name in ("junit-validation-browser",):
+        index = validation["steps"].index(_upload(validation, name))
+        path = ("jobs", "validation-browser", "steps", index)
         mutations.extend([
             (name + " loses always", path + ("if",), None),
             (name + " ignores missing XML", path + ("with", "if-no-files-found"), "ignore"),

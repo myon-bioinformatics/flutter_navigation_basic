@@ -96,9 +96,11 @@ def test_ci_and_docker_install_only_browser_engines() -> None:
     docker_installs = _install_lines(dockerfile)
 
     # The regular smoke/auto-E2E lanes install the full configured engine set.
+    # The validation page contract is Chromium-only and is not a portable project.
     assert workflow_installs == [
         f"npx {expected_install}",
         f"npx {expected_install}",
+        "npx playwright install --with-deps chromium",
     ]
     assert docker_installs == [f"&& npx --prefix e2e {expected_install}"]
 
@@ -216,3 +218,4 @@ def test_workflow_dispatch_is_force_run_without_playwright_toggle() -> None:
     dispatch_block = workflow.split('if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]', 1)[1]
     dispatch_block = dispatch_block.split("exit 0", 1)[0]
     assert 'echo "playwright=true"' in dispatch_block
+    assert 'echo "validation_browser=true"' in dispatch_block

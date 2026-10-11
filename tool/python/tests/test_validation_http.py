@@ -44,6 +44,8 @@ def test_browser_form_is_served(server):
         body = response.read().decode("utf-8")
     assert 'id="value"' in body and 'id="run"' in body
     assert "fetch('/validate'" in body
+    assert "textContent" in body and "innerHTML" not in body
+    assert "submitted:value" in body
 
 
 def test_form_submission_uses_actual_python_validator(server):

@@ -120,7 +120,7 @@ document.getElementById('run').addEventListener('click', async () => {
  try { const response = await fetch('/validate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
    const text = await response.text(); let data;
    try { data = JSON.parse(text); } catch { data = {error: 'non-JSON response'}; }
-   output.textContent = JSON.stringify({http_status:response.status,...data},null,2);
+   output.textContent = JSON.stringify({http_status:response.status,...data,submitted:value},null,2);
  } catch (error) { output.textContent = '通信エラー: '+String(error); }
 });
 </script></html>''').encode('utf-8')
