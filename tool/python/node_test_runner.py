@@ -6,7 +6,6 @@ a small local JSON receipt. The original JUnit remains the canonical CI artifact
 from __future__ import annotations
 
 import json
-import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -55,12 +54,6 @@ def run_node(*, root: Path, files: list[str], report: Path,
     if not files:
         print("node runner: no test files selected", file=sys.stderr)
         return 2
-    if name_pattern is not None:
-        try:
-            re.compile(name_pattern)
-        except re.error:
-            print("node runner: invalid test-name regex", file=sys.stderr)
-            return 2
     # A stale successful report must never hide a failed/aborted subprocess.
     report = report.resolve()
     report.parent.mkdir(parents=True, exist_ok=True)
@@ -89,8 +82,13 @@ def run_node(*, root: Path, files: list[str], report: Path,
     if summary["passed"] + summary["failed"] == 0:
         print("node runner: no executed tests (all skipped)", file=sys.stderr)
         return code if code != 0 else 1
-    if name_pattern is not None and not any(re.search(name_pattern, name) for name in summary["names"]):
-        print("node runner: no JUnit testcase matched requested name pattern", file=sys.stderr)
+    # Node owns JavaScript regex semantics, including describe ancestors and
+    # /pattern/flags. No-match produces synthetic file-level JUnit cases.
+    # Do not re-evaluate the regex in Python.
+    file_names = {name for file in files for name in
+                  (file, str((root / file).resolve()))}
+    if name_pattern is not None and all(name in file_names for name in summary["names"]):
+        print("node runner: no selected tests (only file-level JUnit cases)", file=sys.stderr)
         return code if code != 0 else 1
     summary.update({"runner": "node", "exit_code": code,
                     "ok": code == 0 and summary["failed"] == 0,
