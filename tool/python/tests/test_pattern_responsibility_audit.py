@@ -270,3 +270,18 @@ def test_receipt_is_accepted_only_for_the_current_toml_bytes(tmp_path):
         audit.verify_receipt(ROOT, _bound_receipt(tmp_path, "0" * 64), "a" * 40, "123")
     assert audit.main(["--check", "--route-verification", str(_bound_receipt(tmp_path)),
                        "--route-head-sha", "a" * 40, "--route-run-id", "123"]) == 0
+
+
+def test_audit_without_receipt_says_unverified_not_null():
+    assert audit.audit(ROOT)["route_verification"] == {"status": "unverified"}
+
+
+def test_receipt_must_cover_all_198_routes(tmp_path):
+    import hashlib
+    path = tmp_path / "short.json"
+    path.write_text(json.dumps({"schema": "route-verification/1", "result": "success", "routes": 197,
+                                "head_sha": "a" * 40, "run_id": "123",
+                                "expected_sha256": hashlib.sha256((ROOT / audit.MANIFEST).read_bytes()).hexdigest()}),
+                    encoding="utf-8")
+    with pytest.raises(ValueError, match="198 routes"):
+        audit.verify_receipt(ROOT, path, "a" * 40, "123")

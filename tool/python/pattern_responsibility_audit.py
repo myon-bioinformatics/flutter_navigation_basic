@@ -218,7 +218,9 @@ def audit(root: Path, verification: dict | None = None) -> dict:
                 if not (root/source).is_file():
                     errors.append("%03d: missing %s %s" % (row["id"],field,source))
     return {"schema":"pattern-responsibility/1",
-            "route_verification": verification,
+            # Explicit status instead of null: a report without a receipt is unverified.
+            "route_verification": ({"status": "verified", **verification} if verification
+                                   else {"status": "unverified"}),
             "summary":{"patterns":len(records),
                        "dart_files":sum(len(x["dart_files"]) for x in records),
                        "statuses":counts,
@@ -241,6 +243,8 @@ def verify_receipt(root: Path, path: Path, head_sha: str | None, run_id: str | N
         raise ValueError("route verification head SHA does not match expected head")
     if receipt.get("run_id") != run_id:
         raise ValueError("route verification run ID does not match expected run")
+    if receipt.get("routes") != 198:
+        raise ValueError("route verification receipt does not cover 198 routes")
     if receipt.get("expected_sha256") != hashlib.sha256((root/MANIFEST).read_bytes()).hexdigest():
         raise ValueError(f"route verification was made against a different {MANIFEST}")
     return receipt

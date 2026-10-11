@@ -51,7 +51,7 @@ def compare(expected: dict, observed: dict, *, head_sha: str | None = None, run_
     if any(not (isinstance(key, str) and key.isdigit()) for key in keys):  # int(key) below
         return ["route keys must be zero-padded numbers such as 001"]
     problems = [f"{key}: TOML names unknown widget {value!r}"
-                for key, value in sorted(want.items()) if value not in known]
+                for key, value in sorted(want.items()) if not isinstance(value, str) or value not in known]
     for key in sorted(keys):
         if key in seen and not isinstance(seen[key], dict):
             problems.append(f"{key}: observation is not an object")
@@ -59,7 +59,7 @@ def compare(expected: dict, observed: dict, *, head_sha: str | None = None, run_
         if key not in seen:
             problems.append(f"{key}: expected {want[key]}, but no such route was observed")
         elif key not in want:
-            problems.append(f"{key}: observed {seen[key]['widget']}, but it is missing from the TOML")
+            problems.append(f"{key}: observed {seen[key].get('widget')}, but it is missing from the TOML")
         elif seen[key].get("widget") != want[key] or seen[key].get("id") != int(key):
             problems.append(f"{key}: expected {want[key]}#{int(key)}, observed "
                             f"{seen[key].get('widget')}#{seen[key].get('id')}")
@@ -103,6 +103,8 @@ def main(argv=None) -> int:
                 "schema": "route-verification/1",
                 "head_sha": observed["provenance"]["head_sha"],
                 "run_id": observed["provenance"]["run_id"],
+                # Recorded for traceability; reruns share a run id.
+                "run_attempt": observed["provenance"].get("run_attempt"),
                 "routes": len(observed["routes"]),
                 "expected": _relative(args.expected),
                 "observed": _relative(args.observed),

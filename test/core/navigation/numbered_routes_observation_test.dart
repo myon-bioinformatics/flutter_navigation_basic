@@ -56,6 +56,7 @@ void main() {
         'provenance': {
           'head_sha': Platform.environment['ROUTE_HEAD_SHA'] ?? '',
           'run_id': Platform.environment['ROUTE_RUN_ID'] ?? '',
+          'run_attempt': Platform.environment['GITHUB_RUN_ATTEMPT'] ?? '',
         },
         'routes': {
           for (final id in ids)

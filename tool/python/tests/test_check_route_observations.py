@@ -112,3 +112,20 @@ def test_receipt_binds_input_bytes_and_uses_repository_paths(tmp_path):
     assert saved["expected"] == "tool/ci/numbered_routes.toml"
     assert saved["expected_sha256"] == hashlib.sha256((ROOT / "tool/ci/numbered_routes.toml").read_bytes()).hexdigest()
     assert saved["observed_sha256"] == hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def test_extra_route_without_widget_and_array_toml_value_fail_without_traceback():
+    extra = _observed()
+    extra["routes"]["199"] = {"id": 199}
+    assert "199: observed None, but it is missing from the TOML" in check.compare(EXPECTED, extra)
+    broken = {**EXPECTED, "routes": {**EXPECTED["routes"], "001": ["GenericScreen"]}}
+    assert "001: TOML names unknown widget ['GenericScreen']" in check.compare(broken, _observed())
+
+
+def test_receipt_records_run_attempt(tmp_path):
+    data = _observed()
+    data["provenance"]["run_attempt"] = "2"
+    path, receipt = tmp_path / "observed.json", tmp_path / "receipt.json"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    assert check.main([str(path), "--head-sha", "a" * 40, "--run-id", "123", "--receipt", str(receipt)]) == 0
+    assert json.loads(receipt.read_text(encoding="utf-8"))["run_attempt"] == "2"
