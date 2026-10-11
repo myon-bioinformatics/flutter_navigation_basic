@@ -9,6 +9,11 @@ import re
 import sys
 import unicodedata
 
+# ASCII-only decimal/scientific notation. float() alone would also accept
+# underscores ("1_000"), surrounding spaces and non-ASCII digits ("١٢").
+_FLOAT = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?")
+_ISO_DATE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
+
 
 def run(req):
     if not isinstance(req, dict):
@@ -42,17 +47,20 @@ def run(req):
         if target == "float":
             if isinstance(value, bool) or not isinstance(value, (str, int, float)):
                 raise ValueError("unsafe float coercion")
+            if isinstance(value, str) and not _FLOAT.fullmatch(value):
+                raise ValueError("invalid float")
             try:
                 result = float(value)
-            except ValueError as exc:
+            except (ValueError, OverflowError) as exc:
                 raise ValueError("invalid float") from exc
             if not math.isfinite(result):
                 raise ValueError("non-finite float")
             return {"value": result}
         if target == "bool":
-            if value in (True, "true", "1", 1):
+            # Exact types only: 1.0 == 1 and must not count as a boolean.
+            if value is True or value in ("true", "1") or (type(value) is int and value == 1):
                 return {"value": True}
-            if value in (False, "false", "0", 0):
+            if value is False or value in ("false", "0") or (type(value) is int and value == 0):
                 return {"value": False}
             raise ValueError("invalid boolean")
         raise ValueError("unsupported target")
@@ -61,6 +69,9 @@ def run(req):
             raise ValueError("date expects string")
         source = req.get("source", "iso")
         if source == "iso":
+            # fromisoformat also takes week dates and YYYYMMDD; keep YYYY-MM-DD.
+            if not _ISO_DATE.fullmatch(value):
+                raise ValueError("invalid iso date")
             parsed = date.fromisoformat(value)
         elif source == "compact":
             if not re.fullmatch(r"[0-9]{8}", value):
@@ -72,7 +83,8 @@ def run(req):
         if target == "iso":
             out = parsed.isoformat()
         elif target == "compact":
-            out = parsed.strftime("%Y%m%d")
+            # strftime("%Y") is not zero-padded below year 1000 on glibc.
+            out = f"{parsed.year:04d}{parsed.month:02d}{parsed.day:02d}"
         else:
             raise ValueError("unsupported target format")
         return {"value": out}
@@ -104,8 +116,9 @@ def run(req):
         keep = req.get("keep_last", 4)
         if type(keep) is not int or not 0 <= keep <= 32:
             raise ValueError("invalid keep_last")
-        visible = value[-keep:] if keep else ""
-        return {"value": "*" * max(0, len(value) - keep) + visible}
+        if len(value) <= keep:  # never reveal a value shorter than the suffix
+            return {"value": "*" * len(value)}
+        return {"value": "*" * (len(value) - keep) + (value[-keep:] if keep else "")}
     raise ValueError("unsupported operation")
 
 

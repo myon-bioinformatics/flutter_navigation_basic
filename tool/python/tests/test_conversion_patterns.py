@@ -50,3 +50,37 @@ def test_masking_keeps_requested_suffix():
 def test_invalid_requests_fail_closed(payload):
     with pytest.raises(ValueError):
         m.run(payload)
+
+
+def test_compact_dates_keep_four_digit_years_and_round_trip():
+    assert m.run({"operation":"date","source":"iso","target":"compact","value":"0999-01-01"}) == {"value":"09990101"}
+    assert m.run({"operation":"date","source":"compact","target":"compact","value":"09990101"}) == {"value":"09990101"}
+
+
+@pytest.mark.parametrize("value", ["2026-W01-1", "20260101", "2026-1-01"])
+def test_iso_source_accepts_only_extended_calendar_dates(value):
+    with pytest.raises(ValueError):
+        m.run({"operation":"date","source":"iso","value":value})
+
+
+@pytest.mark.parametrize(("value", "keep"), [("1234", 4), ("12", 4), ("x", 1)])
+def test_values_not_longer_than_the_suffix_are_fully_masked(value, keep):
+    assert m.run({"operation":"mask","value":value,"keep_last":keep}) == {"value":"*" * len(value)}
+
+
+def test_float_accepts_plain_ascii_notation():
+    for value, expected in (("-1.5e3", -1500.0), (".5", 0.5), ("2.", 2.0), (3, 3.0)):
+        assert m.run({"operation":"coerce","target":"float","value":value}) == {"value":expected}
+
+
+@pytest.mark.parametrize("payload", [
+    {"operation":"coerce","target":"float","value":"1_000"},
+    {"operation":"coerce","target":"float","value":" 1.5"},
+    {"operation":"coerce","target":"float","value":"\u0661\u0662"},
+    {"operation":"coerce","target":"float","value":10 ** 400},
+    {"operation":"coerce","target":"bool","value":1.0},
+    {"operation":"coerce","target":"bool","value":0.0},
+])
+def test_lenient_or_overflowing_coercions_fail_closed(payload):
+    with pytest.raises(ValueError):
+        m.run(payload)

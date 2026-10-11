@@ -14,6 +14,12 @@
 実装: `tool/python/conversion_patterns.py`
 テスト: `tool/python/tests/test_conversion_patterns.py`
 
+## 入力契約の要点
+
+- 104 float: ASCII の10進・指数表記のみ（`1_000`、前後の空白、ASCII 以外の数字は拒否）。bool は `true`/`false`/`"1"`/`"0"`/整数 0・1 のみ。
+- 105 date: `iso` は `YYYY-MM-DD` のみ（週日付・`YYYYMMDD` は `compact` を使う）。`compact` 出力は年を常に4桁にする。
+- 110 mask: 値の長さが `keep_last` 以下なら全文字を伏せる（末尾を見せても全体が露出しないように）。
+
 ## 完成度
 
 **限定実装**。独立処理と異常系テストは存在するが、Flutter番号付き画面からの実行は未接続。
