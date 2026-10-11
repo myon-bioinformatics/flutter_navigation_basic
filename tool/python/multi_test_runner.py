@@ -77,8 +77,35 @@ def _save_history(history: Path, runner: str, files: list[str], attempts: list[d
     history.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+def update_failure_ledger(path: Path, runner: str, attempts: list[dict]) -> None:
+    """Accumulate fingerprints across runs without retaining raw error text."""
+    path = path.resolve()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists():
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            raise ValueError("invalid existing failure ledger; refusing overwrite") from exc
+        if data.get("schema") != "failure-patterns/1" or not isinstance(data.get("patterns"), dict):
+            raise ValueError("invalid failure ledger schema")
+    else:
+        data = {"schema": "failure-patterns/1", "patterns": {}}
+    for attempt in attempts:
+        for failure in attempt["failures"]:
+            key = runner + ":" + failure["kind"] + ":" + failure["message_sha256"]
+            pattern = data["patterns"].setdefault(key, {
+                "runner": runner, "kind": failure["kind"],
+                "message_sha256": failure["message_sha256"], "occurrences": 0})
+            pattern["occurrences"] += 1
+    if len(data["patterns"]) > 500:
+        raise ValueError("failure ledger reached 500 distinct patterns; archive it first")
+    temp = path.with_name(path.name + ".tmp")
+    temp.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    temp.replace(path)
+
+
 def run_suite(runner: str, *, root: Path, files: list[str], report: Path,
-              history: Path, retry_failed: bool = False, timeout: int = 300,
+              history: Path, retry_failed: bool = False, timeout: int = 300,\n              ledger: Path | None = None,
               invoke=None) -> int:
     if timeout <= 0:
         raise ValueError("timeout must be positive")
@@ -115,12 +142,14 @@ def run_suite(runner: str, *, root: Path, files: list[str], report: Path,
         if code == 0:
             break
     _save_history(history, runner, files, attempts)
+    if ledger is not None:
+        update_failure_ledger(ledger, runner, attempts)
     return attempts[0]["exit_code"]
 
 
 def run_node_retries(*, root: Path, files: list[str], report: Path, history: Path,
                      name_pattern: str | None = None, timeout: int = 300,
-                     retry_failed: bool = False) -> int:
+                     retry_failed: bool = False, ledger: Path | None = None) -> int:
     from node_test_runner import run_node
     report = report.resolve()
     history = history.resolve()
@@ -143,4 +172,6 @@ def run_node_retries(*, root: Path, files: list[str], report: Path, history: Pat
         if code == 0:
             break
     _save_history(history, "node", files, attempts, "same-selected-files-and-filter")
+    if ledger is not None:
+        update_failure_ledger(ledger, "node", attempts)
     return attempts[0]["exit_code"]
