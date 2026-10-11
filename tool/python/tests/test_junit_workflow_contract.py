@@ -195,6 +195,21 @@ def test_failure_evidence_workflow_contract():
     _assert_contract(yaml.safe_load(WORKFLOW.read_text(encoding="utf-8")))
 
 
+@pytest.mark.parametrize("path", [
+    "tool/python/test.py",
+    "tool/python/multi_test_runner.py",
+    "e2e/tests/runner_adapter_smoke.spec.ts",
+])
+def test_browser_adapter_changes_select_e2e_junit(path, classify_workflow_asset):
+    workflow = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
+    outputs = classify_workflow_asset(workflow, path)
+    assert outputs["e2e"] == "true"
+    assert outputs["python"] == "true" if path.startswith("tool/python/") else outputs["playwright"] == "true"
+    _assert_adapter_producer(workflow)
+    assert _plan(workflow, python=False, playwright=False, e2e=True) == (
+        "true", ADAPTER_REPORTS)
+
+
 def test_validation_sources_select_the_browser_contract_without_flutter_e2e(classify_workflow_asset):
     workflow = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
     text = WORKFLOW.read_text(encoding="utf-8")
