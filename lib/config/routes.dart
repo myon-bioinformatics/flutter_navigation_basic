@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/navigation/app_route_registry.dart';
 import '../core/data_processing/native_parallel_pattern_example.dart';
 import '../core/data_processing/validation_pattern_links.dart';
+import '../core/data_processing/conversion_pattern_links.dart';
 import '../core/data_processing/interactive_pattern_example.dart';
 import '../core/navigation/route_names.dart';
 import '../screens/generic_screen.dart';
@@ -71,6 +72,9 @@ class AppRoutes {
       final patternId = id;
       map[screenRoute(patternId)] =
           (_) => ValidationPatternLinks(patternId: patternId);
+    }
+    for (final id in ConversionPatternLinks.names.keys) {
+      map[screenRoute(id)] = (_) => ConversionPatternLinks(patternId: id);
     }
 
     for (final id in [136, 137]) {
