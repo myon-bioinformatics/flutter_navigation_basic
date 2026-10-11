@@ -130,9 +130,6 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
     lock = json.loads((PYTHON_DIR / "vendor.lock.json").read_text(encoding="utf-8"))
     assert lock["schema"] == "vendor-lock/1"
     expected = {
-        ("myon-bioinformatics/Ironmate", "repository_metadata_contract.py", "tool/python/vendor/repository_metadata_contract.py"),
-        ("myon-bioinformatics/Ironmate", "repository_metadata_generator.py", "tool/python/vendor/repository_metadata_generator.py"),
-        ("myon-bioinformatics/Ironmate", "LICENSE", "tool/python/vendor/Ironmate-LICENSE"),
         ("myon-bioinformatics/yourself", "yourself.py", "tool/python/vendor/yourself.py"),
         ("myon-bioinformatics/yourself", "LICENSE", "tool/python/vendor/yourself-LICENSE"),
         ("myon-bioinformatics/xprobe", "xprobe.py", "tool/python/vendor/xprobe.py"),
@@ -150,12 +147,10 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
     entries = lock["files"]
     assert {(entry["repository"], entry["source"], entry["destination"]) for entry in entries} == expected
     for entry in entries:
-        if entry["repository"] == "myon-bioinformatics/Ironmate":
-            # The metadata sources were retired from Ironmate main. Resolve the
-            # already-adopted source/LICENSE snapshot instead of a deleted path.
-            assert entry["ref"] == entry["commit"] == "73157cb7fed236a4a941722a6dcddd69a33ab95a"
-        else:
-            assert entry["ref"] == "refs/heads/main"
+        assert entry["ref"] == "refs/heads/main"
+    # The former Ironmate producer was replaced by gh_identity (#169) and removed.
+    assert not any((vendor / name).exists() for name in (
+        "repository_metadata_contract.py", "repository_metadata_generator.py", "Ironmate-LICENSE"))
     assert len({entry["destination"] for entry in entries}) == len(entries)
     for entry in entries:
         commit = entry["commit"]
@@ -207,27 +202,27 @@ def test_http_editor_does_not_depend_directly_on_legacy_curl_parser():
     assert not (ROOT / "lib/shared/http/curl_export.dart").exists()
 
 
-# Differential check while the former Ironmate producer is still vendored:
-# the gh_identity adapter must produce the same record and the same bytes.
-import repository_metadata_generator as ironmate
+# Frozen compatibility with the former Ironmate producer (73157cb7). These
+# values were produced by its write_metadata()/collect_portable_tooling() before
+# it was removed; gh_identity must keep emitting the same bytes and labels.
+IRONMATE_FIXTURE_SHA256 = {
+    "repository-metadata.json": "e34d4a69e1dcdd14a0983d141f0111f42cf144974157baf2772f60cdc2016df6",
+    "repository-metadata.jsonl": "f250d22adcdd7ceccfc43aec956fa370d71baf37e37d1a6c480c3c72208d7099",
+}
 
 
-@pytest.mark.parametrize("env", [{}, {"GITHUB_HEAD_REF": "feature/x", "GITHUB_REF_NAME": "1/merge"},
-                                 {"GITHUB_REF_NAME": "main"}])
-def test_gh_identity_v1_matches_ironmate_record_and_bytes(checkout, tmp_path, env):
-    tooling = {"python": "3.12.1.post1", "git": "2.45.0"}
-    old = ironmate.record_from_checkout(checkout, "example/repo", env=env, tooling=tooling)
-    new = ghi.repository_metadata_v1(checkout, repository="example/repo", env=env, tooling=tooling,
-                                     generated_at=old["generated_at"])
-    assert new == old
-    ironmate.write_metadata(old, tmp_path / "old")
-    ghi.write_repository_metadata(new, tmp_path / "new")
-    for name in ("repository-metadata.json", "repository-metadata.jsonl"):
-        assert (tmp_path / "new" / name).read_bytes() == (tmp_path / "old" / name).read_bytes()
+def test_v1_writer_bytes_match_former_ironmate_output(tmp_path):
+    record = json.loads((PYTHON_DIR / "fixtures/repository_metadata_v1.json").read_text(encoding="utf-8"))
+    ghi.write_repository_metadata(record, tmp_path)
+    for name, digest in IRONMATE_FIXTURE_SHA256.items():
+        assert hashlib.sha256((tmp_path / name).read_bytes()).hexdigest() == digest
 
 
-@pytest.mark.parametrize("version", ["3.12.3", "3.14.0rc1", "3.12.1.post1", "3.13.0.dev2",
-                                     "3.12.1+local.1", "not-a-version"])
-def test_python_tooling_label_matches_ironmate(monkeypatch, version):
+@pytest.mark.parametrize("version,label", [
+    ("3.12.3", "3.12.3"), ("3.14.0rc1", "3.14.0rc1"), ("3.12.1.post1", "3.12.1.post1"),
+    ("3.13.0.dev2", "3.13.0.dev2"), ("3.12.1+local.1", "3.12.1+local.1"), ("1!3.12.0", "1!3.12.0"),
+    ("not-a-version", None),
+])
+def test_python_tooling_label_matches_former_ironmate(monkeypatch, version, label):
     monkeypatch.setattr("platform.python_version", lambda: version)
-    assert ghi.tool_versions(include_python=True) == ironmate.collect_portable_tooling(include_python=True)
+    assert ghi.tool_versions(include_python=True).get("python") == label

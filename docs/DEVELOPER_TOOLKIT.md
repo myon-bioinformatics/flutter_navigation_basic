@@ -220,8 +220,9 @@ record into the existing Flutter build diagnostics. Python 3 and Git are require
 for generation. The producer is the vendored `tool/python/vendor/gh_identity.py`
 (`repository_metadata_v1`, gh_identity #34 and #35), pinned with Git blob ID and SHA-256 in
 `tool/python/vendor.lock.json`. Its output is byte-for-byte the former Ironmate
-`73157cb7` schema v1 record apart from `generated_at`; the two Ironmate files stay
-vendored until the switch is green on CI and are removed in a follow-up.
+`73157cb7` schema v1 record apart from `generated_at`. The Ironmate files were
+removed after the switch (#169); the former output bytes and Python version
+labels stay pinned as frozen values in `tool/python/tests/test_repository_metadata.py`.
 
 The Python adapter requests Python plus `git` / `gh` / `node` / `npm` / `npx`
 versions through `gh_identity.tool_versions(..., include_python=True)`.
