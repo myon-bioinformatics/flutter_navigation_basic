@@ -36,22 +36,6 @@ python3 -S tool/python/render_pattern_status.py pattern-responsibility.json patt
    「新しく動く機能」「テスト件数・環境」「完成度」「残課題」を記録する。
 7. PR #145は検証が完了するまで未マージとし、同一headのCI ALL GREENを確認する。
 
-## 到達性（2026-10-11 からの監査基準）
-
-アプリ本体から `lib/features/*_patterns` への import は 0 件で、各パターンの `view.dart` は
-どの route からも到達しない。そこで監査の第一の軸を「`/screenNNN` が実際に何を表示するか」に変えた。
-
-- 期待値: `tool/ci/numbered_routes.json`（**人が書く**。198 件の行き先 Widget）
-- 実測: `test/core/navigation/numbered_routes_manifest_test.dart` が 198 本の route を実行時に解決し、
-  Widget の種別と id が期待値と一致することを確かめる（期待値と実測値を分離）。
-- 監査: `route`（Widget）、`reachability`（`shared` / `generic`）、`provision`
-  （`shared_interaction` / `shared_source_links` / `shared_native_example` / `generic_catalogue`）、
-  `legacy_view`（`unreachable` / `absent`）を各行に出す。routes.dart の正規表現解析は撤去した。
-- `status`（下の分類）はディレクトリ内コードの証跡として**従来どおり**残す。たとえば
-  `native_flutter_example` は「アプリから到達しない Flutter の例」であり、route の行き先は `generic_catalogue`。
-  旧 View を削除して数が変わっても、機能の増減ではなく未到達コードの整理である。
-- 共通 Widget に route が実証されたパターンは `view.dart` を必須にしない（`shared_widget_route`）。
-
 ## 分類の読み方
 
 - `fake_delayed_success`: 固定成功文言のダミー。機能未実装。

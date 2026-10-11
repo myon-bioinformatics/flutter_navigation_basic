@@ -1,4 +1,3 @@
-import pytest
 import pattern_responsibility_audit as audit
 from pathlib import Path
 import tempfile
@@ -66,8 +65,7 @@ def test_empty_catalogue_fails_check():
         (root / "lib/features/data_processing_patterns").mkdir(parents=True)
         result = audit.audit(root)
         assert result["summary"]["patterns"] == 0
-        missing = [e for e in result["errors"] if e.endswith("missing catalogue pattern")]
-        assert len(missing) == 198  # plus the missing route manifest error
+        assert len(result["errors"]) == 198
 
 
 def test_unexpected_catalogue_id_is_reported():
@@ -148,75 +146,62 @@ def test_seven_shared_gesture_views_are_not_description_only():
         assert not any("E2E-only" in warning for warning in row["warnings"])
 
 
-import json
-
-
-def _manifest(root, overrides=None, **changes):
-    routes = {"%03d" % i: "GenericScreen" for i in range(1, 199)}
-    routes.update({"%03d" % k: v for k, v in (overrides or {}).items()})
-    doc = {"schema": "numbered-routes/1", "generic_widget": "GenericScreen",
-           "shared_widgets": ["InteractivePatternExample", "ValidationPatternLinks"],
-           "routes": routes, **changes}
-    (root/"tool/ci").mkdir(parents=True, exist_ok=True)
-    (root/audit.MANIFEST).write_text(json.dumps(doc), encoding="utf-8")
-
-
-def _gesture_root(td, route):
+def _gesture_root(td, routes_text):
     root = Path(td)
     setup(root, 171)
     (audit.pattern_dir(root, 171)/"view.dart").write_text(
         "const InteractivePatternExample(patternId: 171);\n", encoding="utf-8")
-    _manifest(root, {171: route})
+    (root/"lib/config").mkdir(parents=True)
+    (root/audit.ROUTES).write_text(routes_text, encoding="utf-8")
     return root
 
 
-def test_gesture_status_follows_the_proven_route_not_the_view_text():
+ROUTED = """for (final patternId in [171, 172]) {
+  map[screenRoute(patternId)] =
+      (_) => InteractivePatternExample(patternId: patternId);
+}
+"""
+
+
+def test_gesture_view_needs_a_numbered_route_to_count_as_native():
     with tempfile.TemporaryDirectory() as td:
-        row = audit.inspect(_gesture_root(td, "InteractivePatternExample"), 171)
+        row = audit.inspect(_gesture_root(td, ROUTED), 171)
         assert row["status"] == "native_flutter_shared_interaction", row
-        assert (row["reachability"], row["provision"], row["legacy_view"]) == (
-            "shared", "shared_interaction", "unreachable")
+    for label, routes in (
+        ("id removed from the loop", ROUTED.replace("171, ", "")),
+        ("loop builds a different widget", ROUTED.replace("InteractivePatternExample", "GenericScreen")),
+        ("no routes.dart content", ""),
+    ):
+        with tempfile.TemporaryDirectory() as td:
+            row = audit.inspect(_gesture_root(td, routes), 171)
+            assert row["status"] != "native_flutter_shared_interaction", label
+            assert any("numbered route is not evidenced" in w for w in row["warnings"]), label
+
+
+def test_route_loop_survives_reformatting_and_fails_loudly_when_unreadable():
+    reformatted = """for (final patternId in [
+  171,
+  172,
+]) {
+  if (true) { map['x'] = (_) => const SizedBox(); }
+  map[screenRoute(patternId)] = (_) => InteractivePatternExample(
+        patternId: patternId,
+      );
+}
+"""
     with tempfile.TemporaryDirectory() as td:
-        row = audit.inspect(_gesture_root(td, "GenericScreen"), 171)
-        assert row["status"] != "native_flutter_shared_interaction"
-        assert row["reachability"] == "generic"
-        assert any("does not build the shared native interaction" in w for w in row["warnings"])
-
-
-def test_shared_route_makes_view_optional_but_generic_route_does_not():
+        root = _gesture_root(td, reformatted)
+        assert audit.routed_interactions(root) == {171, 172}
+        assert audit.inspect(root, 171)["status"] == "native_flutter_shared_interaction"
     with tempfile.TemporaryDirectory() as td:
-        root = Path(td)
-        for number in (136, 137):  # no producer, not a gesture pattern
-            setup(root, number)
-            (audit.pattern_dir(root, number)/"view.dart").unlink()
-        _manifest(root, {136: "ValidationPatternLinks"})
-        shared, generic = audit.inspect(root, 136), audit.inspect(root, 137)
-        assert (shared["status"], shared["legacy_view"]) == ("shared_widget_route", "absent")
-        assert generic["status"] == "missing_catalogue_artifact"
+        root = _gesture_root(td, "final ids = [171]; // no recognisable loop\n")
+        assert audit.routed_interactions(root) is None
+        assert "lib/config/routes.dart: numbered interaction loop not recognised" in audit.audit(root)["errors"]
 
 
-@pytest.mark.parametrize(("change", "message"), [
-    ({"routes": {"001": "GenericScreen"}}, "must list 001-198 in order"),
-    ({"schema": "numbered-routes/0"}, "unexpected schema"),
-    ({"shared_widgets": ["MysteryWidget"]}, "unknown widget kinds"),
-])
-def test_malformed_manifest_is_an_audit_error(change, message):
-    with tempfile.TemporaryDirectory() as td:
-        root = Path(td)
-        setup(root, 1)
-        _manifest(root, **change)
-        assert any(message in error for error in audit.audit(root)["errors"])
-
-
-def test_missing_manifest_is_an_audit_error():
-    with tempfile.TemporaryDirectory() as td:
-        root = Path(td)
-        setup(root, 1)
-        assert "tool/ci/numbered_routes.json: missing" in audit.audit(root)["errors"]
-
-
-def test_real_repository_reachability_is_complete():
-    summary = audit.audit(ROOT)["summary"]
-    assert sum(summary["reachability"].values()) == 198
-    assert "unknown" not in summary["reachability"]
-    assert "unknown" not in summary["provisions"]
+def test_real_routes_are_read_once_per_audit(monkeypatch):
+    calls = []
+    original = audit.routed_interactions
+    monkeypatch.setattr(audit, "routed_interactions", lambda root: calls.append(root) or original(root))
+    audit.audit(ROOT)
+    assert len(calls) == 1
