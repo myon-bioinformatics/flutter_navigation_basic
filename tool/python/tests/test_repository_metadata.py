@@ -11,9 +11,14 @@ import pytest
 PYTHON_DIR = Path(__file__).resolve().parents[1]
 ROOT = PYTHON_DIR.parents[1]
 sys.path.insert(0, str(PYTHON_DIR / "vendor"))
-import repository_metadata_generator as canonical_generator
-from repository_metadata_generator import record_from_checkout
-from repository_metadata_contract import validate_repository_record
+import gh_identity as ghi
+
+
+def record_from_checkout(root, repository, *, env):
+    return ghi.repository_metadata_v1(root, repository=repository, env=env)
+
+
+validate_repository_record = ghi.validate_repository_metadata_v1
 
 
 def git(root, *args):
@@ -59,12 +64,9 @@ def test_cli_gated_sha_and_json_jsonl(checkout, tmp_path):
     record = json.loads((output / "repository-metadata.json").read_text())
     assert record == json.loads((output / "repository-metadata.jsonl").read_text())
     validate_repository_record(record)
-    assert record["tooling"]["python"] == canonical_generator.normalize_version_output(
-        "python", canonical_generator.platform.python_version(),
-    )
-    assert record["tooling"]["git"] == canonical_generator.normalize_version_output(
-        "git", git(checkout, "--version"),
-    )
+    observed = ghi.tool_versions(("git",), include_python=True)
+    assert record["tooling"]["python"] == observed["python"]
+    assert record["tooling"]["git"] == observed["git"]
 
 
 @pytest.mark.parametrize(
@@ -87,14 +89,25 @@ def test_adapter_collects_canonical_tooling_without_nulls(
     checkout, tmp_path, monkeypatch, python_version, command_versions, expected_tooling,
 ):
     # Control observation inputs, not the adapter, collector or checkout identity.
-    monkeypatch.setattr(canonical_generator.platform, "python_version", lambda: python_version)
+    monkeypatch.setattr("platform.python_version", lambda: python_version)
     observed_commands = []
+    banners = {"git": "git version {}", "gh": "gh version {} (2024-01-01)",
+               "node": "v{}", "npm": "{}", "npx": "{}"}
 
-    def observe_command(command):
+    def which(command):
         observed_commands.append(command)
-        return command_versions.get(command)
+        return "/fake/" + command if command in command_versions else None
 
-    monkeypatch.setattr(canonical_generator, "observe_command_version", observe_command)
+    real_run = subprocess.run
+
+    def run(argv, **kwargs):
+        if not str(argv[0]).startswith("/fake/"):
+            return real_run(argv, **kwargs)  # fixture Git calls stay real
+        command = argv[0].rsplit("/", 1)[-1]
+        return subprocess.CompletedProcess(argv, 0, banners[command].format(command_versions[command]) + "\n", "")
+
+    monkeypatch.setattr(ghi.shutil, "which", which)
+    monkeypatch.setattr(ghi.subprocess, "run", run)
     main = runpy.run_path(str(PYTHON_DIR / "generate_repository_metadata.py"))["main"]
     output = tmp_path / "out"
     sha = git(checkout, "rev-parse", "HEAD")

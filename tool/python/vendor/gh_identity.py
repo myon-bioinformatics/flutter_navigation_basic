@@ -319,7 +319,7 @@ def repository_inventory(owner, *, fields=("name",), sort="name", order="asc",
 
 def pr(r,n,**k):
  r=repo(r);d=request("GET",f"repos/{r}/pulls/{n}",**k)
- return {"schema":"gh-identity-pr/1","repository":r,"number":n,"state":d.get("state"),"draft":d.get("draft"),"merged":d.get("merged"),"mergeable":d.get("mergeable"),"head_sha":(d.get("head")or{}).get("sha"),"head_ref":(d.get("head")or{}).get("ref"),"base_sha":(d.get("base")or{}).get("sha"),"base_ref":(d.get("base")or{}).get("ref"),"url":d.get("html_url"),"observed_at":now()}
+ return {"schema":"gh-identity-pr/1","repository":r,"number":n,"state":d.get("state"),"draft":d.get("draft"),"merged":d.get("merged"),"mergeable":d.get("mergeable"),"mergeable_state":d.get("mergeable_state"),"head_sha":(d.get("head")or{}).get("sha"),"head_ref":(d.get("head")or{}).get("ref"),"base_sha":(d.get("base")or{}).get("sha"),"base_ref":(d.get("base")or{}).get("ref"),"url":d.get("html_url"),"observed_at":now()}
 def _review_limits(n,max_items,max_pages):
  n=_positive_identifier(n,"PR number")
  for value in (max_items,max_pages):
@@ -1081,6 +1081,151 @@ def checks_for_sha(r,sha,min_checks=1,transport="auto",timeout=30,*,requester=No
   path=_next_page(path,headers,len(batch))
  summary=summarize_checks(rows,expected,min_checks)
  return {"schema":"gh-identity-checks/1","repository":r,"sha":sha,**summary,"observed_at":now()}
+
+def pr_status(r,n,*,last=3,exclude_events=("dynamic",),transport="auto",timeout=30):
+ """One compact look at a PR head: runs, unfinished/failed checks, latest talk.
+
+ An observation, not a gate (use checks / wait-checks to gate). Runs from the
+ excluded events (default: Copilot's "dynamic") are counted, not listed.
+ """
+ if type(last) is not int or not 0<=last<=20:raise ValueError("last must be 0-20")
+ head=pr(r,n,transport=transport,timeout=timeout);sha=head["head_sha"]
+ runs=run_history(r,head_sha=sha,exclude_events=exclude_events,transport=transport,timeout=timeout)
+ ch=checks_for_sha(r,sha,1,transport,timeout)
+ cs=comments(r,n,transport=transport,timeout=timeout)["comments"]
+ rs=reviews(r,n,transport=transport,timeout=timeout)["reviews"]
+ talk=lambda rows,when:[{k:x.get(k) for k in ("author","state",when,"preview","url") if k in x} for x in rows[-last:]] if last else []
+ return {"schema":"gh-identity-pr-status/1","repository":repo(r),"number":n,
+  "pr":{k:head[k] for k in ("state","draft","merged","mergeable_state","head_sha","head_ref","base_ref","url")},
+  "runs":{"state":runs["state"],"by_conclusion":runs["by_conclusion"],"excluded_count":runs["excluded_count"],
+          "runs":[{"name":x["name"],"event":x["event"],"run_id":x["run_id"],"result":x["conclusion"] or x["status"]} for x in runs["runs"]]},
+  "checks":{"state":ch["state"],"count":ch["count"],"by_conclusion":ch["by_conclusion"],
+            "attention":[{"name":c["name"],"result":c["conclusion"] or c["status"],"url":c["url"]} for c in ch["checks"]
+                         if (c["conclusion"] or c["status"]) not in ("success","skipped","neutral")]},
+  "comments":talk(cs,"created_at"),"reviews":talk(rs,"submitted_at"),"observed_at":now()}
+
+def item_status(r,n,*,last=3,exclude_events=("dynamic",),transport="auto",timeout=30):
+ """PR -> pr_status (with title); Issue -> state, title and latest comments."""
+ r=repo(r);n=_positive_identifier(n,"number")
+ d=request("GET",f"repos/{r}/issues/{n}",transport=transport,timeout=timeout)
+ row=_issue_row(d,r,n)
+ if row["kind"]=="pr":
+  return {**pr_status(r,n,last=last,exclude_events=exclude_events,transport=transport,timeout=timeout),"kind":"pr","title":row["title"]}
+ if type(last) is not int or not 0<=last<=20:raise ValueError("last must be 0-20")
+ cs=comments(r,n,transport=transport,timeout=timeout)["comments"]
+ return {"schema":"gh-identity-issue-status/1","repository":r,"number":n,"kind":"issue","title":row["title"],
+         "state":row["state"],"updated_at":d.get("updated_at"),"url":d.get("html_url"),
+         "comments":[{k:x.get(k) for k in ("author","created_at","preview","url")} for x in cs[-last:]] if last else [],
+         "observed_at":now()}
+
+def parse_status_targets(tokens):
+ """OWNER/REPO sets the repository for following bare numbers; OWNER/REPO#N is explicit."""
+ current=None;targets=[]
+ for token in tokens:
+  if re.fullmatch(r"[0-9]+",token):
+   if current is None:raise ValueError("a number needs a preceding OWNER/REPO")
+   targets.append((current,int(token)))
+  elif "#" in token:
+   name,_,number=token.partition("#")
+   if not re.fullmatch(r"[0-9]+",number):raise ValueError("expected OWNER/REPO#NUMBER")
+   targets.append((repo(name),int(number)))
+  else:
+   current=repo(token)
+ if not targets:raise ValueError("no PR or Issue number given")
+ if len(targets)>20:raise ValueError("at most 20 targets")
+ return targets
+
+def status_many(tokens,*,last=3,exclude_events=("dynamic",),transport="auto",timeout=30):
+ """Several PRs/Issues, possibly across repositories; one failure does not hide the rest."""
+ items=[]
+ for r,n in parse_status_targets(tokens):
+  try:items.append(item_status(r,n,last=last,exclude_events=exclude_events,transport=transport,timeout=timeout))
+  except (Error,ValueError) as e:items.append({"repository":r,"number":n,"kind":None,"error":getattr(e,"code","invalid_argument")})
+ return items[0] if len(items)==1 and "error" not in items[0] else {"schema":"gh-identity-status-list/1","items":items,"observed_at":now()}
+
+def render_status(o):
+ out=[]
+ for item in o["items"] if "items" in o else [o]:
+  if item.get("error"):out.append(f"{item['repository']}#{item['number']}: error {item['error']}")
+  elif item.get("kind")=="issue":
+   out.append(f"{item['repository']}#{item['number']} issue {item['state']} updated={item['updated_at']} {item['title']}")
+   out+=[f"comment {x.get('author')} {x.get('created_at')}: {(x.get('preview') or '')[:200]}" for x in item["comments"]]
+  else:
+   out.append(f"{item['repository']}#{item['number']} {item.get('title') or ''}".rstrip());out.append(render_pr_status(item))
+ return "\n".join(out)
+
+def render_pr_status(o):
+ p=o["pr"];lines=[f"#{o['number']} {p['state']}{' draft' if p['draft'] else ''} merged={p['merged']} {p['mergeable_state']} head={p['head_sha'][:8]} {p['head_ref']} -> {p['base_ref']}"]
+ r=o["runs"];lines.append(f"runs: {r['state']} {r['by_conclusion']}"+(f" (excluded {r['excluded_count']})" if r["excluded_count"] else ""))
+ lines+=[f"  {x['name']} {x['event']} {x['run_id']} {x['result']}" for x in r["runs"]]
+ c=o["checks"];lines.append(f"checks: {c['state']} {c['count']} {c['by_conclusion']}")
+ lines+=[f"  ! {x['name']} {x['result']}" for x in c["attention"]]
+ for label,rows,when in (("comment",o["comments"],"created_at"),("review",o["reviews"],"submitted_at")):
+  lines+=[f"{label} {x.get('author')} {x.get(when)}{' '+x['state'] if x.get('state') else ''}: {(x.get('preview') or '')[:200]}" for x in rows]
+ return "\n".join(lines)
+
+def _checks_snapshot(summary,elapsed):
+ return {"at_seconds":round(elapsed,1),"state":summary["state"],"count":summary["count"],"by_conclusion":summary["by_conclusion"]}
+
+def _checks_progress(summary,ignored,elapsed,changed):
+ counts=" ".join(f"{k}={v}" for k,v in summary["by_conclusion"].items()) or "no checks"
+ skip=f" (ignored {len(ignored)})" if ignored else ""
+ lines=[f"[{int(elapsed)}s] {summary['state']} {counts}{skip}"]
+ lines+=[f"  {c['name']}: {c['from']} -> {c['to']}" for c in changed]
+ waiting=[c["name"] for c in summary["checks"] if c["status"]!="completed"]
+ if waiting:lines.append(f"  waiting ({len(waiting)}): {', '.join(waiting[:5])}{' ...' if len(waiting)>5 else ''}")
+ return "\n".join(lines)
+
+def wait_checks(r,sha,*,min_checks=1,interval=60,wait_timeout=900,ignore=(),transport="auto",timeout=30,
+                progress=None,sleep=None,clock=None):
+ """Poll check-runs on one SHA until green or failed, or until wait_timeout.
+
+ Reports the first and the last snapshot plus every per-check transition seen
+ between polls (queued -> in_progress -> success ...). Each poll is its own
+ bounded operation. `ignore` drops named checks (e.g. a reviewer bot that
+ errors) before the state is judged; they stay listed.
+ """
+ if not re.fullmatch(r"[0-9a-fA-F]{40}",str(sha)):raise ValueError("invalid sha")
+ if isinstance(interval,bool) or not isinstance(interval,(int,float)) or not 5<=interval<=600:raise ValueError("interval must be 5-600 seconds")
+ if isinstance(wait_timeout,bool) or not isinstance(wait_timeout,(int,float)) or not 0<wait_timeout<=3600:raise ValueError("wait_timeout must be 1-3600 seconds")
+ if _BUDGET.get() is not None:raise ValueError("wait_checks runs its own bounded polls; call it outside operation()")
+ sleep=sleep or time.sleep;clock=clock or time.monotonic
+ ignore=set(ignore);start=clock();polls=0;first=None;seen={};transitions=[]
+ while True:
+  polls+=1
+  raw=checks_for_sha(r,sha,min_checks,transport,timeout)
+  kept=[c for c in raw["checks"] if c["name"] not in ignore]
+  ignored=[c for c in raw["checks"] if c["name"] in ignore]
+  expected=raw["expected_count"]-len(ignored) if isinstance(raw["expected_count"],int) else None
+  # min_checks counts every check, ignored ones included (as in the README);
+  # judge the kept checks against the same total minus what was ignored.
+  floor=max(1,min_checks-len(ignored))
+  summary=summarize_checks(kept,expected,floor) if raw["complete"] else {**summarize_checks(kept,None,floor),"state":"incomplete"}
+  elapsed=clock()-start
+  changed=[]
+  for c in kept:
+   key=c["id"] if c.get("id") is not None else c["name"]
+   now_state=c["conclusion"] or c["status"] or "unknown"
+   before=seen.get(key)
+   if before is not None and before!=now_state:
+    changed.append({"name":c["name"],"from":before,"to":now_state,"at_seconds":round(elapsed,1)})
+   elif before is None and first is not None:
+    changed.append({"name":c["name"],"from":"absent","to":now_state,"at_seconds":round(elapsed,1)})
+   seen[key]=now_state
+  transitions+=changed
+  if first is None:first=_checks_snapshot(summary,elapsed)
+  if progress:progress(_checks_progress(summary,ignored,elapsed,changed))
+  # A completed failure means this SHA can no longer turn green: stop early.
+  bad={"failure","cancelled","timed_out","action_required","startup_failure","stale"}
+  failed=[c["name"] for c in kept if c["status"]=="completed" and c["conclusion"] in bad]
+  if failed and summary["state"]=="pending":summary={**summary,"state":"failed"}
+  done=summary["state"] in ("green","failed")
+  if done or elapsed+interval>wait_timeout:
+   return {"schema":"gh-identity-wait-checks/1","repository":repo(r),"sha":sha.lower(),**summary,
+           "initial":first,"final":_checks_snapshot(summary,elapsed),"transitions":transitions,
+           "ignored":[{"name":c["name"],"conclusion":c["conclusion"],"status":c["status"]} for c in ignored],
+           "failed_checks":failed,"polls":polls,"elapsed_seconds":round(elapsed,1),"timed_out":not done,"observed_at":now()}
+  sleep(interval)
 
 def observe_pr(r,n,min_checks=1,transport="auto",timeout=30):
  before=pr(r,n,transport=transport,timeout=timeout)
@@ -2169,6 +2314,259 @@ def git_check_ignore(root=".", paths=(), *, max_paths=1000, max_bytes=1_000_000)
         })
     return {"records": ordered, "truncated": truncated}
 
+# Repository metadata: one checkout identity shared by every repository.
+# Git identity lives here; app-specific build data (sizes, screens) does not.
+REPOSITORY_METADATA_SCHEMA = "2.0"
+REPOSITORY_METADATA_V1_SCHEMA = "1.0"
+_RM_OWNER = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?")
+_RM_NAME = re.compile(r"[A-Za-z0-9_.-]+")
+_RM_SHA = re.compile(r"[0-9a-f]{40}|[0-9a-f]{64}")
+_RM_TOOL_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,31}")
+_RM_TOOL_VALUE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+ -]{0,31}")
+_RM_MEASUREMENTS = ("github_reported_size_bytes", "working_tree_bytes", "release_artifact_bytes")
+_RM_TOOL_ARGS = {"git": "--version", "gh": "--version", "node": "--version", "npm": "--version", "npx": "--version"}
+_RM_VERSION = r"[0-9]+(?:\.[0-9]+)+(?:[-+._][0-9A-Za-z][0-9A-Za-z.-]*)?"
+_RM_TOOL_PATTERNS = {
+    "git": re.compile(r"git version (?P<v>" + _RM_VERSION + r")(?:\s.*)?"),
+    "gh": re.compile(r"gh version (?P<v>" + _RM_VERSION + r")(?:\s.*)?"),
+    "node": re.compile(r"v(?P<v>" + _RM_VERSION + r")"),
+    "npm": re.compile(r"(?P<v>" + _RM_VERSION + r")"),
+    "npx": re.compile(r"(?P<v>" + _RM_VERSION + r")"),
+    # Same acceptance as Ironmate's _PACKAGE_VERSION (epoch, pre, post, dev, local).
+    "python": re.compile(r"(?P<v>(?:[0-9]+!)?[0-9]+(?:\.[0-9]+)*(?:(?:a|b|rc)[0-9]+)?(?:\.post[0-9]+)?"
+                         r"(?:\.dev[0-9]+)?(?:\+(?:[0-9A-Za-z][0-9A-Za-z.-]*)?)?)"),
+}
+
+
+def _rm_full_name(full_name):
+    if not isinstance(full_name, str) or full_name.count("/") != 1:
+        raise ValueError("repository must be owner/name")
+    owner, name = full_name.split("/")
+    if not _RM_OWNER.fullmatch(owner) or not _RM_NAME.fullmatch(name) or name in (".", ".."):
+        raise ValueError("repository must be owner/name")
+    return full_name
+
+
+def _rm_sha(value, name="sha"):
+    if not isinstance(value, str) or not _RM_SHA.fullmatch(value.lower()):
+        raise ValueError(name + " must be a full 40- or 64-hex commit SHA")
+    return value.lower()
+
+
+def _rm_time(value, name):
+    if not isinstance(value, str):
+        raise ValueError(name + " must be an ISO 8601 timestamp")
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as error:
+        raise ValueError(name + " must be an ISO 8601 timestamp") from error
+    if parsed.tzinfo is None:
+        raise ValueError(name + " must include a timezone")
+    return value
+
+
+def _rm_git(root, *args):
+    raw, truncated, _ = _git_run(root, ["-c", "i18n.logOutputEncoding=UTF-8", *args], max_bytes=64 * 1024)
+    if truncated:
+        raise GitInspectionError("git output exceeded the metadata bound")
+    return _git_decode(raw).strip()
+
+
+def checkout_head(root="."):
+    """The commit actually checked out at root (never GITHUB_SHA or other env)."""
+    sha = _rm_sha(_rm_git(root, "rev-parse", "--verify", "HEAD^{commit}"), "HEAD")
+    fields = _rm_git(root, "show", "-s", "--format=%cI%x1f%s", "HEAD").split("\x1f", 1)
+    if len(fields) != 2 or not fields[1]:
+        raise GitInspectionError("HEAD has no committer date or subject")
+    branch = _rm_git(root, "branch", "--show-current") or None
+    return {"sha": sha, "branch": branch, "detached": branch is None,
+            "timestamp": _rm_time(fields[0], "timestamp"), "subject": fields[1].splitlines()[0]}
+
+
+_RM_REMOTE = (re.compile(r"(?:https?|ssh|git)://(?:[^@/]+@)?github\.com(?::\d+)?/([^/]+)/([^/]+?)(?:\.git)?/?"),
+              re.compile(r"[^@\s/]+@github\.com:([^/]+)/([^/]+?)(?:\.git)?/?"))
+
+
+def remote_repository(root=".", remote="origin"):
+    """owner/name of a GitHub remote, or None; the URL itself is never returned.
+
+    Credentials, proxies and non-GitHub hosts are not echoed: an unrecognised
+    remote yields {"full_name": None, "reason": "not_github"}.
+    """
+    if not isinstance(remote, str) or not re.fullmatch(r"[A-Za-z0-9._-]+", remote):
+        raise ValueError("remote must be a plain remote name")
+    raw, _, code = _git_run(root, ["remote", "get-url", remote], max_bytes=4096, ok=(0, 2, 128))
+    if code:
+        return {"remote": remote, "full_name": None, "reason": "no_remote"}
+    url = _git_decode(raw).strip()
+    for pattern in _RM_REMOTE:
+        match = pattern.fullmatch(url)
+        if match:
+            try:
+                return {"remote": remote, "full_name": _rm_full_name(match.group(1) + "/" + match.group(2)), "reason": None}
+            except ValueError:
+                break
+    return {"remote": remote, "full_name": None, "reason": "not_github"}
+
+
+def local_position(root="."):
+    """Where am I: cwd, Git top level, checkout HEAD, change counts, GitHub remote.
+
+    Local only (no network). Only an explicit Git answer becomes an absence:
+    not_a_checkout (exit 128 and no .git above cwd) or no_commit (HEAD does not
+    verify). Anything else (no git executable, permissions, a broken .git,
+    output bounds) is git_error with a short detail, never an absence.
+    """
+    cwd = os.path.abspath(os.fspath(root))
+    base = {"schema": "gh-identity-local-position/1", "cwd": cwd}
+    def failed(error):
+        return {**base, "git": None, "reason": "git_error", "detail": str(error)}
+    try:
+        raw, _, code = _git_run(root, ["rev-parse", "--show-toplevel"], max_bytes=64 * 1024, ok=(0, 128))
+        if code == 128:
+            here = Path(cwd)
+            if any((folder / ".git").exists() for folder in (here, *here.parents)):
+                return failed("rev-parse failed inside a .git tree")
+            return {**base, "git": None, "reason": "not_a_checkout"}
+        top = _git_decode(raw).strip()
+        if _git_run(root, ["rev-parse", "--verify", "-q", "HEAD^{commit}"], max_bytes=4096, ok=(0, 1))[2] == 1:
+            return {**base, "git": None, "reason": "no_commit"}
+        head = checkout_head(root)
+        status = git_status(root)
+        remote = remote_repository(root)
+    except (GitInspectionError, ValueError) as error:
+        return failed(error)
+    kinds = Counter()
+    for record in status["records"]:
+        if record["kind"] == "?":
+            kinds["untracked"] += 1
+        elif record["kind"] in ("1", "2", "u"):
+            xy = record["record"].split(" ", 2)[1]
+            kinds["staged"] += xy[0] != "."
+            kinds["unstaged"] += xy[1] != "."
+    return {**base,
+            "git": {"top_level": top, "relative": os.path.relpath(cwd, top), "head": head,
+                    "changes": {k: kinds.get(k, 0) for k in ("staged", "unstaged", "untracked")},
+                    "changes_truncated": status["truncated"], "remote": remote}}
+
+
+def repository_metadata(root=".", *, repository, source_sha=None, expected_sha=None, generated_at=None):
+    """Minimal public record: repository, checkout HEAD, optional source commit.
+
+    source_sha is the caller-stated origin of the change (for example a PR head)
+    and is reported separately; it never replaces the checkout HEAD.
+    """
+    head = checkout_head(root)
+    if expected_sha is not None and head["sha"] != _rm_sha(expected_sha, "expected_sha"):
+        raise ValueError("checkout HEAD does not match expected_sha")
+    record = {"schema_version": REPOSITORY_METADATA_SCHEMA,
+              "repository": {"full_name": _rm_full_name(repository)},
+              "head": head,
+              "source": {"sha": _rm_sha(source_sha, "source_sha") if source_sha else None},
+              "generated_at": _rm_time(generated_at or now().replace("+00:00", "Z"), "generated_at")}
+    return record
+
+
+def tool_versions(commands=(), *, include_python=False, timeout=5.0):
+    """Explicitly requested, allowlisted tool versions; missing tools are omitted."""
+    if isinstance(commands, (str, bytes)):
+        raise TypeError("commands must be a sequence of command names")
+    unknown = [command for command in commands if command not in _RM_TOOL_ARGS]
+    if unknown:
+        raise ValueError("unsupported tooling command: " + ", ".join(map(str, unknown)))
+    observed = {}
+    if include_python:
+        import platform
+        match = _RM_TOOL_PATTERNS["python"].fullmatch(platform.python_version())
+        if match:
+            observed["python"] = match.group("v")
+    for command in commands:
+        executable = shutil.which(command)
+        if not executable:
+            continue
+        try:
+            result = subprocess.run([executable, _RM_TOOL_ARGS[command]], capture_output=True, text=True,
+                                    encoding="utf-8", errors="replace", timeout=timeout, check=False)
+        except (OSError, subprocess.SubprocessError):
+            continue
+        text = (result.stdout.strip() or result.stderr.strip()) if result.returncode == 0 else ""
+        first = next((line.strip() for line in text.splitlines() if line.strip()), "")
+        match = _RM_TOOL_PATTERNS[command].fullmatch(first)
+        if match and len(match.group("v")) <= 32:
+            observed[command] = match.group("v")
+    return observed
+
+
+def validate_repository_metadata_v1(record):
+    """The Ironmate repository-metadata v1 contract, field for field."""
+    if not isinstance(record, dict) or set(record) != {"schema_version", "repository", "head", "measurements", "tooling", "generated_at"}:
+        raise ValueError("unexpected or missing top-level fields")
+    if record["schema_version"] != REPOSITORY_METADATA_V1_SCHEMA:
+        raise ValueError("unsupported schema_version")
+    head = record["head"]
+    if not isinstance(head, dict) or set(head) != {"sha", "short_sha", "branch", "timestamp", "subject"}:
+        raise ValueError("invalid head")
+    if not isinstance(head["sha"], str) or not _RM_SHA.fullmatch(head["sha"]):
+        raise ValueError("sha must be lowercase full hex")
+    if head["short_sha"] != head["sha"][:8]:
+        raise ValueError("short_sha must be the first 8 characters of sha")
+    if not head["branch"] or not head["subject"]:
+        raise ValueError("branch and subject are required")
+    _rm_time(head["timestamp"], "timestamp")
+    _rm_time(record["generated_at"], "generated_at")
+    if not isinstance(record["repository"], dict) or set(record["repository"]) != {"full_name"}:
+        raise ValueError("invalid repository")
+    _rm_full_name(record["repository"]["full_name"])
+    sizes = record["measurements"]
+    if not isinstance(sizes, dict) or set(sizes) != set(_RM_MEASUREMENTS) or any(
+            value is not None and (type(value) is not int or value < 0) for value in sizes.values()):
+        raise ValueError("measurements must be non-negative integers or null")
+    tooling = record["tooling"]
+    if not isinstance(tooling, dict) or any(
+            not isinstance(k, str) or not _RM_TOOL_NAME.fullmatch(k) or
+            not isinstance(v, str) or not _RM_TOOL_VALUE.fullmatch(v) for k, v in tooling.items()):
+        raise ValueError("tooling values must be short version labels")
+    return record
+
+
+def repository_metadata_v1(root=".", *, repository, env=None, expected_sha=None, generated_at=None,
+                           tooling=None, measurements=None):
+    """Compatibility adapter producing the existing schema v1 record.
+
+    Branch keeps v1's label rule: GITHUB_HEAD_REF, then GITHUB_REF_NAME, then
+    the checkout branch, else "detached". The SHA is always the checkout HEAD.
+    """
+    env = os.environ if env is None else env
+    record = repository_metadata(root, repository=repository, expected_sha=expected_sha, generated_at=generated_at)
+    head = record["head"]
+    branch = ((env.get("GITHUB_HEAD_REF") or "").strip() or (env.get("GITHUB_REF_NAME") or "").strip()
+              or head["branch"] or "detached")
+    sizes = dict.fromkeys(_RM_MEASUREMENTS)
+    extra = set(measurements or {}) - set(_RM_MEASUREMENTS)
+    if extra:
+        raise ValueError("unknown measurements: " + ", ".join(sorted(extra)))
+    sizes.update(measurements or {})
+    return validate_repository_metadata_v1({
+        "schema_version": REPOSITORY_METADATA_V1_SCHEMA,
+        "repository": record["repository"],
+        "head": {"sha": head["sha"], "short_sha": head["sha"][:8], "branch": branch,
+                 "timestamp": head["timestamp"], "subject": head["subject"]},
+        "measurements": sizes, "tooling": dict(tooling or {}),
+        "generated_at": record["generated_at"]})
+
+
+def write_repository_metadata(record, output_dir):
+    """repository-metadata.json (pretty) and .jsonl (one line), sorted keys."""
+    if record.get("schema_version") == REPOSITORY_METADATA_V1_SCHEMA:
+        validate_repository_metadata_v1(record)
+    output = Path(output_dir)
+    output.mkdir(parents=True, exist_ok=True)
+    pretty = json.dumps(record, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
+    line = json.dumps(record, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n"
+    (output / "repository-metadata.json").write_text(pretty, encoding="utf-8")
+    (output / "repository-metadata.jsonl").write_text(line, encoding="utf-8")
+    return {"json": "repository-metadata.json", "jsonl": "repository-metadata.jsonl"}
+
 
 def _main(argv=None):
  argv=list(sys.argv[1:] if argv is None else argv)
@@ -2191,6 +2589,8 @@ def _main(argv=None):
   if command=="git-grep":x.add_argument("pattern")
   if command=="git-ignore":x.add_argument("paths",nargs="+")
  x=s.add_parser("git-switch");x.add_argument("--root",default=".");x.add_argument("branch",nargs="?",help='existing branch, or "-" for the previous branch');x.add_argument("-c","--create",metavar="NEW_BRANCH");x.add_argument("--write",action="store_true")
+ x=s.add_parser("local-position",help="cwd, Git top level, checkout HEAD, change counts, GitHub remote (local only)");x.add_argument("--root",default=".")
+ x=s.add_parser("repo-metadata",help="checkout repository metadata (v2 minimal, or v1 compatibility)");x.add_argument("--root",default=".");x.add_argument("--repository",default=os.environ.get("GITHUB_REPOSITORY"));x.add_argument("--format",choices=("v2","v1"),default="v2");x.add_argument("--source-sha");x.add_argument("--expected-sha");x.add_argument("--generated-at");x.add_argument("--tool",action="append",default=[],metavar="NAME",help="v1 only: observe an allowlisted tool version (python, git, gh, node, npm, npx)");x.add_argument("--output-dir")
  x=s.add_parser("repo");x.add_argument("repo")
  x=s.add_parser("tree");x.add_argument("repo");x.add_argument("--ref",default="main")
  depth_args=x.add_mutually_exclusive_group();depth_args.add_argument("--depth",type=int,default=1);depth_args.add_argument("--recursive",action="store_true")
@@ -2213,7 +2613,9 @@ def _main(argv=None):
  x=s.add_parser("artifacts");x.add_argument("repo");x.add_argument("run_id",type=int)
  x=s.add_parser("artifact-file");x.add_argument("repo");x.add_argument("artifact_id",type=int);x.add_argument("member");x.add_argument("--file-bytes",type=int,default=10_000_000)
  x=s.add_parser("checks");x.add_argument("repo");x.add_argument("sha");x.add_argument("--min-checks",type=int,default=1)
+ x=s.add_parser("wait-checks",help="poll check-runs on a SHA until green/failed; progress on stderr");x.add_argument("repo");x.add_argument("sha");x.add_argument("--min-checks",type=int,default=1);x.add_argument("--interval",type=float,default=60);x.add_argument("--wait-timeout",type=float,default=900);x.add_argument("--ignore-check",action="append",default=[],metavar="NAME");x.add_argument("--poll-timeout",type=float,default=30,help=argparse.SUPPRESS)
  x=s.add_parser("observe-pr");x.add_argument("repo");x.add_argument("number",type=int);x.add_argument("--min-checks",type=int,default=1)
+ x=s.add_parser("pr-status",help="compact status of PRs/Issues: OWNER/REPO N [N...] or OWNER/REPO#N ...");x.add_argument("targets",nargs="+",metavar="OWNER/REPO|N|OWNER/REPO#N");x.add_argument("--last",type=int,default=3);x.add_argument("--exclude-event",action="append",default=None,metavar="EVENT");x.add_argument("--text",action="store_true",help="human-readable lines instead of JSON")
  x=s.add_parser("workflow");x.add_argument("repo");x.add_argument("workflow_id")
  x=s.add_parser("run");x.add_argument("repo");x.add_argument("run_id",type=int);x.add_argument("--attempt",type=int)
  x=s.add_parser("jobs");x.add_argument("repo");x.add_argument("run_id",type=int);x.add_argument("--attempt",type=int)
@@ -2241,6 +2643,16 @@ def _main(argv=None):
    elif ns.branch=="-":o=git_switch(ns.root,previous=True,write=ns.write)
    elif ns.branch:o=git_switch(ns.root,ns.branch,write=ns.write)
    else:raise ValueError("branch required")
+  elif ns.cmd=="local-position":o=local_position(ns.root)
+  elif ns.cmd=="repo-metadata":
+   if not ns.repository:raise ValueError("--repository or GITHUB_REPOSITORY required")
+   if ns.format=="v1":
+    o=repository_metadata_v1(ns.root,repository=ns.repository,expected_sha=ns.expected_sha,generated_at=ns.generated_at,
+                             tooling=tool_versions([t for t in ns.tool if t!="python"],include_python="python" in ns.tool))
+   else:
+    if ns.tool:raise ValueError("--tool applies to --format v1 only")
+    o=repository_metadata(ns.root,repository=ns.repository,source_sha=ns.source_sha,expected_sha=ns.expected_sha,generated_at=ns.generated_at)
+   if ns.output_dir:write_repository_metadata(o,ns.output_dir)
   elif ns.cmd=="repo":o=repository(ns.repo,transport=transport)
   elif ns.cmd=="tree":o=tree(ns.repo,ns.ref,depth=None if ns.recursive else ns.depth,exclude_dirs=ns.exclude_dir,exclude_files=ns.exclude_file,transport=transport)
   elif ns.cmd=="repos":o=repositories(ns.owner,transport=transport)
@@ -2267,7 +2679,9 @@ def _main(argv=None):
   elif ns.cmd=="artifacts":o=artifacts(ns.repo,ns.run_id,transport=transport)
   elif ns.cmd=="artifact-file":o=artifact_file(ns.repo,ns.artifact_id,ns.member,max_bytes=ns.file_bytes,transport=transport)
   elif ns.cmd=="checks":o=checks_for_sha(ns.repo,ns.sha,ns.min_checks,transport)
+  elif ns.cmd=="wait-checks":o=wait_checks(ns.repo,ns.sha,min_checks=ns.min_checks,interval=ns.interval,wait_timeout=ns.wait_timeout,ignore=ns.ignore_check,transport=transport,timeout=ns.poll_timeout,progress=lambda line:print(line,file=sys.stderr,flush=True))
   elif ns.cmd=="observe-pr":o=observe_pr(ns.repo,ns.number,ns.min_checks,transport)
+  elif ns.cmd=="pr-status":o=status_many(ns.targets,last=ns.last,exclude_events=tuple(ns.exclude_event) if ns.exclude_event is not None else ("dynamic",),transport=transport)
   elif ns.cmd=="workflow":o=workflow(ns.repo,ns.workflow_id,transport=transport)
   elif ns.cmd=="run":o=run(ns.repo,ns.run_id,attempt=ns.attempt,transport=transport)
   elif ns.cmd=="jobs":o=jobs(ns.repo,ns.run_id,attempt=ns.attempt,transport=transport)
@@ -2279,10 +2693,11 @@ def _main(argv=None):
    marker=f"<!-- gh-identity:{ns.operation_key} -->" if ns.operation_key else None
    o=post_comment(ns.repo,ns.number,ns.body,ns.write,marker,transport,sanitize_mentions=ns.sanitize_mentions)
  except (ValueError,Error,OSError,GitInspectionError) as e:print(json.dumps({"status":"error","error":getattr(e,"code","git_inspection_failed" if isinstance(e,GitInspectionError) else "invalid_argument")}),file=sys.stderr);return 2
- print(json.dumps(o,ensure_ascii=False))
+ if ns.cmd=="pr-status" and ns.text:print(render_status(o))
+ else:print(json.dumps(o,ensure_ascii=False))
  if ns.cmd in ("job-log","inline-comments","review-threads","review-observations"):return 0 if o["complete"] else 1
  # Gate-style exit codes: 0 only when everything observed is complete and green.
- if ns.cmd in ("checks","head-runs"):return 0 if o["state"]=="green" else 1
+ if ns.cmd in ("checks","head-runs","wait-checks"):return 0 if o["state"]=="green" else 1
  if ns.cmd in ("artifacts","artifact-file"):return 0 if o["complete"] else 1
  if ns.cmd=="observe-pr":return 0 if o["checks"]["state"]=="green" and not o["stale"] else 1
  if ns.cmd in ("comment","variable-set","git-switch"):
@@ -2297,6 +2712,10 @@ def main(argv=None):
     index=args.index(flag)
     if index+1>=len(args):raise ValueError("missing limit")
     limits[key]=convert(args[index+1]);del args[index:index+2]
+  # wait-checks spans many bounded polls; --timeout then bounds each poll.
+  if args[:1]==["wait-checks"]:
+   if set(limits)-{"timeout"}:raise ValueError("wait-checks accepts --timeout only (per poll)")
+   return _main(args+(["--poll-timeout",str(limits["timeout"])] if "timeout" in limits else []))
   with operation(**limits):return _main(args)
  except (ValueError,Error,GitInspectionError) as e:
   print(json.dumps({"status":"error","error":getattr(e,"code","git_inspection_failed" if isinstance(e,GitInspectionError) else "invalid_argument")}),file=sys.stderr)
