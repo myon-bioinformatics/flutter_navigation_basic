@@ -11,7 +11,6 @@ VENDOR = ROOT / "tool/python/vendor"
 MODULES = (
     "yourself.py",
     "xprobe.py",
-    "git_inspector.py",
     "gh_ops.py",
     "check_evidence.py",
     "check_png.py",

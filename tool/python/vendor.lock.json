@@ -74,15 +74,6 @@
       "sha256": "b02c4880336c3fce5427b818bfe19175c13f0acb8bf1204c6208ac85bb20f730"
     },
     {
-      "repository": "myon-bioinformatics/myon-bioinformatics",
-      "ref": "refs/heads/main",
-      "commit": "a0ac5902b29b13a3b9c903526bf2fee21a3042b3",
-      "source": "git_inspector.py",
-      "destination": "tool/python/vendor/git_inspector.py",
-      "blob_sha": "9f6d88101688e2578a3ca45e7eaf7c805fe6f1bd",
-      "sha256": "7b960e0851b23ca7ca64d8f917dd8e56aa0509ca6332d191309a7895cf382641"
-    },
-    {
       "repository": "myon-bioinformatics/cli_args",
       "ref": "refs/heads/main",
       "commit": "d849c17f5e7c18037e2ab2c04bc71eee3e22cd35",
@@ -115,15 +106,6 @@
       "commit": "de5bd0f5d81721bb54f0fbb8747d2f6b56d6b720",
       "source": "LICENSE",
       "destination": "tool/python/vendor/browser-test-kit-LICENSE",
-      "blob_sha": "4ec4989b801bf1a3df6184d21f79e6e7ed5931f6",
-      "sha256": "15f66204c4a6a1ce0c94f0ed4319ff9400f872e85fd32c95f21695c2f231af59"
-    },
-    {
-      "repository": "myon-bioinformatics/myon-bioinformatics",
-      "ref": "refs/heads/main",
-      "commit": "a0ac5902b29b13a3b9c903526bf2fee21a3042b3",
-      "source": "LICENSE",
-      "destination": "tool/python/vendor/myon-bioinformatics-LICENSE",
       "blob_sha": "4ec4989b801bf1a3df6184d21f79e6e7ed5931f6",
       "sha256": "15f66204c4a6a1ce0c94f0ed4319ff9400f872e85fd32c95f21695c2f231af59"
     },
