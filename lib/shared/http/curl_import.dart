@@ -25,7 +25,9 @@ Future<CurlImportResult> importCurlText(
   Future<String> Function(String)? transport,
 }) async {
   if (!usePythonCurlRuntime) return legacy.importLegacyCurl(raw, newId: newId);
-  return importPythonCurl(raw, newId: newId, transport: transport);
+  final result = await importPythonCurl(raw, newId: newId, transport: transport);
+  // MUTATION (do not merge): silent fallback the contract must catch.
+  return result.isOk ? result : legacy.importLegacyCurl(raw, newId: newId);
 }
 
 /// Transfer/shape boundary only: no curl lexing or request processing in Dart.
