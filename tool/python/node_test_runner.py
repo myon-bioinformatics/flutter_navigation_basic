@@ -85,9 +85,12 @@ def run_node(*, root: Path, files: list[str], report: Path,
     # Node owns JavaScript regex semantics, including describe ancestors and
     # /pattern/flags. No-match produces synthetic file-level JUnit cases.
     # Do not re-evaluate the regex in Python.
-    file_names = {name for file in files for name in
-                  (file, str((root / file).resolve()))}
-    if name_pattern is not None and all(name in file_names for name in summary["names"]):
+    # Node normalizes paths in synthetic file-level cases (e.g. "./x" -> "x").
+    # Normalize both sides instead of comparing the raw CLI spelling.
+    file_names = {(root / name).resolve() for name in files}
+    if name_pattern is not None and all(
+        (root / name).resolve() in file_names for name in summary["names"]
+    ):
         print("node runner: no selected tests (only file-level JUnit cases)", file=sys.stderr)
         return code if code != 0 else 1
     summary.update({"runner": "node", "exit_code": code,
