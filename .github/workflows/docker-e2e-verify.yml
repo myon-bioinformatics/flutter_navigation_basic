@@ -1,4 +1,4 @@
-name: Docker E2E verify
+name: Docker E2E snapshot generation (manual)
 
 # Manual-only proof that Dockerfile.e2e actually builds and runs a real
 # Chromium against the Flutter web build (GPT's blocking review comment on
@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   docker-e2e:
-    name: Build and run Dockerfile.e2e (snapshot --update)
+    name: Generate Docker E2E snapshot baselines
     runs-on: ubuntu-latest
 
     steps:
