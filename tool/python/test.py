@@ -99,7 +99,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("-x", "--exitfirst", action="store_true",
                         help="Pass -x to pytest: stop after the first failure (Node unaffected)")
     parser.add_argument("--print-message", action="append", default=[], metavar="TEXT",
-                        help="Print literal agent/CI message (repeatable; never evaluate code)")
+                        help="Print literal agent/CI message (repeatable; alone runs no tests; never evaluate code)")
     parser.add_argument("--node", action="store_true",
                         help="Run Node's native tests with JUnit evidence")
     parser.add_argument("--node-test-file", action="append", default=None,
