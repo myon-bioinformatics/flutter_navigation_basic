@@ -144,7 +144,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--test-history", type=Path,
                         default=Path("build/test-results/test-attempts.json"),
                         help="JSON record of initial and retry attempts")
-    parser.add_argument("--test-timeout", type=int, default=300,
+    parser.add_argument("--failure-ledger", type=Path,\n                        help="Optional bounded cross-run failure fingerprint ledger")\n    parser.add_argument("--test-timeout", type=int, default=300,
                         help="Per-attempt subprocess timeout in seconds")
     parser.add_argument("--retry-failed", action="store_true",
                         help="Retry selected files once after failure; preserve original failure")
@@ -267,7 +267,7 @@ def main(argv: list[str] | None = None) -> int:
             code = run_node_retries(
                 root=ROOT, files=files, report=ROOT / args.node_report,
                 history=ROOT / args.test_history, name_pattern=args.node_name_pattern,
-                timeout=args.node_timeout, retry_failed=True)
+                timeout=args.node_timeout, retry_failed=True,\n                ledger=ROOT / args.failure_ledger if args.failure_ledger else None)
         else:
             code = _run_node_tests(args)
         if code != 0:
