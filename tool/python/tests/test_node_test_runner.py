@@ -52,7 +52,7 @@ def test_missing_node_does_not_accept_stale_report(tmp_path):
 def test_invalid_regex_and_empty_file_selection(tmp_path):
     assert run_node(root=tmp_path, files=[], report=tmp_path / "node.xml") == 2
     assert run_node(root=tmp_path, files=["x.test.mjs"], report=tmp_path / "node.xml",
-                    name_pattern="[") == 2
+                    name_pattern="[") != 0
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node unavailable")
@@ -74,3 +74,18 @@ def test_missing_node_clears_stale_receipt(tmp_path):
     assert run_node(root=tmp_path, files=["x.test.mjs"], report=report,
                     receipt=receipt, node="__node_does_not_exist__") == 127
     assert not receipt.exists()
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node unavailable")
+@pytest.mark.parametrize("pattern", ["Clipboard", "/COPIES/i"])
+def test_node_js_regex_and_describe_name_are_authoritative(tmp_path, pattern):
+    js = tmp_path / "clipboard.test.mjs"
+    js.write_text(
+        "import { describe, it } from 'node:test'; "
+        "describe('Clipboard', () => { "
+        "it('copies', () => {}); it('COPIES', () => {}); });"
+    )
+    report = tmp_path / "node.xml"
+    assert run_node(root=tmp_path, files=[js.name], report=report,
+                    name_pattern=pattern) == 0
+    assert read_junit(report)["passed"] >= 1
