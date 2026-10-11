@@ -96,7 +96,10 @@ def run(req):
         groups = [{"m", "km", "cm"}, {"kg", "g"}]
         if unit_from not in factors or unit_to not in factors or not any({unit_from, unit_to} <= g for g in groups):
             raise ValueError("incompatible units")
-        return {"value": value * factors[unit_from] / factors[unit_to]}
+        result = value * factors[unit_from] / factors[unit_to]
+        if not math.isfinite(result):
+            raise ValueError("unit conversion overflow")
+        return {"value": result}
     if op == "encoding":
         if not isinstance(value, str):
             raise ValueError("encoding expects string")
