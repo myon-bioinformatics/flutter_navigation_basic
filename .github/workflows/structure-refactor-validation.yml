@@ -95,6 +95,13 @@ jobs:
             --head-sha "${{ github.event.pull_request.head.sha || github.sha }}" \\
             --run-id "${{ github.run_id }}" \\
             --receipt build/test-results/route-verification.json
+      - name: Export route-verified responsibility inventory
+        if: always()
+        run: |
+          python3 -S tool/python/pattern_responsibility_audit.py --json --check \
+            --route-verification build/test-results/route-verification.json \
+            > build/test-results/pattern-responsibility-verified.json
+
       - name: Commit-pinned validation link widget tests
         if: always()
         run: |
@@ -121,6 +128,7 @@ jobs:
             build/test-results/flutter-pinned-events.jsonl
             build/test-results/route-observations.json
             build/test-results/route-verification.json
+            build/test-results/pattern-responsibility-verified.json
             build/test-results/flutter-events.jsonl
           if-no-files-found: error
       - name: Analyze Flutter source
