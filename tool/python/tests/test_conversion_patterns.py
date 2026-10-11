@@ -107,16 +107,19 @@ def test_unit_conversion_rejects_integers_too_large_for_float():
     ({"operation":"encoding","mode":"utf8_to_base64","value":"\ud800"}, "invalid utf8 input"),
     ({"operation":"coerce","target":"int","value":"0x10"}, "invalid integer"),
     ({"operation":"coerce","target":"int","value":"9" * 5000}, "invalid integer"),               # CPython digit cap
-    ({"operation":"date","source":"iso","value":"2100-02-29"}, None),
-    ({"operation":"date","source":"iso","value":"0000-01-01"}, None),
+    ({"operation":"date","source":"iso","value":"2100-02-29"}, "invalid iso date"),
+    ({"operation":"date","source":"iso","value":"0000-01-01"}, "invalid iso date"),
+    ({"operation":"date","source":"iso","value":"2024-13-01"}, "invalid iso date"),
+    ({"operation":"date","source":"compact","value":"21000229"}, "invalid compact date"),
+    ({"operation":"date","source":"compact","value":"00000101"}, "invalid compact date"),
+    ({"operation":"date","source":"compact","value":"20241301"}, "invalid compact date"),
     ({"operation":"unit","from":"km","to":"cm","value":-1e306}, "unit conversion overflow"),
     ({"operation":"unit","from":"cm","to":"km","value":5e-324}, "unit conversion underflow"),
 ])
 def test_boundaries_fail_closed_with_stable_messages(payload, message):
     with pytest.raises(ValueError) as error:
         m.run(payload)
-    if message:
-        assert str(error.value) == message
+    assert str(error.value) == message
 
 
 @pytest.mark.parametrize(("payload", "expected"), [
@@ -130,3 +133,10 @@ def test_boundaries_fail_closed_with_stable_messages(payload, message):
 ])
 def test_boundaries_that_are_accepted(payload, expected):
     assert m.run(payload) == {"value": expected}
+
+
+def test_cli_reports_malformed_json_with_a_fixed_message(monkeypatch, capsys):
+    import io
+    monkeypatch.setattr(m.sys, "stdin", io.StringIO("{bad"))
+    assert m.main() == 2
+    assert capsys.readouterr().err.strip() == "invalid conversion request: invalid json"

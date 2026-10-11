@@ -16,12 +16,12 @@
 
 ## 入力契約の要点
 
-- 104 float: ASCII の10進・指数表記のみ（`1_000`、前後の空白、ASCII 以外の数字は拒否）。bool は `true`/`false`/`"1"`/`"0"`/整数 0・1 のみ。
+- 104 float: ASCII の10進・指数表記のみ（`1_000`、前後の空白、ASCII 以外の数字は拒否）。`1e-400` のように 0 にアンダーフローする値は拒否せず `0.0` を返す（拒否は 107 unit のみ）。bool は `true`/`false`/`"1"`/`"0"`/整数 0・1 のみ。
 - 105 date: `iso` は `YYYY-MM-DD` のみ（週日付・`YYYYMMDD` は `compact` を使う）。`compact` 出力は年を常に4桁にする。
-- 107 unit: 結果が inf になる場合と、0 でない入力が 0 にアンダーフローする場合は拒否する。
+- 107 unit: 結果が inf になる場合と、0 でない入力が 0 にアンダーフローする場合は拒否する。非正規化数（例: `1e-320` g→kg）は精度が落ちても受理する。
 - 110 mask: 値の長さが `keep_last` 以下なら全文字を伏せる（末尾を見せても全体が露出しないように）。
   数え方は**コードポイント単位**（結合文字・絵文字の ZWJ 列は途中で切れうる）。`*` の数で**元の長さは分かる**。
-- エラーは固定の文言（例: `invalid integer`、`invalid utf8 input`）で返し、CPython や codec のメッセージは出さない。
+- エラーは固定の文言（例: `invalid integer`、`invalid utf8 input`、`invalid iso date`、`invalid compact date`、CLI の `invalid json`）で返し、CPython や codec のメッセージは出さない。
 
 ## 完成度
 

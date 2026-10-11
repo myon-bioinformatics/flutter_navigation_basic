@@ -75,11 +75,17 @@ def run(req):
             # fromisoformat also takes week dates and YYYYMMDD; keep YYYY-MM-DD.
             if not _ISO_DATE.fullmatch(value):
                 raise ValueError("invalid iso date")
-            parsed = date.fromisoformat(value)
+            try:  # e.g. 2100-02-29 or year 0: keep our own message
+                parsed = date.fromisoformat(value)
+            except ValueError as exc:
+                raise ValueError("invalid iso date") from exc
         elif source == "compact":
             if not re.fullmatch(r"[0-9]{8}", value):
                 raise ValueError("invalid compact date")
-            parsed = date(int(value[:4]), int(value[4:6]), int(value[6:]))
+            try:
+                parsed = date(int(value[:4]), int(value[4:6]), int(value[6:]))
+            except ValueError as exc:
+                raise ValueError("invalid compact date") from exc
         else:
             raise ValueError("unsupported date format")
         target = req.get("target", "iso")
@@ -146,7 +152,11 @@ def main():
         raw = sys.stdin.read(1_000_001)
         if len(raw) > 1_000_000:
             raise ValueError("input too large")
-        print(json.dumps(run(json.loads(raw)), ensure_ascii=False, allow_nan=False))
+        try:
+            request = json.loads(raw)
+        except ValueError as exc:  # JSONDecodeError text names parser internals
+            raise ValueError("invalid json") from exc
+        print(json.dumps(run(request), ensure_ascii=False, allow_nan=False))
     except (ValueError, TypeError, OverflowError) as exc:
         print(f"invalid conversion request: {exc}", file=sys.stderr)
         return 2
