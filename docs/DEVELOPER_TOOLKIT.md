@@ -218,7 +218,7 @@ See [`MULTIPLATFORM_RUNTIME_OWNERSHIP.md`](./MULTIPLATFORM_RUNTIME_OWNERSHIP.md)
 JSON/JSONL using `tool/python/generate_repository_metadata.py`, then reads that
 record into the existing Flutter build diagnostics. Python 3 and Git are required
 for generation. The producer is the vendored `tool/python/vendor/gh_identity.py`
-(`repository_metadata_v1`, gh_identity #34), pinned with Git blob ID and SHA-256 in
+(`repository_metadata_v1`, gh_identity #34 and #35), pinned with Git blob ID and SHA-256 in
 `tool/python/vendor.lock.json`. Its output is byte-for-byte the former Ironmate
 `73157cb7` schema v1 record apart from `generated_at`; the two Ironmate files stay
 vendored until the switch is green on CI and are removed in a follow-up.

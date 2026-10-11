@@ -205,3 +205,29 @@ def test_http_editor_does_not_depend_directly_on_legacy_curl_parser():
     assert "CurlSafeSubset" not in page
     assert "RequestDraftCodec.toCurl(" in page
     assert not (ROOT / "lib/shared/http/curl_export.dart").exists()
+
+
+# Differential check while the former Ironmate producer is still vendored:
+# the gh_identity adapter must produce the same record and the same bytes.
+import repository_metadata_generator as ironmate
+
+
+@pytest.mark.parametrize("env", [{}, {"GITHUB_HEAD_REF": "feature/x", "GITHUB_REF_NAME": "1/merge"},
+                                 {"GITHUB_REF_NAME": "main"}])
+def test_gh_identity_v1_matches_ironmate_record_and_bytes(checkout, tmp_path, env):
+    tooling = {"python": "3.12.1.post1", "git": "2.45.0"}
+    old = ironmate.record_from_checkout(checkout, "example/repo", env=env, tooling=tooling)
+    new = ghi.repository_metadata_v1(checkout, repository="example/repo", env=env, tooling=tooling,
+                                     generated_at=old["generated_at"])
+    assert new == old
+    ironmate.write_metadata(old, tmp_path / "old")
+    ghi.write_repository_metadata(new, tmp_path / "new")
+    for name in ("repository-metadata.json", "repository-metadata.jsonl"):
+        assert (tmp_path / "new" / name).read_bytes() == (tmp_path / "old" / name).read_bytes()
+
+
+@pytest.mark.parametrize("version", ["3.12.3", "3.14.0rc1", "3.12.1.post1", "3.13.0.dev2",
+                                     "3.12.1+local.1", "not-a-version"])
+def test_python_tooling_label_matches_ironmate(monkeypatch, version):
+    monkeypatch.setattr("platform.python_version", lambda: version)
+    assert ghi.tool_versions(include_python=True) == ironmate.collect_portable_tooling(include_python=True)
