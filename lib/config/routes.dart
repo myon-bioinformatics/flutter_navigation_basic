@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/navigation/app_route_registry.dart';
 import '../core/data_processing/native_parallel_pattern_example.dart';
+import '../core/data_processing/validation_pattern_links.dart';
 import '../core/data_processing/interactive_pattern_example.dart';
 import '../core/navigation/route_names.dart';
 import '../screens/generic_screen.dart';
@@ -62,6 +63,14 @@ class AppRoutes {
               map[screenRoute(patternId)]!;
         }
       }
+    }
+
+    // Static-hosted validation screens point to the Python source and tests.
+    // They do not claim that GitHub Pages can run the Python HTTP server.
+    for (var id = 91; id <= 99; id++) {
+      final patternId = id;
+      map[screenRoute(patternId)] =
+          (_) => ValidationPatternLinks(patternId: patternId);
     }
 
     for (final id in [136, 137]) {
