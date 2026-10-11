@@ -60,3 +60,18 @@ Raw failure messages are never copied into the ledger. The per-run history
 is still replaced for each invocation, while the optional ledger accumulates.
 This is an exact-message fingerprint, not a semantic root-cause classifier;
 changing line numbers or timestamps can create different patterns.
+
+## Real-browser CI proof (Node Playwright)
+
+The Non-Dart `Playwright install smoke` job installs Chromium, Firefox and
+WebKit and executes `e2e/tests/runner_adapter_smoke.spec.ts` through
+`python3 tool/python/test.py --external-runner playwright-node`.
+The spec clicks a real browser button and waits for a timer-driven DOM update.
+The same Playwright config also covers mobile browser emulation; this is not
+physical Android/iOS evidence. The job uploads native JUnit and the attempt
+history, and validates the JUnit schema.
+
+**Deno is a separate JavaScript/TypeScript runtime, not a browser engine.**
+The Deno adapter executes `deno test`; browser interaction still requires a
+browser automation library such as Playwright. The adapter is not claimed
+browser-tested simply because Node Playwright succeeds.
