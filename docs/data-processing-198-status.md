@@ -53,6 +53,8 @@ python3 -S tool/python/render_pattern_status.py pattern-responsibility.json patt
   `native_flutter_example` は「アプリから到達しない Flutter の例」であり、route の行き先は `generic_catalogue`。
   旧 View を削除して数が変わっても、機能の増減ではなく未到達コードの整理である。
 - 共通 Widget に route が実証されたパターンは `view.dart` を必須にしない（`shared_widget_route`）。
+- この基準で、共通 Widget に route が実証された 22 件（091-099、103-105・107・109・110、171-175・183・184）の
+  旧 `view.dart` を削除した（本番 Dart −22）。route の行き先は変わらないため、機能の増減はない。
 
 ## 分類の読み方
 

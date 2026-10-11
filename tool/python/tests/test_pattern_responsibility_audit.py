@@ -139,11 +139,11 @@ def test_pattern_in_wrong_bucket_is_rejected():
         assert any("100: duplicate or misplaced" in error for error in result["errors"])
 
 
-def test_seven_shared_gesture_views_are_not_description_only():
+def test_seven_shared_gesture_routes_need_no_legacy_view():
     for number in sorted(audit.GESTURES):
         row = audit.inspect(ROOT, number)
         assert row["status"] == "native_flutter_shared_interaction", row
-        assert row["dart_files"] == ["view.dart"]
+        assert (row["dart_files"], row["legacy_view"]) == ([], "absent")
         assert not row["stale_readme"]
         assert not any("E2E-only" in warning for warning in row["warnings"])
 
@@ -285,3 +285,12 @@ def test_receipt_must_cover_all_198_routes(tmp_path):
                     encoding="utf-8")
     with pytest.raises(ValueError, match="198 routes"):
         audit.verify_receipt(ROOT, path, "a" * 40, "123")
+
+
+def test_routes_proven_shared_have_no_legacy_view_left():
+    """Views behind a shared route were unreachable; keep them deleted."""
+    rows = {r["id"]: r for r in audit.audit(ROOT)["patterns"]}
+    shared = sorted(n for n, r in rows.items() if r["reachability"] == "shared")
+    assert len(shared) == 24
+    left = [n for n in shared if rows[n]["legacy_view"] != "absent" and n not in (136, 137)]
+    assert left == []
