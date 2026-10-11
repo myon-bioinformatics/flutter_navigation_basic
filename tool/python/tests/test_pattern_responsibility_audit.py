@@ -223,3 +223,24 @@ def test_real_repository_reachability_is_complete():
     assert sum(summary["reachability"].values()) == 198
     assert "unknown" not in summary["reachability"]
     assert "unknown" not in summary["provisions"]
+
+
+def test_cli_rejects_route_receipt_without_external_identity(tmp_path):
+    receipt = tmp_path / "receipt.json"
+    receipt.write_text(json.dumps({
+        "schema": "route-verification/1", "head_sha": "a" * 40,
+        "run_id": "123", "routes": 198, "result": "success"
+    }), encoding="utf-8")
+    assert audit.main(["--root", str(ROOT), "--route-verification", str(receipt),
+                       "--json"]) == 2
+
+
+@pytest.mark.parametrize(("head", "run"), [("b" * 40, "123"), ("a" * 40, "999")])
+def test_cli_rejects_route_receipt_for_other_head_or_run(tmp_path, head, run):
+    receipt = tmp_path / "receipt.json"
+    receipt.write_text(json.dumps({
+        "schema": "route-verification/1", "head_sha": "a" * 40,
+        "run_id": "123", "routes": 198, "result": "success"
+    }), encoding="utf-8")
+    assert audit.main(["--root", str(ROOT), "--route-verification", str(receipt),
+                       "--route-head-sha", head, "--route-run-id", run, "--json"]) == 2
