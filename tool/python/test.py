@@ -9,6 +9,9 @@ Examples:
   python3 tool/python/test.py --pytest -k zoom
   python3 tool/python/test.py --flutter-outcomes build/diagnostics/flutter-test.json
   python3 tool/python/test.py --node --node-receipt build/test-results/node-summary.json
+  python3 tool/python/test.py --python -x
+  python3 tool/python/test.py --python --node -x
+  python3 tool/python/test.py --print-message "CI check started"
 """
 
 from __future__ import annotations
@@ -89,10 +92,14 @@ def main(argv: list[str] | None = None) -> int:
         help="Fetch and print the latest Actions run/jobs for the current branch",
     )
     parser.add_argument(
-        "--pytest",
-        action="store_true",
-        help="Run pytest oracles (default when no mode flags are set)",
+        "--pytest", "--python", "--py",
+        dest="pytest", action="store_true",
+        help="Run Python pytest only (default when no test runner is selected)",
     )
+    parser.add_argument("-x", "--exitfirst", action="store_true",
+                        help="Pass -x to pytest: stop after the first failure (Node unaffected)")
+    parser.add_argument("--print-message", action="append", default=[], metavar="TEXT",
+                        help="Print literal agent/CI message (repeatable; never evaluate code)")
     parser.add_argument("--node", action="store_true",
                         help="Run Node's native tests with JUnit evidence")
     parser.add_argument("--node-test-file", action="append", default=None,
@@ -159,8 +166,22 @@ def main(argv: list[str] | None = None) -> int:
     if pytest_extra and pytest_extra[0] == "--":
         pytest_extra = pytest_extra[1:]
 
+    # Runner selection is explicit: --node only, --python only, or both.
+    # Keep the historical no-flag default as pytest for Python-only callers.
+    explicit_runner = args.pytest or args.node
+    run_python = args.pytest or (not explicit_runner and not args.actions_latest
+                                  and args.flutter_outcomes is None
+                                  and not args.print_message)
+    if args.exitfirst and not run_python:
+        parser.error("-x/--exitfirst requires the Python pytest runner")
+    if pytest_extra and not run_python:
+        parser.error("pytest arguments require --python/--pytest")
+
     ran_something = False
     exit_code = 0
+    for message in args.print_message:
+        print(message)
+        ran_something = True
 
     if args.flutter_outcomes is not None:
         ran_something = True
@@ -196,15 +217,12 @@ def main(argv: list[str] | None = None) -> int:
         if code != 0:
             exit_code = code if exit_code == 0 else exit_code
 
-    # Default to pytest when no other mode flags are set, or when --pytest is explicit.
-    if args.pytest or (
-        not args.actions_latest and args.flutter_outcomes is None and not args.node
-    ):
+    if run_python:
         ran_something = True
         # When both modes run, force local oracle mode unless caller overrode.
         if args.actions_latest and "--oracle-mode" not in " ".join(pytest_extra):
             pytest_extra = ["--oracle-mode=local", *pytest_extra]
-        code = _run_pytest(pytest_extra)
+        code = _run_pytest((["-x"] if args.exitfirst else []) + pytest_extra)
         if code != 0:
             exit_code = code
 
