@@ -62,7 +62,8 @@ def test_cli_exit_codes(tmp_path):
 
 def test_refactor_smoke_check_step_parses_as_one_command():
     import shlex
-    import yaml
+    # Refactor smoke installs only pytest; the full Non-Dart pytest has PyYAML.
+    yaml = pytest.importorskip("yaml")
     workflow = yaml.safe_load((ROOT / ".github/workflows/structure-refactor-validation.yml").read_text(encoding="utf-8"))
     runs = [step["run"] for job in workflow["jobs"].values() for step in job.get("steps", [])
             if step.get("run", "").startswith("python3 -S tool/python/check_route_observations.py")]
