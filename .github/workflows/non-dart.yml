@@ -450,6 +450,25 @@ jobs:
           npx playwright install --with-deps chromium firefox webkit
           npx playwright test --list --project=chromium --project=firefox --project=webkit --project=mobile-chromium --project=mobile-webkit
 
+      - name: Run real browser through shared Python Playwright adapter
+        run: |
+          python3 tool/python/test.py --external-runner playwright-node \
+            --test-file e2e/tests/runner_adapter_smoke.spec.ts \
+            --test-report build/test-results/playwright-adapter.xml \
+            --test-history build/test-results/playwright-adapter-attempts.json
+          python3 -S tool/python/validate_runner_junit.py build/test-results/playwright-adapter.xml
+
+      - name: Preserve shared Playwright adapter evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-adapter-smoke
+          path: |
+            build/test-results/playwright-adapter.xml
+            build/test-results/playwright-adapter-attempts.json
+          if-no-files-found: error
+          retention-days: 14
+
   # Full portable E2E is selected from changed browser-facing paths. It remains
   # outside Flutter/Pages workflows, so unrelated changes do not pay this cost.
   playwright:
