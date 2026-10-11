@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../shared/catalog/catalog_search.dart';
 import 'package:flutter/services.dart';
 import '../config/routes.dart';
 import '../shared/display/display_scope.dart';
@@ -409,23 +410,7 @@ class _Screen6CatalogSearchState extends State<_Screen6CatalogSearch> {
   }
 
   List<ScreenData> get _filtered {
-    final query = _query.trim().toLowerCase();
-    if (query.isEmpty) return widget.screens;
-    return widget.screens.where((screen) {
-      final haystack = <String>[
-        screen.screenDataId.toString(),
-        'screen${screen.screenDataId}',
-        screen.name,
-        screen.title,
-        screen.domainKey,
-        screen.domainJa,
-        screen.useCaseJa,
-        screen.useCaseEn,
-        screen.useCaseKey,
-        screen.description,
-      ].join('\n').toLowerCase();
-      return haystack.contains(query);
-    }).toList();
+    return searchCatalog(widget.screens, _query);
   }
 
   void _open(ScreenData screen) {
