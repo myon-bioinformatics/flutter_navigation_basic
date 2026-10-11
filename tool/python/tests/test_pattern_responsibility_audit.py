@@ -254,11 +254,15 @@ def test_malformed_receipt_is_rejected_without_traceback(tmp_path):
                        "--route-head-sha", "a" * 40, "--route-run-id", "123"]) == 2
 
 
-def _bound_receipt(tmp_path, digest=None):
+def _bound_receipt(tmp_path, digest=None, **changes):
     import hashlib
+    observed = tmp_path / "route-observations.json"
+    observed.write_text('{"schema": "route-observations/2"}\n', encoding="utf-8")
     data = {"schema": "route-verification/1", "result": "success", "routes": 198,
             "head_sha": "a" * 40, "run_id": "123",
-            "expected_sha256": digest or hashlib.sha256((ROOT / audit.MANIFEST).read_bytes()).hexdigest()}
+            "expected_sha256": digest or hashlib.sha256((ROOT / audit.MANIFEST).read_bytes()).hexdigest(),
+            "observed": str(observed),
+            "observed_sha256": hashlib.sha256(observed.read_bytes()).hexdigest(), **changes}
     path = tmp_path / "bound-receipt.json"
     path.write_text(json.dumps(data), encoding="utf-8")
     return path
@@ -270,6 +274,23 @@ def test_receipt_is_accepted_only_for_the_current_toml_bytes(tmp_path):
         audit.verify_receipt(ROOT, _bound_receipt(tmp_path, "0" * 64), "a" * 40, "123")
     assert audit.main(["--check", "--route-verification", str(_bound_receipt(tmp_path)),
                        "--route-head-sha", "a" * 40, "--route-run-id", "123"]) == 0
+
+
+def test_receipt_is_rejected_when_the_observations_changed_or_vanished(tmp_path):
+    receipt = _bound_receipt(tmp_path)
+    assert audit.verify_receipt(ROOT, receipt, "a" * 40, "123")["routes"] == 198
+    (tmp_path / "route-observations.json").write_text('{"schema": "edited"}\n', encoding="utf-8")
+    with pytest.raises(ValueError, match="changed after verification"):
+        audit.verify_receipt(ROOT, receipt, "a" * 40, "123")
+    (tmp_path / "route-observations.json").unlink()
+    with pytest.raises(ValueError, match="cannot be read"):
+        audit.verify_receipt(ROOT, receipt, "a" * 40, "123")
+
+
+@pytest.mark.parametrize("changes", [{"observed": ""}, {"observed": None}, {"observed_sha256": "0" * 64}])
+def test_receipt_without_a_matching_observation_record_is_rejected(tmp_path, changes):
+    with pytest.raises(ValueError, match="observation"):
+        audit.verify_receipt(ROOT, _bound_receipt(tmp_path, **changes), "a" * 40, "123")
 
 
 def test_audit_without_receipt_says_unverified_not_null():
