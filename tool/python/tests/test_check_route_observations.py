@@ -101,3 +101,14 @@ def test_non_numeric_route_keys_fail_without_traceback(key):
 def test_audit_and_checker_share_one_definition_of_widget_kinds():
     import pattern_responsibility_audit as audit
     assert audit.known_widgets is check.known_widgets
+
+
+def test_receipt_binds_input_bytes_and_uses_repository_paths(tmp_path):
+    import hashlib
+    path, receipt = tmp_path / "observed.json", tmp_path / "receipt.json"
+    path.write_text(json.dumps(_observed()), encoding="utf-8")
+    assert check.main([str(path), "--head-sha", "a" * 40, "--run-id", "123", "--receipt", str(receipt)]) == 0
+    saved = json.loads(receipt.read_text(encoding="utf-8"))
+    assert saved["expected"] == "tool/ci/numbered_routes.toml"
+    assert saved["expected_sha256"] == hashlib.sha256((ROOT / "tool/ci/numbered_routes.toml").read_bytes()).hexdigest()
+    assert saved["observed_sha256"] == hashlib.sha256(path.read_bytes()).hexdigest()

@@ -7,6 +7,7 @@ stdlib-only, read-only, deterministic, CI-friendly.
 from __future__ import annotations
 
 import argparse
+import hashlib
 from collections import Counter
 import json
 from pathlib import Path
@@ -228,6 +229,22 @@ def audit(root: Path, verification: dict | None = None) -> dict:
                        "errors":len(errors)},
             "errors":errors,"patterns":records}
 
+def verify_receipt(root: Path, path: Path, head_sha: str | None, run_id: str | None) -> dict:
+    """Accept a route receipt only for this head, this run and the current TOML bytes."""
+    receipt = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(receipt, dict) or receipt.get("schema") != "route-verification/1" \
+            or receipt.get("result") != "success":
+        raise ValueError("invalid route verification receipt")
+    if not head_sha or not run_id:
+        raise ValueError("route verification requires expected head SHA and run ID")
+    if receipt.get("head_sha") != head_sha:
+        raise ValueError("route verification head SHA does not match expected head")
+    if receipt.get("run_id") != run_id:
+        raise ValueError("route verification run ID does not match expected run")
+    if receipt.get("expected_sha256") != hashlib.sha256((root/MANIFEST).read_bytes()).hexdigest():
+        raise ValueError(f"route verification was made against a different {MANIFEST}")
+    return receipt
+
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root",type=Path,default=ROOT)
@@ -240,16 +257,8 @@ def main(argv=None):
     try:
         verification = None
         if args.route_verification:
-            verification = json.loads(args.route_verification.read_text(encoding="utf-8"))
-            if not isinstance(verification, dict) or verification.get("schema") != "route-verification/1" \
-                    or verification.get("result") != "success":
-                raise ValueError("invalid route verification receipt")
-            if not args.route_head_sha or not args.route_run_id:
-                raise ValueError("route verification requires expected head SHA and run ID")
-            if verification.get("head_sha") != args.route_head_sha:
-                raise ValueError("route verification head SHA does not match expected head")
-            if verification.get("run_id") != args.route_run_id:
-                raise ValueError("route verification run ID does not match expected run")
+            verification = verify_receipt(args.root.resolve(), args.route_verification,
+                                          args.route_head_sha, args.route_run_id)
         result=audit(args.root.resolve(), verification)
     except (ValueError,OSError) as error:
         print("audit: "+str(error),file=sys.stderr)

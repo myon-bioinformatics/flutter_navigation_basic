@@ -252,3 +252,21 @@ def test_malformed_receipt_is_rejected_without_traceback(tmp_path):
     path.write_text("[]", encoding="utf-8")
     assert audit.main(["--check", "--route-verification", str(path),
                        "--route-head-sha", "a" * 40, "--route-run-id", "123"]) == 2
+
+
+def _bound_receipt(tmp_path, digest=None):
+    import hashlib
+    data = {"schema": "route-verification/1", "result": "success", "routes": 198,
+            "head_sha": "a" * 40, "run_id": "123",
+            "expected_sha256": digest or hashlib.sha256((ROOT / audit.MANIFEST).read_bytes()).hexdigest()}
+    path = tmp_path / "bound-receipt.json"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    return path
+
+
+def test_receipt_is_accepted_only_for_the_current_toml_bytes(tmp_path):
+    assert audit.verify_receipt(ROOT, _bound_receipt(tmp_path), "a" * 40, "123")["run_id"] == "123"
+    with pytest.raises(ValueError, match="different tool/ci/numbered_routes.toml"):
+        audit.verify_receipt(ROOT, _bound_receipt(tmp_path, "0" * 64), "a" * 40, "123")
+    assert audit.main(["--check", "--route-verification", str(_bound_receipt(tmp_path)),
+                       "--route-head-sha", "a" * 40, "--route-run-id", "123"]) == 0

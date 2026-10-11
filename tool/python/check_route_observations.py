@@ -8,6 +8,7 @@ Fails on any difference in count, widget kind or id. Standard library only.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -15,6 +16,14 @@ import sys
 import tomllib
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def _relative(path: Path) -> str:
+    """Repository-relative path when possible (CI absolute paths say nothing)."""
+    try:
+        return path.resolve().relative_to(ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
 
 
 def known_widgets(expected: dict) -> set[str]:
@@ -68,8 +77,10 @@ def main(argv=None) -> int:
     parser.add_argument("--receipt", type=Path)
     args = parser.parse_args(argv)
     try:
-        expected = tomllib.loads(args.expected.read_text(encoding="utf-8"))
-        observed = json.loads(args.observed.read_text(encoding="utf-8"))
+        expected_bytes = args.expected.read_bytes()
+        observed_bytes = args.observed.read_bytes()
+        expected = tomllib.loads(expected_bytes.decode("utf-8"))
+        observed = json.loads(observed_bytes)
     except (OSError, ValueError) as error:
         print(f"route check: cannot read input: {error}", file=sys.stderr)
         return 2
@@ -93,8 +104,12 @@ def main(argv=None) -> int:
                 "head_sha": observed["provenance"]["head_sha"],
                 "run_id": observed["provenance"]["run_id"],
                 "routes": len(observed["routes"]),
-                "expected": args.expected.as_posix(),
-                "observed": args.observed.as_posix(),
+                "expected": _relative(args.expected),
+                "observed": _relative(args.observed),
+                # Bind the receipt to the exact bytes it checked, so a receipt
+                # cannot vouch for a TOML edited after the check.
+                "expected_sha256": hashlib.sha256(expected_bytes).hexdigest(),
+                "observed_sha256": hashlib.sha256(observed_bytes).hexdigest(),
                 "result": "success",
             }
             args.receipt.parent.mkdir(parents=True, exist_ok=True)
