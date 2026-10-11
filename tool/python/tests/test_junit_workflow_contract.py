@@ -391,7 +391,5 @@ def test_real_collector_contract_rejects_provenance_mutations(
     contract(workflow)  # The actual production contract must accept the baseline.
     mutant = deepcopy(workflow)
     mutant["jobs"]["junit-identity"]["with"]["commit-sha"] = bad_input
-    with pytest.raises(AssertionError, match="") as exc:
+    with pytest.raises(AssertionError):
         contract(mutant)
-    # A mutant must fail the real checker, not a comparison helper in this test.
-    assert exc.value is not None, label
