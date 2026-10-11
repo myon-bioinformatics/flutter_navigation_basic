@@ -49,3 +49,14 @@ real Node flaky retry. It does not claim installed Deno or browser E2E execution
 until the required toolchain and browser dependencies are present in the CI lane.
 Future work may use stable source IDs for narrower per-test reruns, but must
 reject ambiguous IDs rather than silently running a different test.
+
+## Accumulating failure patterns across runs
+
+Pass `--failure-ledger build/test-results/failure-patterns.json` to append
+counts for matching (runner, failure kind, SHA-256 of message) fingerprints
+across multiple invocations. The ledger is bounded to 500 distinct patterns,
+and a malformed existing ledger is rejected instead of silently overwritten.
+Raw failure messages are never copied into the ledger. The per-run history
+is still replaced for each invocation, while the optional ledger accumulates.
+This is an exact-message fingerprint, not a semantic root-cause classifier;
+changing line numbers or timestamps can create different patterns.
