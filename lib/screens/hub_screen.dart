@@ -32,7 +32,7 @@ class _HubScreenState extends State<HubScreen> {
     if (mounted) {
       setState(() {
         _all = screens;
-        _filtered = screens;
+        _filtered = searchCatalog(screens, _searchCtrl.text);
         _loading = false;
       });
     }
@@ -91,7 +91,11 @@ class _HubScreenState extends State<HubScreen> {
           preferredSize: const Size.fromHeight(56),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: TextField(
+            child: Semantics(
+              identifier: 'hub-search',
+              container: true,
+              explicitChildNodes: true,
+              child: TextField(
               controller: _searchCtrl,
               decoration: InputDecoration(
                 hintText: display.text('hub.searchHint'),
@@ -102,6 +106,7 @@ class _HubScreenState extends State<HubScreen> {
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24)),
                 contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              ),
               ),
             ),
           ),
