@@ -8,6 +8,7 @@ Examples:
   python3 tool/python/test.py --actions-latest --download-artifact python-oracle-summary
   python3 tool/python/test.py --pytest -k zoom
   python3 tool/python/test.py --flutter-outcomes build/diagnostics/flutter-test.json
+  python3 tool/python/test.py --node --node-receipt build/test-results/node-summary.json
 """
 
 from __future__ import annotations
@@ -34,6 +35,22 @@ def _run_pytest(extra: list[str]) -> int:
     ]
     # Run with tool/python as cwd so inifile rootdir/testpaths resolve cleanly.
     return subprocess.run(cmd, cwd=PYTHON_DIR).returncode
+
+
+def _run_node_tests(args) -> int:
+    from node_test_runner import run_node
+
+    files = args.node_test_file or [
+        path.relative_to(ROOT).as_posix()
+        for path in sorted((ROOT / "tool/javascript/tests").glob("*.test.mjs"))
+    ]
+    return run_node(
+        root=ROOT, files=files,
+        report=ROOT / args.node_report,
+        receipt=ROOT / args.node_receipt if args.node_receipt else None,
+        name_pattern=args.node_name_pattern,
+        timeout=args.node_timeout,
+    )
 
 
 def _run_actions_latest(argv: list[str]) -> int:
@@ -76,6 +93,19 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Run pytest oracles (default when no mode flags are set)",
     )
+    parser.add_argument("--node", action="store_true",
+                        help="Run Node's native tests with JUnit evidence")
+    parser.add_argument("--node-test-file", action="append", default=None,
+                        help="Explicit Node test file (repeatable); default: tool/javascript/tests/*.test.mjs")
+    parser.add_argument("--node-name-pattern", help="Node test-name regex")
+    parser.add_argument("--node-report", type=Path,
+                        default=Path("build/test-results/node.xml"),
+                        help="Native Node JUnit output path")
+    parser.add_argument("--node-receipt", type=Path,
+                        help="Optional JSON summary of Node JUnit")
+    parser.add_argument("--node-timeout", type=int, default=300,
+                        help="Node subprocess timeout in seconds")
+
     parser.add_argument(
         "--flutter-outcomes",
         type=Path,
@@ -158,9 +188,17 @@ def main(argv: list[str] | None = None) -> int:
         code = _run_actions_latest(actions_argv)
         exit_code = code if exit_code == 0 else exit_code
 
+    if args.node:
+        ran_something = True
+        if args.node_timeout <= 0:
+            parser.error("--node-timeout must be positive")
+        code = _run_node_tests(args)
+        if code != 0:
+            exit_code = code if exit_code == 0 else exit_code
+
     # Default to pytest when no other mode flags are set, or when --pytest is explicit.
     if args.pytest or (
-        not args.actions_latest and args.flutter_outcomes is None
+        not args.actions_latest and args.flutter_outcomes is None and not args.node
     ):
         ran_something = True
         # When both modes run, force local oracle mode unless caller overrode.
