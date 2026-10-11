@@ -82,3 +82,24 @@ def test_combined_runner_preserves_failure(monkeypatch, node_exit, python_exit, 
                         lambda args: calls.append("python") or python_exit)
     assert entry.main(["--node", "--python"]) == expected
     assert calls == ["node", "python"]
+
+
+@pytest.mark.parametrize("runner", ["deno", "playwright-node", "playwright-python"])
+def test_external_runner_does_not_start_pytest(monkeypatch, runner):
+    calls = []
+    monkeypatch.setattr(entry, "_run_pytest", lambda args: pytest.fail("pytest must not start"))
+    monkeypatch.setattr(entry, "_run_external_tests",
+                        lambda args: calls.append((args.external_runner, args.test_file)) or 0)
+    assert entry.main(["--external-runner", runner, "--test-file", "fixture.test.ts"]) == 0
+    assert calls == [(runner, ["fixture.test.ts"])]
+
+
+def test_retry_requires_supported_runner():
+    with pytest.raises(SystemExit) as exc:
+        entry.main(["--retry-failed"])
+    assert exc.value.code == 2
+
+
+def test_external_failure_propagates(monkeypatch):
+    monkeypatch.setattr(entry, "_run_external_tests", lambda args: 7)
+    assert entry.main(["--external-runner", "deno", "--test-file", "fixture.test.ts"]) == 7

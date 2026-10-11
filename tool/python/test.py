@@ -56,6 +56,27 @@ def _run_node_tests(args) -> int:
     )
 
 
+def _run_external_tests(args) -> int:
+    from multi_test_runner import run_suite
+
+    runner = args.external_runner
+    if not args.test_file:
+        print("external runner requires --test-file", file=sys.stderr)
+        return 2
+    try:
+        return run_suite(
+            runner, root=ROOT, files=args.test_file,
+            report=ROOT / args.test_report,
+            history=ROOT / args.test_history,
+            ledger=ROOT / args.failure_ledger if args.failure_ledger else None,
+            retry_failed=args.retry_failed,
+            timeout=args.test_timeout,
+        )
+    except (ValueError, OSError) as exc:
+        print(f"external runner: {exc}", file=sys.stderr)
+        return 2
+
+
 def _run_actions_latest(argv: list[str]) -> int:
     # Keep this as an importable module for pytest/conftest too.
     from actions_latest import main as actions_main
@@ -113,6 +134,24 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--node-timeout", type=int, default=300,
                         help="Node subprocess timeout in seconds")
 
+    parser.add_argument("--external-runner",
+                        choices=("deno", "playwright-node", "playwright-python"),
+                        help="Run an allowlisted Deno/Playwright suite")
+    parser.add_argument("--test-file", action="append", default=[],
+                        help="Selected test file for external runner (repeatable)")
+    parser.add_argument("--test-report", type=Path,
+                        default=Path("build/test-results/external.xml"),
+                        help="External runner JUnit output")
+    parser.add_argument("--test-history", type=Path,
+                        default=Path("build/test-results/test-attempts.json"),
+                        help="JSON record of initial and retry attempts")
+    parser.add_argument("--failure-ledger", type=Path,
+                        help="Optional bounded cross-run failure fingerprint ledger")
+    parser.add_argument("--test-timeout", type=int, default=300,
+                        help="Per-attempt subprocess timeout in seconds")
+    parser.add_argument("--retry-failed", action="store_true",
+                        help="Retry selected files once after failure; preserve original failure")
+
     parser.add_argument(
         "--flutter-outcomes",
         type=Path,
@@ -168,7 +207,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # Runner selection is explicit: --node only, --python only, or both.
     # Keep the historical no-flag default as pytest for Python-only callers.
-    explicit_runner = args.pytest or args.node
+    explicit_runner = args.pytest or args.node or bool(args.external_runner)
     run_python = args.pytest or (not explicit_runner and not args.actions_latest
                                   and args.flutter_outcomes is None
                                   and not args.print_message)
@@ -176,6 +215,15 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("-x/--exitfirst requires the Python pytest runner")
     if pytest_extra and not run_python:
         parser.error("pytest arguments require --python/--pytest")
+
+    if args.retry_failed and not (args.node or args.external_runner):
+        parser.error("--retry-failed requires --node or --external-runner")
+    if args.test_timeout <= 0:
+        parser.error("--test-timeout must be positive")
+    if args.external_runner and args.node:
+        parser.error("choose --node or --external-runner, not both")
+    if args.external_runner and args.pytest:
+        parser.error("run external and Python separately to retain distinct evidence")
 
     ran_something = False
     exit_code = 0
@@ -213,9 +261,27 @@ def main(argv: list[str] | None = None) -> int:
         ran_something = True
         if args.node_timeout <= 0:
             parser.error("--node-timeout must be positive")
-        code = _run_node_tests(args)
+        if args.retry_failed:
+            from multi_test_runner import run_node_retries
+            files = args.node_test_file or [
+                path.relative_to(ROOT).as_posix()
+                for path in sorted((ROOT / "tool/javascript/tests").glob("*.test.mjs"))
+            ]
+            code = run_node_retries(
+                root=ROOT, files=files, report=ROOT / args.node_report,
+                history=ROOT / args.test_history, name_pattern=args.node_name_pattern,
+                timeout=args.node_timeout, retry_failed=True,
+                ledger=ROOT / args.failure_ledger if args.failure_ledger else None)
+        else:
+            code = _run_node_tests(args)
         if code != 0:
             exit_code = code if exit_code == 0 else exit_code
+
+    if args.external_runner:
+        ran_something = True
+        code = _run_external_tests(args)
+        if code != 0 and exit_code == 0:
+            exit_code = code
 
     if run_python:
         ran_something = True

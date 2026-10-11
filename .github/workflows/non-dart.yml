@@ -121,6 +121,13 @@ jobs:
                 playwright=true
                 ;;
             esac
+            # Independent classifier: tool/python/* already matches in the
+            # previous case, so these exact files need their own case block.
+            case "$f" in
+              tool/python/multi_test_runner.py|tool/python/test.py)
+                e2e=true
+                ;;
+            esac
             case "$f" in
               .dockerignore|lib/*.dart|test/*.dart|tool/python/tests/test_pattern_catalogue_boundary.py|.github/workflows/non-dart.yml)
                 pattern_boundary=true
@@ -429,8 +436,8 @@ jobs:
           retention-days: 14
 
   # Lightweight Node check when e2e/ changes — no Flutter boot.
-  playwright-smoke:
-    name: Playwright install smoke
+  playwright-adapter-smoke:
+    name: Playwright browser adapter smoke
     needs: changes
     if: needs.changes.outputs.e2e == 'true'
     runs-on: ubuntu-latest
@@ -443,12 +450,38 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Install and list Playwright tests
+      - name: Install and list Playwright browser projects
         working-directory: e2e
         run: |
           npm install
           npx playwright install --with-deps chromium firefox webkit
           npx playwright test --list --project=chromium --project=firefox --project=webkit --project=mobile-chromium --project=mobile-webkit
+
+      - name: Run real browser through shared Python Playwright adapter
+        run: |
+          python3 tool/python/test.py --external-runner playwright-node \
+            --test-file e2e/tests/runner_adapter_smoke.spec.ts \
+            --test-report build/test-results/playwright-adapter.xml \
+            --test-history build/test-results/playwright-adapter-attempts.json
+          python3 -S tool/python/validate_runner_junit.py build/test-results/playwright-adapter.xml
+
+      - name: Preserve shared Playwright adapter evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: junit-playwright-adapter-smoke
+          path: build/test-results/playwright-adapter.xml
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Preserve shared Playwright attempt history
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-adapter-attempts
+          path: build/test-results/playwright-adapter-attempts.json
+          if-no-files-found: error
+          retention-days: 14
 
   # Full portable E2E is selected from changed browser-facing paths. It remains
   # outside Flutter/Pages workflows, so unrelated changes do not pay this cost.
@@ -592,6 +625,7 @@ jobs:
       - id: plan
         env:
           PYTHON: ${{ needs.changes.outputs.python == 'true' || needs.changes.outputs.workflow == 'true' }}
+          E2E: ${{ needs.changes.outputs.e2e == 'true' }}
           PLAYWRIGHT: ${{ needs.changes.outputs.playwright == 'true' }}
           VALIDATION_BROWSER: ${{ needs.changes.outputs.validation_browser == 'true' }}
         run: |
@@ -600,6 +634,8 @@ jobs:
           import os
 
           reports = []
+          if os.environ["E2E"] == "true":
+              reports += ["junit-playwright-adapter-smoke/playwright-adapter.xml"]
           if os.environ["PYTHON"] == "true":
               reports += ["junit-python-3.12/python-3.12.xml",
                           "junit-controlled-python-3.12/junit.xml"]
@@ -615,7 +651,7 @@ jobs:
           PY
 
   junit-identity:
-    needs: [changes, junit-plan, python-pytest, playwright, validation-browser]
+    needs: [changes, junit-plan, python-pytest, playwright-adapter-smoke, playwright, validation-browser]
     if: always() && needs.junit-plan.outputs.run == 'true'
     permissions:
       contents: read
