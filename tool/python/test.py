@@ -223,7 +223,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.actions_latest and "--oracle-mode" not in " ".join(pytest_extra):
             pytest_extra = ["--oracle-mode=local", *pytest_extra]
         code = _run_pytest((["-x"] if args.exitfirst else []) + pytest_extra)
-        if code != 0:
+        if code != 0 and exit_code == 0:
             exit_code = code
 
     if not ran_something:
