@@ -781,11 +781,12 @@ def search(query,kind="pr",sort="updated",order="desc",max_items=100,max_pages=1
          "scope":"accessible_search_results","observed_at":now()}
 
 
-def run_history(r,max_items=100,max_pages=10,head_sha=None,branch=None,event=None,transport="auto",timeout=30):
+def run_history(r,max_items=100,max_pages=10,head_sha=None,branch=None,event=None,transport="auto",timeout=30,exclude_events=()):
  r=repo(r)
  if not isinstance(max_items,int) or max_items<1:raise ValueError("max_items must be positive")
  if not isinstance(max_pages,int) or max_pages<1:raise ValueError("max_pages must be positive")
- rows=[];page=1;exhausted=False;pages_fetched=0
+ rows=[];page=1;exhausted=False;pages_fetched=0;excluded=0
+ exclude_events=tuple(exclude_events)
  while page<=max_pages and len(rows)<max_items:
   query={"per_page":"100","page":str(page)}
   # Server-side filters keep pages small; the client-side checks below still verify them.
@@ -805,6 +806,7 @@ def run_history(r,max_items=100,max_pages=10,head_sha=None,branch=None,event=Non
    if head_sha is not None and row["head_sha"]!=head_sha:continue
    if branch is not None and row["head_branch"]!=branch:continue
    if event is not None and row["event"]!=event:continue
+   if row["event"] in exclude_events:excluded+=1;continue
    rows.append(row)
    if len(rows)>=max_items:break
   if len(raw)<100:exhausted=consumed==len(raw);break
@@ -818,7 +820,8 @@ def run_history(r,max_items=100,max_pages=10,head_sha=None,branch=None,event=Non
   "pages_fetched":pages_fetched,"complete":exhausted,"truncated":not exhausted,
   "state":state if exhausted else "incomplete",
   "by_conclusion":dict(sorted(Counter(x["conclusion"] or x["status"] or "unknown" for x in rows).items())),
-  "filters":{"head_sha":head_sha,"branch":branch,"event":event}}
+  "filters":{"head_sha":head_sha,"branch":branch,"event":event,"exclude_events":list(exclude_events)},
+  "excluded_count":excluded}
 
 def workflow_run_discovery(r, workflow_id, *, branch=None, head_sha=None, event=None,
                            max_items=100, max_pages=10, page_size=100, start_page=1, start_offset=0,
@@ -1865,6 +1868,71 @@ def git_status(root=".", *, max_bytes=1_000_000):
         index += 1
     return {"clean": not records and not truncated, "records": records, "truncated": truncated}
 
+def _git_head(root):
+    """Current branch name ("" when detached) and HEAD commit."""
+    branch = _git_decode(_git_run(root, ["branch", "--show-current"])[0]).strip()
+    sha = _git_decode(_git_run(root, ["rev-parse", "--verify", "HEAD"])[0]).strip()
+    return {"branch": branch, "head_sha": sha}
+
+
+def _git_branch_exists(root, name):
+    return _git_run(root, ["show-ref", "--verify", "--quiet", "refs/heads/" + name], ok=(0, 1))[2] == 0
+
+
+def git_switch(root=".", branch=None, *, create=False, previous=False, write=False):
+    """Plan, or with write=True perform, one `git switch` and verify the result.
+
+    Exactly one of: switch to an existing local branch, create a new branch
+    (`-c`), or return to the previous branch (`-`). Without write nothing is
+    changed. Existing-branch switches use --no-guess so a remote-tracking
+    branch is never created implicitly.
+    """
+    if previous == (branch is not None):
+        raise ValueError("give a branch name or previous=True, not both")
+    if create and previous:
+        raise ValueError("create cannot be combined with previous")
+    before = _git_head(root)
+    out = {"schema": "gh-identity-git-switch/1", "status": "planned", "mutation_status": "not_attempted",
+           "verification_status": "not_attempted", "before": before}
+    if previous:
+        target = _git_decode(_git_run(root, ["rev-parse", "--abbrev-ref", "--verify", "@{-1}"],
+                                      ok=(0, 128))[0]).strip()
+        if not target:
+            # Empty when there is no previous position or it was a detached
+            # HEAD; `git switch -` itself refuses a commit there.
+            raise GitInspectionError("previous position is not a branch")
+        args = ["switch", "-"]
+    else:
+        name = _git_ref(branch)
+        # Validate as a branch name without touching refs.
+        if _git_run(root, ["check-ref-format", "--branch", name], ok=(0, 1, 128))[2] != 0:
+            raise ValueError("invalid branch name")
+        exists = _git_branch_exists(root, name)
+        if create and exists:
+            raise GitInspectionError("branch already exists")
+        if not create and not exists:
+            raise GitInspectionError("local branch not found")
+        target = name
+        args = ["switch", "-c", name] if create else ["switch", "--no-guess", name]
+    out.update(target=target, command=["git", *args])
+    if not write:
+        return out
+    try:
+        _git_run(root, args)
+    except GitInspectionError as error:
+        out.update(status="mutation_failed", mutation_status="failed", error=str(error))
+        return out
+    out["mutation_status"] = "succeeded"
+    after = _git_head(root)
+    out["after"] = after
+    verified = after["branch"] == target
+    if create:
+        verified = verified and after["head_sha"] == before["head_sha"]
+    out.update(verified=verified, verification_status="verified" if verified else "mismatch",
+               status="verified" if verified else "verification_mismatch")
+    return out
+
+
 def git_ls_files(root=".", *, include_untracked=False, max_files=10_000,
              max_bytes=1_000_000):
     """Return a bounded NUL-safe file inventory.
@@ -2122,6 +2190,7 @@ def _main(argv=None):
   if command=="git-show":x.add_argument("revision",nargs="?",default="HEAD");x.add_argument("--path")
   if command=="git-grep":x.add_argument("pattern")
   if command=="git-ignore":x.add_argument("paths",nargs="+")
+ x=s.add_parser("git-switch");x.add_argument("--root",default=".");x.add_argument("branch",nargs="?",help='existing branch, or "-" for the previous branch');x.add_argument("-c","--create",metavar="NEW_BRANCH");x.add_argument("--write",action="store_true")
  x=s.add_parser("repo");x.add_argument("repo")
  x=s.add_parser("tree");x.add_argument("repo");x.add_argument("--ref",default="main")
  depth_args=x.add_mutually_exclusive_group();depth_args.add_argument("--depth",type=int,default=1);depth_args.add_argument("--recursive",action="store_true")
@@ -2140,7 +2209,7 @@ def _main(argv=None):
   x=s.add_parser(command);x.add_argument("repo");x.add_argument("number",type=int);x.add_argument("--limit",type=int,default=100);x.add_argument("--page-limit",type=int,default=10)
  x=s.add_parser("workflow-runs");x.add_argument("repo");x.add_argument("workflow_id");x.add_argument("--branch");x.add_argument("--head-sha");x.add_argument("--event");x.add_argument("--limit",type=int,default=100);x.add_argument("--page-limit",type=int,default=10);x.add_argument("--page-size",type=int,default=100);x.add_argument("--start-page",type=int,default=1);x.add_argument("--start-offset",type=int,default=0)
  x=s.add_parser("runs");x.add_argument("repo")
- x=s.add_parser("head-runs");x.add_argument("repo");x.add_argument("head_sha");x.add_argument("--event");x.add_argument("--limit",type=int,default=100);x.add_argument("--page-limit",type=int,default=10)
+ x=s.add_parser("head-runs");x.add_argument("repo");x.add_argument("head_sha");x.add_argument("--event");x.add_argument("--exclude-event",action="append",default=[],help="e.g. dynamic (Copilot code review runs)");x.add_argument("--limit",type=int,default=100);x.add_argument("--page-limit",type=int,default=10)
  x=s.add_parser("artifacts");x.add_argument("repo");x.add_argument("run_id",type=int)
  x=s.add_parser("artifact-file");x.add_argument("repo");x.add_argument("artifact_id",type=int);x.add_argument("member");x.add_argument("--file-bytes",type=int,default=10_000_000)
  x=s.add_parser("checks");x.add_argument("repo");x.add_argument("sha");x.add_argument("--min-checks",type=int,default=1)
@@ -2166,6 +2235,12 @@ def _main(argv=None):
   elif ns.cmd=="git-blame":o=git_blame(ns.root,path=ns.path,max_bytes=ns.output_bytes)
   elif ns.cmd=="git-grep":o=git_grep(ns.root,ns.pattern,max_bytes=ns.output_bytes)
   elif ns.cmd=="git-ignore":o=git_check_ignore(ns.root,ns.paths,max_bytes=ns.output_bytes)
+  elif ns.cmd=="git-switch":
+   if ns.create and ns.branch is not None:raise ValueError("use either BRANCH or -c NEW_BRANCH")
+   if ns.create:o=git_switch(ns.root,ns.create,create=True,write=ns.write)
+   elif ns.branch=="-":o=git_switch(ns.root,previous=True,write=ns.write)
+   elif ns.branch:o=git_switch(ns.root,ns.branch,write=ns.write)
+   else:raise ValueError("branch required")
   elif ns.cmd=="repo":o=repository(ns.repo,transport=transport)
   elif ns.cmd=="tree":o=tree(ns.repo,ns.ref,depth=None if ns.recursive else ns.depth,exclude_dirs=ns.exclude_dir,exclude_files=ns.exclude_file,transport=transport)
   elif ns.cmd=="repos":o=repositories(ns.owner,transport=transport)
@@ -2188,7 +2263,7 @@ def _main(argv=None):
   elif ns.cmd=="runs":o=runs(ns.repo,transport=transport)
   elif ns.cmd=="head-runs":
    if not re.fullmatch(r"[0-9a-fA-F]{40}",ns.head_sha):raise ValueError("invalid head_sha")
-   o=run_history(ns.repo,max_items=ns.limit,max_pages=ns.page_limit,head_sha=ns.head_sha,event=ns.event,transport=transport)
+   o=run_history(ns.repo,max_items=ns.limit,max_pages=ns.page_limit,head_sha=ns.head_sha,event=ns.event,transport=transport,exclude_events=ns.exclude_event)
   elif ns.cmd=="artifacts":o=artifacts(ns.repo,ns.run_id,transport=transport)
   elif ns.cmd=="artifact-file":o=artifact_file(ns.repo,ns.artifact_id,ns.member,max_bytes=ns.file_bytes,transport=transport)
   elif ns.cmd=="checks":o=checks_for_sha(ns.repo,ns.sha,ns.min_checks,transport)
@@ -2210,7 +2285,7 @@ def _main(argv=None):
  if ns.cmd in ("checks","head-runs"):return 0 if o["state"]=="green" else 1
  if ns.cmd in ("artifacts","artifact-file"):return 0 if o["complete"] else 1
  if ns.cmd=="observe-pr":return 0 if o["checks"]["state"]=="green" and not o["stale"] else 1
- if ns.cmd in ("comment","variable-set"):
+ if ns.cmd in ("comment","variable-set","git-switch"):
   return 0 if o.get("status") in ("planned","already_exists","verified") else 1
  return 0
 def main(argv=None):
