@@ -18,6 +18,7 @@ FAKE = ("TODO: 実装を追加してください",
         "await Future.delayed(const Duration(milliseconds: 100));",
         "executed successfully")
 PRODUCERS = (
+    ((103, 104, 105, 107, 109, 110), "python", "tool/python/conversion_patterns.py", "tool/python/tests/test_conversion_patterns.py"),
     (range(91, 100), "python", "tool/python/validation_patterns.py", "tool/python/tests/test_validation_patterns.py"),
     ((4, 35), "javascript", "tool/javascript/interaction_patterns.mjs", "tool/javascript/tests/interaction_patterns.test.mjs"),
     ((25, 28), "python", "tool/python/scoring_heap_patterns.py", "tool/python/tests/test_scoring_heap_patterns.py"),
