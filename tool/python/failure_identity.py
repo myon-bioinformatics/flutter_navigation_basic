@@ -11,18 +11,18 @@ from pathlib import Path
 import sys
 from typing import Any
 
-# The canonical metadata producer has sibling imports, like its existing consumer.
 _VENDOR = Path(__file__).resolve().parent / "vendor"
 if str(_VENDOR) not in sys.path:
     sys.path.insert(0, str(_VENDOR))
-from repository_metadata_generator import record_from_checkout
+import gh_identity as ghi
 from vendor import xprobe
 
 
 def collect_failure_identity(
     raw: str, *, root: Path, repository: str, report_id: str
 ) -> dict[str, Any]:
-    record = record_from_checkout(root, repository)
+    # Checkout HEAD at root (never GITHUB_SHA); repository is validated owner/name.
+    record = ghi.repository_metadata(root, repository=repository)
     commit_sha = record["head"]["sha"]
     imported = xprobe.cases_from_junit(
         raw, repository=record["repository"]["full_name"],

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Generate Flutter's canonical repository record using the pinned Ironmate producer.
+"""Generate Flutter's repository record (schema v1) with the vendored gh_identity.
 
 Only this adapter owns output placement and the optional Pages gated-SHA check.
-Git identity/normalization stays in vendor/repository_metadata_generator.py.
+Git identity, v1 validation and serialization live in vendor/gh_identity.py
+(repository_metadata_v1); the bytes match the former Ironmate producer.
 """
 from __future__ import annotations
 
@@ -12,7 +13,9 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "vendor"))
-from repository_metadata_generator import record_from_checkout, write_metadata
+import gh_identity as ghi
+
+TOOL_COMMANDS = ("git", "gh", "node", "npm", "npx")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -23,15 +26,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output-dir", type=Path, default=Path("build/diagnostics/repository"))
     parser.add_argument("--expected-sha", help="Pages gated checkout SHA; fail before writing on mismatch")
     args = parser.parse_args(argv)
-    record = record_from_checkout(
-        args.root.resolve(),
-        args.repository,
-        include_python_tooling=True,
-        tooling_commands=("git", "gh", "node", "npm", "npx"),
-    )
-    if args.expected_sha is not None and record["head"]["sha"] != args.expected_sha:
-        parser.error("canonical metadata SHA does not match the gated checkout SHA")
-    write_metadata(record, args.output_dir)
+    try:
+        record = ghi.repository_metadata_v1(
+            args.root.resolve(), repository=args.repository, expected_sha=args.expected_sha,
+            tooling=ghi.tool_versions(TOOL_COMMANDS, include_python=True),
+        )
+    except ValueError as error:
+        if "expected_sha" in str(error):
+            parser.error("canonical metadata SHA does not match the gated checkout SHA")
+        raise
+    ghi.write_repository_metadata(record, args.output_dir)
     return 0
 
 

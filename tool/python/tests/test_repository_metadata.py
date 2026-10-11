@@ -11,9 +11,14 @@ import pytest
 PYTHON_DIR = Path(__file__).resolve().parents[1]
 ROOT = PYTHON_DIR.parents[1]
 sys.path.insert(0, str(PYTHON_DIR / "vendor"))
-import repository_metadata_generator as canonical_generator
-from repository_metadata_generator import record_from_checkout
-from repository_metadata_contract import validate_repository_record
+import gh_identity as ghi
+
+
+def record_from_checkout(root, repository, *, env):
+    return ghi.repository_metadata_v1(root, repository=repository, env=env)
+
+
+validate_repository_record = ghi.validate_repository_metadata_v1
 
 
 def git(root, *args):
@@ -59,12 +64,9 @@ def test_cli_gated_sha_and_json_jsonl(checkout, tmp_path):
     record = json.loads((output / "repository-metadata.json").read_text())
     assert record == json.loads((output / "repository-metadata.jsonl").read_text())
     validate_repository_record(record)
-    assert record["tooling"]["python"] == canonical_generator.normalize_version_output(
-        "python", canonical_generator.platform.python_version(),
-    )
-    assert record["tooling"]["git"] == canonical_generator.normalize_version_output(
-        "git", git(checkout, "--version"),
-    )
+    observed = ghi.tool_versions(("git",), include_python=True)
+    assert record["tooling"]["python"] == observed["python"]
+    assert record["tooling"]["git"] == observed["git"]
 
 
 @pytest.mark.parametrize(
@@ -87,14 +89,25 @@ def test_adapter_collects_canonical_tooling_without_nulls(
     checkout, tmp_path, monkeypatch, python_version, command_versions, expected_tooling,
 ):
     # Control observation inputs, not the adapter, collector or checkout identity.
-    monkeypatch.setattr(canonical_generator.platform, "python_version", lambda: python_version)
+    monkeypatch.setattr("platform.python_version", lambda: python_version)
     observed_commands = []
+    banners = {"git": "git version {}", "gh": "gh version {} (2024-01-01)",
+               "node": "v{}", "npm": "{}", "npx": "{}"}
 
-    def observe_command(command):
+    def which(command):
         observed_commands.append(command)
-        return command_versions.get(command)
+        return "/fake/" + command if command in command_versions else None
 
-    monkeypatch.setattr(canonical_generator, "observe_command_version", observe_command)
+    real_run = subprocess.run
+
+    def run(argv, **kwargs):
+        if not str(argv[0]).startswith("/fake/"):
+            return real_run(argv, **kwargs)  # fixture Git calls stay real
+        command = argv[0].rsplit("/", 1)[-1]
+        return subprocess.CompletedProcess(argv, 0, banners[command].format(command_versions[command]) + "\n", "")
+
+    monkeypatch.setattr(ghi.shutil, "which", which)
+    monkeypatch.setattr(ghi.subprocess, "run", run)
     main = runpy.run_path(str(PYTHON_DIR / "generate_repository_metadata.py"))["main"]
     output = tmp_path / "out"
     sha = git(checkout, "rev-parse", "HEAD")
@@ -192,3 +205,29 @@ def test_http_editor_does_not_depend_directly_on_legacy_curl_parser():
     assert "CurlSafeSubset" not in page
     assert "RequestDraftCodec.toCurl(" in page
     assert not (ROOT / "lib/shared/http/curl_export.dart").exists()
+
+
+# Differential check while the former Ironmate producer is still vendored:
+# the gh_identity adapter must produce the same record and the same bytes.
+import repository_metadata_generator as ironmate
+
+
+@pytest.mark.parametrize("env", [{}, {"GITHUB_HEAD_REF": "feature/x", "GITHUB_REF_NAME": "1/merge"},
+                                 {"GITHUB_REF_NAME": "main"}])
+def test_gh_identity_v1_matches_ironmate_record_and_bytes(checkout, tmp_path, env):
+    tooling = {"python": "3.12.1.post1", "git": "2.45.0"}
+    old = ironmate.record_from_checkout(checkout, "example/repo", env=env, tooling=tooling)
+    new = ghi.repository_metadata_v1(checkout, repository="example/repo", env=env, tooling=tooling,
+                                     generated_at=old["generated_at"])
+    assert new == old
+    ironmate.write_metadata(old, tmp_path / "old")
+    ghi.write_repository_metadata(new, tmp_path / "new")
+    for name in ("repository-metadata.json", "repository-metadata.jsonl"):
+        assert (tmp_path / "new" / name).read_bytes() == (tmp_path / "old" / name).read_bytes()
+
+
+@pytest.mark.parametrize("version", ["3.12.3", "3.14.0rc1", "3.12.1.post1", "3.13.0.dev2",
+                                     "3.12.1+local.1", "not-a-version"])
+def test_python_tooling_label_matches_ironmate(monkeypatch, version):
+    monkeypatch.setattr("platform.python_version", lambda: version)
+    assert ghi.tool_versions(include_python=True) == ironmate.collect_portable_tooling(include_python=True)
