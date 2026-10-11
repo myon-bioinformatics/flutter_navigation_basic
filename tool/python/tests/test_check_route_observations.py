@@ -75,3 +75,17 @@ def test_refactor_smoke_check_step_parses_as_one_command():
                        .replace("${{ github.run_id }}", "1"))
     assert "\\" not in argv, argv  # stray backslash arguments break argparse
     assert argv[argv.index("--head-sha") + 1] == "h" and argv[argv.index("--run-id") + 1] == "1"
+
+
+
+@pytest.mark.parametrize("payload", [[], {"schema": "route-observations/2", "provenance": {}, "routes": []},
+                                     {"schema": "route-observations/2", "provenance": {}, "routes": {"001": "x"}}])
+def test_malformed_observations_fail_without_traceback(tmp_path, payload):
+    path = tmp_path / "observed.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    assert check.main([str(path)]) in (1, 2)
+
+
+def test_toml_naming_an_unknown_widget_fails():
+    broken = {**EXPECTED, "routes": {**EXPECTED["routes"], "001": "TypoScreen"}}
+    assert "001: TOML names unknown widget 'TypoScreen'" in check.compare(broken, _observed())

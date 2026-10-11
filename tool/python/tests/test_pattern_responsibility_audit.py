@@ -244,3 +244,11 @@ def test_cli_rejects_route_receipt_for_other_head_or_run(tmp_path, head, run):
     }), encoding="utf-8")
     assert audit.main(["--root", str(ROOT), "--route-verification", str(receipt),
                        "--route-head-sha", head, "--route-run-id", run, "--json"]) == 2
+
+
+
+def test_malformed_receipt_is_rejected_without_traceback(tmp_path):
+    path = tmp_path / "receipt.json"
+    path.write_text("[]", encoding="utf-8")
+    assert audit.main(["--check", "--route-verification", str(path),
+                       "--route-head-sha", "a" * 40, "--route-run-id", "123"]) == 2

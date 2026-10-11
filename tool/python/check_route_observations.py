@@ -29,8 +29,16 @@ def compare(expected: dict, observed: dict, *, head_sha: str | None = None, run_
         return [f"observations: head SHA {provenance.get('head_sha')!r} != expected {head_sha!r}"]
     if run_id is not None and provenance.get("run_id") != run_id:
         return [f"observations: run ID {provenance.get('run_id')!r} != expected {run_id!r}"]
-    problems = []
+    if not isinstance(want, dict) or not isinstance(seen, dict):
+        return ["routes must be tables keyed by 001-198"]
+    known = (set(expected.get("shared_widgets", {})) | set(expected.get("dedicated_widgets", {}))
+             | {expected.get("generic_widget")})
+    problems = [f"{key}: TOML names unknown widget {value!r}"
+                for key, value in sorted(want.items()) if value not in known]
     for key in sorted(set(want) | set(seen)):
+        if key in seen and not isinstance(seen[key], dict):
+            problems.append(f"{key}: observation is not an object")
+            continue
         if key not in seen:
             problems.append(f"{key}: expected {want[key]}, but no such route was observed")
         elif key not in want:
@@ -59,6 +67,9 @@ def main(argv=None) -> int:
         return 2
     if args.receipt and (not args.head_sha or not args.run_id):
         print("route check: --receipt requires --head-sha and --run-id", file=sys.stderr)
+        return 2
+    if not isinstance(expected, dict) or not isinstance(observed, dict):
+        print("route check: inputs must be a TOML table and a JSON object", file=sys.stderr)
         return 2
     problems = compare(expected, observed, head_sha=args.head_sha, run_id=args.run_id)
     annotate = os.environ.get("GITHUB_ACTIONS") == "true"

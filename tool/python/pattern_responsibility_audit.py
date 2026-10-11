@@ -238,7 +238,8 @@ def main(argv=None):
         verification = None
         if args.route_verification:
             verification = json.loads(args.route_verification.read_text(encoding="utf-8"))
-            if verification.get("schema") != "route-verification/1" or verification.get("result") != "success":
+            if not isinstance(verification, dict) or verification.get("schema") != "route-verification/1" \
+                    or verification.get("result") != "success":
                 raise ValueError("invalid route verification receipt")
             if not args.route_head_sha or not args.route_run_id:
                 raise ValueError("route verification requires expected head SHA and run ID")
