@@ -6,6 +6,10 @@ language-native test runners or the existing failure-identity JUnit collector.
 ```sh
 python3 tool/python/test.py --pytest
 python3 tool/python/test.py --node
+python3 tool/python/test.py --python            # explicit Python-only (alias --pytest/--py)
+python3 tool/python/test.py --python -x         # pytest stops at first failure
+python3 tool/python/test.py --python --node    # both runners, nonzero if either fails
+python3 tool/python/test.py --print-message "from: agent; test complete"
 python3 tool/python/test.py --node --node-name-pattern 'request'
 python3 tool/python/test.py --node --node-test-file tool/javascript/tests/example.test.mjs
 python3 tool/python/test.py --node --node-receipt build/test-results/node-summary.json
@@ -30,3 +34,17 @@ python3 tool/python/test.py --node --node-receipt build/test-results/node-summar
 - Deno, Playwright (Node/Python), browser click/fetch/lifecycle and Flutter Web
   integration are **future adapters**. Passing Flutter Web E2E is useful
   cross-platform evidence, not proof of Android/iOS native behavior.
+
+## Runner selection and printing
+
+No runner flags retains the historical **pytest-only** default (avoids breaking
+Python-only environments). `--node` selects Node only; `--python`, `--py`, or
+`--pytest` selects Python only; specify both for both. `-x`/`--exitfirst`
+is pytest's stop-on-first-failure flag and is rejected when only Node runs.
+Combined runs preserve failure exit status even if the other runner succeeds.
+
+`--print-message TEXT` prints literal user/agent-supplied text. Repeating it
+prints multiple messages; by itself it runs no tests. It deliberately does
+**not** interpret Python expressions, execute `python -c`, or inject text into
+shell commands. Use `python3 -c` separately for deliberate scripting; the
+common test CLI remains an execution-safe test orchestrator.
