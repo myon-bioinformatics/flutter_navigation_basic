@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 import re
 import sys
+import tomllib
 
 ROOT = Path(__file__).resolve().parents[2]
 FAKE = ("TODO: 実装を追加してください",
@@ -41,9 +42,10 @@ PRODUCERS = (
 )
 NATIVE = set(range(151,164)) | set(range(166,171))
 GESTURES = {171, 172, 173, 174, 175, 183, 184}
-MANIFEST = "tool/ci/numbered_routes.json"
-# Provision = what the app really shows on /screenNNN (proven at runtime by
-# test/core/navigation/numbered_routes_manifest_test.dart against the manifest).
+MANIFEST = "tool/ci/numbered_routes.toml"
+# Provision = what the app really shows on /screenNNN. The hand-written TOML is
+# checked against runtime observations (numbered_routes_observation_test.dart
+# + check_route_observations.py) in CI, so it is evidence, not a guess.
 PROVISION = {
     "InteractivePatternExample": "shared_interaction",
     "NativeParallelPatternExample": "shared_native_example",
@@ -53,12 +55,12 @@ PROVISION = {
 }
 
 def load_routes(root: Path) -> tuple[dict[int, str], dict[str, set[str]], list[str]]:
-    """Read the hand-written route manifest; return (id -> widget, kinds, errors)."""
+    """Read the hand-written route expectations; return (id -> widget, kinds, errors)."""
     path = root/MANIFEST
     if not path.is_file():
         return {}, {}, [f"{MANIFEST}: missing"]
     try:
-        doc = json.loads(path.read_text(encoding="utf-8"))
+        doc = tomllib.loads(path.read_text(encoding="utf-8"))
         shared, generic = set(doc["shared_widgets"]), doc["generic_widget"]
         routes = doc["routes"]
     except (ValueError, KeyError, TypeError) as error:

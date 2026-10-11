@@ -41,9 +41,11 @@ python3 -S tool/python/render_pattern_status.py pattern-responsibility.json patt
 アプリ本体から `lib/features/*_patterns` への import は 0 件で、各パターンの `view.dart` は
 どの route からも到達しない。そこで監査の第一の軸を「`/screenNNN` が実際に何を表示するか」に変えた。
 
-- 期待値: `tool/ci/numbered_routes.json`（**人が書く**。198 件の行き先 Widget）
-- 実測: `test/core/navigation/numbered_routes_manifest_test.dart` が 198 本の route を実行時に解決し、
-  Widget の種別と id が期待値と一致することを確かめる（期待値と実測値を分離）。
+- 期待値: `tool/ci/numbered_routes.toml`（**人が書く**。198 件の行き先 Widget。コメント可）
+- 実測: `test/core/navigation/numbered_routes_observation_test.dart` が 198 本の route を実行時に解決し、
+  `build/route-observations.json` に Widget の種別と id を書き出す（**機械が書く**。期待値は読まない）。
+- 判定: `tool/python/check_route_observations.py` が TOML と JSON を照合し、件数・種別・id の
+  どれかが違えば失敗する。Refactor smoke で実測の直後に実行する。
 - 監査: `route`（Widget）、`reachability`（`shared` / `generic`）、`provision`
   （`shared_interaction` / `shared_source_links` / `shared_native_example` / `generic_catalogue`）、
   `legacy_view`（`unreachable` / `absent`）を各行に出す。routes.dart の正規表現解析は撤去した。

@@ -155,10 +155,13 @@ def _manifest(root, overrides=None, **changes):
     routes = {"%03d" % i: "GenericScreen" for i in range(1, 199)}
     routes.update({"%03d" % k: v for k, v in (overrides or {}).items()})
     doc = {"schema": "numbered-routes/1", "generic_widget": "GenericScreen",
-           "shared_widgets": ["InteractivePatternExample", "ValidationPatternLinks"],
+           "shared_widgets": {"InteractivePatternExample": "x", "ValidationPatternLinks": "x"},
            "routes": routes, **changes}
+    lines = [f'schema = "{doc["schema"]}"', f'generic_widget = "{doc["generic_widget"]}"',
+             "[shared_widgets]", *[f'{k} = "{v}"' for k, v in doc["shared_widgets"].items()],
+             "[routes]", *[f'"{k}" = "{v}"' for k, v in doc["routes"].items()]]
     (root/"tool/ci").mkdir(parents=True, exist_ok=True)
-    (root/audit.MANIFEST).write_text(json.dumps(doc), encoding="utf-8")
+    (root/audit.MANIFEST).write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def _gesture_root(td, route):
@@ -198,7 +201,7 @@ def test_shared_route_makes_view_optional_but_generic_route_does_not():
 @pytest.mark.parametrize(("change", "message"), [
     ({"routes": {"001": "GenericScreen"}}, "must list 001-198 in order"),
     ({"schema": "numbered-routes/0"}, "unexpected schema"),
-    ({"shared_widgets": ["MysteryWidget"]}, "unknown widget kinds"),
+    ({"shared_widgets": {"MysteryWidget": "x"}}, "unknown widget kinds"),
 ])
 def test_malformed_manifest_is_an_audit_error(change, message):
     with tempfile.TemporaryDirectory() as td:
@@ -212,7 +215,7 @@ def test_missing_manifest_is_an_audit_error():
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
         setup(root, 1)
-        assert "tool/ci/numbered_routes.json: missing" in audit.audit(root)["errors"]
+        assert "tool/ci/numbered_routes.toml: missing" in audit.audit(root)["errors"]
 
 
 def test_real_repository_reachability_is_complete():

@@ -43,7 +43,7 @@ def render(report, head, tree=None):
         "- **注意**: これは静的な証跡分類。完全実装・E2E成功を自動認定するものではない。",
         "- Python/JSのproducerが存在しても、Flutter画面からの実行接続は別途検証する。",
         "- `限定実装` は完成を意味しない。実行可能範囲と残課題を必ず参照する。",
-        "- **提供形態**は `/screenNNN` が実際に表示する Widget（`tool/ci/numbered_routes.json`、Flutter テストで実行時に照合）。"
+        "- **提供形態**は `/screenNNN` が実際に表示する Widget（`tool/ci/numbered_routes.toml`、CI で実行時の観測と照合）。"
         "**実装証跡**はパターンのディレクトリ内のコードの分類で、旧 `view.dart` はアプリから到達しない。",
         *([f"- 提供形態: {_counts(summary['provisions'])} / 旧 view.dart: {_counts(summary['legacy_views'])}"]
           if summary.get("provisions") else []),
