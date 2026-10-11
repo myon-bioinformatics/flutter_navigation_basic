@@ -53,3 +53,24 @@ def test_invalid_regex_and_empty_file_selection(tmp_path):
     assert run_node(root=tmp_path, files=[], report=tmp_path / "node.xml") == 2
     assert run_node(root=tmp_path, files=["x.test.mjs"], report=tmp_path / "node.xml",
                     name_pattern="[") == 2
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node unavailable")
+def test_filter_matching_nothing_fails_closed(tmp_path):
+    js = tmp_path / "checks.test.mjs"
+    js.write_text("import test from 'node:test'; test('exists', () => {});")
+    report = tmp_path / "node.xml"
+    receipt = tmp_path / "summary.json"
+    receipt.write_text('{"ok":true}')
+    assert run_node(root=tmp_path, files=[js.name], report=report, receipt=receipt,
+                    name_pattern="^never-matches$") != 0
+    assert not receipt.exists()
+
+
+def test_missing_node_clears_stale_receipt(tmp_path):
+    report = tmp_path / "node.xml"
+    receipt = tmp_path / "summary.json"
+    receipt.write_text('{"ok":true}')
+    assert run_node(root=tmp_path, files=["x.test.mjs"], report=report,
+                    receipt=receipt, node="__node_does_not_exist__") == 127
+    assert not receipt.exists()
