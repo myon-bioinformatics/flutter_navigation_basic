@@ -44,8 +44,8 @@ def explicit_origin(value):
 
 
 class Handler(BaseHTTPRequestHandler):
-    # Socket read timeout: a client that never sends its body is dropped instead
-    # of holding a worker forever (http.server closes on TimeoutError).
+    # Socket read timeout. A body that never arrives is answered 408 here;
+    # http.server would otherwise close the socket with no status.
     timeout = 10
 
     def _loopback_names(self):
@@ -152,12 +152,23 @@ document.getElementById('run').addEventListener('click', async () => {
             size = int(self.headers.get("Content-Length", "0"))
             if not 0 < size <= 65536:
                 raise ValueError("invalid request size")
-            payload = json.loads(self.rfile.read(size))
-            result = run(payload)
-            status, body = 200, result
+        except (ValueError, TypeError, OverflowError):
+            self._json(400, {"error": "invalid validation request"}, cors=True)
+            return
+        try:
+            raw = self.rfile.read(size)
+        except TimeoutError:
+            self._json(408, {"error": "request timed out"}, cors=True)
+            return
+        if len(raw) != size:
+            self._json(400, {"error": "invalid validation request"}, cors=True)
+            return
+        try:
+            result = run(json.loads(raw))
         except (ValueError, TypeError, UnicodeError, KeyError, RecursionError, OverflowError):
-            status, body = 400, {"error": "invalid validation request"}
-        self._json(status, body, cors=True)
+            self._json(400, {"error": "invalid validation request"}, cors=True)
+            return
+        self._json(200, result, cors=True)
 
 
 def build_server(argv=None):

@@ -188,15 +188,24 @@ def test_content_length_zero_or_negative_is_400(server, length):
     assert json.loads(raw) == {"error": "invalid validation request"}
 
 
-def test_client_that_never_sends_its_body_is_dropped(server, monkeypatch):
+def test_stalled_body_gets_408(server, monkeypatch):
     monkeypatch.setattr(Handler, "timeout", 0.5)
     port = int(server.rsplit(":", 1)[1])
     with socket.create_connection(("127.0.0.1", port), timeout=5) as client:
         client.sendall(b"POST /validate HTTP/1.1\r\nHost: 127.0.0.1:%d\r\n"
                        b"Content-Type: application/json\r\nContent-Length: 10\r\n\r\n" % port)
         started = time.monotonic()
-        assert client.recv(1024) == b""  # server closed the connection
-        assert time.monotonic() - started < 4
+        data = b""
+        while True:
+            chunk = client.recv(4096)
+            if not chunk:
+                break
+            data += chunk
+    assert time.monotonic() - started < 4
+    status = int(data.split(b" ", 2)[1])
+    assert status == 408
+    _head, _, raw = data.partition(b"\r\n\r\n")
+    assert json.loads(raw) == {"error": "request timed out"}
 
 
 def _exchange(port, head, body=b""):
