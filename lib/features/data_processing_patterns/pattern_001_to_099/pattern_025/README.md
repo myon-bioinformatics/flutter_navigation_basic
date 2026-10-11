@@ -1,27 +1,9 @@
 # Pattern 025: TfIdf
 
-**カテゴリ**: 案D - データ処理パターン
+## 責務と実装範囲
+- Python: `tool/python/scoring_heap_patterns.py` の `tfidf` が独立処理を担当。
+- Dart: `view.dart` は説明表示のみ。旧GetXの固定成功実行は撤去。
+- 旧Controller・Service・Modelと旧Dartテストは削除済み。
+- 残課題: Flutterからの実行未接続。
 
-## 概要
-TF-IDF スコアリング (擬似実装)。
-
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
-
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern025View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern025Controller())));
-```
-
-## 関連パターン
-- 前: Pattern 024
-- 次: Pattern 026
+**対応状況: 限定実装。** 独立処理は実装済みだが、Flutter画面の完成機能としては扱わない。

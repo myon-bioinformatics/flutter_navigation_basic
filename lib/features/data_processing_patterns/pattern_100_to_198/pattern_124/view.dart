@@ -1,37 +1,22 @@
-// Pattern 124: FutureWait
-// Future.wait による並列実行。
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
 
-class Pattern124View extends GetView<Pattern124Controller> {
+/// JS Promise catalogue analogue: no Node runtime is bundled with Flutter.
+class Pattern124View extends StatelessWidget {
   const Pattern124View({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 124: FutureWait'),
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Pattern 124: FutureWait')),
+    body: const Padding(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Future.wait による並列実行。'),
+          SizedBox(height: 12),
+          Text('JS Promise参照実装あり。Flutterでの直接実行は未接続。'),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Future.wait による並列実行。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }

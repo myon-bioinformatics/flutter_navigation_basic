@@ -1,11 +1,8 @@
-// Pattern 040: PageSize
-// ページサイズ変更対応ページング。
-import 'model.dart';
+// Pattern 040: PageSize — Python collection-window state boundary.
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
 
-class Pattern040Service {
-  Future<Pattern040Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern040Result(message: 'PageSize executed successfully');
-  }
+class Pattern040Service extends JsonListAsset {
+  Pattern040Service({AssetBundle? bundle})
+      : super('assets/data_processing/window_040.json', bundle: bundle);
 }

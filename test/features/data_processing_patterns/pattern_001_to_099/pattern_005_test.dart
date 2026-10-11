@@ -1,24 +1,29 @@
-// Pattern 005: SearchBasic - テスト
-// テキスト検索によるリストフィルタリング。
+import 'dart:convert';
+
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_005/model.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_005/service.dart';
 
-void main() {
-  group('Pattern 005: SearchBasic', () {
-    test('model toJson and fromJson', () {
-      const result = Pattern005Result(message: 'test');
-      final json = result.toJson();
-      expect(json['message'], equals('test'));
-      final restored = Pattern005Result.fromJson(json);
-      expect(restored.message, equals('test'));
-    });
+class _Bundle extends CachingAssetBundle {
+  _Bundle(this.payload);
+  final String payload;
+  @override
+  Future<ByteData> load(String key) async =>
+      ByteData.sublistView(Uint8List.fromList(utf8.encode(payload)));
+  @override
+  Future<String> loadString(String key, {bool cache = true}) async => payload;
+}
 
-    test('service run completes', () async {
-      final service = Pattern005Service();
-      final result = await service.run();
-      expect(result, isA<Pattern005Result>());
-      expect(result.message, isNotEmpty);
-    });
+void main() {
+  test('pattern 005 loads externally processed text values', () async {
+    final service = Pattern005Service(bundle: _Bundle(
+      '{"schema":"text-processing/1","mode":"test","values":["ok"]}',
+    ));
+    expect(await service.load(), equals(["ok"]));
+  });
+
+  test('pattern 005 rejects malformed generated data', () async {
+    final service = Pattern005Service(bundle: _Bundle('{"schema":"text-processing/1"}'));
+    await expectLater(service.load(), throwsFormatException);
   });
 }

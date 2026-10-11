@@ -1,27 +1,9 @@
 # Pattern 016: RangeFilter
 
-**カテゴリ**: 案D - データ処理パターン
+## 責務と実装状態
+- Python: `tool/python/collection_query_patterns.py` の `range` で独立した実処理を実装。
+- テスト: `tool/python/tests/test_collection_query_patterns.py` で処理契約を検証。
+- Dart: `view.dart` は説明画面のみ。FlutterからPythonを呼び出す経路は未接続。
+- 旧Controller・Service・Modelと固定成功文言を検証する旧テストは削除済み。
 
-## 概要
-数値・日付レンジフィルタリング。
-
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
-
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern016View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern016Controller())));
-```
-
-## 関連パターン
-- 前: Pattern 015
-- 次: Pattern 017
+**対応状況: 限定実装。** 実行可能なPython処理はあるが、画面操作と結果表示は未実装。

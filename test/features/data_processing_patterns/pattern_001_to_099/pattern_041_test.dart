@@ -1,24 +1,29 @@
-// Pattern 041: OffsetLimit - テスト
-// offset/limit パラメータ付きページング。
+import 'dart:convert';
+
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_041/model.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_041/service.dart';
 
-void main() {
-  group('Pattern 041: OffsetLimit', () {
-    test('model toJson and fromJson', () {
-      const result = Pattern041Result(message: 'test');
-      final json = result.toJson();
-      expect(json['message'], equals('test'));
-      final restored = Pattern041Result.fromJson(json);
-      expect(restored.message, equals('test'));
-    });
+class _Bundle extends CachingAssetBundle {
+  _Bundle(this.payload);
+  final String payload;
+  @override
+  Future<ByteData> load(String key) async =>
+      ByteData.sublistView(Uint8List.fromList(utf8.encode(payload)));
+  @override
+  Future<String> loadString(String key, {bool cache = true}) async => payload;
+}
 
-    test('service run completes', () async {
-      final service = Pattern041Service();
-      final result = await service.run();
-      expect(result, isA<Pattern041Result>());
-      expect(result.message, isNotEmpty);
-    });
+void main() {
+  test('pattern 041 loads externally computed paging state', () async {
+    final service = Pattern041Service(bundle: _Bundle(
+      '{"schema":"collection-window/1","mode":"test","values":["ok"]}',
+    ));
+    expect(await service.load(), equals(["ok"]));
+  });
+
+  test('pattern 041 rejects malformed generated data', () async {
+    final service = Pattern041Service(bundle: _Bundle('{"schema":"collection-window/1"}'));
+    await expectLater(service.load(), throwsFormatException);
   });
 }

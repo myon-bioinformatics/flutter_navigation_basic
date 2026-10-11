@@ -1,4 +1,14 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices, type ReporterDescription } from '@playwright/test';
+
+// JUnit is opt-in: without an output file the junit reporter would print XML to
+// stdout. CI sets PLAYWRIGHT_JUNIT_OUTPUT_FILE per invocation.
+const reporter: ReporterDescription[] = [
+  ['html', { outputFolder: 'playwright-report' }],
+  ['list'],
+];
+if (process.env.PLAYWRIGHT_JUNIT_OUTPUT_FILE) {
+  reporter.push(['junit']);
+}
 
 export default defineConfig({
   testDir: './tests',
@@ -6,7 +16,7 @@ export default defineConfig({
   forbidOnly: false,
   retries: 0,
   workers: 1,
-  reporter: [['html', { outputFolder: 'playwright-report' }], ['list']],
+  reporter,
   use: {
     baseURL: 'http://localhost:8080',
     trace: 'on-first-retry',

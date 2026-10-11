@@ -11,13 +11,12 @@ VENDOR = ROOT / "tool/python/vendor"
 MODULES = (
     "yourself.py",
     "xprobe.py",
-    "git_inspector.py",
     "gh_ops.py",
-    "gh_identity.py",
     "check_evidence.py",
     "check_png.py",
     "jsonl_digest.py",
     "cli_args.py",
+    "gh_identity.py",
 )
 
 
@@ -45,3 +44,25 @@ def test_environment_probe_is_safe_no_argument_json():
     payload = json.loads(result.stdout)
     assert payload["schema_version"] == 1
     assert set(payload) == {"schema_version", "os", "runtime", "host", "directory"}
+
+
+def test_gh_identity_local_contract_prefers_github_environment():
+    sys.path.insert(0, str(VENDOR))
+    import gh_identity
+    value = gh_identity.local_identity(env={
+        "GITHUB_SHA": "A" * 40,
+        "GITHUB_HEAD_REF": "feature/runtime",
+    })
+    assert value["schema"] == "gh-identity-local/1"
+    assert value["sha"] == "a" * 40
+    assert value["ref"] == "feature/runtime"
+    assert value["source"] == "github-env"
+
+
+def test_gh_identity_provides_the_git_inspection_api_that_replaced_git_inspector():
+    sys.path.insert(0, str(VENDOR))
+    import gh_identity
+    for name in ("status", "ls_files", "diff", "log", "log_numstat", "show", "blame", "grep", "check_ignore"):
+        assert callable(getattr(gh_identity, "git_" + name)), name
+    observed = gh_identity.git_status(ROOT)
+    assert isinstance(observed, dict)

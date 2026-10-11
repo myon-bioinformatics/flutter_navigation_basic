@@ -1,27 +1,8 @@
 # Pattern 161: InheritedModel
 
-**カテゴリ**: 案D - データ処理パターン
-
-## 概要
 InheritedModel による選択的再ビルド。
 
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
-
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern161View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern161Controller())));
-```
-
-## 関連パターン
-- 前: Pattern 160
-- 次: Pattern 162
+Flutter標準の `InheritedModel` を `lib/core/data_processing/inherited_catalogue_example.dart`
+で実装。2つの値の状態伝播を `test/features/data_processing_patterns/inherited_catalogue_test.dart`
+で検証します。GetXと旧成功メッセージだけのダミーServiceは撤去。
+Python/JSにFlutterのWidget依存関係を移すことはしません。

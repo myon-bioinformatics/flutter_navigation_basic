@@ -1,37 +1,17 @@
-// Pattern 026: SortedSet
-// ソート済みセットのデータ構造実装。
+// Pattern 026: SortedSet — generated example, not runtime collection logic.
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/processed_list_example.dart';
 
-class Pattern026View extends GetView<Pattern026Controller> {
-  const Pattern026View({super.key});
+import 'service.dart';
+
+class Pattern026View extends StatelessWidget {
+  const Pattern026View({super.key, this.bundle});
+  final AssetBundle? bundle;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 026: SortedSet'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'ソート済みセットのデータ構造実装。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ProcessedListExample(
+        title: 'Pattern 026: SortedSet',
+        asset: Pattern026Service(bundle: bundle),
+      );
 }

@@ -1,27 +1,23 @@
 # Pattern 001: FilterBasic
 
-**カテゴリ**: 案D - データ処理パターン
+Python stdlib processes supplied JSON and generates
+`assets/data_processing/filter_basic.json`. This catalogue view displays that
+result; it does not filter arbitrary input at Flutter runtime.
 
-## 概要
-リストのシンプルなフィルタリング実装。
+`service.dart` selects the asset using shared `JsonListAsset.load()`.
+`view.dart` configures shared `ProcessedListExample` loading/result/error/retry
+state. The obsolete message-only model and GetX controller were removed.
+The internal `run()`/message-result contract is intentionally replaced by
+`load()` values, as in patterns 002/003. No GetX registration or binding is needed.
 
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
-
-## 使用例
 ```dart
-// GetX での画面遷移
-Get.to(() => const Pattern001View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern001Controller())));
+Navigator.of(context).push(
+  MaterialPageRoute<void>(builder: (_) => const Pattern001View()),
+);
 ```
 
-## 関連パターン
-- 前: Pattern 001
-- 次: Pattern 002
+Processing and generation commands: `docs/list-selection.md`.
+The shared Flutter suite is
+`test/features/data_processing_patterns/pattern_001_to_099/filter_conditions_test.dart`.
+It tests the real asset, malformed/missing data and UI loading/error/retry/disposal
+without global controller registration. Related examples: 002 and 003.

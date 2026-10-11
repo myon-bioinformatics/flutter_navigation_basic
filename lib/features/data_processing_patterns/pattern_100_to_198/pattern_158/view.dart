@@ -1,37 +1,11 @@
-// Pattern 158: ChangeNotifier
-// ChangeNotifier による状態通知実装。
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
+import 'package:flutter_application_1/core/data_processing/native_notifier_example.dart';
 
-class Pattern158View extends GetView<Pattern158Controller> {
+class Pattern158View extends StatelessWidget {
   const Pattern158View({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 158: ChangeNotifier'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'ChangeNotifier による状態通知実装。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  @override Widget build(BuildContext context) => const NativeNotifierExample(
+    title: 'Pattern 158: ChangeNotifier',
+    description: 'ChangeNotifier による状態通知実装。',
+    useChangeNotifier: true,
+  );
 }

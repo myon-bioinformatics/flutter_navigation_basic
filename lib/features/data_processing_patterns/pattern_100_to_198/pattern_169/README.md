@@ -1,27 +1,11 @@
 # Pattern 169: CleanArch
 
-**カテゴリ**: 案D - データ処理パターン
-
-## 概要
 Clean Architecture の実装例。
 
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
+Flutter標準APIによる実動作の小さな例を
+`lib/core/data_processing/counter_architecture_example.dart` にまとめた。
+共通Widgetテストは`test/features/data_processing_patterns/counter_architecture_test.dart`。
 
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern169View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern169Controller())));
-```
-
-## 関連パターン
-- 前: Pattern 168
-- 次: Pattern 170
+この例はCleanArchの**最小構造**を示すものであり、完全なフレームワーク互換や
+あらゆる役割の実装ではない。GetXの旧ダミーController、
+message Model、100ms待つServiceと個別テストは撤去済み。

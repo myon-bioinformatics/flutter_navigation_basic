@@ -1,11 +1,8 @@
-// Pattern 038: Prefetch
-// スクロール位置検出による先読み。
-import 'model.dart';
+// Pattern 038: Prefetch — Python collection-window state boundary.
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
 
-class Pattern038Service {
-  Future<Pattern038Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern038Result(message: 'Prefetch executed successfully');
-  }
+class Pattern038Service extends JsonListAsset {
+  Pattern038Service({AssetBundle? bundle})
+      : super('assets/data_processing/window_038.json', bundle: bundle);
 }

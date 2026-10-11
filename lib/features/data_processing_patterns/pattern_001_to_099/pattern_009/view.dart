@@ -1,37 +1,18 @@
-// Pattern 009: SortBasic
-// 基本的なリストソート実装。
+// Pattern 009: SortBasic — generated example, not runtime sorting.
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/processed_list_example.dart';
 
-class Pattern009View extends GetView<Pattern009Controller> {
-  const Pattern009View({super.key});
+import 'service.dart';
+
+class Pattern009View extends StatelessWidget {
+  const Pattern009View({super.key, this.bundle});
+
+  final AssetBundle? bundle;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 009: SortBasic'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '基本的なリストソート実装。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ProcessedListExample(
+        title: 'Pattern 009: SortBasic',
+        asset: Pattern009Service(bundle: bundle),
+      );
 }

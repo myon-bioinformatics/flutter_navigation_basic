@@ -1,37 +1,18 @@
-// Pattern 019: TextIndex
-// 全文検索インデックスの構築。
+// Pattern 019: TextIndex — generated example, not runtime text processing.
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/processed_list_example.dart';
 
-class Pattern019View extends GetView<Pattern019Controller> {
-  const Pattern019View({super.key});
+import 'service.dart';
+
+class Pattern019View extends StatelessWidget {
+  const Pattern019View({super.key, this.bundle});
+
+  final AssetBundle? bundle;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 019: TextIndex'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '全文検索インデックスの構築。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ProcessedListExample(
+        title: 'Pattern 019: TextIndex',
+        asset: Pattern019Service(bundle: bundle),
+      );
 }

@@ -1,27 +1,10 @@
 # Pattern 012: SortCustom
 
-**カテゴリ**: 案D - データ処理パターン
+## 機能と責務
+- Python: `tool/python/collection_query_patterns.py` の `custom_sort` が実際の並べ替えを担当。
+- Pythonテスト: `tool/python/tests/test_collection_query_patterns.py` がソートの契約を検証。
+- Dart: `view.dart` は画面の説明と利用可能な範囲を表示するだけ。FlutterからPython CLIへの実行接続は未実装。
+- 旧Controller・Service・Modelと、固定成功文字列を検証していた旧Dartテストは削除済み。
 
-## 概要
-カスタムコンパレータによるソート。
-
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
-
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern012View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern012Controller())));
-```
-
-## 関連パターン
-- 前: Pattern 011
-- 次: Pattern 013
+## 対応状況
+**限定実装**。Pythonでのソート処理は実装済みだが、Flutter画面からの実行と結果表示は未接続。削除したダミー実行ボタンを実機能として数えない。

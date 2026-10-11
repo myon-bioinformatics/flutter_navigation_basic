@@ -1,0 +1,1 @@
+{"mode": "text-index", "schema": "text-processing/1", "values": [{"id": "doc-1", "tokens": ["flutter", "renders", "portable", "user", "interfaces"]}, {"id": "doc-2", "tokens": ["python", "processes", "portable", "data", "search", "indexes"]}, {"id": "doc-3", "tokens": ["search", "indexes", "make", "repeated", "search", "fast"]}]}

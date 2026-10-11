@@ -5,23 +5,18 @@
 ## 概要
 ネストリストのフラット化処理。
 
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
+## 実装と検証
+- 計算処理: `tool/python/collection_transform.py` の `flatten` 操作
+- Python回帰テスト: `tool/python/tests/test_collection_transform.py`
+- CLI仕様: `docs/collection-transform.md`
+- UI: `view.dart` はFlutterの情報表示境界。Pythonプロセスの直接呼び出しは行わない。
+- 旧GetX Controller／ダミーService／message Modelは削除済み。
 
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern118View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern118Controller())));
+## CLIの起動例
+```sh
+python -S tool/python/collection_transform.py --input input.json
 ```
 
-## 関連パターン
-- 前: Pattern 117
-- 次: Pattern 119
+入力JSONに `"operation": "flatten"` と `"values"` を含める。
+必要な追加フィールドはCLI仕様を参照すること。
+Flutterでの実行やデータ表示まで実装済みと誤認しないこと。

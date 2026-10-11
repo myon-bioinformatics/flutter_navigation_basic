@@ -1,0 +1,15 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {processRequest} from '../stream_patterns.mjs';
+const e=(...pairs)=>pairs.map(([at_ms,value])=>({at_ms,value}));
+const go=(mode,params)=>processRequest({mode,...params});
+test('127 async basic',async()=>assert.deepEqual((await go('basic',{events:e([0,1],[1,2])})).events,e([0,1],[1,2])));
+test('128 controller add/close',async()=>assert.deepEqual((await go('controller',{commands:[{op:'add',value:1},{op:'close'}]})).events,e([0,1])));
+test('129 independent broadcast fans',async()=>assert.deepEqual((await go('broadcast',{events:e([0,1]),subscribers:2})).subscribers,[e([0,1]),e([0,1])]));
+test('130 transform',async()=>assert.deepEqual((await go('transform',{events:e([0,[1,2]]),steps:[{op:'expand'},{op:'map_add',value:1},{op:'where_equals',value:3}]})).events,e([0,3])));
+test('131 stable merge',async()=>assert.deepEqual((await go('merge',{streams:[e([0,'a'],[2,'b']),e([1,'x'],[2,'y'])]})).events,[{at_ms:0,value:'a',source:0},{at_ms:1,value:'x',source:1},{at_ms:2,value:'b',source:0},{at_ms:2,value:'y',source:1}]));
+test('132 debounce trailing',async()=>assert.deepEqual((await go('debounce',{events:e([0,'a'],[5,'b'],[11,'c'],[20,'d']),duration_ms:6})).events,e([11,'c'],[20,'d'])));
+test('133 leading throttle',async()=>assert.deepEqual((await go('throttle',{events:e([0,1],[4,2],[5,3]),duration_ms:5})).events,e([0,1],[5,3])));
+test('134 buffer remainder',async()=>assert.deepEqual((await go('buffer',{events:e([0,1],[1,2],[2,3]),size:2})).events,e([1,[1,2]],[2,[3]])));
+test('135 sliding complete window',async()=>assert.deepEqual((await go('window',{events:e([0,1],[1,2],[2,3]),size:2})).events,e([1,[1,2]],[2,[2,3]])));
+test('invalid input rejected',async()=>{for(const payload of [{mode:'basic',events:e([2,1],[1,2])},{mode:'controller',commands:[{op:'close'},{op:'add',value:1}]},{mode:'buffer',events:[],size:0},{mode:'debounce',events:[],duration_ms:0}])await assert.rejects(processRequest(payload));});

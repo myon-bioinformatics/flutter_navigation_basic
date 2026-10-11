@@ -1,0 +1,1 @@
+{"values":[{"name":"A","profile":{"tags":["blue"]}},{"name":"B","profile":{"tags":[]}},{"name":"C","profile":{"tags":["blue","red"]}},{"name":"D"}],"conditions":[{"path":["profile","tags",0],"equals":"blue"}]}

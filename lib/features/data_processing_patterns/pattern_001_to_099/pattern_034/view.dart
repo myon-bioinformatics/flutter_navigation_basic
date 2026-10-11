@@ -1,37 +1,17 @@
-// Pattern 034: LoadMore
-// 「もっと読む」ボタン形式のページング。
+// Pattern 034: LoadMore — rendered Python state, no GetX controller.
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/processed_list_example.dart';
 
-class Pattern034View extends GetView<Pattern034Controller> {
-  const Pattern034View({super.key});
+import 'service.dart';
+
+class Pattern034View extends StatelessWidget {
+  const Pattern034View({super.key, this.bundle});
+  final AssetBundle? bundle;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 034: LoadMore'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '「もっと読む」ボタン形式のページング。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ProcessedListExample(
+        title: 'Pattern 034: LoadMore',
+        asset: Pattern034Service(bundle: bundle),
+      );
 }

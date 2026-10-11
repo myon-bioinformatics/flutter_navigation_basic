@@ -1,37 +1,13 @@
-// Pattern 161: InheritedModel
-// InheritedModel による選択的再ビルド。
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
+import 'package:flutter_application_1/core/data_processing/inherited_catalogue_example.dart';
 
-class Pattern161View extends GetView<Pattern161Controller> {
+class Pattern161View extends StatelessWidget {
   const Pattern161View({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 161: InheritedModel'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'InheritedModel による選択的再ビルド。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => const InheritedCatalogueExample(
+    title: 'Pattern 161: InheritedModel',
+    description: 'InheritedModel による選択的再ビルド。',
+    selective: true,
+  );
 }

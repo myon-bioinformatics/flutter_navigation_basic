@@ -1,11 +1,8 @@
-// Pattern 036: LazyList
-// 遅延ロードリスト実装。
-import 'model.dart';
+// Pattern 036: LazyList — Python collection-window state boundary.
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
 
-class Pattern036Service {
-  Future<Pattern036Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern036Result(message: 'LazyList executed successfully');
-  }
+class Pattern036Service extends JsonListAsset {
+  Pattern036Service({AssetBundle? bundle})
+      : super('assets/data_processing/window_036.json', bundle: bundle);
 }

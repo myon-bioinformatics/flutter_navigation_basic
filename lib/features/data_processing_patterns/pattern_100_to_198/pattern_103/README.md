@@ -1,26 +1,12 @@
 # Pattern 103: DataNormalize
 
-**カテゴリ**: 案D - データ処理パターン
+## 責務と実装範囲
+- Python: `tool/python/conversion_patterns.py` の `normalize` が処理を担当（trim + NFC/NFKC + case 変換）。
+- テスト: `tool/python/tests/test_conversion_patterns.py`。契約は `docs/data-processing-conversion-103-110.md`。
+- Flutter: `/screen103` は共通の `ConversionPatternLinks` で、実装・テスト・契約への GitHub リンクを表示・コピーできる。
+- 旧カタログの `view.dart` は、どの route からも使われていなかったため削除した。旧 Controller・Service・Model はない。
 
-## 概要
-データ正規化 (文字列トリム、大文字小文字統一等)。
-
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
-
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern103View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern103Controller())));
-```
+**対応状況: 限定実装。** Python の処理は実装済みだが、Flutter 画面からの変換実行は未接続。
 
 ## 関連パターン
 - 前: Pattern 102

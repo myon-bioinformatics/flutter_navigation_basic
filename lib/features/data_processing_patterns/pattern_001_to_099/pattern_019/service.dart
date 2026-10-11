@@ -1,11 +1,8 @@
-// Pattern 019: TextIndex
-// 全文検索インデックスの構築。
-import 'model.dart';
+// Pattern 019: TextIndex — Python-generated text-processing result boundary.
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
 
-class Pattern019Service {
-  Future<Pattern019Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern019Result(message: 'TextIndex executed successfully');
-  }
+class Pattern019Service extends JsonListAsset {
+  Pattern019Service({AssetBundle? bundle})
+      : super('assets/data_processing/text_index.json', bundle: bundle);
 }

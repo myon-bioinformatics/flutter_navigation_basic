@@ -92,6 +92,19 @@ def build_parser() -> argparse.ArgumentParser:
     evidence.add_argument("--output", default="test-results/photo-studio-evidence.png")
     evidence.add_argument("--timeout-ms", type=int, default=30000)
 
+    interaction = sub.add_parser(
+        "interaction",
+        help="Drive Flutter E2E-only drag/animation/selection routes via Playwright.",
+    )
+    interaction.add_argument("--project", default="chromium")
+    interaction.add_argument(
+        "--kind",
+        choices=("portable", "gesture", "all"),
+        default="portable",
+        help="Use portable click tests, native pointer gestures, or both.",
+    )
+    interaction.add_argument("--headed", action="store_true")
+
     report = sub.add_parser("report", help="Open the Playwright HTML report.")
     report.add_argument("extra", nargs=argparse.REMAINDER)
 
@@ -140,6 +153,17 @@ def main(argv: list[str] | None = None) -> int:
             f"--output={args.output}",
             f"--timeout={args.timeout_ms}",
         ])
+
+    if args.command == "interaction":
+        grep = None if args.kind == "all" else f"@{args.kind}"
+        return _run(
+            _playwright_test_args(
+                projects=[args.project],
+                headed=args.headed,
+                grep=grep,
+                extra=["tests/pattern_interactions.spec.ts"],
+            )
+        )
 
     if args.command == "report":
         return _run([*_playwright_prefix(), "show-report", *args.extra])

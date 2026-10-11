@@ -1,27 +1,9 @@
 # Pattern 035: VirtualList
 
-**カテゴリ**: 案D - データ処理パターン
+## 責務と実装範囲
+- JavaScript: `tool/javascript/interaction_patterns.mjs` の `virtualWindow` が独立処理を担当。
+- Dart: `view.dart` は説明表示のみ。旧GetXの固定成功実行は撤去。
+- 旧Controller・Service・Modelと旧Dartテストは削除済み。
+- 残課題: 実DOM表示・スクロール未接続。
 
-## 概要
-仮想リスト (大量データ表示最適化)。
-
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
-
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern035View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern035Controller())));
-```
-
-## 関連パターン
-- 前: Pattern 034
-- 次: Pattern 036
+**対応状況: 限定実装。** 独立処理は実装済みだが、Flutter画面の完成機能としては扱わない。

@@ -1,11 +1,8 @@
-// Pattern 041: OffsetLimit
-// offset/limit パラメータ付きページング。
-import 'model.dart';
+// Pattern 041: OffsetLimit — Python collection-window state boundary.
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
 
-class Pattern041Service {
-  Future<Pattern041Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern041Result(message: 'OffsetLimit executed successfully');
-  }
+class Pattern041Service extends JsonListAsset {
+  Pattern041Service({AssetBundle? bundle})
+      : super('assets/data_processing/window_041.json', bundle: bundle);
 }

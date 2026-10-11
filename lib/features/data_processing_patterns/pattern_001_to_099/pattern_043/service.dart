@@ -1,11 +1,8 @@
-// Pattern 043: WindowPaging
-// Window Paging 実装。
-import 'model.dart';
+// Pattern 043: WindowPaging — Python collection-window state boundary.
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
 
-class Pattern043Service {
-  Future<Pattern043Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern043Result(message: 'WindowPaging executed successfully');
-  }
+class Pattern043Service extends JsonListAsset {
+  Pattern043Service({AssetBundle? bundle})
+      : super('assets/data_processing/window_043.json', bundle: bundle);
 }

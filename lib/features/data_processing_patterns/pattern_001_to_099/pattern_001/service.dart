@@ -1,11 +1,8 @@
-// Pattern 001: FilterBasic
-// リストのシンプルなフィルタリング実装。
-import 'model.dart';
+// Pattern 001: FilterBasic — load externally processed values only.
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
 
-class Pattern001Service {
-  Future<Pattern001Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern001Result(message: 'FilterBasic executed successfully');
-  }
+class Pattern001Service extends JsonListAsset {
+  Pattern001Service({AssetBundle? bundle})
+      : super('assets/data_processing/filter_basic.json', bundle: bundle);
 }

@@ -3,7 +3,7 @@
   "files": [
     {
       "repository": "myon-bioinformatics/Ironmate",
-      "ref": "refs/heads/main",
+      "ref": "73157cb7fed236a4a941722a6dcddd69a33ab95a",
       "commit": "73157cb7fed236a4a941722a6dcddd69a33ab95a",
       "source": "repository_metadata_contract.py",
       "destination": "tool/python/vendor/repository_metadata_contract.py",
@@ -12,7 +12,7 @@
     },
     {
       "repository": "myon-bioinformatics/Ironmate",
-      "ref": "refs/heads/main",
+      "ref": "73157cb7fed236a4a941722a6dcddd69a33ab95a",
       "commit": "73157cb7fed236a4a941722a6dcddd69a33ab95a",
       "source": "repository_metadata_generator.py",
       "destination": "tool/python/vendor/repository_metadata_generator.py",
@@ -21,7 +21,7 @@
     },
     {
       "repository": "myon-bioinformatics/Ironmate",
-      "ref": "refs/heads/main",
+      "ref": "73157cb7fed236a4a941722a6dcddd69a33ab95a",
       "commit": "73157cb7fed236a4a941722a6dcddd69a33ab95a",
       "source": "LICENSE",
       "destination": "tool/python/vendor/Ironmate-LICENSE",
@@ -74,15 +74,6 @@
       "sha256": "b02c4880336c3fce5427b818bfe19175c13f0acb8bf1204c6208ac85bb20f730"
     },
     {
-      "repository": "myon-bioinformatics/myon-bioinformatics",
-      "ref": "refs/heads/main",
-      "commit": "a0ac5902b29b13a3b9c903526bf2fee21a3042b3",
-      "source": "git_inspector.py",
-      "destination": "tool/python/vendor/git_inspector.py",
-      "blob_sha": "9f6d88101688e2578a3ca45e7eaf7c805fe6f1bd",
-      "sha256": "7b960e0851b23ca7ca64d8f917dd8e56aa0509ca6332d191309a7895cf382641"
-    },
-    {
       "repository": "myon-bioinformatics/cli_args",
       "ref": "refs/heads/main",
       "commit": "d849c17f5e7c18037e2ab2c04bc71eee3e22cd35",
@@ -119,15 +110,6 @@
       "sha256": "15f66204c4a6a1ce0c94f0ed4319ff9400f872e85fd32c95f21695c2f231af59"
     },
     {
-      "repository": "myon-bioinformatics/myon-bioinformatics",
-      "ref": "refs/heads/main",
-      "commit": "a0ac5902b29b13a3b9c903526bf2fee21a3042b3",
-      "source": "LICENSE",
-      "destination": "tool/python/vendor/myon-bioinformatics-LICENSE",
-      "blob_sha": "4ec4989b801bf1a3df6184d21f79e6e7ed5931f6",
-      "sha256": "15f66204c4a6a1ce0c94f0ed4319ff9400f872e85fd32c95f21695c2f231af59"
-    },
-    {
       "repository": "myon-bioinformatics/cli_args",
       "ref": "refs/heads/main",
       "commit": "d849c17f5e7c18037e2ab2c04bc71eee3e22cd35",
@@ -148,16 +130,16 @@
     {
       "repository": "myon-bioinformatics/gh_identity",
       "ref": "refs/heads/main",
-      "commit": "3efe04b1c62d97fc2582fbd90f999bcf426c9ea3",
+      "commit": "57e01329c7662f7fc6c74cee23e648e8cd209f6f",
       "source": "gh_identity.py",
       "destination": "tool/python/vendor/gh_identity.py",
-      "blob_sha": "6c1d7119f94c0eac04b80b4a8071f0f26fb2dabf",
-      "sha256": "9eb2a59c4c7656fcfc597644a4fb6449fae4784d2a0014ef2867d0006d493d2b"
+      "blob_sha": "b5fd2487b1f9e151c28e15fa859561800758792d",
+      "sha256": "c3c8058f5603bc099ae6fff01d4f4a187e2c76a878cbde40ac1559bfb135e10b"
     },
     {
       "repository": "myon-bioinformatics/gh_identity",
       "ref": "refs/heads/main",
-      "commit": "3efe04b1c62d97fc2582fbd90f999bcf426c9ea3",
+      "commit": "57e01329c7662f7fc6c74cee23e648e8cd209f6f",
       "source": "LICENSE",
       "destination": "tool/python/vendor/gh_identity-LICENSE",
       "blob_sha": "4ec4989b801bf1a3df6184d21f79e6e7ed5931f6",

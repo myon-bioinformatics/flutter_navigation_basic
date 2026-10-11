@@ -1,27 +1,10 @@
 # Pattern 164: EventState
 
-**カテゴリ**: 案D - データ処理パターン
-
-## 概要
 イベント→状態遷移パターン。
 
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
-
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern164View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern164Controller())));
-```
-
-## 関連パターン
-- 前: Pattern 163
-- 次: Pattern 165
+- 実処理: `tool/python/state_reducer.py` の `event_state` operation
+- pytest: `tool/python/tests/test_state_reducer.py`
+- 契約: `docs/state-reducer-patterns.md`
+- Redux Storeやサブスクライバー、Flutter状態管理との完全互換は意図しない。
+- 旧ダミーController／Model／Serviceは削除済み。
+- Viewは説明画面であり、Python CLIの実行結果は未接続。

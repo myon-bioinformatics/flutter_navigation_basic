@@ -1,37 +1,17 @@
-// Pattern 038: Prefetch
-// スクロール位置検出による先読み。
+// Pattern 038: Prefetch — rendered Python state, no GetX controller.
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/processed_list_example.dart';
 
-class Pattern038View extends GetView<Pattern038Controller> {
-  const Pattern038View({super.key});
+import 'service.dart';
+
+class Pattern038View extends StatelessWidget {
+  const Pattern038View({super.key, this.bundle});
+  final AssetBundle? bundle;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 038: Prefetch'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'スクロール位置検出による先読み。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ProcessedListExample(
+        title: 'Pattern 038: Prefetch',
+        asset: Pattern038Service(bundle: bundle),
+      );
 }

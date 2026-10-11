@@ -12,6 +12,7 @@ on:
       - "tool/python/**"
       - "tool/time/**"
       - "assets/time/**"
+      - "assets/data_processing/**"
       - "test/fixtures/photo_studio/import_compat/**"
       - "e2e/**"
       - "**/requirements.txt"
@@ -25,6 +26,7 @@ on:
       - "tool/python/**"
       - "tool/time/**"
       - "assets/time/**"
+      - "assets/data_processing/**"
       - "test/fixtures/photo_studio/import_compat/**"
       - "e2e/**"
       - "**/requirements.txt"
@@ -38,7 +40,8 @@ on:
 
 concurrency:
   group: non-dart-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # Preserve the producer and its JUnit artifacts before downstream collection.
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -53,6 +56,7 @@ jobs:
       workflow: ${{ steps.filter.outputs.workflow }}
       pattern_boundary: ${{ steps.filter.outputs.pattern_boundary }}
       playwright: ${{ steps.filter.outputs.playwright }}
+      validation_browser: ${{ steps.filter.outputs.validation_browser }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -69,6 +73,7 @@ jobs:
               echo "workflow=true"
               echo "pattern_boundary=true"
               echo "playwright=true"
+              echo "validation_browser=true"
             } >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -87,6 +92,7 @@ jobs:
                 echo "workflow=true"
                 echo "pattern_boundary=true"
                 echo "playwright=true"
+                echo "validation_browser=true"
               } >> "$GITHUB_OUTPUT"
               exit 0
             fi
@@ -99,9 +105,10 @@ jobs:
           workflow=false
           pattern_boundary=false
           playwright=false
+          validation_browser=false
           for f in "${files[@]}"; do
             case "$f" in
-              tool/python/*|tool/time/*|assets/time/*|test/fixtures/photo_studio/import_compat/*|lib/features/*_patterns/*)
+              tool/python/*|tool/time/*|assets/time/*|assets/data_processing/*|test/fixtures/photo_studio/import_compat/*|lib/features/*_patterns/*)
                 python=true
                 ;;
               e2e/*)
@@ -132,6 +139,13 @@ jobs:
                 python=true
                 ;;
             esac
+            # Chromium contract for the loopback validation page. It does not
+            # boot Flutter, so keep it off the portable five-project suite.
+            case "$f" in
+              tool/python/validation_http.py|tool/python/validation_patterns.py|tool/python/tests/test_validation_http.py|tool/python/tests/test_validation_patterns.py|e2e/tests/validation_http.spec.ts|e2e/playwright.config.ts|.github/workflows/non-dart.yml)
+                validation_browser=true
+                ;;
+            esac
           done
 
           {
@@ -140,11 +154,12 @@ jobs:
             echo "workflow=$workflow"
             echo "pattern_boundary=$pattern_boundary"
             echo "playwright=$playwright"
+            echo "validation_browser=$validation_browser"
           } >> "$GITHUB_OUTPUT"
           {
             echo "Changed files (${#files[@]}):"
             printf '%s\n' "${files[@]}"
-            echo "outputs: python=$python e2e=$e2e workflow=$workflow pattern_boundary=$pattern_boundary playwright=$playwright"
+            echo "outputs: python=$python e2e=$e2e workflow=$workflow pattern_boundary=$pattern_boundary playwright=$playwright validation_browser=$validation_browser"
           }
 
   # This is the only non-Dart job activated by ordinary Dart-source changes.
@@ -494,7 +509,23 @@ jobs:
             fi
             sleep 1
           done
-          python3 ../tool/python/playwright.py test --project chromium --project firefox --project webkit --project mobile-chromium --project mobile-webkit --grep @portable tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts tests/photo_studio_ingress.spec.ts tests/photo_studio_format_matrix.spec.ts
+          junit_dir="$GITHUB_WORKSPACE/build/test-results"
+          mkdir -p "$junit_dir"
+          PLAYWRIGHT_JUNIT_OUTPUT_FILE="$junit_dir/playwright-portable.xml" \
+            python3 ../tool/python/playwright.py test --project chromium --project firefox --project webkit --project mobile-chromium --project mobile-webkit --grep @portable tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts tests/photo_studio_ingress.spec.ts tests/photo_studio_format_matrix.spec.ts
+          PLAYWRIGHT_JUNIT_OUTPUT_FILE="$junit_dir/playwright-interaction-portable.xml" \
+            python3 ../tool/python/playwright.py interaction --project chromium --kind portable
+          PLAYWRIGHT_JUNIT_OUTPUT_FILE="$junit_dir/playwright-interaction-gesture.xml" \
+            python3 ../tool/python/playwright.py interaction --project chromium --kind gesture
+
+      - name: Preserve junit-playwright-e2e
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: junit-playwright-e2e
+          path: build/test-results/playwright-*.xml
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Upload Playwright report
         if: always()
@@ -507,14 +538,97 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
 
+  # Chromium-only contract for the loopback validation page. The portable
+  # Playwright job boots Flutter web and an allowlisted spec set; this page
+  # is a separate Python server, so it stays on its own producer and JUnit.
+  validation-browser:
+    name: Validation browser contract
+    needs: changes
+    if: needs.changes.outputs.validation_browser == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
 
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+
+      - name: Install Chromium
+        working-directory: e2e
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+
+      - name: Run validation page browser contract
+        working-directory: e2e
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/build/test-results"
+          PLAYWRIGHT_JUNIT_OUTPUT_FILE="$GITHUB_WORKSPACE/build/test-results/validation-browser.xml" \
+            python3 ../tool/python/playwright.py test --project=chromium tests/validation_http.spec.ts
+
+      - name: Preserve junit-validation-browser
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: junit-validation-browser
+          path: build/test-results/validation-browser.xml
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Preserve validation browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: validation-browser-evidence
+          path: e2e/test-results/
+          if-no-files-found: warn
+          retention-days: 14
+
+  # The collector only sees artifacts of THIS workflow run, so the expectation
+  # must follow which producer jobs the path classifier actually selected.
+  junit-plan:
+    name: Plan expected JUnit reports
+    needs: changes
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.plan.outputs.run }}
+      reports: ${{ steps.plan.outputs.reports }}
+    steps:
+      - id: plan
+        env:
+          PYTHON: ${{ needs.changes.outputs.python == 'true' || needs.changes.outputs.workflow == 'true' }}
+          PLAYWRIGHT: ${{ needs.changes.outputs.playwright == 'true' }}
+          VALIDATION_BROWSER: ${{ needs.changes.outputs.validation_browser == 'true' }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+
+          reports = []
+          if os.environ["PYTHON"] == "true":
+              reports += ["junit-python-3.12/python-3.12.xml",
+                          "junit-controlled-python-3.12/junit.xml"]
+          if os.environ["PLAYWRIGHT"] == "true":
+              reports += ["junit-playwright-e2e/playwright-portable.xml",
+                          "junit-playwright-e2e/playwright-interaction-portable.xml",
+                          "junit-playwright-e2e/playwright-interaction-gesture.xml"]
+          if os.environ["VALIDATION_BROWSER"] == "true":
+              reports += ["junit-validation-browser/validation-browser.xml"]
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write("run=" + ("true" if reports else "false") + "\n")
+              output.write("reports=" + json.dumps(reports) + "\n")
+          PY
 
   junit-identity:
-    needs: [changes, python-pytest]
-    if: always() && (needs.changes.outputs.python == 'true' || needs.changes.outputs.workflow == 'true')
+    needs: [changes, junit-plan, python-pytest, playwright, validation-browser]
+    if: always() && needs.junit-plan.outputs.run == 'true'
     permissions:
       contents: read
       actions: read
     uses: myon-bioinformatics/myon-bioinformatics/.github/workflows/reusable-junit-identity.yml@4dfda95d6573250477f991a0421fa6acb9bc0258
     with:
-      expected-reports: '["junit-python-3.12/python-3.12.xml", "junit-controlled-python-3.12/junit.xml"]'
+      expected-reports: ${{ needs.junit-plan.outputs.reports }}

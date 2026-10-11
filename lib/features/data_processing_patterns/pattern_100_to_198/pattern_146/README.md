@@ -1,27 +1,10 @@
 # Pattern 146: RxLike
 
-**カテゴリ**: 案D - データ処理パターン
-
-## 概要
 RxDart 風の Reactive 実装 (標準 Stream)。
 
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
-
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern146View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern146Controller())));
-```
-
-## 関連パターン
-- 前: Pattern 145
-- 次: Pattern 147
+## 責務
+- 参照実装：`tool/javascript/event_loop_patterns.mjs`、mode `reactive`
+- 回帰テスト：`tool/javascript/tests/*.test.mjs`（`node --test`）
+- 詳細：`docs/event-loop-patterns.md`
+- FlutterのViewは説明用。Node実行への接続は未実装。Dart Stream/Future固有動作の完全互換ではない。
+- 旧ダミーController/Model/Serviceは削除済み。

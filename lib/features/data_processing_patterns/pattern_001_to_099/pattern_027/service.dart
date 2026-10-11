@@ -1,11 +1,8 @@
-// Pattern 027: PriorityQueue
-// 優先度キューによるデータ管理。
-import 'model.dart';
+// Pattern 027: PriorityQueue — Python-generated collection result boundary.
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
 
-class Pattern027Service {
-  Future<Pattern027Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern027Result(message: 'PriorityQueue executed successfully');
-  }
+class Pattern027Service extends JsonListAsset {
+  Pattern027Service({AssetBundle? bundle})
+      : super('assets/data_processing/priority_queue.json', bundle: bundle);
 }

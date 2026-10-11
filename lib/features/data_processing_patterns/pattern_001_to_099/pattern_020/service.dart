@@ -1,11 +1,8 @@
-// Pattern 020: InvertedIndex
-// 転置インデックスによる高速検索。
-import 'model.dart';
+// Pattern 020: InvertedIndex — Python-generated text-processing result boundary.
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/core/data_processing/json_list_asset.dart';
 
-class Pattern020Service {
-  Future<Pattern020Result> run() async {
-    // TODO: 実装を追加してください
-    await Future.delayed(const Duration(milliseconds: 100));
-    return Pattern020Result(message: 'InvertedIndex executed successfully');
-  }
+class Pattern020Service extends JsonListAsset {
+  Pattern020Service({AssetBundle? bundle})
+      : super('assets/data_processing/inverted_index.json', bundle: bundle);
 }

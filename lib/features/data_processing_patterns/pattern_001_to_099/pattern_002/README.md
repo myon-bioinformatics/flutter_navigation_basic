@@ -1,27 +1,20 @@
 # Pattern 002: FilterMultiple
 
-**カテゴリ**: 案D - データ処理パターン
+Python stdlibの共通CLI `tool/python/list_selection.py` が実処理を行います。
+入力例 `tool/python/fixtures/filter_multiple_input.json` から生成した
+`assets/data_processing/filter_multiple.json` を既存の画面で読み込みます。
+この画面は生成済みの例の表示で、任意入力の実行時フィルターではありません。
 
-## 概要
-複数条件でのフィルタリング。
+`service.dart` は共有 `JsonListAsset` のパス指定だけ、`view.dart` は共有
+`ProcessedListExample` の表示設定だけです。不要な `model.dart` と
+`controller.dart` は削除しました。GetX登録やbindingは不要です。
 
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
-
-## 使用例
 ```dart
-// GetX での画面遷移
-Get.to(() => const Pattern002View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern002Controller())));
+Navigator.of(context).push(MaterialPageRoute(
+  builder: (_) => const Pattern002View(),
+));
 ```
 
-## 関連パターン
-- 前: Pattern 001
-- 次: Pattern 003
+CLIの条件契約・生成/検査コマンドは `docs/list-selection.md`、共通の実処理・
+エラー/再試行テストは `filter_conditions_test.dart` と
+`tool/python/tests/test_filter_conditions.py` を参照してください。

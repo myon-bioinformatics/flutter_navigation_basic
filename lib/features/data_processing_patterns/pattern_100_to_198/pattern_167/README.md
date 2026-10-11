@@ -1,27 +1,11 @@
 # Pattern 167: MVVM
 
-**カテゴリ**: 案D - データ処理パターン
-
-## 概要
 MVVM パターンの Flutter 実装。
 
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
+Flutter標準APIによる実動作の小さな例を
+`lib/core/data_processing/counter_architecture_example.dart` にまとめた。
+共通Widgetテストは`test/features/data_processing_patterns/counter_architecture_test.dart`。
 
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern167View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern167Controller())));
-```
-
-## 関連パターン
-- 前: Pattern 166
-- 次: Pattern 168
+この例はMVVMの**最小構造**を示すものであり、完全なフレームワーク互換や
+あらゆる役割の実装ではない。GetXの旧ダミーController、
+message Model、100ms待つServiceと個別テストは撤去済み。

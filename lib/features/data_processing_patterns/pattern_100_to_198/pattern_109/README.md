@@ -1,26 +1,12 @@
 # Pattern 109: Encoding
 
-**カテゴリ**: 案D - データ処理パターン
+## 責務と実装範囲
+- Python: `tool/python/conversion_patterns.py` の `encoding` が処理を担当（UTF-8 文字列と Base64 の相互変換）。
+- テスト: `tool/python/tests/test_conversion_patterns.py`。契約は `docs/data-processing-conversion-103-110.md`。
+- Flutter: `/screen109` は共通の `ConversionPatternLinks` で、実装・テスト・契約への GitHub リンクを表示・コピーできる。
+- 旧カタログの `view.dart` は、どの route からも使われていなかったため削除した。旧 Controller・Service・Model はない。
 
-## 概要
-文字エンコーディング変換処理。
-
-## ファイル構成
-| ファイル | 役割 |
-|---|---|
-| `view.dart` | UI コンポーネント |
-| `controller.dart` | ビジネスロジック (GetX Controller) |
-| `service.dart` | サービス層 |
-| `model.dart` | データモデル |
-| `README.md` | 本ドキュメント |
-| `test.dart` | テストコード |
-
-## 使用例
-```dart
-// GetX での画面遷移
-Get.to(() => const Pattern109View(),
-  binding: BindingsBuilder(() => Get.lazyPut(() => Pattern109Controller())));
-```
+**対応状況: 限定実装。** Python の処理は実装済みだが、Flutter 画面からの変換実行は未接続。
 
 ## 関連パターン
 - 前: Pattern 108

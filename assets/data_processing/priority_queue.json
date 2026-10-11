@@ -1,0 +1,1 @@
+{"mode": "priority", "schema": "list-ordering/1", "values": [{"name": "critical", "priority": 1}, {"name": "urgent", "priority": 1}, {"name": "normal", "priority": 2}, {"name": "later", "priority": 3}]}

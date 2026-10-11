@@ -1,37 +1,18 @@
-// Pattern 165: Redux
-// Redux パターンの擬似実装。
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
 
-class Pattern165View extends GetView<Pattern165Controller> {
+class Pattern165View extends StatelessWidget {
   const Pattern165View({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pattern 165: Redux'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Redux パターンの擬似実装。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Obx(() => Text('状態: ${controller.status.value}')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.execute,
-              child: const Text('実行'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Pattern 165: Redux')),
+    body: const Padding(
+      padding: EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start,children: [
+        Text('Redux パターンの擬似実装。'),
+        SizedBox(height: 12),
+        Text('Pythonで純粋な状態遷移を実装済み。Flutter画面との実行接続は未実装。'),
+      ]),
+    ),
+  );
 }
