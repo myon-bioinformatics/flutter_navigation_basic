@@ -32,7 +32,7 @@ def command_for(runner: str, *, root: Path, files: list[str], report: Path):
         e2e = base / "e2e"
         if not all(Path(p).is_relative_to(e2e) for p in paths):
             raise ValueError("Node Playwright test files must be under e2e")
-        return ["npx", "--no-install", "playwright", "test", "--reporter=junit", *paths], e2e, {
+        return ["npx", "--no-install", "playwright", "test", "--reporter=junit",\n                *[str(Path(p).relative_to(e2e)) for p in paths]], e2e, {
             "PLAYWRIGHT_JUNIT_OUTPUT_FILE": str(report)}
     return [sys.executable, "-m", "pytest", "--junitxml=" + str(report), *paths], base, {}
 
