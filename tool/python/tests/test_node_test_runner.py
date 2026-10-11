@@ -89,3 +89,36 @@ def test_node_js_regex_and_describe_name_are_authoritative(tmp_path, pattern):
     assert run_node(root=tmp_path, files=[js.name], report=report,
                     name_pattern=pattern) == 0
     assert read_junit(report)["passed"] >= 1
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node unavailable")
+@pytest.mark.parametrize("path_style", ["relative", "dot-relative", "absolute"])
+def test_no_match_rejects_all_node_path_spellings(tmp_path, path_style):
+    js = tmp_path / "path.test.mjs"
+    js.write_text("import test from 'node:test'; test('exists', () => {});")
+    file_arg = {
+        "relative": js.name,
+        "dot-relative": "./" + js.name,
+        "absolute": str(js),
+    }[path_style]
+    report = tmp_path / "node.xml"
+    assert run_node(root=tmp_path, files=[file_arg], report=report,
+                    name_pattern="^never-matches$") != 0
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node unavailable")
+@pytest.mark.parametrize("path_style", ["relative", "dot-relative", "absolute"])
+def test_matching_suite_accepts_all_node_path_spellings(tmp_path, path_style):
+    js = tmp_path / "path.test.mjs"
+    js.write_text(
+        "import { describe, it } from 'node:test'; "
+        "describe('Clipboard', () => { it('copies', () => {}); });"
+    )
+    file_arg = {
+        "relative": js.name,
+        "dot-relative": "./" + js.name,
+        "absolute": str(js),
+    }[path_style]
+    report = tmp_path / "node.xml"
+    assert run_node(root=tmp_path, files=[file_arg], report=report,
+                    name_pattern="Clipboard") == 0
