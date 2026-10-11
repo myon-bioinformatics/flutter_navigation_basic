@@ -48,7 +48,7 @@ void main() {
 
     final ids = observed.keys.toList()..sort();
     final path = Platform.environment['ROUTE_OBSERVATIONS'] ??
-        'build/route-observations.json';
+        'build/test-results/route-observations.json';
     File(path)
       ..parent.createSync(recursive: true)
       ..writeAsStringSync(const JsonEncoder.withIndent('  ').convert({

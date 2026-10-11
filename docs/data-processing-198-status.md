@@ -43,7 +43,7 @@ python3 -S tool/python/render_pattern_status.py pattern-responsibility.json patt
 
 - 期待値: `tool/ci/numbered_routes.toml`（**人が書く**。198 件の行き先 Widget。コメント可）
 - 実測: `test/core/navigation/numbered_routes_observation_test.dart` が 198 本の route を実行時に解決し、
-  `build/route-observations.json` に Widget の種別と id を書き出す（**機械が書く**。期待値は読まない）。
+  `build/test-results/route-observations.json` に Widget の種別と id を書き出す（**機械が書く**。期待値は読まない）。
 - 判定: `tool/python/check_route_observations.py` が TOML と JSON を照合し、件数・種別・id の
   どれかが違えば失敗する。Refactor smoke で実測の直後に実行する。
 - 監査: `route`（Widget）、`reachability`（`shared` / `dedicated` / `generic`）、`provision`

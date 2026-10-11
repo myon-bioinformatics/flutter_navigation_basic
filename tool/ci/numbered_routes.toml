@@ -2,7 +2,7 @@
 # このファイルは人が書く。機械では生成しない。
 #
 # - 実測: test/core/navigation/numbered_routes_observation_test.dart が 198 本の route を
-#   実行時に解決し、build/route-observations.json に Widget の種別と id を書き出す。
+#   実行時に解決し、build/test-results/route-observations.json に Widget の種別と id を書き出す。
 # - 判定: tool/python/check_route_observations.py がこのファイルと実測を照合し、
 #   件数・種別・id のどれかが違えば CI を落とす（route を足して更新し忘れても気づける）。
 # - 監査: tool/python/pattern_responsibility_audit.py がこのファイルを route の証跡として読む。

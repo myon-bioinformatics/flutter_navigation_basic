@@ -2,7 +2,7 @@
 """Compare observed numbered-route widgets with the hand-written expectations.
 
 Expected: tool/ci/numbered_routes.toml (people write it).
-Observed: build/route-observations.json (the Flutter observation test writes it).
+Observed: build/test-results/route-observations.json (the Flutter observation test writes it).
 Fails on any difference in count, widget kind or id. Standard library only.
 """
 from __future__ import annotations
