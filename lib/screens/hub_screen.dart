@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../shared/catalog/catalog_search.dart';
 import '../config/routes.dart';
 import '../shared/display/display_scope.dart';
 import 'generic_screen.dart';
@@ -38,17 +39,8 @@ class _HubScreenState extends State<HubScreen> {
   }
 
   void _filter() {
-    final query = _searchCtrl.text.toLowerCase();
     setState(() {
-      _filtered = query.isEmpty
-          ? _all
-          : _all
-              .where((s) =>
-                  s.name.toLowerCase().contains(query) ||
-                  s.title.toLowerCase().contains(query) ||
-                  s.description.toLowerCase().contains(query) ||
-                  s.category.toLowerCase().contains(query))
-              .toList();
+      _filtered = searchCatalog(_all, _searchCtrl.text);
     });
   }
 
