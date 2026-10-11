@@ -67,8 +67,8 @@ Pythonの実処理と一致することをPlaywright/JUnitで確認する。
 選択・コピーできる。Dartの処理重複やGitHub Pages上のPython常駐は不要。
 
 GitHub Pages のビルドは `--dart-define=SOURCE_REF=<deploy した commit>` を渡すので、
-公開画面のリンクはそのコミットに固定され、作業ブランチを削除しても 404 にならない。
-それ以外のビルド（ローカル・PR の CI）はマージ前でもファイルがある PR #145 の作業ブランチを指す。**現時点では外部ブラウザを直接開くボタンではなく、
+公開画面のリンクはそのコミットに固定される。`SOURCE_REF` を渡さないビルドは main を指す
+（マージ前は main にファイルがないため、PR のビルドでは 404 になりうる）。**現時点では外部ブラウザを直接開くボタンではなく、
 URLのコピー操作**である。
 
 テスト: `test/features/data_processing_patterns/validation_pattern_links_test.dart`。
