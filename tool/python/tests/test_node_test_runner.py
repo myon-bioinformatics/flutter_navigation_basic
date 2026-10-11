@@ -14,7 +14,7 @@ def test_native_junit_failure_and_skip(tmp_path):
     path = tmp_path / "node.xml"
     path.write_text('<testsuites><testcase name="ok"/><testcase name="bad"><failure message="boom">stack</failure></testcase><testcase name="skip"><skipped/></testcase></testsuites>')
     assert read_junit(path) == {"passed": 1, "failed": 1, "skipped": 1, "total": 3,
-                                "failures": [{"name": "bad", "message": "boom"}]}
+                                "failures": [{"name": "bad", "message": "boom"}], "names": ["ok", "bad", "skip"]}
 
 
 @pytest.mark.parametrize("xml", ["<broken", "<other/>", "<testsuites/>",
