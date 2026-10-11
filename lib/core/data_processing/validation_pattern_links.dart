@@ -14,7 +14,7 @@ class ValidationPatternLinks extends StatelessWidget {
     'RangeValidation', 'RegexValidation', 'FormValidation',
   ];
   static const _repo =
-      'https://github.com/myon-bioinformatics/flutter_navigation_basic/blob/main/';
+      'https://github.com/myon-bioinformatics/flutter_navigation_basic/blob/work/pattern-filter-basic-python/';
 
   @override
   Widget build(BuildContext context) {
