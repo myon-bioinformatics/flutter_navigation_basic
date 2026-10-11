@@ -90,13 +90,20 @@ def run(req):
         return {"value": out}
     if op == "unit":
         unit_from, unit_to = req.get("from"), req.get("to")
-        if type(value) not in (int, float) or not math.isfinite(value):
+        try:  # math.isfinite converts ints to float: huge ints raise OverflowError
+            finite = type(value) in (int, float) and math.isfinite(value)
+        except OverflowError:
+            finite = False
+        if not finite:
             raise ValueError("unit value must be finite number")
         factors = {"m": 1.0, "km": 1000.0, "cm": 0.01, "kg": 1.0, "g": 0.001}
         groups = [{"m", "km", "cm"}, {"kg", "g"}]
         if unit_from not in factors or unit_to not in factors or not any({unit_from, unit_to} <= g for g in groups):
             raise ValueError("incompatible units")
-        result = value * factors[unit_from] / factors[unit_to]
+        try:
+            result = value * factors[unit_from] / factors[unit_to]
+        except OverflowError as exc:
+            raise ValueError("unit conversion overflow") from exc
         if not math.isfinite(result):
             raise ValueError("unit conversion overflow")
         return {"value": result}

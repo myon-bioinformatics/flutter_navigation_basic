@@ -90,3 +90,8 @@ def test_unit_conversion_overflow_fails_closed():
     # finite input can still overflow after applying a conversion factor.
     with pytest.raises(ValueError, match="overflow"):
         m.run({"operation":"unit","from":"km","to":"cm","value":1e308})
+
+
+def test_unit_conversion_rejects_integers_too_large_for_float():
+    with pytest.raises(ValueError):
+        m.run({"operation":"unit","from":"km","to":"m","value":10 ** 400})
