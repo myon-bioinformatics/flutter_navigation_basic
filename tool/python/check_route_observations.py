@@ -57,6 +57,9 @@ def main(argv=None) -> int:
     except (OSError, ValueError) as error:
         print(f"route check: cannot read input: {error}", file=sys.stderr)
         return 2
+    if args.receipt and (not args.head_sha or not args.run_id):
+        print("route check: --receipt requires --head-sha and --run-id", file=sys.stderr)
+        return 2
     problems = compare(expected, observed, head_sha=args.head_sha, run_id=args.run_id)
     annotate = os.environ.get("GITHUB_ACTIONS") == "true"
     for problem in problems:
