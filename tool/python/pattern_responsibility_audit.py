@@ -231,6 +231,8 @@ def main(argv=None):
     parser.add_argument("--json",action="store_true")
     parser.add_argument("--check",action="store_true")
     parser.add_argument("--route-verification",type=Path)
+    parser.add_argument("--route-head-sha")
+    parser.add_argument("--route-run-id")
     args=parser.parse_args(argv)
     try:
         verification = None
@@ -238,6 +240,12 @@ def main(argv=None):
             verification = json.loads(args.route_verification.read_text(encoding="utf-8"))
             if verification.get("schema") != "route-verification/1" or verification.get("result") != "success":
                 raise ValueError("invalid route verification receipt")
+            if not args.route_head_sha or not args.route_run_id:
+                raise ValueError("route verification requires expected head SHA and run ID")
+            if verification.get("head_sha") != args.route_head_sha:
+                raise ValueError("route verification head SHA does not match expected head")
+            if verification.get("run_id") != args.route_run_id:
+                raise ValueError("route verification run ID does not match expected run")
         result=audit(args.root.resolve(), verification)
     except (ValueError,OSError) as error:
         print("audit: "+str(error),file=sys.stderr)
