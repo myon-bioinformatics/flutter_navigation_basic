@@ -16,12 +16,16 @@ const usePythonCurlRuntime = bool.fromEnvironment('CURL_PYTHON_RUNTIME');
 ///
 /// Native/static compatibility builds keep the legacy implementation until
 /// their runtime/packaging boundary is replaced and measured.
+///
+/// [transport] replaces the Python HTTP call in tests only; production passes
+/// nothing. It is ignored when the Python runtime is not compiled in.
 Future<CurlImportResult> importCurlText(
   String raw, {
   required String Function() newId,
+  Future<String> Function(String)? transport,
 }) async {
   if (!usePythonCurlRuntime) return legacy.importLegacyCurl(raw, newId: newId);
-  return importPythonCurl(raw, newId: newId);
+  return importPythonCurl(raw, newId: newId, transport: transport);
 }
 
 /// Transfer/shape boundary only: no curl lexing or request processing in Dart.
