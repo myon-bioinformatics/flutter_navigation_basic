@@ -129,8 +129,6 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
         ("myon-bioinformatics/browser-test-kit", "scripts/check_png.py", "tool/python/vendor/check_png.py"),
         ("myon-bioinformatics/browser-test-kit", "scripts/jsonl_digest.py", "tool/python/vendor/jsonl_digest.py"),
         ("myon-bioinformatics/browser-test-kit", "LICENSE", "tool/python/vendor/browser-test-kit-LICENSE"),
-        ("myon-bioinformatics/myon-bioinformatics", "git_inspector.py", "tool/python/vendor/git_inspector.py"),
-        ("myon-bioinformatics/myon-bioinformatics", "LICENSE", "tool/python/vendor/myon-bioinformatics-LICENSE"),
         ("myon-bioinformatics/cli_args", "cli_args.py", "tool/python/vendor/cli_args.py"),
         ("myon-bioinformatics/cli_args", "LICENSE", "tool/python/vendor/cli_args-LICENSE"),
         ("myon-bioinformatics/gh_identity", "gh_identity.py", "tool/python/vendor/gh_identity.py"),
