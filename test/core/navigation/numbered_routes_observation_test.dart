@@ -52,7 +52,11 @@ void main() {
     File(path)
       ..parent.createSync(recursive: true)
       ..writeAsStringSync(const JsonEncoder.withIndent('  ').convert({
-        'schema': 'route-observations/1',
+        'schema': 'route-observations/2',
+        'provenance': {
+          'head_sha': Platform.environment['ROUTE_HEAD_SHA'] ?? '',
+          'run_id': Platform.environment['ROUTE_RUN_ID'] ?? '',
+        },
         'routes': {
           for (final id in ids)
             id.toString().padLeft(3, '0'): {
