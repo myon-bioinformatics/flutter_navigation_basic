@@ -271,8 +271,7 @@ def test_failure_evidence_contract_rejects_unsafe_mutations():
         pytest.fail(f"unsafe workflow mutation escaped: {label}")
 
 
-def test_refactor_smoke_collector_matches_its_producers():
-    workflow = yaml.safe_load(REFACTOR.read_text(encoding="utf-8"))
+def _assert_refactor_smoke_collector(workflow):
     collector = workflow["jobs"]["junit-identity"]
     assert collector["uses"] == COLLECTOR
     assert collector["if"] == "always()"
@@ -295,6 +294,10 @@ def test_refactor_smoke_collector_matches_its_producers():
         assert step.get("if") == "always()", artifact
         assert step["with"]["if-no-files-found"] == "error", artifact
         assert filename in step["with"]["path"], artifact
+
+
+def test_refactor_smoke_collector_matches_its_producers():
+    _assert_refactor_smoke_collector(yaml.safe_load(REFACTOR.read_text(encoding="utf-8")))
 
 
 FLUTTER_LANES = {  # job -> (report lane, shard count)
@@ -320,8 +323,7 @@ def _lane_reports(lane):
     return [f"junit-flutter-{lane}-{n}/flutter-{lane}-{n}.xml" for n in range(shards)]
 
 
-def test_flutter_workflow_collects_every_selected_shard():
-    workflow = yaml.safe_load(DART.read_text(encoding="utf-8"))
+def _assert_flutter_workflow_collector(workflow):
     jobs = workflow["jobs"]
     shard = "${{ matrix.shard }}"
     for name, (lane, shards) in FLUTTER_LANES.items():
@@ -365,21 +367,31 @@ def test_flutter_workflow_collects_every_selected_shard():
     assert collector["with"]["commit-sha"] == "${{ github.event.pull_request.head.sha || github.sha }}"
 
 
-@pytest.mark.parametrize("workflow_path", [DART, WORKFLOW, REFACTOR])
-@pytest.mark.parametrize("bad_input", [
-    "${{ github.sha }}",  # PR merge checkout is not the durable PR head.
-    "",                   # Missing provenance must never pass the caller contract.
-    "${{ github.event.pull_request.head.sha }}",  # Missing push fallback.
-])
-def test_collector_pr_head_provenance_rejects_unsafe_inputs(workflow_path, bad_input):
-    workflow = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
-    collector = workflow["jobs"]["junit-identity"]
-    expected = "${{ github.event.pull_request.head.sha || github.sha }}"
-    def require_provenance(value):
-        assert value == expected
+def test_flutter_workflow_collects_every_selected_shard():
+    _assert_flutter_workflow_collector(yaml.safe_load(DART.read_text(encoding="utf-8")))
 
-    require_provenance(collector["with"]["commit-sha"])
+
+PROVENANCE_MUTATIONS = [
+    ("collector names PR merge checkout", "${{ github.sha }}"),
+    ("collector drops provenance", ""),
+    ("collector loses push fallback", "${{ github.event.pull_request.head.sha }}"),
+]
+
+
+@pytest.mark.parametrize("workflow_path, contract", [
+    (WORKFLOW, _assert_contract),
+    (REFACTOR, _assert_refactor_smoke_collector),
+    (DART, _assert_flutter_workflow_collector),
+])
+@pytest.mark.parametrize("label, bad_input", PROVENANCE_MUTATIONS)
+def test_real_collector_contract_rejects_provenance_mutations(
+    workflow_path, contract, label, bad_input,
+):
+    workflow = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
+    contract(workflow)  # The actual production contract must accept the baseline.
     mutant = deepcopy(workflow)
     mutant["jobs"]["junit-identity"]["with"]["commit-sha"] = bad_input
-    with pytest.raises(AssertionError):
-        require_provenance(mutant["jobs"]["junit-identity"]["with"]["commit-sha"])
+    with pytest.raises(AssertionError, match="") as exc:
+        contract(mutant)
+    # A mutant must fail the real checker, not a comparison helper in this test.
+    assert exc.value is not None, label
