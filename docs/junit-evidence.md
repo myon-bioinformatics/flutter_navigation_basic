@@ -9,16 +9,14 @@ producer and workflow.
 
 The controlled child is intentionally red inside a green regression. It runs with
 and without JUnit, checks both exit codes are 1, and uses the shared xprobe importer
-to check failure/setup-error identities and sentinel redaction. Compact context
-has `commit_sha=null`; this lane does not infer provenance from Git or connect the
-canonical metadata producer.
+to check failure/setup-error identities and sentinel redaction. Compact cases
+carry the checkout SHA from the canonical repository-metadata generator and a
+run-order-independent fingerprint (`tool/python/failure_identity.py`). The shared
+collector separately records the commit its caller states.
 
-The importer is test-only and byte-verified before loading. CI checks out upstream
-xprobe at `7e7015b2df69ad446b968f6fa49711b5b1dbdd3f` into `.junit-tools`.
-Local full pytest runs skip this optional integration regression when the importer
-is absent. CI and explicit evidence runs require it and fail if it is missing.
-To exercise the regression locally, place that commit's `xprobe.py` in
-`.junit-tools/xprobe.py` first (Git blob `dbc5b7d55005d6288c072a7612584d6170c216f4`).
+The importer is the repository's vendored `tool/python/vendor/xprobe.py`, pinned and
+byte-checked through `tool/python/vendor.lock.json`; the regression asserts it loads
+that file. CI no longer checks out a separate xprobe copy.
 No runtime import or dependency is added.
 
 The regression uses the real `tool/python/test.py` wrapper and verifies its native

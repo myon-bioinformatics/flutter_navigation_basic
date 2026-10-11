@@ -139,8 +139,8 @@ reuses the already-tested distinct processor rather than introducing a new one.
 Raw JUnit/receipts stay in short-retention controlled artifacts. Producer cases
 have repository/canonical checkout context and run-order-independent fingerprints;
 raw messages/stdout/parameter sentinels do not enter the compact corpus.
-The unchanged shared downstream collector still needs context/fingerprint
-propagation, and unused `.junit-tools` checkouts remain cleanup work.
+The shared downstream collector now records the caller-stated commit SHA;
+run-order-independent case IDs there remain follow-up work (xprobe).
 
 Existing pytest collects basic/conditions/distinct tests and the native chain.
 The shared `filter_conditions_test.dart` remains in the existing pattern-shard
