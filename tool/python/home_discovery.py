@@ -4,6 +4,7 @@ The Flutter runtime randomly chooses a triple each Home refresh; this file
 provides precomputed eligible IDs, not a frozen one-time Home selection.
 """
 import json
+import random
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -13,16 +14,9 @@ IDS = tuple(range(6, 199))
 
 
 def make_draws():
-    state = 0x1257A7
-    draws = []
-    for _ in range(COUNT):
-        pool = list(IDS)
-        for i in range(len(pool) - 1, 0, -1):
-            state = (1664525 * state + 1013904223) & 0xffffffff
-            j = state % (i + 1)
-            pool[i], pool[j] = pool[j], pool[i]
-        draws.append(pool[:3])
-    return draws
+    ids = list(IDS)
+    random.Random(0x1257A7).shuffle(ids)
+    return [ids[i:i + 3] for i in range(0, COUNT * 3, 3)]
 
 
 def render():
