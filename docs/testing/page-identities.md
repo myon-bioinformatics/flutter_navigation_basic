@@ -27,6 +27,32 @@ composition seed → Composition Studio, clipboard workbench → Clipboard Shelf
 external/mock API → HTTP Request Draft. E2E interaction aliases share their
 numbered page's identity. Examples: `🏠 ↔ 🗺️`, `🏠 → 🥐`.
 
+## Emoji transitions as web URLs
+
+The transition notation is also a navigation input. From the repository root,
+this stdlib-only one-liner turns `A → B` (go) and `A ↔ B` (go and come back)
+into Flutter Web hash URLs, one per visited page, using the generated registry
+as the only source. Spaces and variation selectors are ignored; an unknown
+emoji exits non-zero without printing a partial path. Set `BASE` for a local
+build (for example `BASE=http://127.0.0.1:8080/`).
+
+<!-- emoji-transition-one-liner -->
+```sh
+python3 -c "import os,re,sys;V=lambda s:re.sub(r'[︎️\s]','',s);D=open('lib/shared/navigation/page_identities.g.dart',encoding='utf-8').read().split('pageRouteAliases')[0];M={V(e):r for r,e in re.findall(r\"'(/[^']*)': '([^']+)'\",D)};t=re.split('([→↔])',V(sys.argv[1]));p=[t[0]];[p.extend([b] if a=='→' else [b,p[-1]]) for a,b in zip(t[1::2],t[2::2])];B=os.environ.get('BASE','https://myon-bioinformatics.github.io/flutter_navigation_basic/');print('\n'.join(B+'#'+(M.get(e) or sys.exit('unknown page emoji: '+e)) for e in p))" '🏠 ↔︎ 🗺️'
+```
+
+```text
+https://myon-bioinformatics.github.io/flutter_navigation_basic/#/
+https://myon-bioinformatics.github.io/flutter_navigation_basic/#/hub
+https://myon-bioinformatics.github.io/flutter_navigation_basic/#/
+```
+
+`🏠 → 🥐` gives `#/` then `#/examples/irony-generator`; chains such as
+`🏠 → 🗺️ → 🌍 ↔ 🕶️` expand left to right. Each URL opens that page directly,
+so any listed page can be reached from a browser address bar or a link.
+`tool/python/tests/test_emoji_transition_one_liner.py` runs the documented
+line itself.
+
 Four catalogue emojis previously collided with tool pages and are reassigned:
 Screen1 🌍, Screen8 🏝️, Screen110 🗓️, Screen145 🌆. Hub and page headers read the
 same assignments. All other catalogue assignments remain stable.
