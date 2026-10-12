@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'standard_page_footer.dart';
 import 'standard_page_header.dart';
+import 'session_text_clipboard.dart';
 
 /// Shared chrome around a self-contained feature body.
 /// New callers provide a title; legacy AppBars remain accepted during migration.
@@ -33,6 +34,8 @@ class StandardPageShell extends StatelessWidget {
         ),
         endDrawer: title == null ? null : Drawer(
           child: SafeArea(child: ListView(children: [
+            const SessionClipboardDrawerSection(),
+            const Divider(),
             const ListTile(
               leading: Icon(Icons.route_outlined),
               title: Text('Navigation'),
