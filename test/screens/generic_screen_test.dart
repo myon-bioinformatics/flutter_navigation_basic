@@ -3,6 +3,8 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/config/routes.dart';
 import 'package:flutter_application_1/screens/generic_screen.dart';
+import 'package:flutter_application_1/shared/widgets/standard_page_footer.dart';
+import 'package:flutter_application_1/shared/widgets/tool_door_selector.dart';
 import 'package:flutter_application_1/shared/display/display_scope.dart';
 
 import '../support/display_test_harness.dart';
@@ -32,6 +34,13 @@ Future<void> _pumpGeneric(
 }
 
 void main() {
+  testWidgets('numbered catalogue page includes shared navigation footer', (tester) async {
+    await _pumpGeneric(tester, 6);
+    expect(find.byType(StandardPageFooter), findsOneWidget);
+    expect(find.byType(ToolDoorSelector), findsOneWidget);
+    expect(find.byType(DropdownButtonFormField<String>), findsOneWidget);
+  });
+
   testWidgets('non-detail screen shows translated Back-to-Hub and pattern chips', (tester) async {
     // Screen 3 is in the "realtime" domain, which has no ScreenDetail payload.
     // Its raw description sentence ("Navigation: BasicReplace, API: HttpPut, ...")
