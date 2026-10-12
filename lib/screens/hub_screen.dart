@@ -140,17 +140,22 @@ class _HubScreenState extends State<HubScreen> {
       itemCount: _filtered.length,
       itemBuilder: (context, i) {
         final s = _filtered[i];
-        return ListTile(
-          key: Key('screen-item-${s.screenDataId}'),
-          leading: CircleAvatar(child: Text(s.emoji)),
-          title: Text('${s.name}: ${s.title}'),
-          subtitle: Text(
-            s.description,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+        return Semantics(
+          identifier: 'hub-result-${s.screenDataId}',
+          container: true,
+          explicitChildNodes: true,
+          child: ListTile(
+            key: Key('screen-item-${s.screenDataId}'),
+            leading: CircleAvatar(child: Text(s.emoji)),
+            title: Text('${s.name}: ${s.title}'),
+            subtitle: Text(
+              s.description,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _navigate(s),
           ),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => _navigate(s),
         );
       },
     );
@@ -208,3 +213,4 @@ class _HubScreenState extends State<HubScreen> {
     );
   }
 }
+

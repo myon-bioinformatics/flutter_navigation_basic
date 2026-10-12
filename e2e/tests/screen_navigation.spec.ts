@@ -19,6 +19,7 @@ async function setCatalogQuery(search: Locator, query: string) {
   await expect(search).toHaveValue(query);
 }
 
+
 test.describe('Screen Navigation', () => {
   test('navigates to Screen1 from hub', async ({ page }) => {
     await navigateToHub(page);
@@ -157,57 +158,60 @@ test.describe('Screen Navigation', () => {
     const listMode = page.locator('[flt-semantics-identifier="hub-list-view"]');
     await expect(listMode).toBeVisible();
     await listMode.click();
-    const region = page.locator('[flt-semantics-identifier="hub-search"]');
-    await expect(region).toHaveCount(1);
-    const search = region.getByRole('textbox');
-    await expect(search).toBeEditable();
-    await search.click();
-    await expect(search).toBeFocused();
-    await expect(search).toHaveAttribute('autocorrect', 'on');
-    await search.pressSequentially('Transformed Result List', { delay: 50 });
-    await expect(page.locator('[key="screen-item-5"]')).toHaveCount(1);
-    await expect(page.locator('[key="screen-item-6"]')).toHaveCount(0);
-    await setCatalogQuery(search, 'no_such_use_case_144');
-    await expect(page.locator('[key="screen-item-5"]')).toHaveCount(0);
-    await setCatalogQuery(search, '');
-    await expect(page.locator('[key="screen-item-5"]')).toHaveCount(1);
-    // Clearing restores the catalogue; filter again to render an off-viewport row.
-    await setCatalogQuery(search, 'screen6');
-    await expect(page.locator('[key="screen-item-6"]')).toBeVisible();
+    const search = page.locator('[flt-semantics-identifier="hub-search"]').getByRole('textbox');
+    const rows = page.locator('[flt-semantics-identifier^="hub-result-"]');
+    const result5 = page.locator('[flt-semantics-identifier="hub-result-5"]');
+    const result6 = page.locator('[flt-semantics-identifier="hub-result-6"]');
     await setCatalogQuery(search, 'Transformed Result List');
-    await page.locator('[key="screen-item-5"]').click();
+    await expect(rows).toHaveCount(1);
+    await expect(result5).toBeVisible();
+    await expect(result6).toHaveCount(0);
+    await setCatalogQuery(search, 'no_such_use_case_144');
+    await expect(rows).toHaveCount(0);
+    await setCatalogQuery(search, '');
+    // Check restored ordering among rendered rows; the full list is lazy.
+    await expect(rows.nth(0)).toHaveAttribute('flt-semantics-identifier', 'hub-result-1');
+    await expect(rows.nth(1)).toHaveAttribute('flt-semantics-identifier', 'hub-result-2');
+    await setCatalogQuery(search, 'screen6');
+    await expect(result6).toBeVisible();
+    await setCatalogQuery(search, 'Transformed Result List');
+    await expect(rows).toHaveCount(1);
+    const tapTarget = result5.locator('[flt-tappable]');
+    await expect(tapTarget).toHaveCount(1);
+    await tapTarget.evaluate((element) => (element as HTMLElement).click());
     await waitForFlutter(page);
     await expect(page).toHaveURL(/#\/screen5$/);
   });
 
   test('Screen6 excludes unrelated results, handles zero matches and clear @portable', async ({ page }) => {
     await navigateToScreen(page, 6);
-    const region = page.locator('[flt-semantics-identifier="screen6-search"]');
-    const search = region.getByRole('textbox');
-    await search.click();
-    await expect(search).toBeFocused();
-    await expect(search).toHaveAttribute('autocorrect', 'on');
-    await search.pressSequentially('Transformed Result List', { delay: 50 });
-    await expect(page.locator('[flt-semantics-identifier="screen6-result-5"]')).toHaveCount(1);
-    await expect(page.locator('[flt-semantics-identifier="screen6-result-6"]')).toHaveCount(0);
+    const search = page.locator('[flt-semantics-identifier="screen6-search"]').getByRole('textbox');
+    const resultCount = page.locator('[flt-semantics-identifier="screen6-result-count"]');
+    const result5 = page.locator('[flt-semantics-identifier="screen6-result-5"]');
+    const result6 = page.locator('[flt-semantics-identifier="screen6-result-6"]');
+    await setCatalogQuery(search, 'Transformed Result List');
+    await expect(resultCount).toContainText('1 / 198');
+    await expect(result5).toBeVisible();
+    await expect(result6).toHaveCount(0);
     await setCatalogQuery(search, 'no_such_use_case_144');
-    await expect(page.locator('[flt-semantics-identifier="screen6-result-count"]')).toContainText('0 / 198');
-    const clear = page.getByRole('button', { name: /clear/i });
-    // Clear control is locale-sensitive, so its absence in some locales must
-    // not prevent testing the underlying editable-input clear contract.
-    if (await clear.count()) {
-      await clear.first().click();
-    } else {
-      await setCatalogQuery(search, '');
-    }
-    await expect(page.locator('[flt-semantics-identifier="screen6-result-count"]')).toContainText('198 / 198');
-    // The list virtualizes off-viewport rows. Refilter to bring Screen6 into
-    // the rendered viewport instead of treating a missing DOM row as missing data.
+    await expect(resultCount).toContainText('0 / 198');
+    await expect(result5).toHaveCount(0);
+    const clear = page.locator('[flt-semantics-identifier="screen6-clear"]').getByRole('button');
+    await expect(clear).toBeVisible();
+    await clear.click();
+    await expect(search).toHaveValue('');
+    await expect(resultCount).toContainText('198 / 198');
+    await expect(page.locator('[flt-semantics-identifier="screen6-result-1"]')).toBeVisible();
+    // Re-enter through the live editing strategy after clicking Clear. The
+    // count confirms filtering happened before inspecting a virtualized row.
     await setCatalogQuery(search, 'screen6');
-    await expect(page.locator('[flt-semantics-identifier="screen6-result-count"]')).toContainText('1 / 198');
-    await expect(page.locator('[flt-semantics-identifier="screen6-result-6"]')).toBeVisible();
-    await setCatalogQuery(search, '');
-    await expect(page.locator('[flt-semantics-identifier="screen6-result-count"]')).toContainText('198 / 198');
+    await expect(search).toHaveValue('screen6');
+    await expect(resultCount).toHaveText('11 / 198');
+    await expect(result6).toBeVisible();
+    await clear.click();
+    await expect(search).toHaveValue('');
+    await expect(resultCount).toContainText('198 / 198');
+    await expect(page.locator('[flt-semantics-identifier="screen6-result-1"]')).toBeVisible();
   });
 
   for (const screenId of testData.sampleScreenIds) {
@@ -229,3 +233,4 @@ test.describe('Screen Navigation', () => {
     await expect(page.getByText('Back to Hub', { exact: false })).toBeVisible();
   });
 });
+

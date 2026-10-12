@@ -441,14 +441,19 @@ class _Screen6CatalogSearchState extends State<_Screen6CatalogSearch> {
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _query.isEmpty
                     ? null
-                    : IconButton(
-                        key: const Key('screen6-catalog-clear'),
-                        tooltip: display.text('clipboardWorkbench.clear'),
-                        onPressed: () {
-                          _queryController.clear();
-                          setState(() => _query = '');
-                        },
-                        icon: const Icon(Icons.clear),
+                    : Semantics(
+                        identifier: 'screen6-clear',
+                        container: true,
+                        explicitChildNodes: true,
+                        child: IconButton(
+                          key: const Key('screen6-catalog-clear'),
+                          tooltip: display.text('clipboardWorkbench.clear'),
+                          onPressed: () {
+                            _queryController.clear();
+                            setState(() => _query = '');
+                          },
+                          icon: const Icon(Icons.clear),
+                        ),
                       ),
               ),
               onChanged: (value) => setState(() => _query = value),
