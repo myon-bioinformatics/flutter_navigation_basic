@@ -69,7 +69,16 @@ class _HubScreenState extends State<HubScreen> {
     return StandardPageShell(
       currentRouteName: AppRoutes.hub,
       title: display.text('hub.title'),
-      headerActions: [
+      subHeader: PreferredSize(
+        preferredSize: const Size.fromHeight(104),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: 48,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
           IconButton(
             tooltip: display.text('mockApi.title'),
             icon: const Icon(Icons.api),
@@ -92,27 +101,29 @@ class _HubScreenState extends State<HubScreen> {
             onPressed: () => setState(() => _mode = _ViewMode.grid),
             color: _mode == _ViewMode.grid ? Colors.blue : null,
           ),
-          const SizedBox(width: 8),
-      ],
-      subHeader: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: TextField(
-              controller: _searchCtrl,
-              decoration: InputDecoration(
-                hintText: display.text('hub.searchHint'),
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.white,
-                isDense: true,
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24)),
-                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+
+                ],
               ),
             ),
-          ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: TextField(
+                controller: _searchCtrl,
+                decoration: InputDecoration(
+                  hintText: display.text('hub.searchHint'),
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.white,
+                  isDense: true,
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24)),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                ),
+              ),
+            ),
+          ],
         ),
+      ),
       child: _loading
           ? const Center(child: CircularProgressIndicator())
           : _filtered.isEmpty
