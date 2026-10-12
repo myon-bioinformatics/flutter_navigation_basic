@@ -23,7 +23,11 @@ class StandardPageHeader extends StatelessWidget implements PreferredSizeWidget 
   Widget build(BuildContext context) => AppBar(
         title: Text(title),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        leading: IconButton(
+        leading: BackButton(
+          key: const Key('shared-header-back'),
+        ),
+        actions: [
+          IconButton(
           key: const Key('shared-header-home'),
           tooltip: 'Home',
           icon: const Icon(Icons.home_outlined),
@@ -61,7 +65,6 @@ class StandardPageHeader extends StatelessWidget implements PreferredSizeWidget 
             Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
           },
         ),
-        actions: [
           ...extraActions,
           if (DisplayScope.maybeOf(context) != null)
             const DisplayLocalePicker(compact: true),
