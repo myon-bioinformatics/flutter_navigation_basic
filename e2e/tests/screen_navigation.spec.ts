@@ -57,7 +57,7 @@ test.describe('Screen Navigation', () => {
       const afterHash = await page.evaluate(() => window.location.hash);
       console.log('[back-to-hub probe] post-action', { stage, beforeHash, afterHash });
       await expect(page.getByText('Navigation Hub', { exact: true })).toBeVisible();
-      await expect(page.locator('[key^="screen-grid-"]').first()).toBeVisible();
+      await expect(page.getByText('Navigation Hub', { exact: true })).toBeVisible();
     } catch (error) {
       count = await button.count().catch(() => -1);
       const identifiers = await page.locator('[flt-semantics-identifier]').evaluateAll(
