@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "about": "Expected Base64ImageBridge.decodeText() outcomes for vendored Ironmate cases. Does not depend on Ironmate error message text.",
+  "cases": {
+    "raw_png": {"accept": true, "detectedFormat": "png"},
+    "data_png": {"accept": true, "detectedFormat": "png"},
+    "data_mismatch_jpeg_label": {"accept": false},
+    "data_mismatch_png_label": {"accept": false},
+    "raw_gif": {"accept": false},
+    "data_gif": {"accept": false},
+    "upper_scheme": {"accept": true, "detectedFormat": "png"},
+    "bom": {"accept": true, "detectedFormat": "png"},
+    "param_charset": {"accept": true, "detectedFormat": "png"},
+    "param_name": {"accept": true, "detectedFormat": "png"},
+    "param_quoted": {"accept": false},
+    "not_base64_uri": {"accept": false},
+    "wrapped_crlf_76": {"accept": true, "detectedFormat": "png"},
+    "wrapped_spaces_tabs": {"accept": true, "detectedFormat": "png"},
+    "url_safe": {"accept": false},
+    "pct_padding": {"accept": false},
+    "no_padding": {"accept": false},
+    "extra_padding": {"accept": false},
+    "empty": {"accept": false}
+  }
+}

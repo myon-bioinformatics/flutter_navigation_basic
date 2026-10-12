@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "source_repository": "https://github.com/myon-bioinformatics/Ironmate",
+  "source_path": "tests/fixtures/base64_bridge_cases.json",
+  "source_commit": "6acddc3bb5367a6571a32294fcfe12f12483a084",
+  "sha256": "766d0327293ab2404e4a6d0c7c23bfbe523d672823cad4c0d88d11908dd83671",
+  "vendored_path": "test/fixtures/base64_bridge/base64_bridge_cases.json",
+  "notes": "Pinned from Ironmate main for PR #92 cross-repo Base64ImageBridge contract."
+}
