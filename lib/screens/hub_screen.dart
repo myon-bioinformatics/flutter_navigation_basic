@@ -81,11 +81,15 @@ class _HubScreenState extends State<HubScreen> {
             icon: const Icon(Icons.hub_outlined),
             onPressed: () => Navigator.pushNamed(context, AppRoutes.externalMcp),
           ),
-          IconButton(
-            tooltip: display.text('hub.listViewTooltip'),
-            icon: const Icon(Icons.list),
-            onPressed: () => setState(() => _mode = _ViewMode.list),
-            color: _mode == _ViewMode.list ? Colors.blue : null,
+          Semantics(
+            identifier: 'hub-list-view',
+            container: true,
+            child: IconButton(
+              tooltip: display.text('hub.listViewTooltip'),
+              icon: const Icon(Icons.list),
+              onPressed: () => setState(() => _mode = _ViewMode.list),
+              color: _mode == _ViewMode.list ? Colors.blue : null,
+            ),
           ),
           IconButton(
             tooltip: display.text('hub.gridViewTooltip'),
