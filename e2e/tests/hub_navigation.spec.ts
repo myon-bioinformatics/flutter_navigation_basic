@@ -15,8 +15,9 @@ test.describe('Hub Screen Navigation', () => {
   test('navigates to hub from home @portable', async ({ page }) => {
     await navigateToHub(page);
     await expect(page).toHaveURL(/#\/hub$/);
-    await expect(page.getByText('Navigation Hub', { exact: true })).toBeVisible();
-    await expect(page.getByText('Navigation Hub', { exact: true })).toBeVisible();
+    const title = page.locator('[flt-semantics-identifier="shared-header-title"]');
+    await expect(title).toBeVisible();
+    await expect(title).toContainText('Navigation Hub');
   });
 
   test('hub shows 198 screens in grid mode', async ({ page }) => {
