@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:math';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import '../domain/home_controller.dart';
 import '../../../config/routes.dart';
@@ -18,19 +20,47 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-/// Samples up to three distinct catalogue screens without replacing any tool route.
-/// A caller-supplied Random keeps the sampling contract testable.
-List<ScreenData> pickHomeDiscoveryScreens(List<ScreenData> screens,
-    {Random? random}) {
-  final candidates = screens.where((screen) =>
-      screen.screenDataId >= 6 && screen.screenDataId <= 198).toList();
-  candidates.shuffle(random ?? Random());
-  return candidates.take(3).toList(growable: false);
+/// Picks a precomputed Python-generated draw, filtering against the live catalog.
+/// The draw index is chosen on every refresh, not frozen at build time.
+List<ScreenData> pickHomeDiscoveryScreens(
+  List<ScreenData> screens,
+  List<List<int>> draws, {
+  Random? random,
+}) {
+  final eligible = {
+    for (final s in screens)
+      if (s.screenDataId >= 6 && s.screenDataId <= 198) s.screenDataId: s,
+  };
+  if (eligible.isEmpty || draws.isEmpty) return const [];
+  final chosen = draws[(random ?? Random()).nextInt(draws.length)];
+  final ids = <int>{};
+  // A partial/synthetic catalog may not contain every proposed id.
+  // Fill from its own known entries without introducing invalid routes.
+  for (final id in [...chosen, ...eligible.keys]) {
+    if (eligible.containsKey(id)) ids.add(id);
+    if (ids.length == 3) break;
+  }
+  return [for (final id in ids) eligible[id]!];
+}
+
+Future<List<List<int>>> loadHomeDiscoveryDraws() async {
+  final raw = await rootBundle.loadString('assets/home_discovery_draws.json');
+  final parsed = jsonDecode(raw) as Map<String, dynamic>;
+  if (parsed['schema'] != 1) throw const FormatException('unknown discovery schema');
+  final rows = (parsed['draws'] as List).map((row) =>
+      (row as List).map((id) => id as int).toList()).toList();
+  if (rows.isEmpty || rows.any((row) =>
+      row.length != 3 || row.toSet().length != 3 ||
+      row.any((id) => id < 6 || id > 198))) {
+    throw const FormatException('invalid discovery draws');
+  }
+  return rows;
 }
 
 class _HomeScreenState extends State<HomeScreen> {
   List<ScreenData> _discoveries = const [];
   int _generation = 0;
+  List<List<int>>? _draws;
 
   @override
   void initState() {
@@ -42,8 +72,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final generation = ++_generation;
     try {
       final screens = await ScreensConfig.load();
+      final draws = _draws ?? await loadHomeDiscoveryDraws();
       if (!mounted || generation != _generation) return;
-      setState(() => _discoveries = pickHomeDiscoveryScreens(screens));
+      _draws = draws;
+      setState(() => _discoveries = pickHomeDiscoveryScreens(screens, draws));
     } catch (_) {
       // Discovery is optional: leave the main tools available if the asset fails.
       if (mounted && generation == _generation) {
