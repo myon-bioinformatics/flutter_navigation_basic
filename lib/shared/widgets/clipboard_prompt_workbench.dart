@@ -202,7 +202,10 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
       return;
     }
     try {
-      final payload = Base64ImageBridge.decodeText(input);
+      final payload = Base64ImageBridge.decodeText(
+        input,
+        maxBytes: Base64ImageBridge.maxBytesForBase64CharBudget(_maxBase64TextChars),
+      );
       setState(() {
         _imageBytes = payload.bytes;
         _imageMimeType = payload.mimeType;

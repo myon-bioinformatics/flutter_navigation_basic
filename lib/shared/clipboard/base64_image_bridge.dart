@@ -21,6 +21,12 @@ class Base64ImageBridge {
     'image/webp',
   };
 
+  /// Byte ceiling for clipboard shelf image paste (shared with UI preflight).
+  static const int clipboardShelfMaxImageBytes = 3 * 1024 * 1024;
+
+  /// Extra characters allowed for a `data:image/...;base64,` prefix on clipboard text.
+  static const int dataUrlPrefixSlackChars = 256;
+
   static ({int width, int height}) targetDimensions({
     required int width,
     required int height,
@@ -112,6 +118,28 @@ class Base64ImageBridge {
   /// included, whitespace and any `data:` prefix excluded).
   static int maxBase64Chars(int maxBytes) => 4 * ((maxBytes + 2) ~/ 3);
 
+  /// Conservative decoded-byte budget for a Base64 character budget (no prefix).
+  static int maxBytesForBase64CharBudget(int base64CharBudget) =>
+      (base64CharBudget ~/ 4) * 3;
+
+  /// Max clipboard text length when a data URL prefix may precede the payload.
+  static int maxClipboardTextChars(int maxBytes) =>
+      maxBase64Chars(maxBytes) + dataUrlPrefixSlackChars;
+
+  /// True when compact Base64 in [text] would exceed [maxBytes] after decode.
+  static bool textExceedsMaxImageBytes(String text, int maxBytes) {
+    var trimmed = _stripBom(text).trim();
+    if (trimmed.isEmpty) return false;
+    final dataUrl = _dataUrlPattern.firstMatch(trimmed);
+    if (dataUrl != null) {
+      trimmed = trimmed.substring(dataUrl.end);
+    } else if (trimmed.length >= 5 && trimmed.substring(0, 5).toLowerCase() == 'data:') {
+      return true;
+    }
+    final encoded = trimmed.replaceAll(RegExp(r'\s+'), '');
+    return encoded.length > maxBase64Chars(maxBytes);
+  }
+
   /// Whether clipboard text should be tried as an image: an image data URL
   /// (any letter case) or raw standard Base64, possibly line-wrapped.
   static bool looksLikeImageText(String value, {int minChars = 80}) {
@@ -153,6 +181,10 @@ class Base64ImageBridge {
     }
     return null;
   }
+
+  /// [decodeText] with [clipboardShelfMaxImageBytes] (clipboard shelf paste path).
+  static Base64ImagePayload decodeClipboardShelfText(String input) =>
+      decodeText(input, maxBytes: clipboardShelfMaxImageBytes);
 
   /// Strictly decodes raw Base64 or a `data:image/...;base64,` URL.
   ///

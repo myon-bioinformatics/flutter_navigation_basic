@@ -13,6 +13,15 @@ final _jpeg = Uint8List.fromList([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10]);
 final _webp = Uint8List.fromList(
   [...'RIFF'.codeUnits, 4, 0, 0, 0, ...'WEBP'.codeUnits],
 );
+
+Uint8List _minimalPngSized(int length) {
+  if (length < 8) {
+    throw ArgumentError.value(length, 'length', 'must be at least 8');
+  }
+  final bytes = Uint8List(length);
+  bytes.setAll(0, const [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+  return bytes;
+}
 /// Mimics pre-fix [Base64ImageBridge.decodeText] (no magic-byte verification).
 Base64ImagePayload legacyDecodeWithoutMagicBytes(String input) {
   final text = input.trim();
@@ -183,6 +192,53 @@ void main() {
         expect(Base64ImageBridge.decodeText('$prefix$exact', maxBytes: 100).bytes.length, 100);
         expect(() => Base64ImageBridge.decodeText('$prefix$over', maxBytes: 100), throwsFormatException);
       }
+    });
+  });
+
+  group('clipboard shelf byte ceiling', () {
+    final maxBytes = Base64ImageBridge.clipboardShelfMaxImageBytes;
+
+    test('accepts decoded payload at exactly maxBytes', () {
+      final raw = base64Encode(_minimalPngSized(maxBytes));
+      expect(raw.length, Base64ImageBridge.maxBase64Chars(maxBytes));
+      expect(Base64ImageBridge.textExceedsMaxImageBytes(raw, maxBytes), isFalse);
+      expect(
+        Base64ImageBridge.decodeText(raw, maxBytes: maxBytes).bytes.length,
+        maxBytes,
+      );
+    });
+
+    test('rejects decoded payload at maxBytes + 1', () {
+      final raw = base64Encode(_minimalPngSized(maxBytes + 1));
+      expect(Base64ImageBridge.textExceedsMaxImageBytes(raw, maxBytes), isTrue);
+      expect(
+        () => Base64ImageBridge.decodeText(raw, maxBytes: maxBytes),
+        throwsFormatException,
+      );
+    });
+
+    test('rejects compact Base64 one character over maxBase64Chars', () {
+      final exact = base64Encode(_minimalPngSized(maxBytes));
+      final overChars = '${exact}a';
+      expect(overChars.length, Base64ImageBridge.maxBase64Chars(maxBytes) + 1);
+      expect(Base64ImageBridge.textExceedsMaxImageBytes(overChars, maxBytes), isTrue);
+      expect(
+        () => Base64ImageBridge.decodeText(overChars, maxBytes: maxBytes),
+        throwsFormatException,
+      );
+    });
+
+    test('legacy +256 char slack cannot bypass maxBytes (+192 decoded bytes)', () {
+      final bytes = _minimalPngSized(maxBytes + 192);
+      final raw = base64Encode(bytes);
+      expect(raw.length, Base64ImageBridge.maxBase64Chars(maxBytes) + 256);
+      expect(raw.length, lessThanOrEqualTo(Base64ImageBridge.maxClipboardTextChars(maxBytes)));
+      expect(Base64ImageBridge.textExceedsMaxImageBytes(raw, maxBytes), isTrue);
+      expect(
+        () => Base64ImageBridge.decodeText(raw, maxBytes: maxBytes),
+        throwsFormatException,
+      );
+      expect(Base64ImageBridge.decodeText(raw).bytes.length, maxBytes + 192);
     });
   });
 

@@ -35,9 +35,7 @@ class ClipboardShelf extends StatefulWidget {
 }
 
 class _ClipboardShelfState extends State<ClipboardShelf> {
-  /// 3 MiB of image bytes as Base64 (+ room for a data URL prefix).
-  static final int _maxImageClipboardChars =
-      Base64ImageBridge.maxBase64Chars(3 * 1024 * 1024) + 256;
+  static const int _maxImageBytes = Base64ImageBridge.clipboardShelfMaxImageBytes;
 
   final _manualController = TextEditingController();
   final List<ClipboardShelfItem> _items = [];
@@ -105,9 +103,9 @@ class _ClipboardShelfState extends State<ClipboardShelf> {
 
     final imageCandidate = Base64ImageBridge.looksLikeImageText(text);
     Object? imageError;
-    if (imageCandidate && text.length <= _maxImageClipboardChars) {
+    if (imageCandidate && !Base64ImageBridge.textExceedsMaxImageBytes(text, _maxImageBytes)) {
       try {
-        final payload = Base64ImageBridge.decodeText(text);
+        final payload = Base64ImageBridge.decodeClipboardShelfText(text);
         final added = await _addImage(payload.bytes, payload.mimeType);
         if (added) return;
       } catch (error) {
@@ -116,7 +114,7 @@ class _ClipboardShelfState extends State<ClipboardShelf> {
       }
     } else if (imageCandidate) {
       imageError = FormatException(
-        'Image text is longer than $_maxImageClipboardChars characters.',
+        'Base64 image exceeds $_maxImageBytes bytes.',
       );
     }
     _addText(text);

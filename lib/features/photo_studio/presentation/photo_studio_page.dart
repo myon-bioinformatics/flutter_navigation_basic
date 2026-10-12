@@ -78,8 +78,6 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
   ];
 
   static const _maxImageBytes = PhotoImportLimits.maxInputBytes;
-  static final _maxImageClipboardChars =
-      Base64ImageBridge.maxBase64Chars(_maxImageBytes) + 256; // + data URL prefix
 
   /// Fallback until the first canvas layout reports its size.
   static const _fallbackCanvasSize = Size(760, 280);
@@ -463,9 +461,13 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
 
       if (text.isNotEmpty) {
         final imageCandidate = Base64ImageBridge.looksLikeImageText(text);
-        if (imageCandidate && text.length <= _maxImageClipboardChars) {
+        if (imageCandidate &&
+            !Base64ImageBridge.textExceedsMaxImageBytes(text, _maxImageBytes)) {
           try {
-            final payload = Base64ImageBridge.decodeText(text);
+            final payload = Base64ImageBridge.decodeText(
+              text,
+              maxBytes: _maxImageBytes,
+            );
             await _importImageBytes(
               payload.bytes,
               source: PhotoImportSource.paste,
@@ -487,7 +489,8 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
             }
             // Raw Base64-looking text: fall through to binary clipboard.
           }
-        } else if (imageCandidate && text.length > _maxImageClipboardChars) {
+        } else if (imageCandidate &&
+            Base64ImageBridge.textExceedsMaxImageBytes(text, _maxImageBytes)) {
           _setImportStatusIfCurrent(
             generation,
             const PhotoImportStatus.failure(

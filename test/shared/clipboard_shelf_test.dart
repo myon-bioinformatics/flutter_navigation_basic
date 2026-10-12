@@ -1,6 +1,10 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_application_1/shared/clipboard/base64_image_bridge.dart';
 import 'package:flutter_application_1/shared/display/display_scope.dart';
 import 'package:flutter_application_1/shared/widgets/clipboard_shelf.dart';
 
@@ -133,6 +137,17 @@ void main() {
     expect(find.text('このフィルターに該当する棚の項目はありません。'), findsOneWidget);
     expect(find.text('セッション限定の棚です。アプリ／ページを再起動すると項目は消えます。'), findsOneWidget);
     expect(find.text('テキスト / URL / Markdown を追加'), findsOneWidget);
+  });
+
+  test('clipboard shelf decode path enforces maxBytes (legacy +256 char slack)', () {
+    final maxBytes = Base64ImageBridge.clipboardShelfMaxImageBytes;
+    final bytes = Uint8List(maxBytes + 192);
+    bytes.setAll(0, const [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+    final pasted = base64Encode(bytes);
+    expect(pasted.length, lessThanOrEqualTo(Base64ImageBridge.maxClipboardTextChars(maxBytes)));
+    expect(Base64ImageBridge.textExceedsMaxImageBytes(pasted, maxBytes), isTrue);
+    expect(() => Base64ImageBridge.decodeClipboardShelfText(pasted), throwsFormatException);
+    expect(Base64ImageBridge.decodeText(pasted).bytes.length, maxBytes + 192);
   });
 
   testWidgets('invalid image data URL is kept as text and the reason is shown', (tester) async {
