@@ -1,6 +1,8 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../domain/home_controller.dart';
 import '../../../config/routes.dart';
+import '../../../screens/generic_screen.dart';
 import '../../../core/navigation/route_names.dart';
 import '../../../shared/diagnostics/build_diagnostics_card.dart';
 import '../../../shared/display/display_scope.dart';
@@ -16,8 +18,44 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
+/// Samples up to three distinct catalogue screens without replacing any tool route.
+/// A caller-supplied Random keeps the sampling contract testable.
+List<ScreenData> pickHomeDiscoveryScreens(List<ScreenData> screens,
+    {Random? random}) {
+  final candidates = screens.where((screen) =>
+      screen.screenDataId >= 6 && screen.screenDataId <= 198).toList();
+  candidates.shuffle(random ?? Random());
+  return candidates.take(3).toList(growable: false);
+}
+
 class _HomeScreenState extends State<HomeScreen> {
-  void _refresh() => setState(() {});
+  List<ScreenData> _discoveries = const [];
+  int _generation = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _reshuffle();
+  }
+
+  Future<void> _reshuffle() async {
+    final generation = ++_generation;
+    try {
+      final screens = await ScreensConfig.load();
+      if (!mounted || generation != _generation) return;
+      setState(() => _discoveries = pickHomeDiscoveryScreens(screens));
+    } catch (_) {
+      // Discovery is optional: leave the main tools available if the asset fails.
+      if (mounted && generation == _generation) {
+        setState(() => _discoveries = const []);
+      }
+    }
+  }
+
+  void _refresh() {
+    _reshuffle();
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -141,14 +179,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () => Navigator.of(context)
                           .pushNamed(RouteNames.compositionGenerator),
                     ),
-                    HomeOverviewAction(
-                      label: display.text('home.action.urlParameters.label'),
-                      subtitle:
-                          display.text('home.action.urlParameters.subtitle'),
-                      icon: Icons.link_outlined,
-                      onTap: () =>
-                          Navigator.of(context).pushNamed(RouteNames.screen5),
-                    ),
+                    for (final screen in _discoveries)
+                      HomeOverviewAction(
+                        label: screen.useCaseJa.isNotEmpty
+                            ? 'Screen${screen.screenDataId} · ${screen.useCaseJa}'
+                            : 'Screen${screen.screenDataId} · ${screen.title}',
+                        subtitle: screen.description,
+                        icon: Icons.shuffle_outlined,
+                        onTap: () => Navigator.of(context)
+                            .pushNamed(AppRoutes.screenRoute(screen.screenDataId)),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 20),
