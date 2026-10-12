@@ -128,9 +128,17 @@ bool _jpegHasProgressiveSof(Uint8List bytes) {
   while (i + 3 < bytes.length) {
     if (bytes[i] != 0xFF) return false;
     final marker = bytes[i + 1];
+    if (marker == 0xFF) {
+      i += 1; // fill byte before a marker
+      continue;
+    }
     if (marker == 0xD9 || marker == 0xDA) return false;
-    if (marker == 0xC2) return true;
-    if (marker == 0xC0 || marker == 0xC1) return false;
+    if (marker == 0xC2 || marker == 0xC6 || marker == 0xCA || marker == 0xCE) {
+      return true; // progressive SOF (Huffman or arithmetic)
+    }
+    if (marker == 0xC0 || marker == 0xC1 || marker == 0xC3 || marker == 0xC9 || marker == 0xCB) {
+      return false;
+    }
     if (marker >= 0xD0 && marker <= 0xD7) {
       i += 2;
       continue;
@@ -152,12 +160,25 @@ int? _jpegExifOrientation(Uint8List bytes) {
   while (i + 8 < bytes.length) {
     if (bytes[i] != 0xFF) return null;
     final marker = bytes[i + 1];
+    if (marker == 0xFF) {
+      i += 1; // fill byte before a marker
+      continue;
+    }
     if (marker == 0xD9 || marker == 0xDA) return null;
     if (marker == 0xE1) {
       final len = (bytes[i + 2] << 8) | bytes[i + 3];
       if (len < 8 || i + 2 + len > bytes.length) return null;
       final segment = bytes.sublist(i + 4, i + 2 + len);
-      return _orientationFromExifApp1(segment);
+      // An XMP APP1 may precede the EXIF APP1: keep scanning past it.
+      if (segment.length >= 6 &&
+          segment[0] == 0x45 &&
+          segment[1] == 0x78 &&
+          segment[2] == 0x69 &&
+          segment[3] == 0x66) {
+        return _orientationFromExifApp1(segment);
+      }
+      i += 2 + len;
+      continue;
     }
     if (marker >= 0xD0 && marker <= 0xD7) {
       i += 2;

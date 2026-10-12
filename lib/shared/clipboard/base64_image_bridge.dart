@@ -108,26 +108,104 @@ class Base64ImageBridge {
     }
   }
 
-  static Base64ImagePayload decodeText(String input) {
-    final text = input.trim();
+  /// Upper bound of Base64 characters for [maxBytes] decoded bytes (`=` padding
+  /// included, whitespace and any `data:` prefix excluded).
+  static int maxBase64Chars(int maxBytes) => 4 * ((maxBytes + 2) ~/ 3);
+
+  /// Whether clipboard text should be tried as an image: an image data URL
+  /// (any letter case) or raw standard Base64, possibly line-wrapped.
+  static bool looksLikeImageText(String value, {int minChars = 80}) {
+    final text = _stripBom(value).trim();
+    if (text.length >= 11 && text.substring(0, 11).toLowerCase() == 'data:image/') {
+      return true;
+    }
+    final compact = text.replaceAll(RegExp(r'\s+'), '');
+    return compact.length >= minChars &&
+        compact.length % 4 == 0 &&
+        _base64Pattern.hasMatch(compact);
+  }
+
+  static final RegExp _dataUrlPattern = RegExp(
+    r'^data:([a-z0-9.+-]+/[a-z0-9.+-]+)?((?:;[a-z0-9.+-]+=[a-z0-9.+-]+)*);base64,',
+    caseSensitive: false,
+  );
+  static final RegExp _base64Pattern = RegExp(r'^[A-Za-z0-9+/]*={0,2}$');
+
+  static String _stripBom(String value) =>
+      value.startsWith('\uFEFF') ? value.substring(1) : value;
+
+  /// Image MIME type from magic bytes, or null when not PNG/JPEG/WebP.
+  static String? sniffMimeType(Uint8List bytes) {
+    bool at(int offset, List<int> sig) {
+      if (bytes.length < offset + sig.length) return false;
+      for (var i = 0; i < sig.length; i++) {
+        if (bytes[offset + i] != sig[i]) return false;
+      }
+      return true;
+    }
+
+    if (at(0, const [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])) {
+      return 'image/png';
+    }
+    if (at(0, const [0xFF, 0xD8, 0xFF])) return 'image/jpeg';
+    if (at(0, const [0x52, 0x49, 0x46, 0x46]) && at(8, const [0x57, 0x45, 0x42, 0x50])) {
+      return 'image/webp';
+    }
+    return null;
+  }
+
+  /// Strictly decodes raw Base64 or a `data:image/...;base64,` URL.
+  ///
+  /// The declared type must match the decoded bytes; `;key=value` parameters
+  /// are ignored; URL-safe characters, `%3D` and missing padding are rejected.
+  static Base64ImagePayload decodeText(String input, {int? maxBytes}) {
+    var text = _stripBom(input).trim();
     if (text.isEmpty) throw const FormatException('Base64 input is empty.');
 
-    final dataUrl = RegExp(
-      r'^data:([^;,]+);base64,(.*)$',
-      dotAll: true,
-    ).firstMatch(text);
-    final mimeType = (dataUrl?.group(1) ?? 'image/png').toLowerCase();
-    final encoded = (dataUrl?.group(2) ?? text).replaceAll(RegExp(r'\s+'), '');
-    if (!supportedRasterMimeTypes.contains(mimeType)) {
+    String? declared;
+    final dataUrl = _dataUrlPattern.firstMatch(text);
+    if (dataUrl != null) {
+      declared = dataUrl.group(1)?.toLowerCase();
+      if (declared == 'image/jpg') declared = 'image/jpeg';
+      text = text.substring(dataUrl.end);
+    } else if (text.length >= 5 && text.substring(0, 5).toLowerCase() == 'data:') {
+      throw const FormatException(
+        'Data URL must be base64-encoded (data:<type>;base64,...) '
+        'with plain ;key=value parameters only.',
+      );
+    }
+    if (declared != null && !supportedRasterMimeTypes.contains(declared)) {
       throw FormatException(
-        'Unsupported image MIME type: $mimeType. '
-        'Use PNG, JPEG, or WebP.',
+        'Unsupported image MIME type: $declared. Use PNG, JPEG, or WebP.',
+      );
+    }
+    final encoded = text.replaceAll(RegExp(r'\s+'), '');
+    if (encoded.isEmpty) throw const FormatException('Base64 input is empty.');
+    if (maxBytes != null && encoded.length > maxBase64Chars(maxBytes)) {
+      throw FormatException('Base64 image exceeds $maxBytes bytes.');
+    }
+    if (encoded.length % 4 != 0 || !_base64Pattern.hasMatch(encoded)) {
+      throw const FormatException(
+        'Invalid Base64 (standard A-Z a-z 0-9 + / with = padding; '
+        'URL-safe, %3D and unpadded input are rejected).',
       );
     }
     final bytes = base64Decode(encoded);
     if (bytes.isEmpty) {
       throw const FormatException('Decoded image bytes are empty.');
     }
-    return Base64ImagePayload(bytes: bytes, mimeType: mimeType);
+    if (maxBytes != null && bytes.length > maxBytes) {
+      throw FormatException('Base64 image exceeds $maxBytes bytes.');
+    }
+    final actual = sniffMimeType(bytes);
+    if (actual == null) {
+      throw const FormatException(
+        'Decoded bytes are not a PNG, JPEG, or WebP image.',
+      );
+    }
+    if (declared != null && declared != actual) {
+      throw FormatException('Data URL says $declared but the bytes are $actual.');
+    }
+    return Base64ImagePayload(bytes: bytes, mimeType: actual);
   }
 }
