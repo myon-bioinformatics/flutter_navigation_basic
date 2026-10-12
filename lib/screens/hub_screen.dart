@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../config/routes.dart';
 import '../shared/display/display_scope.dart';
 import 'generic_screen.dart';
+import '../shared/widgets/standard_page_shell.dart';
 
 enum _ViewMode { list, grid }
 
@@ -65,7 +66,8 @@ class _HubScreenState extends State<HubScreen> {
   @override
   Widget build(BuildContext context) {
     final display = DisplayScope.of(context);
-    return Scaffold(
+    return StandardPageShell(
+      currentRouteName: AppRoutes.hub,
       appBar: AppBar(
         title: Text(display.text('hub.title')),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -115,7 +117,7 @@ class _HubScreenState extends State<HubScreen> {
           ),
         ),
       ),
-      body: _loading
+      child: _loading
           ? const Center(child: CircularProgressIndicator())
           : _filtered.isEmpty
               ? Center(child: Text(display.text('hub.empty')))
