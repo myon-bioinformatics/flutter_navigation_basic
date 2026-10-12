@@ -23,9 +23,10 @@ class StandardPageHeader extends StatelessWidget implements PreferredSizeWidget 
   Widget build(BuildContext context) => AppBar(
         title: Text(title),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        leading: BackButton(
-          key: const Key('shared-header-back'),
-        ),
+        leading: Navigator.of(context).canPop()
+            ? const BackButton(key: Key('shared-header-back'))
+            : null,
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
           key: const Key('shared-header-home'),
