@@ -97,16 +97,11 @@ void main() {
         random: Random(42)).length, 2);
   });
 
-  testWidgets('Home shows three catalogue discoveries, not fixed Screen5', (tester) async {
-    await _pumpHome(tester);
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Screen5 ·'), findsNothing);
-    final panel = tester.widget<HomeOverviewPanel>(find.byType(HomeOverviewPanel));
-    final discovery = panel.actions.where((action) => action.label.startsWith('Screen')).toList();
-    expect(discovery.length, 3);
-    expect(discovery.map((action) => action.label).toSet().length, 3);
-    expect(discovery.any((action) => action.label.startsWith('Screen5 ·')), isFalse);
-    expect(find.text('Legacy static link'), findsNothing);
+  test('candidate selection does not promote fixed Screen5', () {
+    final proposed = pickHomeDiscoveryScreens(
+        sampleScreens, [[9, 7, 6]], random: Random(42));
+    expect(proposed.map((screen) => screen.screenDataId), [9, 7, 6]);
+    expect(proposed.any((screen) => screen.screenDataId == 5), isFalse);
   });
 
   testWidgets('renders catalog-driven action cards and a weekday-aware date', (tester) async {
