@@ -1,3 +1,4 @@
+import '../support/header_finders.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/screens/mcp_integration_screen.dart';
@@ -30,7 +31,7 @@ void main() {
     final controller = await loadTestDisplayController();
     await _pumpMcpScreen(tester, controller: controller);
 
-    expect(find.text('External Integration · MCP'), findsOneWidget);
+    expect(pageHeaderTitle('External Integration · MCP'), findsOneWidget);
     expect(find.text('MCP Demo'), findsOneWidget);
     expect(find.text('Choose an MCP scenario.'), findsOneWidget);
     expect(find.text('tool list'), findsOneWidget);

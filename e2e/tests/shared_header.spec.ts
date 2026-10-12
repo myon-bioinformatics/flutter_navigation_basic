@@ -3,6 +3,10 @@ import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { waitForFlutter } from '../utils/helpers';
 
+// Controls are immediately available after Flutter loads; fail with a useful
+// locator error instead of spending the full test timeout on a missing action.
+test.use({ actionTimeout: 5_000 });
+
 const pages: Array<[string, boolean]> = [
   ['/', true], ['/hub', true], ['/core/clipboard-shelf', false],
   ['/tools/time/now-timeline', false], ['/tools/location/coordinates', false],

@@ -1,3 +1,4 @@
+import '../../support/header_finders.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import '../../../lib/config/routes.dart';
@@ -22,7 +23,7 @@ void main() {
       final route = AppRoutes.routes[AppRoutes.screenRoute(entry.key)];
       expect(route, isNotNull, reason: 'missing /screen${entry.key}');
       await tester.pumpWidget(MaterialApp(home: Builder(builder: route!)));
-      expect(find.text(entry.value), findsOneWidget,
+      expect(pageHeaderTitle(entry.value), findsOneWidget,
           reason: '/screen${entry.key} should open ${entry.value}');
       expect(find.textContaining('順序: A, B, C'), findsOneWidget,
           reason: '/screen${entry.key} should expose the real interaction state');
