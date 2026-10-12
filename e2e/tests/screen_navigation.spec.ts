@@ -13,7 +13,9 @@ test.describe('Screen Navigation', () => {
   test('navigates to Screen5 from hub', async ({ page }) => {
     await navigateToHub(page);
     // Use list mode to find screen 5
-    await page.getByTitle('List view').click();
+    const listMode = page.locator('[flt-semantics-identifier="hub-list-view"]');
+    await expect(listMode).toBeVisible();
+    await listMode.click();
     await waitForFlutter(page);
     await page.locator('[key="screen-item-5"]').click();
     await waitForFlutter(page);
@@ -178,8 +180,12 @@ test.describe('Screen Navigation', () => {
       await search.fill('');
     }
     await expect(page.locator('[flt-semantics-identifier="screen6-result-count"]')).toContainText('198 / 198');
-    await expect(page.locator('[flt-semantics-identifier="screen6-result-5"]')).toHaveCount(1);
-    await expect(page.locator('[flt-semantics-identifier="screen6-result-6"]')).toHaveCount(1);
+    // The list virtualizes off-viewport rows. Refilter to bring Screen6 into
+    // the rendered viewport instead of treating a missing DOM row as missing data.
+    await search.fill('screen6');
+    await expect(page.locator('[flt-semantics-identifier="screen6-result-6"]')).toBeVisible();
+    await search.fill('');
+    await expect(page.locator('[flt-semantics-identifier="screen6-result-count"]')).toContainText('198 / 198');
   });
 
   for (const screenId of testData.sampleScreenIds) {
