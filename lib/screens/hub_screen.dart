@@ -120,11 +120,6 @@ class _HubScreenState extends State<HubScreen> {
               : _mode == _ViewMode.list
                   ? _buildList()
                   : _buildGrid(),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.pushNamed(context, AppRoutes.home),
-        icon: const Icon(Icons.home),
-        label: Text(display.text('hub.homeFab')),
-      ),
     );
   }
 
