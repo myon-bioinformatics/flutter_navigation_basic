@@ -38,7 +38,7 @@ test.describe('Home discovery journeys', () => {
     await expect(destination).toBeVisible();
     await destination.click();
     await waitForFlutter(page);
-    await expect(page).toHaveURL(/#\\/examples\\/photo-studio$/);
+    await expect(page).toHaveURL(/#\\/tools\\/media\\/photo-studio$/);
     await page.screenshot({ path: 'test-results/door-to-door-photo-studio.png' });
   });
 
