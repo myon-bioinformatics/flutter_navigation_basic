@@ -14,7 +14,8 @@ test.describe('Hub Screen Navigation', () => {
 
   test('navigates to hub from home @portable', async ({ page }) => {
     await navigateToHub(page);
-    await expect(page.getByText('Navigation Hub', { exact: false })).toBeVisible();
+    await expect(page).toHaveURL(/#\\/hub$/);
+    await expect(page.locator('[key^="screen-grid-"]').first()).toBeVisible();
   });
 
   test('hub shows 198 screens in grid mode', async ({ page }) => {
@@ -56,14 +57,19 @@ test.describe('Hub Screen Navigation', () => {
     await expect(page.getByText('No screens found', { exact: false })).toBeVisible();
   });
 
-  test('hub has Home FAB button', async ({ page }) => {
+  test('hub exposes shared Home confirmation action', async ({ page }) => {
     await navigateToHub(page);
-    await expect(page.getByText('Home')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Home' })).toHaveCount(1);
   });
 
-  test('hub Home FAB navigates back to home', async ({ page }) => {
+  test('hub shared Home action confirms before returning', async ({ page }) => {
     await navigateToHub(page);
-    await page.getByText('Home').click();
+    await page.getByRole('button', { name: 'Home' }).click();
+    await expect(page.getByText('Return to Home?')).toBeVisible();
+    await page.getByText('Cancel · Stay here').click();
+    await expect(page).toHaveURL(/#\\/hub$/);
+    await page.getByRole('button', { name: 'Home' }).click();
+    await page.getByText('Home', { exact: true }).last().click();
     await waitForFlutter(page);
     await expect(page.getByText('Screen1', { exact: false })).toBeVisible();
   });
