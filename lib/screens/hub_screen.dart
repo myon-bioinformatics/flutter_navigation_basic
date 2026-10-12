@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../shared/catalog/catalog_search.dart';
 import '../config/routes.dart';
 import '../shared/display/display_scope.dart';
 import 'generic_screen.dart';
@@ -32,24 +33,15 @@ class _HubScreenState extends State<HubScreen> {
     if (mounted) {
       setState(() {
         _all = screens;
-        _filtered = screens;
+        _filtered = searchCatalog(screens, _searchCtrl.text);
         _loading = false;
       });
     }
   }
 
   void _filter() {
-    final query = _searchCtrl.text.toLowerCase();
     setState(() {
-      _filtered = query.isEmpty
-          ? _all
-          : _all
-              .where((s) =>
-                  s.name.toLowerCase().contains(query) ||
-                  s.title.toLowerCase().contains(query) ||
-                  s.description.toLowerCase().contains(query) ||
-                  s.category.toLowerCase().contains(query))
-              .toList();
+      _filtered = searchCatalog(_all, _searchCtrl.text);
     });
   }
 
@@ -89,11 +81,15 @@ class _HubScreenState extends State<HubScreen> {
             icon: const Icon(Icons.hub_outlined),
             onPressed: () => Navigator.pushNamed(context, AppRoutes.externalMcp),
           ),
-          IconButton(
-            tooltip: display.text('hub.listViewTooltip'),
-            icon: const Icon(Icons.list),
-            onPressed: () => setState(() => _mode = _ViewMode.list),
-            color: _mode == _ViewMode.list ? Colors.blue : null,
+          Semantics(
+            identifier: 'hub-list-view',
+            container: true,
+            child: IconButton(
+              tooltip: display.text('hub.listViewTooltip'),
+              icon: const Icon(Icons.list),
+              onPressed: () => setState(() => _mode = _ViewMode.list),
+              color: _mode == _ViewMode.list ? Colors.blue : null,
+            ),
           ),
           IconButton(
             tooltip: display.text('hub.gridViewTooltip'),
@@ -107,7 +103,11 @@ class _HubScreenState extends State<HubScreen> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: TextField(
+              child: Semantics(
+                identifier: 'hub-search',
+                container: true,
+                explicitChildNodes: true,
+                child: TextField(
                 controller: _searchCtrl,
                 decoration: InputDecoration(
                   hintText: display.text('hub.searchHint'),
@@ -118,6 +118,7 @@ class _HubScreenState extends State<HubScreen> {
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(24)),
                   contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                ),
                 ),
               ),
             ),
@@ -139,17 +140,22 @@ class _HubScreenState extends State<HubScreen> {
       itemCount: _filtered.length,
       itemBuilder: (context, i) {
         final s = _filtered[i];
-        return ListTile(
-          key: Key('screen-item-${s.screenDataId}'),
-          leading: CircleAvatar(child: Text(s.emoji)),
-          title: Text('${s.name}: ${s.title}'),
-          subtitle: Text(
-            s.description,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+        return Semantics(
+          identifier: 'hub-result-${s.screenDataId}',
+          container: true,
+          explicitChildNodes: true,
+          child: ListTile(
+            key: Key('screen-item-${s.screenDataId}'),
+            leading: CircleAvatar(child: Text(s.emoji)),
+            title: Text('${s.name}: ${s.title}'),
+            subtitle: Text(
+              s.description,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _navigate(s),
           ),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => _navigate(s),
         );
       },
     );
@@ -207,3 +213,4 @@ class _HubScreenState extends State<HubScreen> {
     );
   }
 }
+
