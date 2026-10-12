@@ -68,10 +68,8 @@ class _HubScreenState extends State<HubScreen> {
     final display = DisplayScope.of(context);
     return StandardPageShell(
       currentRouteName: AppRoutes.hub,
-      appBar: AppBar(
-        title: Text(display.text('hub.title')),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
+      title: display.text('hub.title'),
+      headerActions: [
           IconButton(
             tooltip: display.text('mockApi.title'),
             icon: const Icon(Icons.api),
@@ -95,9 +93,8 @@ class _HubScreenState extends State<HubScreen> {
             color: _mode == _ViewMode.grid ? Colors.blue : null,
           ),
           const SizedBox(width: 8),
-          const DisplayLocalePicker(compact: true),
-        ],
-        bottom: PreferredSize(
+      ],
+      subHeader: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -116,7 +113,6 @@ class _HubScreenState extends State<HubScreen> {
             ),
           ),
         ),
-      ),
       child: _loading
           ? const Center(child: CircularProgressIndicator())
           : _filtered.isEmpty
