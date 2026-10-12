@@ -14,7 +14,7 @@ class ClipboardShelfPage extends StatelessWidget {
     final display = DisplayScope.of(context);
     return StandardPageShell(
       currentRouteName: RouteNames.clipboardShelf,
-      appBar: AppBar(title: Text(display.text('clipboardShelf.appBarTitle'))),
+      title: display.text('clipboardShelf.appBarTitle'),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 72),
         child: Center(
