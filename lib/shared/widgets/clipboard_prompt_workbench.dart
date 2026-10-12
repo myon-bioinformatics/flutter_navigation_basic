@@ -5,9 +5,13 @@ import 'package:flutter/services.dart';
 
 import '../clipboard/base64_image_bridge.dart';
 import '../display/display_scope.dart';
+import '../../features/photo_studio/presentation/pick_local_image_bytes.dart';
+import '../../features/photo_studio/data/photo_media_ports.dart';
 
 class ClipboardPromptWorkbench extends StatefulWidget {
-  const ClipboardPromptWorkbench({super.key});
+  const ClipboardPromptWorkbench({super.key, this.imagePicker});
+
+  final Future<PhotoPickOutcome> Function()? imagePicker;
 
   @override
   State<ClipboardPromptWorkbench> createState() => _ClipboardPromptWorkbenchState();
@@ -85,6 +89,54 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
       _statusKey = 'clipboardWorkbench.status.attached';
       _statusArgs = {'mimeType': content.mimeType, 'bytes': bytes.length};
     });
+  }
+
+  Future<void> _importLocalImage() async {
+    if (_processingImage) return;
+    setState(() => _processingImage = true);
+    try {
+      final outcome = await (widget.imagePicker?.call() ??
+          pickLocalImageBytesDetailed());
+      if (!mounted) return;
+      if (outcome.status == PhotoPickStatus.cancelled) {
+        setState(() => _processingImage = false);
+        return;
+      }
+      final bytes = outcome.bytes;
+      if (outcome.status != PhotoPickStatus.success ||
+          bytes == null || bytes.isEmpty ||
+          PhotoImportGate.rejectRawBytes(bytes) != null ||
+          (outcome.declaredMimeType?.isNotEmpty == true &&
+              !outcome.declaredMimeType!.startsWith('image/'))) {
+        setState(() {
+          _processingImage = false;
+          _statusKey = 'clipboardWorkbench.status.decodeFailed';
+          _statusArgs = const {'error': 'image import rejected'};
+        });
+        return;
+      }
+      // Downscaling validates decodability and bounds output just as the
+      // existing Base64 image bridge does for paste/attachment.
+      final normalized = await Base64ImageBridge.downscaleToPng(bytes);
+      if (!mounted) return;
+      setState(() {
+        _imageBytes = normalized.bytes;
+        _imageMimeType = normalized.mimeType;
+        _processingImage = false;
+        _statusKey = 'clipboardWorkbench.status.attached';
+        _statusArgs = {
+          'mimeType': normalized.mimeType,
+          'bytes': normalized.bytes.length,
+        };
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _processingImage = false;
+        _statusKey = 'clipboardWorkbench.status.decodeFailed';
+        _statusArgs = {'error': error};
+      });
+    }
   }
 
   Future<void> _copyImageAsBase64() async {
@@ -283,6 +335,12 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
+                    OutlinedButton.icon(
+                      key: const Key('clipboard-import-image'),
+                      onPressed: _processingImage ? null : _importLocalImage,
+                      icon: const Icon(Icons.add_photo_alternate_outlined),
+                      label: Text(display.text('photoStudio.pickImage')),
+                    ),
                     FilledButton.icon(
                       onPressed: _processingImage ? null : _copyImageAsBase64,
                       icon: const Icon(Icons.copy_all_outlined),
