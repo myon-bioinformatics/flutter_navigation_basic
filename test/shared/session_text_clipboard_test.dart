@@ -14,7 +14,7 @@ void main() {
     expect(SessionTextClipboard.save('one'), isTrue);
     expect(SessionTextClipboard.entries.value, ['one', 'two']);
     expect(SessionTextClipboard.save(''), isFalse);
-    expect(SessionTextClipboard.save('x' * (SessionTextClipboard.maxChars + 1)), isFalse);
+    expect(SessionTextClipboard.save(List.filled(SessionTextClipboard.maxChars + 1, 'x').join()), isFalse);
     expect(SessionTextClipboard.entries.value, ['one', 'two']);
     SessionTextClipboard.clear();
     expect(SessionTextClipboard.entries.value, isEmpty);
