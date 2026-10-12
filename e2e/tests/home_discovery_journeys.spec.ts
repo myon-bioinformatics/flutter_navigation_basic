@@ -28,7 +28,7 @@ test.describe('Home discovery journeys', () => {
   test('Door-to-Door dropdown navigates from URL Params to another tool @portable', async ({ page }) => {
     await page.goto('/#/screen5');
     await waitForFlutter(page);
-    await expect(page).toHaveURL(/#\\/screen5$/);
+    await expect(page).toHaveURL(/#\/screen5$/);
     const selector = page.getByText('Door-to-Door tools', { exact: true }).last();
     await expect(selector).toBeVisible();
     // Flutter dropdown is an actual pointer-operated widget, not a native HTML select.
@@ -38,7 +38,7 @@ test.describe('Home discovery journeys', () => {
     await expect(destination).toBeVisible();
     await destination.click();
     await waitForFlutter(page);
-    await expect(page).toHaveURL(/#\\/tools\\/media\\/photo-studio$/);
+    await expect(page).toHaveURL(/#\/tools\/media\/photo-studio$/);
     await page.screenshot({ path: 'test-results/door-to-door-photo-studio.png' });
   });
 
