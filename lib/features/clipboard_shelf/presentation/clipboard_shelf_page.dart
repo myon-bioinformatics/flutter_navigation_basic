@@ -4,7 +4,7 @@ import '../../../core/navigation/route_names.dart';
 import '../../../shared/display/display_scope.dart';
 import '../../../shared/widgets/clipboard_shelf.dart';
 import '../../../shared/widgets/clipboard_prompt_workbench.dart';
-import '../../../shared/widgets/tool_door_selector.dart';
+import '../../../shared/widgets/standard_page_shell.dart';
 
 class ClipboardShelfPage extends StatelessWidget {
   const ClipboardShelfPage({super.key});
@@ -12,9 +12,10 @@ class ClipboardShelfPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final display = DisplayScope.of(context);
-    return Scaffold(
+    return StandardPageShell(
+      currentRouteName: RouteNames.clipboardShelf,
       appBar: AppBar(title: Text(display.text('clipboardShelf.appBarTitle'))),
-      body: SingleChildScrollView(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 72),
         child: Center(
           child: ConstrainedBox(
@@ -25,8 +26,6 @@ class ClipboardShelfPage extends StatelessWidget {
                 ClipboardShelf(),
                 SizedBox(height: 32),
                 ClipboardPromptWorkbench(),
-                SizedBox(height: 24),
-                ToolDoorSelector(currentRouteName: RouteNames.clipboardShelf),
               ],
             ),
           ),
