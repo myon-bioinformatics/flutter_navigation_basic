@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/features/home/domain/home_controller.dart';
 import 'package:flutter_application_1/features/home/presentation/home_screen.dart';
 import 'package:flutter_application_1/screens/generic_screen.dart';
+import 'package:flutter_application_1/shared/widgets/home_overview_panel.dart';
 import 'package:flutter_application_1/shared/display/display_scope.dart';
 
 import '../../../support/display_test_harness.dart';
@@ -101,9 +102,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Screen5 ·'), findsNothing);
     expect(pickHomeDiscoveryScreens(sampleScreens, await loadHomeDiscoveryDraws(), random: Random(42)).length, 3);
-    // The long Home page may lazily mount lower cards only once scrolled.
-    await tester.scrollUntilVisible(find.textContaining('Screen', skipOffstage: false).last, 200, scrollable: find.byType(Scrollable).first);
-    expect(find.textContaining('Screen5 ·'), findsNothing);
+    final panel = tester.widget<HomeOverviewPanel>(find.byType(HomeOverviewPanel));
+    final discovery = panel.actions.where((action) => action.label.startsWith('Screen')).toList();
+    expect(discovery.length, 3);
+    expect(discovery.map((action) => action.label).toSet().length, 3);
+    expect(discovery.any((action) => action.label.startsWith('Screen5 ·')), isFalse);
     expect(find.text('Legacy static link'), findsNothing);
   });
 
