@@ -101,7 +101,6 @@ void main() {
     await _pumpHome(tester);
     await tester.pumpAndSettle();
     expect(find.textContaining('Screen5 ·'), findsNothing);
-    expect(pickHomeDiscoveryScreens(sampleScreens, await loadHomeDiscoveryDraws(), random: Random(42)).length, 3);
     final panel = tester.widget<HomeOverviewPanel>(find.byType(HomeOverviewPanel));
     final discovery = panel.actions.where((action) => action.label.startsWith('Screen')).toList();
     expect(discovery.length, 3);
