@@ -1,3 +1,4 @@
+import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
 import 'package:flutter/material.dart';
 
 class _CounterScope extends InheritedWidget {
@@ -107,7 +108,7 @@ class _InheritedCatalogueExampleState extends State<InheritedCatalogueExample> {
       ],
     );
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: StandardPageHeader(title: widget.title),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

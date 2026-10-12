@@ -1,3 +1,4 @@
+import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
 import 'package:flutter/material.dart';
 
 class _CounterChangeNotifier extends ChangeNotifier {
@@ -27,7 +28,7 @@ class _NativeNotifierExampleState extends State<NativeNotifierExample> {
     if (widget.useChangeNotifier) { _change.reset(); } else { _value.value = 0; }
   }
   @override Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(widget.title)),
+    appBar: StandardPageHeader(title: widget.title),
     body: Padding(padding: const EdgeInsets.all(16),child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

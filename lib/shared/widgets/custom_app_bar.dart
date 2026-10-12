@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../display/display_scope.dart';
-import '../themes/color_constants.dart';
+
+import 'standard_page_header.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CustomAppBar({
@@ -15,20 +15,15 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool showLocalePicker;
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize =>
+      Size.fromHeight(kToolbarHeight + (actions.isEmpty ? 0 : 48));
 
   @override
   Widget build(BuildContext context) {
-    return AppBar(
-      title: Text(title),
-      actions: [
-        ...actions,
-        if (showLocalePicker && DisplayScope.maybeOf(context) != null)
-          const DisplayLocalePicker(compact: true),
-      ],
-      backgroundColor: ColorConstants.primary,
-      foregroundColor: Colors.white,
-      elevation: 2,
+    return StandardPageHeader(
+      title: title,
+      extraActions: actions,
+      showLocalePicker: showLocalePicker,
     );
   }
 }

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+
 import 'standard_page_footer.dart';
 import 'standard_page_header.dart';
-import 'session_text_clipboard.dart';
-import '../display/display_scope.dart';
 
 /// Shared chrome around a self-contained feature body.
 /// New callers provide a title; legacy AppBars remain accepted during migration.
@@ -28,32 +27,16 @@ class StandardPageShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: appBar ?? StandardPageHeader(
+    appBar:
+        appBar ??
+        StandardPageHeader(
           title: title!,
+          currentRouteName: currentRouteName,
           subHeader: subHeader,
           extraActions: headerActions,
         ),
-        endDrawer: title == null ? null : Drawer(
-          child: SafeArea(child: ListView(children: [
-            if (MediaQuery.sizeOf(context).width < 600 &&
-                DisplayScope.maybeOf(context) != null)
-              const ListTile(
-                title: Text('Language'),
-                trailing: DisplayLocalePicker(compact: true),
-              ),
-            const SessionClipboardDrawerSection(),
-            const Divider(),
-            const ListTile(
-              leading: Icon(Icons.route_outlined),
-              title: Text('Navigation'),
-              subtitle: Text('Use the Door-to-Door selector below to move between tools.'),
-            ),
-          ])),
-        ),
-        body: child,
-        bottomNavigationBar: StandardPageFooter(
-          currentRouteName: currentRouteName,
-        ),
-        floatingActionButton: floatingActionButton,
-      );
+    body: child,
+    bottomNavigationBar: StandardPageFooter(currentRouteName: currentRouteName),
+    floatingActionButton: floatingActionButton,
+  );
 }

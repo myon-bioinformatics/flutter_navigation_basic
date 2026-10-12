@@ -22,7 +22,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('HTTP Request Draft'), findsOneWidget);
+    expect(find.text('HTTP Request Draft 🌐'), findsOneWidget);
 
     final addButtons = find.text('Add row');
     expect(addButtons, findsWidgets);

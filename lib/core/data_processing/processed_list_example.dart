@@ -1,3 +1,4 @@
+import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
 import 'package:flutter/material.dart';
 
 import 'json_list_asset.dart';
@@ -41,7 +42,7 @@ class _ProcessedListExampleState extends State<ProcessedListExample> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: StandardPageHeader(title: widget.title),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

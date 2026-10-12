@@ -1,3 +1,4 @@
+import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -28,7 +29,9 @@ class PatternSourceLinks extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Pattern ${patternId.toString().padLeft(3, '0')}: $name')),
+      appBar: StandardPageHeader(
+        title: 'Pattern ${patternId.toString().padLeft(3, '0')}: $name',
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

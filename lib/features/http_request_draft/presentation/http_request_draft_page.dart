@@ -1,3 +1,4 @@
+import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -309,9 +310,10 @@ class _HttpRequestDraftPageState extends State<HttpRequestDraftPage> {
     final body = RequestDraftCodec.buildBody(previewWire, redactSecrets: true);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(display.text('httpDraft.title')),
-        actions: [
+      appBar: StandardPageHeader(
+        currentRouteName: '/tools/http/request-draft',
+        title: display.text('httpDraft.title'),
+        extraActions: [
           TextButton(
             onPressed: _clearDraft,
             child: Text(display.text('httpDraft.clear')),

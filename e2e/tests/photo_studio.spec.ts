@@ -12,7 +12,7 @@ test.describe('Photo Studio representative flow', () => {
 
   test('opens the canonical Photo Studio route @portable', async ({ page }) => {
     await expect(page).toHaveURL(/#\/tools\/media\/photo-studio$/);
-    await expect(page.getByText('Photo Studio', { exact: true })).toBeVisible();
+    await expect(page.locator('[flt-semantics-identifier="shared-header-title"]')).toContainText('Photo Studio');
     await expect(page.getByText('Import image', { exact: true })).toBeVisible();
     await expect(page.getByText('Paste photo', { exact: true })).toBeVisible();
   });

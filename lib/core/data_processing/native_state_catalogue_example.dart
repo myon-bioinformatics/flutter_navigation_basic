@@ -1,3 +1,4 @@
+import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
 import 'package:flutter/material.dart';
 
 /// Minimal native Flutter state demo replacing fake GetX completion shells.
@@ -27,7 +28,7 @@ class _NativeStateCatalogueExampleState extends State<NativeStateCatalogueExampl
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(widget.title)),
+    appBar: StandardPageHeader(title: widget.title),
     body: Padding(
       padding: const EdgeInsets.all(16),
       child: Column(

@@ -1,3 +1,4 @@
+import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -296,10 +297,8 @@ class _CoordinateToolPageState extends State<CoordinateToolPage> {
     final area = _area;
     final tile = _tile;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(t('coordinate.title')),
-        actions: const [DisplayLocalePicker(compact: true)],
-      ),
+      appBar: StandardPageHeader(
+        currentRouteName: '/tools/location/coordinates',title: t('coordinate.title')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 72),
         child: Center(

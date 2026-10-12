@@ -1,3 +1,4 @@
+import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
 import 'package:flutter/material.dart';
 
 /// Native interaction playground; business/data operations can live in Python.
@@ -148,7 +149,7 @@ class _InteractivePatternExampleState extends State<InteractivePatternExample> {
       _ => 'Unsupported',
     };
     return Scaffold(
-      appBar: AppBar(title: Text('Pattern $id: $title')),
+      appBar: StandardPageHeader(title: 'Pattern $id: $title'),
       body: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(

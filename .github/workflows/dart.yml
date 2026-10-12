@@ -59,6 +59,10 @@ jobs:
                 python=true
                 flutter=true
                 ;;
+              tool/python/pattern_contracts.py|tool/python/metadata_contracts.py|tool/python/generate_pattern_contracts.py|tool/python/tests/test_pattern_contracts.py|tool/python/tests/test_metadata_contracts.py)
+                python=true
+                flutter=true
+                ;;
               tool/python/*|tool/time/*)
                 python=true
                 ;;
@@ -155,11 +159,30 @@ jobs:
       - name: Analyze project source
         run: flutter analyze --no-fatal-infos
 
+      - name: Export and validate production Dart contracts
+        run: |
+          set -euo pipefail
+          python3 -S tool/python/generate_pattern_contracts.py --check
+          dart run tool/export_pattern_contracts.dart build/test-results/pattern-contracts.json
+          python3 -S tool/python/pattern_contracts.py build/test-results/pattern-contracts.json --junit build/test-results/pattern-contracts.xml
+          python3 -S tool/python/validate_runner_junit.py build/test-results/pattern-contracts.xml
+
+      - name: Preserve Dart contract JSON and Python JUnit
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: junit-dart-contracts
+          path: |
+            build/test-results/pattern-contracts.json
+            build/test-results/pattern-contracts.xml
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Build Flutter web
         run: flutter build web --release --base-href "/flutter_navigation_basic/"
 
 
-  # Pinned core product suites (excludes ~792 pattern catalogue files).
+  # Pinned core product suites and the thin production-metadata JSON exporter.
   unit-tests:
     name: Pinned core shard ${{ matrix.shard }}
     needs: changes
@@ -203,10 +226,11 @@ jobs:
           path: |
             build/test-results/flutter-core-${{ matrix.shard }}.xml
             build/test-results/flutter-core-${{ matrix.shard }}.jsonl
+            build/test-results/metadata-contracts.json
           if-no-files-found: error
           retention-days: 14
 
-  # Pattern catalogues (~792 files): suite-load dominated. Run only when
+  # Remaining data-processing pattern suites. Repetitive models use JSON contracts. Run only when
   # pattern sources/tests or the pattern path list change (always on main).
   unit-tests-patterns:
     name: Pinned patterns shard ${{ matrix.shard }}
@@ -404,6 +428,7 @@ jobs:
 
           reports = []
           if os.environ["FLUTTER"] == "true":
+              reports += ["junit-dart-contracts/pattern-contracts.xml"]
               reports += [f"junit-flutter-core-{n}/flutter-core-{n}.xml" for n in range(2)]
               reports += [f"junit-flutter-latest-{n}/flutter-latest-{n}.xml" for n in range(2)]
           if os.environ["PATTERNS"] == "true":
@@ -414,7 +439,7 @@ jobs:
           PY
 
   junit-identity:
-    needs: [changes, junit-plan, unit-tests, unit-tests-patterns, latest-stable]
+    needs: [changes, junit-plan, gate, unit-tests, unit-tests-patterns, latest-stable]
     if: always() && needs.junit-plan.outputs.run == 'true'
     permissions:
       contents: read
