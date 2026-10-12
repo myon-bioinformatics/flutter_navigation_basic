@@ -3,7 +3,7 @@
     {
       "name": "Screen1",
       "title": "BasicPush",
-      "emoji": "🌐",
+      "emoji": "🌍",
       "domainKey": "integration",
       "domainJa": "外部連携",
       "domainEmoji": "🌐",
@@ -207,7 +207,7 @@
     {
       "name": "Screen8",
       "title": "OffAll",
-      "emoji": "🗺️",
+      "emoji": "🏝️",
       "domainKey": "routing",
       "domainJa": "画面遷移・ルーティング",
       "domainEmoji": "🧭",
@@ -2980,7 +2980,7 @@
     {
       "name": "Screen110",
       "title": "StackDepth",
-      "emoji": "📋",
+      "emoji": "🗓️",
       "domainKey": "auth",
       "domainJa": "認証・認可",
       "domainEmoji": "🔐",
@@ -3923,7 +3923,7 @@
     {
       "name": "Screen145",
       "title": "MaterialMotion",
-      "emoji": "🖼️",
+      "emoji": "🌆",
       "domainKey": "integration",
       "domainJa": "外部連携",
       "domainEmoji": "🌐",

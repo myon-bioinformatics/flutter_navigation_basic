@@ -2,11 +2,15 @@
 import json
 from pathlib import Path
 import sys
+from generate_page_identities import ALIASES, identities
 
 
 def validate(snapshot):
     assert snapshot['schemaVersion'] == 1
     title = snapshot['title']
+    route = snapshot['route']
+    expected = identities()[ALIASES.get(route, route)]
+    assert title.endswith(' ' + expected), f'{route}: wrong page emoji'
     assert any(0x1f000 <= ord(c) <= 0x1faff or 0x2600 <= ord(c) <= 0x27bf for c in title), 'title must include an emoji'
     boxes = snapshot['boxes']
     required = ('shared-header-title', 'shared-header-home', 'shared-header-favorite', 'shared-header-menu')

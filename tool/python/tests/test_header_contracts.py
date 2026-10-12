@@ -3,7 +3,7 @@ from header_contracts import validate
 
 
 def snapshot():
-    return {'schemaVersion': 1, 'title': 'Navigation Hub 🗺️', 'viewport': {'width': 390}, 'requiresSecondary': True, 'boxes': {
+    return {'schemaVersion': 1, 'route': '/hub', 'title': 'Navigation Hub 🗺️', 'viewport': {'width': 390}, 'requiresSecondary': True, 'boxes': {
         'shared-header-title': {'x': 8, 'y': 14, 'width': 180, 'height': 28},
         'shared-header-home': {'x': 230, 'y': 4, 'width': 48, 'height': 48},
         'shared-header-favorite': {'x': 278, 'y': 4, 'width': 48, 'height': 48},
@@ -16,10 +16,11 @@ def test_accepts_measured_two_row_contract():
     validate(snapshot())
 
 
-@pytest.mark.parametrize('change', ['emoji', 'missing', 'overlap', 'overflow', 'commonRow'])
+@pytest.mark.parametrize('change', ['emoji', 'wrongEmoji', 'missing', 'overlap', 'overflow', 'commonRow'])
 def test_rejects_broken_header_contract(change):
     data = snapshot()
     if change == 'emoji': data['title'] = 'Navigation Hub'
+    elif change == 'wrongEmoji': data['title'] = 'Navigation Hub 🧭'
     elif change == 'missing': data['boxes'].pop('shared-header-menu')
     elif change == 'overlap': data['boxes']['shared-header-secondary']['y'] = 0
     elif change == 'overflow': data['boxes']['shared-header-title']['width'] = 1000

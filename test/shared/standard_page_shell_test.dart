@@ -5,7 +5,101 @@ import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
 import 'package:flutter_application_1/shared/widgets/tool_door_selector.dart';
 import '../support/display_test_harness.dart';
 
+class _NavigationRecorder extends NavigatorObserver {
+  final pushed = <Route<dynamic>>[];
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    pushed.add(route);
+  }
+}
+
 void main() {
+  testWidgets(
+    'Home action on Home preserves state without a dialog or navigation',
+    (tester) async {
+      final observer = _NavigationRecorder();
+      await tester.pumpWidget(
+        await wrapWithDisplayScope(
+          MaterialApp(
+            navigatorObservers: [observer],
+            home: const StandardPageShell(
+              title: 'Home',
+              currentRouteName: '/',
+              child: TextField(),
+            ),
+          ),
+        ),
+      );
+      await tester.enterText(find.byType(TextField), 'keep this draft');
+      final before = observer.pushed.length;
+      await tester.tap(find.byKey(const Key('shared-header-home')));
+      await tester.tap(find.byKey(const Key('shared-header-home')));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(observer.pushed.length, before);
+      expect(find.text('keep this draft'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'rapid Home callbacks produce one dialog and one navigation; cancel permits retry',
+    (tester) async {
+      final observer = _NavigationRecorder();
+      await tester.pumpWidget(
+        await wrapWithDisplayScope(
+          MaterialApp(
+            navigatorObservers: [observer],
+            initialRoute: '/detail',
+            routes: {
+              '/': (_) => const Scaffold(body: Text('home-destination')),
+              '/detail': (_) => const StandardPageShell(
+                title: 'Draft',
+                currentRouteName: '/detail',
+                child: Text('draft'),
+              ),
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final home = find.byKey(const Key('shared-header-home'));
+      // Capture the real callback before a frame can disable the button. This
+      // exercises queued rapid taps rather than relying on the modal barrier.
+      final press = tester.widget<IconButton>(home).onPressed!;
+      press();
+      press();
+      press();
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(observer.pushed.whereType<PopupRoute<dynamic>>().length, 1);
+      expect(tester.widget<IconButton>(home).onPressed, isNull);
+      await tester.tap(find.byKey(const Key('shared-header-stay')));
+      await tester.pumpAndSettle();
+      expect(tester.widget<IconButton>(home).onPressed, isNotNull);
+      press();
+      press();
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(observer.pushed.whereType<PopupRoute<dynamic>>().length, 2);
+      final homePushes = observer.pushed
+          .where((r) => r.settings.name == '/')
+          .length;
+      await tester.tap(find.byKey(const Key('shared-header-confirm-home')));
+      await tester.pump();
+      // The outgoing header must stay guarded throughout route replacement.
+      press();
+      press();
+      await tester.pumpAndSettle();
+      expect(
+        observer.pushed.where((r) => r.settings.name == '/').length,
+        homePushes + 1,
+      );
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.text('home-destination'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('narrow common header keeps title readable and language in menu', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
