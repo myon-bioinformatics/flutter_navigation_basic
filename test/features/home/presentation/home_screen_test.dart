@@ -20,7 +20,7 @@ Future<void> _pumpHome(WidgetTester tester, {DisplayController? controller}) asy
   );
 }
 
-const sampleScreens = [
+final sampleScreens = <ScreenData>[
   ScreenData(
     screenDataId: 5, name: 'Screen5', title: 'Legacy', emoji: '🔗',
     description: 'Legacy static link', category: 'api',
