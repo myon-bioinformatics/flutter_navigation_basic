@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/shared/widgets/session_text_clipboard.dart';
 import 'package:flutter_application_1/shared/widgets/standard_page_shell.dart';
+import '../support/display_test_harness.dart';
 
 void main() {
   setUp(SessionTextClipboard.clear);
@@ -38,20 +39,21 @@ void main() {
       title: title, currentRouteName: '/detail',
       child: Text(title),
     );
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(await wrapWithDisplayScope(MaterialApp(
       initialRoute: '/first',
       routes: {
         '/first': (_) => screen('First screen'),
         '/second': (_) => screen('Second screen'),
       },
-    ));
+    )));
     await tester.tap(find.byKey(const Key('shared-header-menu')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('session-clipboard-save')));
     await tester.pumpAndSettle();
     expect(SessionTextClipboard.entries.value, ['Copied before opening menu']);
 
-    await tester.pageBack();
+    // Dismiss the end drawer through its actual close gesture, not a removed BackButton.
+    await tester.tapAt(const Offset(8, 250));
     await tester.pumpAndSettle();
     final navigator = tester.state<NavigatorState>(find.byType(Navigator));
     navigator.pushNamed('/second');
