@@ -537,6 +537,10 @@ jobs:
           mkdir -p "$junit_dir"
           PLAYWRIGHT_JUNIT_OUTPUT_FILE="$junit_dir/playwright-portable.xml" \
             python3 ../tool/python/playwright.py test --project chromium --project firefox --project webkit --project mobile-chromium --project mobile-webkit --grep @portable tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts tests/photo_studio_ingress.spec.ts tests/photo_studio_format_matrix.spec.ts tests/shared_header.spec.ts
+          # Later Playwright invocations replace their default output folders.
+          # Preserve the five-browser screenshots and JSON before that happens.
+          mkdir -p ../build/playwright-portable
+          cp -R test-results playwright-report ../build/playwright-portable/
           PLAYWRIGHT_JUNIT_OUTPUT_FILE="$junit_dir/playwright-interaction-portable.xml" \
             python3 ../tool/python/playwright.py interaction --project chromium --kind portable
           PLAYWRIGHT_JUNIT_OUTPUT_FILE="$junit_dir/playwright-interaction-gesture.xml" \
@@ -557,6 +561,7 @@ jobs:
         with:
           name: playwright-e2e-report
           path: |
+            build/playwright-portable/
             e2e/playwright-report/
             e2e/test-results/
           retention-days: 14
