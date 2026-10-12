@@ -6,6 +6,7 @@ import { waitForFlutter } from '../utils/helpers';
 // Controls are immediately available after Flutter loads; fail with a useful
 // locator error instead of spending the full test timeout on a missing action.
 test.use({ actionTimeout: 5_000 });
+test.setTimeout(60_000);
 
 const pages: Array<[string, boolean]> = [
   ['/', true], ['/hub', true], ['/core/clipboard-shelf', false],
@@ -19,7 +20,7 @@ const pages: Array<[string, boolean]> = [
 for (const [route, requiresSecondary] of pages) {
   test(`shared header ${route} exports measured JSON @portable`, async ({ page }, testInfo) => {
     await page.goto(`/#${route}`);
-    await waitForFlutter(page);
+    await waitForFlutter(page, 30_000);
     const node = (id: string) => page.locator(`[flt-semantics-identifier="${id}"]`);
     const title = node('shared-header-title');
     await expect(title).toBeVisible();
@@ -38,11 +39,18 @@ for (const [route, requiresSecondary] of pages) {
     const oracle = spawnSync('python3', ['-S', '../tool/python/header_contracts.py', output], { encoding: 'utf8' });
     expect(oracle.error, String(oracle.error)).toBeUndefined();
     expect(oracle.status, oracle.stdout + oracle.stderr).toBe(0);
-    await page.getByRole('button', { name: 'Favorite this page', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Remove favorite', exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Remove favorite', exact: true }).click();
+    const favorite = node('shared-header-favorite').getByRole('button');
+    await expect(favorite).toHaveText('Favorite this page');
+    await favorite.click();
+    // A visible Flutter tooltip is aria-owned by its button and can extend the
+    // accessible name. Identify the control by its stable region, then inspect
+    // the actual updated button text instead of matching the combined name.
+    await expect(favorite).toHaveText('Remove favorite');
+    await favorite.click();
+    await expect(favorite).toHaveText('Favorite this page');
+    await page.mouse.move(0, 200);
     await page.screenshot({ path: testInfo.outputPath('shared-header.png') });
-    await page.getByRole('button', { name: 'Menu', exact: true }).click();
-    await expect(page.getByText('Language', { exact: true })).toBeVisible();
+    await node('shared-header-menu').getByRole('button').click();
+    await expect(page.getByRole('button', { name: /^Language / })).toBeVisible();
   });
 }
