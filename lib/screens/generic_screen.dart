@@ -211,10 +211,8 @@ class _GenericScreenState extends State<GenericScreen> {
 
     return StandardPageShell(
       currentRouteName: AppRoutes.screenRoute(widget.screenId),
-      appBar: AppBar(
-        title: Text(appBarTitle),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
+      title: appBarTitle,
+      headerActions: [
           Semantics(
             identifier: 'back-to-hub',
             button: true,
@@ -232,8 +230,7 @@ class _GenericScreenState extends State<GenericScreen> {
               icon: const Icon(Icons.grid_view),
             ),
           ),
-        ],
-      ),
+      ],
       child: data == null
           ? _loadError == null
               ? const Center(child: CircularProgressIndicator())
