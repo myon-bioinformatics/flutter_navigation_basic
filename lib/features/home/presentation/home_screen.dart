@@ -12,9 +12,10 @@ import '../../../shared/widgets/custom_app_bar.dart';
 import '../../../shared/widgets/home_overview_panel.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, required this.controller});
+  const HomeScreen({super.key, required this.controller, this.discoveryRandom});
 
   final HomeController controller;
+  final Random? discoveryRandom;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -75,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final draws = _draws ?? await loadHomeDiscoveryDraws();
       if (!mounted || generation != _generation) return;
       _draws = draws;
-      setState(() => _discoveries = pickHomeDiscoveryScreens(screens, draws));
+      setState(() => _discoveries = pickHomeDiscoveryScreens(screens, draws, random: widget.discoveryRandom));
     } catch (_) {
       // Discovery is optional: leave the main tools available if the asset fails.
       if (mounted && generation == _generation) {
