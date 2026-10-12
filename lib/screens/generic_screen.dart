@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import '../config/routes.dart';
 import '../shared/display/display_scope.dart';
 import 'pattern_template_screen.dart';
-import '../shared/widgets/standard_page_footer.dart';
+import '../shared/widgets/standard_page_shell.dart';
 
 class ScreenDetail {
   final String purpose;
@@ -209,7 +209,8 @@ class _GenericScreenState extends State<GenericScreen> {
             ? '${data.emoji} ${data.useCaseJa}'
             : 'Screen${data.screenDataId}: ${data.title} ${data.emoji}';
 
-    return Scaffold(
+    return StandardPageShell(
+      currentRouteName: AppRoutes.screenRoute(widget.screenId),
       appBar: AppBar(
         title: Text(appBarTitle),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -233,10 +234,7 @@ class _GenericScreenState extends State<GenericScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: StandardPageFooter(
-        currentRouteName: AppRoutes.screenRoute(widget.screenId),
-      ),
-      body: data == null
+      child: data == null
           ? _loadError == null
               ? const Center(child: CircularProgressIndicator())
               : Center(
