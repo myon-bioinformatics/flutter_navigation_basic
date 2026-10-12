@@ -5,6 +5,25 @@ import 'package:flutter_application_1/shared/widgets/tool_door_selector.dart';
 import '../support/display_test_harness.dart';
 
 void main() {
+  testWidgets('narrow common header keeps title readable and language in drawer', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(await wrapWithDisplayScope(const MaterialApp(
+      home: StandardPageShell(
+        title: 'Navigation Hub', currentRouteName: '/hub',
+        child: Text('Hub content')),
+    )));
+    await tester.pumpAndSettle();
+    final label = find.text('Navigation Hub');
+    expect(label, findsOneWidget);
+    expect(tester.getSize(label).width, greaterThan(60));
+    await tester.tap(find.byKey(const Key('shared-header-menu')));
+    await tester.pumpAndSettle();
+    expect(find.text('Language'), findsOneWidget);
+  });
+
   testWidgets('direct-open page does not expose inert BackButton', (tester) async {
     await tester.pumpWidget(await wrapWithDisplayScope(const MaterialApp(
       home: StandardPageShell(title: 'Direct', currentRouteName: '/direct',
