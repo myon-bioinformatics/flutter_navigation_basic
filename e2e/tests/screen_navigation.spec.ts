@@ -56,8 +56,10 @@ test.describe('Screen Navigation', () => {
       await expect(page).toHaveURL(/#\/hub$/, { timeout: 5_000 });
       const afterHash = await page.evaluate(() => window.location.hash);
       console.log('[back-to-hub probe] post-action', { stage, beforeHash, afterHash });
-      await expect(page.getByText('Navigation Hub', { exact: true })).toBeVisible();
-      await expect(page.getByText('Navigation Hub', { exact: true })).toBeVisible();
+      const title = page.locator('[flt-semantics-identifier="shared-header-title"]');
+      await expect(title).toBeVisible();
+      await expect(title).toContainText('Navigation Hub');
+      await expect(page.locator('[flt-semantics-identifier="shared-header-title"]')).toBeVisible();
     } catch (error) {
       count = await button.count().catch(() => -1);
       const identifiers = await page.locator('[flt-semantics-identifier]').evaluateAll(
