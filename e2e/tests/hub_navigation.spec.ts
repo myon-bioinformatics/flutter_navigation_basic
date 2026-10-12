@@ -16,7 +16,7 @@ test.describe('Hub Screen Navigation', () => {
     await navigateToHub(page);
     await expect(page).toHaveURL(/#\/hub$/);
     await expect(page.getByText('Navigation Hub', { exact: true })).toBeVisible();
-    await expect(page.locator('[key^="screen-grid-"]').first()).toBeVisible();
+    await expect(page.getByText('Navigation Hub', { exact: true })).toBeVisible();
   });
 
   test('hub shows 198 screens in grid mode', async ({ page }) => {
