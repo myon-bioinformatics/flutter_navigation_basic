@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/config/routes.dart';
 import 'package:flutter_application_1/screens/generic_screen.dart';
 import 'package:flutter_application_1/shared/widgets/standard_page_footer.dart';
+import 'package:flutter_application_1/shared/widgets/standard_page_shell.dart';
 import 'package:flutter_application_1/shared/widgets/tool_door_selector.dart';
 import 'package:flutter_application_1/shared/display/display_scope.dart';
 
@@ -36,6 +37,7 @@ Future<void> _pumpGeneric(
 void main() {
   testWidgets('numbered catalogue page includes shared navigation footer', (tester) async {
     await _pumpGeneric(tester, 6);
+    expect(find.byType(StandardPageShell), findsOneWidget);
     expect(find.byType(StandardPageFooter), findsOneWidget);
     expect(find.byType(ToolDoorSelector), findsOneWidget);
     expect(find.byType(DropdownButtonFormField<String>), findsOneWidget);
