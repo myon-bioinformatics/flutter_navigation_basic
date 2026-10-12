@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../clipboard/base64_image_bridge.dart';
 import '../display/display_scope.dart';
 import '../../features/photo_studio/presentation/pick_local_image_bytes.dart';
+import '../../features/photo_studio/data/photo_import_limits.dart';
 import '../../features/photo_studio/data/photo_media_ports.dart';
 
 class ClipboardPromptWorkbench extends StatefulWidget {
@@ -18,7 +19,8 @@ class ClipboardPromptWorkbench extends StatefulWidget {
 }
 
 class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
-  static const int _maxBase64TextChars = 16 * 1024 * 1024;
+  static final int _maxBase64TextChars =
+      Base64ImageBridge.maxClipboardTextChars(PhotoImportLimits.maxInputBytes);
 
   final _rawController = TextEditingController();
   final _goalController = TextEditingController();
@@ -202,10 +204,7 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
       return;
     }
     try {
-      final payload = Base64ImageBridge.decodeText(
-        input,
-        maxBytes: Base64ImageBridge.maxBytesForBase64CharBudget(_maxBase64TextChars),
-      );
+      final payload = Base64ImageBridge.decodeText(input);
       setState(() {
         _imageBytes = payload.bytes;
         _imageMimeType = payload.mimeType;

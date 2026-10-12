@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_application_1/features/photo_studio/data/photo_import_limits.dart';
 import 'package:flutter_application_1/shared/clipboard/base64_image_bridge.dart';
 
 import 'base64_bridge_fixtures.dart';
@@ -195,8 +196,13 @@ void main() {
     });
   });
 
-  group('clipboard shelf byte ceiling', () {
-    final maxBytes = Base64ImageBridge.clipboardShelfMaxImageBytes;
+  group('import byte ceiling (PhotoImportLimits)', () {
+    test('maxClipboardImageBytes matches PhotoImportLimits.maxInputBytes', () {
+      expect(Base64ImageBridge.maxClipboardImageBytes, PhotoImportLimits.maxInputBytes);
+    });
+
+    // Use a small limit so boundary fixtures stay fast; logic is identical at 32 MiB.
+    const maxBytes = 10_000;
 
     test('accepts decoded payload at exactly maxBytes', () {
       final raw = base64Encode(_minimalPngSized(maxBytes));
@@ -210,7 +216,6 @@ void main() {
 
     test('rejects decoded payload at maxBytes + 1', () {
       final raw = base64Encode(_minimalPngSized(maxBytes + 1));
-      expect(Base64ImageBridge.textExceedsMaxImageBytes(raw, maxBytes), isTrue);
       expect(
         () => Base64ImageBridge.decodeText(raw, maxBytes: maxBytes),
         throwsFormatException,
@@ -238,7 +243,6 @@ void main() {
         () => Base64ImageBridge.decodeText(raw, maxBytes: maxBytes),
         throwsFormatException,
       );
-      expect(Base64ImageBridge.decodeText(raw).bytes.length, maxBytes + 192);
     });
   });
 

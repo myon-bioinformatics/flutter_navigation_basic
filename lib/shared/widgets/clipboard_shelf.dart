@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../features/photo_studio/data/photo_import_limits.dart';
 import '../clipboard/base64_image_bridge.dart';
 import '../display/display_scope.dart';
 
@@ -35,7 +36,7 @@ class ClipboardShelf extends StatefulWidget {
 }
 
 class _ClipboardShelfState extends State<ClipboardShelf> {
-  static const int _maxImageBytes = Base64ImageBridge.clipboardShelfMaxImageBytes;
+  static const int _maxImageBytes = PhotoImportLimits.maxInputBytes;
 
   final _manualController = TextEditingController();
   final List<ClipboardShelfItem> _items = [];

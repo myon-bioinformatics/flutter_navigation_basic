@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import '../../features/photo_studio/data/photo_import_limits.dart';
+
 class Base64ImagePayload {
   const Base64ImagePayload({required this.bytes, required this.mimeType});
 
@@ -21,8 +23,8 @@ class Base64ImageBridge {
     'image/webp',
   };
 
-  /// Byte ceiling for clipboard shelf image paste (shared with UI preflight).
-  static const int clipboardShelfMaxImageBytes = 3 * 1024 * 1024;
+  /// Shared decoded-byte ceiling for clipboard / paste Base64 image text.
+  static int get maxClipboardImageBytes => PhotoImportLimits.maxInputBytes;
 
   /// Extra characters allowed for a `data:image/...;base64,` prefix on clipboard text.
   static const int dataUrlPrefixSlackChars = 256;
@@ -118,10 +120,6 @@ class Base64ImageBridge {
   /// included, whitespace and any `data:` prefix excluded).
   static int maxBase64Chars(int maxBytes) => 4 * ((maxBytes + 2) ~/ 3);
 
-  /// Conservative decoded-byte budget for a Base64 character budget (no prefix).
-  static int maxBytesForBase64CharBudget(int base64CharBudget) =>
-      (base64CharBudget ~/ 4) * 3;
-
   /// Max clipboard text length when a data URL prefix may precede the payload.
   static int maxClipboardTextChars(int maxBytes) =>
       maxBase64Chars(maxBytes) + dataUrlPrefixSlackChars;
@@ -182,15 +180,17 @@ class Base64ImageBridge {
     return null;
   }
 
-  /// [decodeText] with [clipboardShelfMaxImageBytes] (clipboard shelf paste path).
-  static Base64ImagePayload decodeClipboardShelfText(String input) =>
-      decodeText(input, maxBytes: clipboardShelfMaxImageBytes);
+  /// [decodeText] for clipboard shelf paste (uses [maxClipboardImageBytes]).
+  static Base64ImagePayload decodeClipboardShelfText(String input) => decodeText(input);
 
   /// Strictly decodes raw Base64 or a `data:image/...;base64,` URL.
   ///
   /// The declared type must match the decoded bytes; `;key=value` parameters
   /// are ignored; URL-safe characters, `%3D` and missing padding are rejected.
+  ///
+  /// When [maxBytes] is omitted, [PhotoImportLimits.maxInputBytes] is enforced.
   static Base64ImagePayload decodeText(String input, {int? maxBytes}) {
+    final byteLimit = maxBytes ?? PhotoImportLimits.maxInputBytes;
     var text = _stripBom(input).trim();
     if (text.isEmpty) throw const FormatException('Base64 input is empty.');
 
@@ -213,8 +213,8 @@ class Base64ImageBridge {
     }
     final encoded = text.replaceAll(RegExp(r'\s+'), '');
     if (encoded.isEmpty) throw const FormatException('Base64 input is empty.');
-    if (maxBytes != null && encoded.length > maxBase64Chars(maxBytes)) {
-      throw FormatException('Base64 image exceeds $maxBytes bytes.');
+    if (encoded.length > maxBase64Chars(byteLimit)) {
+      throw FormatException('Base64 image exceeds $byteLimit bytes.');
     }
     if (encoded.length % 4 != 0 || !_base64Pattern.hasMatch(encoded)) {
       throw const FormatException(
@@ -226,8 +226,8 @@ class Base64ImageBridge {
     if (bytes.isEmpty) {
       throw const FormatException('Decoded image bytes are empty.');
     }
-    if (maxBytes != null && bytes.length > maxBytes) {
-      throw FormatException('Base64 image exceeds $maxBytes bytes.');
+    if (bytes.length > byteLimit) {
+      throw FormatException('Base64 image exceeds $byteLimit bytes.');
     }
     final actual = sniffMimeType(bytes);
     if (actual == null) {
