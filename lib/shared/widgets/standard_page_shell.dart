@@ -33,10 +33,10 @@ class StandardPageShell extends StatelessWidget {
         ),
         endDrawer: title == null ? null : Drawer(
           child: SafeArea(child: ListView(children: [
-            ListTile(
-              leading: const Icon(Icons.home_outlined),
-              title: const Text('Home'),
-              onTap: () => Navigator.pop(context),
+            const ListTile(
+              leading: Icon(Icons.route_outlined),
+              title: Text('Navigation'),
+              subtitle: Text('Use the Door-to-Door selector below to move between tools.'),
             ),
           ])),
         ),
