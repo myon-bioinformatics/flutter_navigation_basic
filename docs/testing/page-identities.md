@@ -75,7 +75,8 @@ screenshots across the five configured browser/emulation projects. Browser
 emulation is not installed Android/iOS proof.
 
 Home on Home preserves the page without confirmation or another route push.
-Other pages allow one confirmation in flight; Cancel permits another attempt,
+Other pages allow one confirmation in flight; backdrop taps do not dismiss
+the modal, so staying requires explicit Cancel. Cancel permits another attempt,
 and approval keeps the guard through the outgoing route transition. Widget
 regressions count dialogs and route pushes using actual callbacks, including
 queued callbacks before the button is disabled. Portable browser regressions
