@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'standard_page_footer.dart';
 import 'standard_page_header.dart';
 import 'session_text_clipboard.dart';
+import '../display/display_scope.dart';
 
 /// Shared chrome around a self-contained feature body.
 /// New callers provide a title; legacy AppBars remain accepted during migration.
@@ -34,6 +35,12 @@ class StandardPageShell extends StatelessWidget {
         ),
         endDrawer: title == null ? null : Drawer(
           child: SafeArea(child: ListView(children: [
+            if (MediaQuery.sizeOf(context).width < 600 &&
+                DisplayScope.maybeOf(context) != null)
+              const ListTile(
+                title: Text('Language'),
+                trailing: DisplayLocalePicker(compact: true),
+              ),
             const SessionClipboardDrawerSection(),
             const Divider(),
             const ListTile(
