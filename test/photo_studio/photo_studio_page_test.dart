@@ -503,7 +503,8 @@ void main() {
 
   testWidgets('paste rejects oversized data:image clipboard text', (tester) async {
     final oversized =
-        'data:image/png;base64,${'A' * ((32 * 1024 * 1024) + 64)}';
+        // Over the Base64 length of 32 MiB (4 * ceil(bytes / 3)) plus prefix room.
+        'data:image/png;base64,${'A' * (4 * ((32 * 1024 * 1024 + 2) ~/ 3) + 512)}';
     final messenger =
         tester.binding.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {

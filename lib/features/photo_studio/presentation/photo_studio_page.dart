@@ -78,7 +78,8 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
   ];
 
   static const _maxImageBytes = PhotoImportLimits.maxInputBytes;
-  static const _maxImageClipboardChars = _maxImageBytes;
+  static final _maxImageClipboardChars =
+      Base64ImageBridge.maxBase64Chars(_maxImageBytes) + 256; // + data URL prefix
 
   /// Fallback until the first canvas layout reports its size.
   static const _fallbackCanvasSize = Size(760, 280);
@@ -445,15 +446,6 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
     }
   }
 
-  bool _looksLikeRawBase64(String value) {
-    if (value.length < 80 ||
-        value.length > _maxImageClipboardChars ||
-        value.length % 4 != 0) {
-      return false;
-    }
-    return RegExp(r'^[A-Za-z0-9+/=\r\n]+$').hasMatch(value);
-  }
-
   Future<void> _pasteImage() async {
     late final int generation;
     setState(() {
@@ -470,8 +462,7 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       }
 
       if (text.isNotEmpty) {
-        final imageCandidate =
-            text.startsWith('data:image/') || _looksLikeRawBase64(text);
+        final imageCandidate = Base64ImageBridge.looksLikeImageText(text);
         if (imageCandidate && text.length <= _maxImageClipboardChars) {
           try {
             final payload = Base64ImageBridge.decodeText(text);
@@ -482,7 +473,19 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
             );
             return;
           } catch (_) {
-            // Fall through to binary clipboard.
+            // An explicit data URL that fails to decode is reported, not
+            // silently replaced by whatever binary image is on the clipboard.
+            if (text.length >= 5 && text.substring(0, 5).toLowerCase() == 'data:') {
+              _setImportStatusIfCurrent(
+                generation,
+                const PhotoImportStatus.failure(
+                  reason: PhotoImportFailureReason.decodeFailed,
+                  source: PhotoImportSource.paste,
+                ),
+              );
+              return;
+            }
+            // Raw Base64-looking text: fall through to binary clipboard.
           }
         } else if (imageCandidate && text.length > _maxImageClipboardChars) {
           _setImportStatusIfCurrent(

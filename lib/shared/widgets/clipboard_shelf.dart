@@ -35,7 +35,9 @@ class ClipboardShelf extends StatefulWidget {
 }
 
 class _ClipboardShelfState extends State<ClipboardShelf> {
-  static const int _maxImageClipboardChars = 4 * 1024 * 1024;
+  /// 3 MiB of image bytes as Base64 (+ room for a data URL prefix).
+  static final int _maxImageClipboardChars =
+      Base64ImageBridge.maxBase64Chars(3 * 1024 * 1024) + 256;
 
   final _manualController = TextEditingController();
   final List<ClipboardShelfItem> _items = [];
@@ -101,24 +103,29 @@ class _ClipboardShelfState extends State<ClipboardShelf> {
       return;
     }
 
-    final imageCandidate = text.startsWith('data:image/') || _looksLikeRawBase64(text);
+    final imageCandidate = Base64ImageBridge.looksLikeImageText(text);
+    Object? imageError;
     if (imageCandidate && text.length <= _maxImageClipboardChars) {
       try {
         final payload = Base64ImageBridge.decodeText(text);
         final added = await _addImage(payload.bytes, payload.mimeType);
         if (added) return;
-      } catch (_) {
-        // Preserve the original clipboard value below when image parsing fails.
+      } catch (error) {
+        // Preserve the original clipboard value below, but say why.
+        imageError = error;
       }
+    } else if (imageCandidate) {
+      imageError = FormatException(
+        'Image text is longer than $_maxImageClipboardChars characters.',
+      );
     }
     _addText(text);
-  }
-
-  bool _looksLikeRawBase64(String value) {
-    if (value.length < 80 || value.length > _maxImageClipboardChars || value.length % 4 != 0) {
-      return false;
+    if (imageError != null && mounted) {
+      setState(() {
+        _statusKey = 'clipboardShelf.status.imageFailed';
+        _statusArgs = {'error': imageError};
+      });
     }
-    return RegExp(r'^[A-Za-z0-9+/=\r\n]+$').hasMatch(value);
   }
 
   void _handleInsertedContent(KeyboardInsertedContent content) {

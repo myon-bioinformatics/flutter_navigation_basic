@@ -134,4 +134,21 @@ void main() {
     expect(find.text('セッション限定の棚です。アプリ／ページを再起動すると項目は消えます。'), findsOneWidget);
     expect(find.text('テキスト / URL / Markdown を追加'), findsOneWidget);
   });
+
+  testWidgets('invalid image data URL is kept as text and the reason is shown', (tester) async {
+    const pasted = 'data:image/jpeg;base64,iVBORw0KGgr7/z4=';
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.getData') return <String, dynamic>{'text': pasted};
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    await pumpShelf(tester);
+
+    await tester.tap(find.text('Paste current clipboard'));
+    await tester.pump(const Duration(milliseconds: 2));
+
+    expect(find.text(pasted), findsOneWidget);
+    expect(find.textContaining('Image preparation failed'), findsOneWidget);
+    expect(find.textContaining('image/png'), findsWidgets);
+  });
 }
