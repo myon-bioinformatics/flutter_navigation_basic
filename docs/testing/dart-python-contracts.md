@@ -44,8 +44,21 @@ cases, changed round trips/defaults, empty stub results, and exceptions.
 The pinned Flutter gate preserves `junit-dart-contracts` (JSON + Python JUnit).
 Core shards preserve `metadata-contracts.json` alongside Flutter raw JSONL and
 JUnit. The shared JUnit collector expects the extra report and still fails for
-missing reports or native failures. Pattern shard paths now contain only the
-remaining data-processing tests. Catalogue production sources remain analyzed.
+missing reports or native failures. PR #175 adds a generated Flutter smoke suite alongside these independent
+contracts. Pattern shards run 594 model round trips, 592 service calls, the
+restored API 001/002 dedicated model tests, and remaining data-processing tests.
+Service failures retain pattern ID, exception summary and stack, and all calls
+finish before the aggregate assertion. Generator/test-only changes also select
+the Flutter and pattern lanes.
+
+Shard 0 additionally runs `check_pattern_smoke_mutations.py`: it temporarily
+changes real UI-theme service 147 to throw, then to return an empty message.
+Each run must exit 1 with one actual test failure and the pattern ID plus cause
+in converted JUnit; compilation errors or an unexpectedly passing suite fail
+the regression check. Source bytes are restored in `finally`. The
+`pattern-smoke-mutation-evidence` artifact retains expected failure JSONL, logs,
+JUnit and receipts separately from normal `junit-*` collection. Normal shards
+still fail on real failures and the shared collector requires every report. Catalogue production sources remain analyzed.
 
 ## Header acceptance
 

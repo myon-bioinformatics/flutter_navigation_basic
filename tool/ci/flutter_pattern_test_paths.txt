@@ -1,2 +1,8 @@
-# Remaining Flutter pattern tests; model/stub contracts run in the pinned gate.
+# Pattern-catalogue Flutter tests; independent JSON contracts also run in the pinned gate.
+# Core / product tests live in flutter_core_test_paths.txt.
+# Lines starting with # are ignored.
+
+# 594 model round trips + 592 service runs, with api 001/002 dedicated model tests.
+test/features/catalogue_smoke_patterns
+test/features/api_patterns
 test/features/data_processing_patterns

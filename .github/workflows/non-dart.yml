@@ -239,6 +239,9 @@ jobs:
       - name: Verify photo fixture drift
         run: python tool/python/generate_photo_import_fixtures.py --check
 
+      - name: Verify generated pattern smoke test
+        run: python tool/python/generate_pattern_smoke_test.py --check
+
   python-vendor-locked:
     name: Python vendor locked baseline
     needs: changes

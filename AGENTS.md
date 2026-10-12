@@ -90,9 +90,9 @@ On failure:
 Pinned Flutter CI splits suites to cut wall time on ordinary feature PRs:
 
 - **Pinned core** (`tool/ci/flutter_core_test_paths.txt`) — always on Flutter-touching PRs, including the thin metadata JSON exporter
-- **Pinned patterns** (`tool/ci/flutter_pattern_test_paths.txt`, remaining data-processing catalogue files) —
+- **Pinned patterns** (`tool/ci/flutter_pattern_test_paths.txt`, generated smoke, dedicated API models, and data-processing catalogue files) —
   only when pattern sources/tests (or that path list) change; always on `main`
-- Repetitive API/navigation/UI-theme models execute through the pinned gate JSON producer and Python contract oracle
+- Repetitive API/navigation/UI-theme models execute through both the generated Flutter smoke suite and the independent pinned gate JSON producer/Python contract oracle
 - Latest-stable shards still smoke **core** paths only
 
 Prefer pytest-like outcome receipts (`passed` / `failed` / `skipped` / `xfailed` /
