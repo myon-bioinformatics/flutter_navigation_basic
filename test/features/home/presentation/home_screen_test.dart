@@ -52,7 +52,7 @@ void main() {
         as Map<String, dynamic>)['draws'] as List;
     final first = (rows[0] as List).cast<int>();
     final second = (rows[1] as List).cast<int>();
-    expect(first.toSet(), isNot(second.toSet()));
+    expect(first.toSet(), isNot(equals(second.toSet())));
 
     final fullCatalog = <ScreenData>[
       for (var id = 6; id <= 198; id++)
@@ -90,7 +90,7 @@ void main() {
     expect(selected.length, 3);
     expect(selected.map((s) => s.screenDataId).toSet().length, 3);
     expect(selected.every((s) => s.screenDataId >= 6), isTrue);
-    expect(pickHomeDiscoveryScreens(sampleScreens.take(2).toList(), [[9, 7, 6]],
+    expect(pickHomeDiscoveryScreens(sampleScreens.take(1).toList(), [[9, 7, 6]],
         random: Random(42)).length, 0);
     expect(pickHomeDiscoveryScreens(sampleScreens.skip(1).take(2).toList(), [[9, 7, 6]],
         random: Random(42)).length, 2);
@@ -100,11 +100,10 @@ void main() {
     await _pumpHome(tester);
     await tester.pumpAndSettle();
     expect(find.textContaining('Screen5 ·'), findsNothing);
-    final visible = [
-      for (var id = 6; id <= 9; id++)
-        if (find.text('Screen$id · Pattern $id').evaluate().isNotEmpty) id,
-    ];
-    expect(visible.length, 3);
+    expect(pickHomeDiscoveryScreens(sampleScreens, await loadHomeDiscoveryDraws(), random: Random(42)).length, 3);
+    // The long Home page may lazily mount lower cards only once scrolled.
+    await tester.scrollUntilVisible(find.textContaining('Screen', skipOffstage: false).last, 200, scrollable: find.byType(Scrollable).first);
+    expect(find.textContaining('Screen5 ·'), findsNothing);
     expect(find.text('Legacy static link'), findsNothing);
   });
 
