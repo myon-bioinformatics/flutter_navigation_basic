@@ -19,7 +19,10 @@ def test_generated_asset_is_current_and_valid():
     for triple in payload["draws"]:
         assert len(triple) == len(set(triple)) == 3
         assert all(6 <= screen_id <= 198 for screen_id in triple)
-    assert len({tuple(triple) for triple in payload["draws"]}) > 1
+    assert len({tuple(triple) for triple in payload["draws"]}) == 64
+    flat = [screen_id for triple in payload["draws"] for screen_id in triple]
+    assert len(flat) == len(set(flat)) == 192
+    assert set(flat).issubset(set(range(6, 199)))
 
 
 def test_flutter_consumes_python_generated_asset():
