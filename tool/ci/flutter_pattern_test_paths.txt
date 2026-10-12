@@ -1,9 +1,8 @@
-# Pattern-catalogue Flutter test paths for the dedicated pinned patterns job.
+# Pattern-catalogue Flutter tests; independent JSON contracts also run in the pinned gate.
 # Core / product tests live in flutter_core_test_paths.txt.
 # Lines starting with # are ignored.
 
-# api/navigation/ui_theme template tests are one generated file
-# (tool/python/generate_pattern_smoke_test.py); api_patterns keeps 2 dedicated tests.
+# 594 model round trips + 592 service runs, with api 001/002 dedicated model tests.
 test/features/catalogue_smoke_patterns
 test/features/api_patterns
 test/features/data_processing_patterns

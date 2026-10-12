@@ -72,6 +72,6 @@ test('/screen171 opens the real interaction, not GenericScreen @portable',async(
   // Numbered catalogue route: unconditional in routes.dart; browser-checked on the E2E build.
   await page.goto('/#/screen171');
   await waitForFlutter(page);
-  await expect(page.getByText('Pattern 171: SortableList',{exact:true})).toBeVisible();
+  await expect(page.locator('[flt-semantics-identifier="shared-header-title"]')).toContainText('Pattern 171: SortableList');
   await expect(page.getByText('順序: A, B, C')).toBeVisible();
 });

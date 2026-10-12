@@ -1,3 +1,4 @@
+import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -68,10 +69,8 @@ class _NowTimelinePageState extends State<NowTimelinePage> {
     final display = DisplayScope.of(context);
     String t(String key) => display.text('nowTimeline.$key');
     return Scaffold(
-      appBar: AppBar(
-        title: Text(t('title')),
-        actions: const [DisplayLocalePicker(compact: true)],
-      ),
+      appBar: StandardPageHeader(
+        currentRouteName: '/tools/time/now-timeline',title: t('title')),
       floatingActionButton: _loading
           ? null
           : FloatingActionButton.extended(

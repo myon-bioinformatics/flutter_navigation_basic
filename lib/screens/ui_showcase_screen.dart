@@ -1,3 +1,4 @@
+import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -197,17 +198,27 @@ class _UiShowcaseScreenState extends State<UiShowcaseScreen> {
       data: _themeFor(context),
       child: Builder(
         builder: (themedContext) => Scaffold(
-          appBar: AppBar(
-            title: Text(config.title),
-            actions: [
+          appBar: StandardPageHeader(
+        currentRouteName: '/examples/ui-showcase',
+            title: config.title,
+            extraActions: [
               PopupMenuButton<String>(
                 tooltip: display.text('uiShowcase.designStyleTooltip'),
                 initialValue: _style,
                 onSelected: (value) => setState(() => _style = value),
                 itemBuilder: (_) => [
-                  PopupMenuItem(value: 'modern', child: Text(display.text('uiShowcase.styleModern'))),
-                  PopupMenuItem(value: 'retro', child: Text(display.text('uiShowcase.styleRetro'))),
-                  PopupMenuItem(value: 'terminal', child: Text(display.text('uiShowcase.styleTerminal'))),
+                  PopupMenuItem(
+                    value: 'modern',
+                    child: Text(display.text('uiShowcase.styleModern')),
+                  ),
+                  PopupMenuItem(
+                    value: 'retro',
+                    child: Text(display.text('uiShowcase.styleRetro')),
+                  ),
+                  PopupMenuItem(
+                    value: 'terminal',
+                    child: Text(display.text('uiShowcase.styleTerminal')),
+                  ),
                 ],
                 icon: const Icon(Icons.palette_outlined),
               ),
@@ -216,18 +227,29 @@ class _UiShowcaseScreenState extends State<UiShowcaseScreen> {
                 initialValue: _brightnessMode,
                 onSelected: (value) => setState(() => _brightnessMode = value),
                 itemBuilder: (_) => [
-                  PopupMenuItem(value: 'system', child: Text(display.text('uiShowcase.brightnessSystem'))),
-                  PopupMenuItem(value: 'light', child: Text(display.text('uiShowcase.brightnessLight'))),
-                  PopupMenuItem(value: 'dark', child: Text(display.text('uiShowcase.brightnessDark'))),
+                  PopupMenuItem(
+                    value: 'system',
+                    child: Text(display.text('uiShowcase.brightnessSystem')),
+                  ),
+                  PopupMenuItem(
+                    value: 'light',
+                    child: Text(display.text('uiShowcase.brightnessLight')),
+                  ),
+                  PopupMenuItem(
+                    value: 'dark',
+                    child: Text(display.text('uiShowcase.brightnessDark')),
+                  ),
                 ],
                 icon: const Icon(Icons.brightness_6_outlined),
               ),
-              IconButton(
-                tooltip: display.text('uiShowcase.homeTooltip'),
-                onPressed: () => _goHome(themedContext),
-                icon: const Icon(Icons.home_outlined),
-              ),
-              const DisplayLocalePicker(compact: true),
+              if (narrow)
+                Builder(
+                  builder: (context) => IconButton(
+                    tooltip: 'Sections',
+                    onPressed: () => Scaffold.of(context).openDrawer(),
+                    icon: const Icon(Icons.view_list_outlined),
+                  ),
+                ),
             ],
           ),
           drawer: narrow

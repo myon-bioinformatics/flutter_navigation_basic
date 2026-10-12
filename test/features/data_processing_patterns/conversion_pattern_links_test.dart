@@ -1,3 +1,4 @@
+import '../../support/header_finders.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,7 +29,7 @@ void main() {
     testWidgets('screen${entry.key} shows its title and the three source URLs',
         (tester) async {
       await _open(tester, entry.key);
-      expect(find.text('Pattern ${entry.key}: ${entry.value}'), findsOneWidget);
+      expect(pageHeaderTitle('Pattern ${entry.key}: ${entry.value}'), findsOneWidget);
       expect(find.textContaining('限定実装'), findsOneWidget);
       expect(find.text('実行'), findsNothing);
       final shown = tester

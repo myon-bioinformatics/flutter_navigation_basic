@@ -1,3 +1,4 @@
+import '../support/header_finders.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/screens/ui_showcase_screen.dart';
@@ -46,7 +47,7 @@ void main() {
     final controller = await loadTestDisplayController();
     await _pumpLoadedShowcase(tester, controller: controller);
 
-    expect(find.text('UI Showcase'), findsWidgets);
+    expect(pageHeaderTitle('UI Showcase'), findsWidgets);
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.text('Internal defaults'), findsOneWidget);
     expect(find.text('External JSON overrides'), findsOneWidget);
@@ -80,15 +81,9 @@ void main() {
     );
 
     final homeButton = tester.widget<IconButton>(
-      find.ancestor(
-        of: find.byIcon(Icons.home_outlined),
-        matching: find.byWidgetPredicate((widget) => widget is IconButton),
-      ),
+      find.byKey(const Key('shared-header-home')),
     );
-    expect(
-      homeButton.tooltip,
-      controller.text('uiShowcase.homeTooltip'),
-    );
+    expect(homeButton.tooltip, 'Home', reason: 'shared chrome uses the same action on every page');
 
     // Switch back to English so Flutter Color identifiers are asserted
     // against the factual catalog labels.
@@ -135,7 +130,7 @@ void main() {
     await tester.scrollUntilVisible(
       videoOptional,
       200,
-      scrollable: find.byType(Scrollable).last,
+      scrollable: find.byWidgetPredicate((widget) => widget is Scrollable && widget.axisDirection == AxisDirection.down).first,
     );
     await tester.pumpAndSettle();
     expect(videoOptional, findsOneWidget);

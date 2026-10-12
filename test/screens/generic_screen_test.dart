@@ -14,9 +14,13 @@ Future<void> _pumpGeneric(
   WidgetTester tester,
   int screenId, {
   DisplayController? controller,
+  bool preloadCatalogue = true,
   Map<String, WidgetBuilder> routes = const {},
 }) async {
   final resolvedController = controller ?? await loadTestDisplayController();
+  // Asset decoding can use a real isolate. Complete it outside the widget
+  // fake clock; cached rootBundle futures otherwise outlive a prior test zone.
+  if (preloadCatalogue) await tester.runAsync(ScreensConfig.load);
   await tester.pumpWidget(
     MaterialApp(
       routes: routes,
@@ -166,7 +170,7 @@ void main() {
     });
     addTearDown(() => ScreensConfig.resetCache());
 
-    await _pumpGeneric(tester, 6);
+    await _pumpGeneric(tester, 6, preloadCatalogue: false);
     expect(calls, 1);
     expect(find.text('Could not load screens.'), findsOneWidget);
     expect(find.byKey(const Key('screen6-catalog-search')), findsNothing);

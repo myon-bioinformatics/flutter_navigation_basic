@@ -1,3 +1,4 @@
+import '../../../support/header_finders.dart';
 // Shared asset/UI contract for list-selection catalogue examples.
 import 'dart:async';
 
@@ -92,7 +93,7 @@ void main() {
         calls++;
         return pending.future;
       }))));
-      expect(find.text('Pattern ${number.toString().padLeft(3, '0')}: $name'), findsOneWidget);
+      expect(pageHeaderTitle('Pattern ${number.toString().padLeft(3, '0')}: $name'), findsOneWidget);
       final button = find.widgetWithText(ElevatedButton, '実行');
       await tester.tap(button);
       await tester.pump();

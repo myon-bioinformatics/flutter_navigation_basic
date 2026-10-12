@@ -226,7 +226,7 @@ void main() {
       (tester) async {
     await _pumpPage(tester);
 
-    expect(find.text('Photo Studio'), findsOneWidget);
+    expect(find.text('Photo Studio 🖼️'), findsOneWidget);
     expect(find.text('Studio'), findsOneWidget);
     expect(find.text('Center + radius'), findsNothing);
     expect(find.text('Manual bounds'), findsNothing);
@@ -1125,10 +1125,11 @@ void main() {
       (tester) async {
     await _pumpPage(tester, surface: const Size(390, 844));
     expect(tester.takeException(), isNull);
-    expect(find.text('Photo Studio'), findsWidgets);
+    expect(find.text('Photo Studio 🖼️'), findsWidgets);
     expect(find.byIcon(Icons.undo), findsOneWidget);
     expect(find.byIcon(Icons.redo), findsOneWidget);
-    expect(find.byIcon(Icons.language), findsOneWidget);
+    expect(find.byKey(const Key('shared-header-menu')), findsOneWidget);
+    expect(find.byKey(const Key('shared-header-favorite')), findsOneWidget);
     expect(find.text('Move'), findsNothing);
     expect(find.text('Resize'), findsNothing);
   });
@@ -1517,7 +1518,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.byType(PhotoStudioPage), findsOneWidget);
-    expect(find.text('Photo Studio'), findsWidgets);
+    expect(find.text('Photo Studio 🖼️'), findsWidgets);
     expect(find.byIcon(Icons.circle), findsOneWidget);
     expect(_undoEnabled(tester), isTrue);
     expect(

@@ -36,6 +36,8 @@ void main() {
 
     expect(find.text('People, places, schedules and events on one shared timeline.'), findsOneWidget);
 
+    await tester.tap(find.byKey(const Key('shared-header-menu')));
+    await tester.pumpAndSettle();
     // Scope to DisplayLocalePicker — ToolDoorSelector also exposes a dropdown.
     await tester.tap(find.descendant(
       of: find.byType(DisplayLocalePicker),
@@ -43,6 +45,8 @@ void main() {
     ));
     await tester.pumpAndSettle();
     await tester.tap(find.text('JPN').last);
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(10, 10));
     await tester.pumpAndSettle();
 
     expect(find.text('人・場所・予定・イベントを1本の時間軸にまとめます。'), findsOneWidget);

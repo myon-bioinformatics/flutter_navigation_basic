@@ -399,6 +399,17 @@ def _assert_flutter_workflow_collector(workflow):
         assert upload.get("if") == "always()", name
         assert upload["with"]["if-no-files-found"] == "error", name
         assert f"build/test-results/flutter-{lane}-{shard}.xml" in upload["with"]["path"], name
+    gate = jobs["gate"]
+    contracts = _step(gate, "Export and validate production Dart contracts")
+    assert contracts.get("continue-on-error", False) is False
+    assert "set -euo pipefail" in contracts["run"]
+    assert "dart run tool/export_pattern_contracts.dart" in contracts["run"]
+    assert "pattern_contracts.py" in contracts["run"]
+    assert "validate_runner_junit.py" in contracts["run"]
+    upload = _upload(gate, "junit-dart-contracts")
+    assert upload["if"] == "always()"
+    assert upload["with"]["if-no-files-found"] == "error"
+    assert "build/test-results/pattern-contracts.xml" in upload["with"]["path"]
     flutter = "needs.changes.outputs.flutter == 'true'"
     assert jobs["unit-tests"]["if"] == flutter
     assert jobs["latest-stable"]["if"] == flutter
@@ -409,13 +420,13 @@ def _assert_flutter_workflow_collector(workflow):
         "FLUTTER": "${{ " + flutter + " }}",
         "PATTERNS": "${{ " + flutter + " && needs.changes.outputs.patterns == 'true' }}",
     }
-    always = _lane_reports("core") + _lane_reports("latest")
+    always = ["junit-dart-contracts/pattern-contracts.xml"] + _lane_reports("core") + _lane_reports("latest")
     assert _run_plan(plan, {"FLUTTER": "true", "PATTERNS": "true"}) == ("true", always + _lane_reports("patterns"))
     assert _run_plan(plan, {"FLUTTER": "true", "PATTERNS": "false"}) == ("true", always)
     assert _run_plan(plan, {"FLUTTER": "false", "PATTERNS": "false"}) == ("false", [])
     collector = jobs["junit-identity"]
     assert collector["needs"][:2] == ["changes", "junit-plan"]
-    assert set(collector["needs"][2:]) == set(FLUTTER_LANES)
+    assert set(collector["needs"][2:]) == set(FLUTTER_LANES) | {"gate"}
     assert collector["if"] == "always() && needs.junit-plan.outputs.run == 'true'"
     assert collector.get("continue-on-error", False) is False
     assert collector["uses"] == COLLECTOR

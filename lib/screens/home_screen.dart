@@ -1,3 +1,4 @@
+import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
 import 'package:flutter/material.dart';
 import '../config/routes.dart';
 import '../shared/display/display_scope.dart';
@@ -36,17 +37,16 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final display = DisplayScope.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(display.text('home.title')),
-        actions: [
+      appBar: StandardPageHeader(
+        currentRouteName: '/',
+        title: display.text('home.title'),
+        extraActions: [
           IconButton(
             tooltip: display.text('common.refresh'),
             onPressed: _refresh,
             icon: const Icon(Icons.refresh),
           ),
-          const DisplayLocalePicker(compact: true),
         ],
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 72),

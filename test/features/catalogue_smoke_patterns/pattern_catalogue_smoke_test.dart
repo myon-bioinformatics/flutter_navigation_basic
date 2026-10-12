@@ -1196,6 +1196,19 @@ class _Pattern {
   final Future<String> Function()? run;
 }
 
+// Wait for every service and retain failures in catalogue order.
+Future<List<String>> _serviceFailures(List<_Pattern> patterns) async {
+  final outcomes = await Future.wait(patterns.map((pattern) async {
+    try {
+      final message = await pattern.run!();
+      return message.isEmpty ? '${pattern.id}: empty message' : null;
+    } catch (error, stack) {
+      return '${pattern.id}: ${error.runtimeType}: $error\n$stack';
+    }
+  }));
+  return outcomes.whereType<String>().toList();
+}
+
 final _patterns = <String, List<_Pattern>>{
   'api_patterns': [
     _Pattern('api_patterns/pattern_001', () { final json = const api001m.Pattern001Result(message: 'test').toJson(); if (json['message'] != 'test') return 'toJson lost message'; return api001m.Pattern001Result.fromJson(json).message; }, null),
@@ -1800,6 +1813,28 @@ final _patterns = <String, List<_Pattern>>{
 };
 
 void main() {
+  test('service diagnostics retain every failing ID and exception', () async {
+    var completed = false;
+    final failed = await _serviceFailures([
+      _Pattern('sentinel/sync', () => 'test', () => throw StateError('sync failure')),
+      _Pattern('sentinel/async', () => 'test', () async {
+        await Future<void>.delayed(Duration.zero);
+        throw ArgumentError('async failure');
+      }),
+      _Pattern('sentinel/empty', () => 'test', () async => ''),
+      _Pattern('sentinel/success', () => 'test', () async {
+        await Future<void>.delayed(Duration.zero);
+        completed = true;
+        return 'ok';
+      }),
+    ]);
+    expect(completed, isTrue);
+    expect(failed, hasLength(3));
+    expect(failed[0], contains('sentinel/sync: StateError: Bad state: sync failure'));
+    expect(failed[1], contains('sentinel/async: ArgumentError: Invalid argument(s): async failure'));
+    expect(failed[2], equals('sentinel/empty: empty message'));
+  });
+
   for (final entry in _patterns.entries) {
     group(entry.key, () {
       for (final pattern in entry.value) {
@@ -1810,12 +1845,8 @@ void main() {
 
       test('every service.run() completes with a non-empty message', () async {
         final runnable = entry.value.where((p) => p.run != null).toList();
-        final messages = await Future.wait(runnable.map((p) => p.run!()));
-        final failed = [
-          for (var i = 0; i < runnable.length; i++)
-            if (messages[i].isEmpty) runnable[i].id,
-        ];
-        expect(failed, isEmpty);
+        final failed = await _serviceFailures(runnable);
+        expect(failed, isEmpty, reason: failed.join('\n'));
         expect(runnable, isNotEmpty);
       });
     });

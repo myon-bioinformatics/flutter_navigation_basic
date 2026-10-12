@@ -1,9 +1,9 @@
+import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../shared/clipboard/base64_image_bridge.dart';
-import '../../../shared/display/display_catalog.dart';
 import '../../../shared/display/display_scope.dart';
 import '../data/clipboard_image_read.dart';
 import '../data/native_image_normalize_adapter.dart';
@@ -969,48 +969,33 @@ class _PhotoStudioPageState extends State<PhotoStudioPage> {
       child: Focus(
         autofocus: true,
         child: Scaffold(
-          appBar: AppBar(
-            title: Row(
-              children: [
-                Flexible(child: Text(t('photoStudio.title'))),
-                if (_isDirty) ...[
-                  const SizedBox(width: 8),
-                  Icon(
-                    Icons.circle,
-                    size: 8,
-                    color: Theme.of(context).colorScheme.tertiary,
-                  ),
-                ],
+          appBar: StandardPageHeader(
+              title: t('photoStudio.title'),
+              currentRouteName: RouteNames.photoStudio,
+              titleTrailing: _isDirty
+                  ? Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: Icon(
+                        Icons.circle,
+                        size: 8,
+                        color: Theme.of(context).colorScheme.tertiary,
+                      ),
+                    )
+                  : null,
+              extraActions: [
+                IconButton(
+                  tooltip: t('photoStudio.undo'),
+                  onPressed: _canUndo ? _undoOnce : null,
+                  icon: const Icon(Icons.undo),
+                ),
+                IconButton(
+                  tooltip: t('photoStudio.redo'),
+                  onPressed: _canRedo ? _redoOnce : null,
+                  icon: const Icon(Icons.redo),
+                ),
               ],
             ),
-            actions: [
-              IconButton(
-                tooltip: t('photoStudio.undo'),
-                onPressed: _canUndo ? _undoOnce : null,
-                icon: const Icon(Icons.undo),
-              ),
-              IconButton(
-                tooltip: t('photoStudio.redo'),
-                onPressed: _canRedo ? _redoOnce : null,
-                icon: const Icon(Icons.redo),
-              ),
-              PopupMenuButton<String>(
-                tooltip: t('photoStudio.languageMenu'),
-                icon: const Icon(Icons.language),
-                onSelected: (locale) {
-                  DisplayScope.of(context).setLocale(locale);
-                },
-                itemBuilder: (context) => [
-                  for (final locale in DisplayCatalog.supportedLocales)
-                    PopupMenuItem<String>(
-                      value: locale,
-                      child: Text(locale.toUpperCase()),
-                    ),
-                ],
-              ),
-            ],
-          ),
-          body: SingleChildScrollView(
+            body: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 72),
             child: Center(
               child: ConstrainedBox(
