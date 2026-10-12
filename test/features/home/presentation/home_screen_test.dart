@@ -43,14 +43,15 @@ void main() {
     ScreensConfig.resetCache();
   });
 
-  test('random sampler chooses up to three unique real catalogue routes', () {
-    final selected = pickHomeDiscoveryScreens(sampleScreens, random: Random(42));
+  test('runtime consumes proposed Python draw and handles sparse catalog', () {
+    final selected = pickHomeDiscoveryScreens(sampleScreens, [[9, 7, 6]], random: Random(42));
+    expect(selected.map((s) => s.screenDataId), [9, 7, 6]);
     expect(selected.length, 3);
     expect(selected.map((s) => s.screenDataId).toSet().length, 3);
     expect(selected.every((s) => s.screenDataId >= 6), isTrue);
-    expect(pickHomeDiscoveryScreens(sampleScreens.take(2).toList(),
+    expect(pickHomeDiscoveryScreens(sampleScreens.take(2).toList(), [[9, 7, 6]],
         random: Random(42)).length, 0);
-    expect(pickHomeDiscoveryScreens(sampleScreens.skip(1).take(2).toList(),
+    expect(pickHomeDiscoveryScreens(sampleScreens.skip(1).take(2).toList(), [[9, 7, 6]],
         random: Random(42)).length, 2);
   });
 
