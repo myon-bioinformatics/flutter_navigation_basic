@@ -132,7 +132,7 @@ test.describe('Screen Navigation', () => {
       '[flt-semantics-identifier="screen6-result-count"]',
     );
     await expect(resultCount).toHaveCount(1);
-    await expect(resultCount).toContainText('1 / 198');
+    await expect(resultCount).toHaveText('1 / 198');
 
     const result = page.locator(
       '[flt-semantics-identifier="screen6-result-5"]',
@@ -173,6 +173,7 @@ test.describe('Screen Navigation', () => {
     await expect(rows.nth(0)).toHaveAttribute('flt-semantics-identifier', 'hub-result-1');
     await expect(rows.nth(1)).toHaveAttribute('flt-semantics-identifier', 'hub-result-2');
     await setCatalogQuery(search, 'screen6');
+    await expect(rows.first()).toHaveAttribute('flt-semantics-identifier', 'hub-result-6');
     await expect(result6).toBeVisible();
     await setCatalogQuery(search, 'Transformed Result List');
     await expect(rows).toHaveCount(1);
@@ -190,17 +191,17 @@ test.describe('Screen Navigation', () => {
     const result5 = page.locator('[flt-semantics-identifier="screen6-result-5"]');
     const result6 = page.locator('[flt-semantics-identifier="screen6-result-6"]');
     await setCatalogQuery(search, 'Transformed Result List');
-    await expect(resultCount).toContainText('1 / 198');
+    await expect(resultCount).toHaveText('1 / 198');
     await expect(result5).toBeVisible();
     await expect(result6).toHaveCount(0);
     await setCatalogQuery(search, 'no_such_use_case_144');
-    await expect(resultCount).toContainText('0 / 198');
+    await expect(resultCount).toHaveText('0 / 198');
     await expect(result5).toHaveCount(0);
     const clear = page.locator('[flt-semantics-identifier="screen6-clear"]').getByRole('button');
     await expect(clear).toBeVisible();
     await clear.click();
     await expect(search).toHaveValue('');
-    await expect(resultCount).toContainText('198 / 198');
+    await expect(resultCount).toHaveText('198 / 198');
     await expect(page.locator('[flt-semantics-identifier="screen6-result-1"]')).toBeVisible();
     // Re-enter through the live editing strategy after clicking Clear. The
     // count confirms filtering happened before inspecting a virtualized row.
@@ -210,7 +211,7 @@ test.describe('Screen Navigation', () => {
     await expect(result6).toBeVisible();
     await clear.click();
     await expect(search).toHaveValue('');
-    await expect(resultCount).toContainText('198 / 198');
+    await expect(resultCount).toHaveText('198 / 198');
     await expect(page.locator('[flt-semantics-identifier="screen6-result-1"]')).toBeVisible();
   });
 
