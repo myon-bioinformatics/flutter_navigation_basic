@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../display/display_scope.dart';
+import '../navigation/page_identities.g.dart';
 import 'session_text_clipboard.dart';
 
 /// Favorites are a session-only prototype: reload starts a new collection.
@@ -17,30 +18,24 @@ class SessionPageFavorites {
 
 /// Title decoration is presentation only; automation uses semantic identifiers.
 String standardPageTitle(String title, String route) {
-  if (RegExp(
-    r'[\u{1F000}-\u{1FAFF}\u2600-\u27BF]',
-    unicode: true,
-  ).hasMatch(title))
-    return title;
-  final emoji = switch (route) {
-    '/' => '🏠',
-    '/hub' => '🗺️',
-    '/core/clipboard-shelf' => '📋',
-    '/tools/time/now-timeline' => '🕒',
-    '/tools/location/coordinates' => '📍',
-    '/tools/media/photo-studio' => '🖼️',
-    '/tools/http/request-draft' => '🌐',
-    '/examples/ui-showcase' => '🎨',
-    '/examples/composition-generator' => '🎸',
-    '/examples/irony-generator' => '🥐',
-    _ => '🧭',
-  };
-  return '$title $emoji';
+  final emoji = pageEmojis[canonicalPageRoute(route)];
+  // Unregistered private/demo pages keep their title. Public routes are checked
+  // against this registry; never assign a shared fallback identity.
+  if (emoji == null) return title;
+  final plainTitle = title
+      .replaceAll(
+        RegExp(
+          r'[\u{1F000}-\u{1FAFF}\u2600-\u27BF\uFE0F\u200D]',
+          unicode: true,
+        ),
+        '',
+      )
+      .trim();
+  return '$plainTitle $emoji';
 }
 
 /// Row one is identical on every page. Page actions occupy a scrollable row two.
-class StandardPageHeader extends StatelessWidget
-    implements PreferredSizeWidget {
+class StandardPageHeader extends StatefulWidget implements PreferredSizeWidget {
   const StandardPageHeader({
     super.key,
     required this.title,
@@ -65,40 +60,66 @@ class StandardPageHeader extends StatelessWidget
         (subHeader?.preferredSize.height ?? 0),
   );
 
+  @override
+  State<StandardPageHeader> createState() => _StandardPageHeaderState();
+}
+
+class _StandardPageHeaderState extends State<StandardPageHeader> {
+  bool _homeInFlight = false;
+  String get title => widget.title;
+  String? get currentRouteName => widget.currentRouteName;
+  Widget? get titleTrailing => widget.titleTrailing;
+  PreferredSizeWidget? get subHeader => widget.subHeader;
+  List<Widget> get extraActions => widget.extraActions;
+  bool get showLocalePicker => widget.showLocalePicker;
+  Size get preferredSize => widget.preferredSize;
+
+  String _route(BuildContext context) =>
+      currentRouteName ?? ModalRoute.of(context)?.settings.name ?? '/';
+
   Future<void> _home(BuildContext context) async {
-    final destination = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Return to Home?'),
-        content: Text(
-          'Leave $title? Unsaved changes on this screen may be lost.',
-        ),
-        actions: [
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: FilledButton(
-                  key: const Key('shared-header-stay'),
-                  onPressed: () => Navigator.pop(dialogContext, false),
-                  child: const Text('Cancel · Stay here'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton(
-                  key: const Key('shared-header-confirm-home'),
-                  onPressed: () => Navigator.pop(dialogContext, true),
-                  child: const Text('Home'),
-                ),
-              ),
-            ],
+    if (_homeInFlight || canonicalPageRoute(_route(context)) == '/') return;
+    setState(() => _homeInFlight = true);
+    var navigated = false;
+    try {
+      final destination = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Return to Home?'),
+          content: Text(
+            'Leave $title? Unsaved changes on this screen may be lost.',
           ),
-        ],
-      ),
-    );
-    if (destination == true && context.mounted) {
-      Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: FilledButton(
+                    key: const Key('shared-header-stay'),
+                    onPressed: () => Navigator.pop(dialogContext, false),
+                    child: const Text('Cancel · Stay here'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton(
+                    key: const Key('shared-header-confirm-home'),
+                    onPressed: () => Navigator.pop(dialogContext, true),
+                    child: const Text('Home'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+      if (destination == true && context.mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
+        navigated = true;
+      }
+    } finally {
+      // Keep the guard through the outgoing route's transition after approval.
+      if (mounted && !navigated) setState(() => _homeInFlight = false);
     }
   }
 
@@ -151,8 +172,7 @@ class StandardPageHeader extends StatelessWidget
 
   @override
   Widget build(BuildContext context) {
-    final route =
-        currentRouteName ?? ModalRoute.of(context)?.settings.name ?? '/';
+    final route = _route(context);
     return AppBar(
       titleSpacing: 8,
       leadingWidth: 40,
@@ -184,7 +204,7 @@ class StandardPageHeader extends StatelessWidget
             key: const Key('shared-header-home'),
             tooltip: 'Home',
             icon: const Icon(Icons.home_outlined),
-            onPressed: () => _home(context),
+            onPressed: _homeInFlight ? null : () => _home(context),
           ),
         ),
         ValueListenableBuilder<Set<String>>(

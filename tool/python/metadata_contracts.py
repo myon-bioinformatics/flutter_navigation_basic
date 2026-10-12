@@ -60,6 +60,7 @@ def validate_locales(locales):
 
 def validate_export(document):
     assert document['schemaVersion'] == 1
+    validate_page_identities(document['pageIdentities'])
     assert document['routes'] == ROUTES
     assert len(document['locales']) == 11 and set(document['locales']) == LOCALES
     assert set(document['namespaces']) == NAMESPACES
@@ -73,6 +74,40 @@ def validate_export(document):
             expected = source.get('screenDataId', source.get('id')) if key == 'screenDataId' else source.get(key)
             assert value == expected, f"Dart decode changed {screen['screenDataId']}:{key}"
     validate_locales(json.loads((ROOT/'assets/display/app_text.json').read_text())['locales'])
+
+
+def validate_page_identities(data):
+    emojis, aliases = data['emojis'], data['aliases']
+    tools = {'/', '/hub', '/core/clipboard-shelf', '/tools/time/now-timeline',
+             '/tools/location/coordinates', '/tools/media/photo-studio',
+             '/tools/http/request-draft', '/examples/ui-showcase',
+             '/examples/composition-generator', '/examples/irony-generator',
+             '/examples/counter-playground', '/examples/external-integration/mcp'}
+    assert set(emojis) == tools | {f'/screen{i}' for i in range(1, 199)}
+    normalized = [emoji.replace('\ufe0f', '') for emoji in emojis.values()]
+    assert all(normalized) and len(set(normalized)) == len(normalized), 'duplicate page emoji'
+    for alias, target in aliases.items():
+        assert alias not in emojis and target in emojis, 'invalid page alias'
+    expected_aliases = {
+        '/tools/location/bounding-box': '/tools/media/photo-studio',
+        '/examples/composition-generator/seed': '/examples/composition-generator',
+        '/examples/clipboard-workbench': '/core/clipboard-shelf',
+        '/examples/external-integration/api': '/tools/http/request-draft',
+        '/examples/mock-api': '/tools/http/request-draft',
+        **{f'/examples/data-processing-interactions/{i}': f'/screen{i}'
+           for i in (171, 172, 173, 174, 175, 183, 184)},
+    }
+    assert aliases == expected_aliases, 'alias destination changed'
+    screens = json.loads((ROOT/'assets/screens.json').read_text())['screens']
+    for screen in screens:
+        identity = screen.get('screenDataId', screen.get('id'))
+        assert emojis[f'/screen{identity}'] == screen['emoji'], 'header/Hub emoji drift'
+    routes = data['publicRoutes']
+    assert set(data['titles']) == set(routes)
+    for route in routes:
+        assert route in emojis or route in aliases, f'unregistered public route: {route}'
+        expected = emojis[aliases.get(route, route)]
+        assert data['titles'][route] == 'Page ' + expected, f'wrong title identity: {route}'
 
 
 if __name__ == '__main__':

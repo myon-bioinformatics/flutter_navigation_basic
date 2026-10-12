@@ -4,6 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/core/navigation/route_names.dart';
 import 'package:flutter_application_1/screens/generic_screen.dart';
 import 'package:flutter_application_1/shared/display/display_catalog.dart';
+import 'package:flutter_application_1/config/routes.dart';
+import 'package:flutter_application_1/shared/navigation/page_identities.g.dart';
+import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
 
 // Keep the actual Dart constants and asset decoder observable. All integrity
 // decisions live in the Python oracle, and the JSON can be inspected separately.
@@ -14,6 +17,15 @@ void main() {
     final screens = await ScreensConfig.load();
     final document = {
       'schemaVersion': 1,
+      'pageIdentities': {
+        'emojis': pageEmojis,
+        'aliases': pageRouteAliases,
+        'publicRoutes': AppRoutes.routes.keys.toList(),
+        'titles': {
+          for (final route in AppRoutes.routes.keys)
+            route: standardPageTitle('Page 🧭', route),
+        },
+      },
       'routes': {
         'home': RouteNames.home,
         'counterPlayground': RouteNames.counterPlayground,
