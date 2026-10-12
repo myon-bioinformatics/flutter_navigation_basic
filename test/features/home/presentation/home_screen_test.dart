@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,13 +10,13 @@ import 'package:flutter_application_1/shared/display/display_scope.dart';
 
 import '../../../support/display_test_harness.dart';
 
-Future<void> _pumpHome(WidgetTester tester, {DisplayController? controller}) async {
+Future<void> _pumpHome(WidgetTester tester, {DisplayController? controller, Random? random}) async {
   final resolvedController = controller ?? await loadTestDisplayController();
   await tester.pumpWidget(
     MaterialApp(
       home: DisplayScope(
         controller: resolvedController,
-        child: HomeScreen(controller: HomeController()),
+        child: HomeScreen(controller: HomeController(), discoveryRandom: random),
       ),
     ),
   );
@@ -34,7 +36,46 @@ final sampleScreens = <ScreenData>[
     ),
 ];
 
+class _SequentialRandom implements Random {
+  int next = 0;
+  @override
+  int nextInt(int max) => (next++) % max;
+  @override
+  bool nextBool() => false;
+  @override
+  double nextDouble() => 0.0;
+}
+
 void main() {
+  testWidgets('refresh selects the next Python-generated triple', (tester) async {
+    final rows = (jsonDecode(await rootBundle.loadString('assets/home_discovery_draws.json'))
+        as Map<String, dynamic>)['draws'] as List;
+    final first = (rows[0] as List).cast<int>();
+    final second = (rows[1] as List).cast<int>();
+    expect(first.toSet(), isNot(second.toSet()));
+
+    final fullCatalog = <ScreenData>[
+      for (var id = 6; id <= 198; id++)
+        ScreenData(
+          screenDataId: id, name: 'Screen$id', title: 'Pattern $id',
+          emoji: '📱', description: 'Discovery pattern $id',
+          category: 'navigation', navigationPattern: '', apiPattern: '',
+          themePattern: '', dataPattern: '',
+        ),
+    ];
+    ScreensConfig.resetCache(loader: () async => fullCatalog);
+    await _pumpHome(tester, random: _SequentialRandom());
+    await tester.pumpAndSettle();
+    for (final id in first) {
+      expect(find.text('Screen$id · Pattern $id'), findsOneWidget);
+    }
+    await tester.tap(find.byIcon(Icons.refresh));
+    await tester.pumpAndSettle();
+    for (final id in second) {
+      expect(find.text('Screen$id · Pattern $id'), findsOneWidget);
+    }
+  });
+
   setUp(() {
     ScreensConfig.resetCache(loader: () async => sampleScreens);
   });
