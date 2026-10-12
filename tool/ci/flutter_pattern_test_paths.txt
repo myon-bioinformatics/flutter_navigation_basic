@@ -2,7 +2,8 @@
 # Core / product tests live in flutter_core_test_paths.txt.
 # Lines starting with # are ignored.
 
+# api/navigation/ui_theme template tests are one generated file
+# (tool/python/generate_pattern_smoke_test.py); api_patterns keeps 2 dedicated tests.
+test/features/catalogue_smoke_patterns
 test/features/api_patterns
 test/features/data_processing_patterns
-test/features/navigation_patterns
-test/features/ui_theme_patterns

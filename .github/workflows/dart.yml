@@ -78,7 +78,7 @@ jobs:
             esac
             case "$f" in
               # Pattern catalogues + shared deps that can regress all ~792 controllers.
-              test/features/*_patterns/*|lib/features/*_patterns/*|assets/screens.json|tool/ci/flutter_pattern_test_paths.txt|lib/core/services/base_controller.dart|pubspec.yaml|pubspec.lock)
+              test/features/*_patterns/*|tool/python/generate_pattern_smoke_test.py|lib/features/*_patterns/*|assets/screens.json|tool/ci/flutter_pattern_test_paths.txt|lib/core/services/base_controller.dart|pubspec.yaml|pubspec.lock)
                 patterns=true
                 ;;
             esac
@@ -206,7 +206,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  # Pattern catalogues (~792 files): suite-load dominated. Run only when
+  # Pattern catalogues (one generated smoke test + ~37 files): suite-load dominated. Run only when
   # pattern sources/tests or the pattern path list change (always on main).
   unit-tests-patterns:
     name: Pinned patterns shard ${{ matrix.shard }}
@@ -229,6 +229,9 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Verify generated pattern smoke test is current
+        run: python3 -S tool/python/generate_pattern_smoke_test.py --check
 
       - name: Run sharded pattern catalogue tests
         run: |
