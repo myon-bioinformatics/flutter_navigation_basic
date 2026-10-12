@@ -27,6 +27,8 @@ def test_flutter_consumes_python_generated_asset():
     pubspec = (ROOT / "pubspec.yaml").read_text(encoding="utf-8")
     assert "assets/home_discovery_draws.json" in source
     assert "assets/home_discovery_draws.json" in pubspec
-    assert "pickHomeDiscoveryScreens(screens, draws)" in source
+    assert "pickHomeDiscoveryScreens(" in source
+    assert "random: widget.discoveryRandom" in source
+    assert "_draws = draws" in source
     assert "void _refresh()" in source
     assert "_reshuffle();" in source
