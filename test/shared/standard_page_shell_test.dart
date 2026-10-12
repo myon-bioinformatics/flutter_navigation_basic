@@ -73,6 +73,12 @@ void main() {
       expect(find.byType(AlertDialog), findsOneWidget);
       expect(observer.pushed.whereType<PopupRoute<dynamic>>().length, 1);
       expect(tester.widget<IconButton>(home).onPressed, isNull);
+      // A tap outside the dialog is not an implicit Cancel action.
+      await tester.tapAt(const Offset(8, 80));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(observer.pushed.whereType<PopupRoute<dynamic>>().length, 1);
+      expect(tester.widget<IconButton>(home).onPressed, isNull);
       await tester.tap(find.byKey(const Key('shared-header-stay')));
       await tester.pumpAndSettle();
       expect(tester.widget<IconButton>(home).onPressed, isNotNull);
