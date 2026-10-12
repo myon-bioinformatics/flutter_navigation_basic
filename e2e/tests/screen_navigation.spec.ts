@@ -56,7 +56,10 @@ test.describe('Screen Navigation', () => {
       await expect(page).toHaveURL(/#\/hub$/, { timeout: 5_000 });
       const afterHash = await page.evaluate(() => window.location.hash);
       console.log('[back-to-hub probe] post-action', { stage, beforeHash, afterHash });
-      await expect(page.getByText('Navigation Hub', { exact: false })).toBeVisible();
+      const title = page.locator('[flt-semantics-identifier="shared-header-title"]');
+      await expect(title).toBeVisible();
+      await expect(title).toContainText('Navigation Hub');
+      await expect(page.locator('[flt-semantics-identifier="shared-header-title"]')).toBeVisible();
     } catch (error) {
       count = await button.count().catch(() => -1);
       const identifiers = await page.locator('[flt-semantics-identifier]').evaluateAll(
@@ -151,7 +154,7 @@ test.describe('Screen Navigation', () => {
     await search.fill('Transformed Result List');
     await page.locator('[key="screen-item-5"]').click();
     await waitForFlutter(page);
-    await expect(page).toHaveURL(/#\\/screen5$/);
+    await expect(page).toHaveURL(/#\/screen5$/);
   });
 
   test('Screen6 excludes unrelated results, handles zero matches and clear @portable', async ({ page }) => {

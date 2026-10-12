@@ -217,18 +217,19 @@ See [`MULTIPLATFORM_RUNTIME_OWNERSHIP.md`](./MULTIPLATFORM_RUNTIME_OWNERSHIP.md)
 `dart run tool/dev.dart meta` (and Android size diagnostics) generates canonical
 JSON/JSONL using `tool/python/generate_repository_metadata.py`, then reads that
 record into the existing Flutter build diagnostics. Python 3 and Git are required
-for generation. The contract and producer are byte-for-byte pins of Ironmate
-`73157cb7fed236a4a941722a6dcddd69a33ab95a`; source paths, commit, Git blob IDs and
-SHA-256 for the producer, contract and license are recorded in
-`tool/python/vendor.lock.json`.
+for generation. The producer is the vendored `tool/python/vendor/gh_identity.py`
+(`repository_metadata_v1`, gh_identity #34 and #35), pinned with Git blob ID and SHA-256 in
+`tool/python/vendor.lock.json`. Its output is byte-for-byte the former Ironmate
+`73157cb7` schema v1 record apart from `generated_at`; the two Ironmate files stay
+vendored until the switch is green on CI and are removed in a follow-up.
 
 The Python adapter requests Python plus `git` / `gh` / `node` / `npm` / `npx`
-versions through canonical `record_from_checkout(include_python_tooling=True,
-tooling_commands=...)`, which delegates observations to `collect_portable_tooling()`.
+versions through `gh_identity.tool_versions(..., include_python=True)`.
 The v1 `tooling` object still contains only short string values. Unavailable,
 failed or malformed version observations are omitted, not represented by nulls;
 if every version observation is unavailable, `tooling` is `{}`. Optional version
 observation failure is nonfatal, but checkout identity still requires working Git.
+The head SHA is always the checkout HEAD, never `GITHUB_SHA`.
 This implements the Flutter consumer slice of Ironmate #49; it does not imply
 completion of other consumers or closure of the parent issue.
 
