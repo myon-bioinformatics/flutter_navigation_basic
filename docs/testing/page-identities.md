@@ -18,8 +18,8 @@ Do not choose a title emoji from translated text or use a shared fallback.
 | UI Showcase | 🎨 |
 | Composition Studio | 🎸 |
 | Irony Generator | 🥐 |
-| Counter Playground | 🔟 |
-| MCP Integration | 👾 |
+| Counter Playground | 👾 |
+| MCP Integration | 🕸️ |
 
 These 12 pages and all 198 numbered pages have distinct identities. Existing
 deep links that open the same page share its emoji: bounding-box → Photo Studio,

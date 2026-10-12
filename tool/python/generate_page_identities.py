@@ -10,8 +10,8 @@ TOOLS = {
     '/tools/time/now-timeline': '🕒', '/tools/location/coordinates': '📍',
     '/tools/media/photo-studio': '🖼️', '/tools/http/request-draft': '🌐',
     '/examples/ui-showcase': '🎨', '/examples/composition-generator': '🎸',
-    '/examples/irony-generator': '🥐', '/examples/counter-playground': '🔟',
-    '/examples/external-integration/mcp': '👾',
+    '/examples/irony-generator': '🥐', '/examples/counter-playground': '👾',
+    '/examples/external-integration/mcp': '🕸️',
 }
 ALIASES = {
     '/tools/location/bounding-box': '/tools/media/photo-studio',

@@ -101,13 +101,15 @@ test('shared header rapid Home taps allow one confirmation then return from Hub 
     else await page.mouse.click(x, y);
   }
   await expect(page.getByText('Return to Home?', { exact: true })).toHaveCount(1);
-  await expect(home).toBeDisabled();
-  await press(page, page.getByRole('button', { name: 'Cancel · Stay here', exact: true }), !!testInfo.project.use.hasTouch);
+  const dialog = page.getByRole('alertdialog');
+  await expect(dialog).toHaveCount(1);
+  await expect(dialog).toBeVisible();
+  await press(page, dialog.getByRole('button', { name: 'Cancel · Stay here', exact: true }), !!testInfo.project.use.hasTouch);
   await expect(title).toContainText('🗺️');
   await expect(home).toBeEnabled();
   await press(page, home, !!testInfo.project.use.hasTouch);
   await expect(page.getByText('Return to Home?', { exact: true })).toHaveCount(1);
-  await press(page, page.getByRole('button', { name: 'Home', exact: true }).last(), !!testInfo.project.use.hasTouch);
+  await press(page, dialog.getByRole('button', { name: 'Home', exact: true }), !!testInfo.project.use.hasTouch);
   await expect(title).toContainText('🏠');
   await expect(title).toHaveCount(1);
   await expect(page.getByText('Return to Home?', { exact: true })).toHaveCount(0);
