@@ -84,6 +84,8 @@ class _StandardPageHeaderState extends State<StandardPageHeader> {
     try {
       final destination = await showDialog<bool>(
         context: context,
+        // Repeated taps on the covered Home control must not dismiss the modal.
+        barrierDismissible: false,
         builder: (dialogContext) => AlertDialog(
           title: const Text('Return to Home?'),
           content: Text(
