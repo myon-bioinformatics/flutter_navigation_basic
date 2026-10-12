@@ -6,7 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/features/home/domain/home_controller.dart';
 import 'package:flutter_application_1/features/home/presentation/home_screen.dart';
 import 'package:flutter_application_1/screens/generic_screen.dart';
-import 'package:flutter_application_1/shared/widgets/home_overview_panel.dart';
 import 'package:flutter_application_1/shared/display/display_scope.dart';
 
 import '../../../support/display_test_harness.dart';
