@@ -56,7 +56,7 @@ test.describe('Screen Navigation', () => {
       await expect(page).toHaveURL(/#\/hub$/, { timeout: 5_000 });
       const afterHash = await page.evaluate(() => window.location.hash);
       console.log('[back-to-hub probe] post-action', { stage, beforeHash, afterHash });
-      await expect(page.getByText('Navigation Hub', { exact: false })).toBeVisible();
+      await expect(page.locator('[key^="screen-grid-"]').first()).toBeVisible();
     } catch (error) {
       count = await button.count().catch(() => -1);
       const identifiers = await page.locator('[flt-semantics-identifier]').evaluateAll(
