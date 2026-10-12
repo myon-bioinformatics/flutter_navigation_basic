@@ -1,3 +1,4 @@
+import '../../../support/header_finders.dart';
 // Pattern 113: DataDeduplicate report boundary.
 import 'dart:async';
 
@@ -58,7 +59,7 @@ void main() {
         return pending.future;
       })),
     ));
-    expect(find.text('Pattern 113: DataDeduplicate'), findsOneWidget);
+    expect(pageHeaderTitle('Pattern 113: DataDeduplicate'), findsOneWidget);
     final button = find.widgetWithText(ElevatedButton, '実行');
     await tester.tap(button);
     await tester.pump();

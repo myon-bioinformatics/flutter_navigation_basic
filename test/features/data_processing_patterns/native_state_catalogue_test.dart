@@ -1,3 +1,4 @@
+import '../../support/header_finders.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_151/view.dart';
@@ -19,7 +20,7 @@ void main() {
   for (final (id, title, view) in cases) {
     testWidgets('native state $id has working transitions and no fake GetX run', (tester) async {
       await tester.pumpWidget(MaterialApp(home: view));
-      expect(find.text(title), findsOneWidget);
+      expect(pageHeaderTitle(title), findsOneWidget);
       expect(find.text('カウント: 0'), findsOneWidget);
       expect(find.textContaining('GetXを使用しないFlutter標準'), findsOneWidget);
       expect(find.text('実行'), findsNothing);

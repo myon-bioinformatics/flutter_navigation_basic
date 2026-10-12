@@ -1,3 +1,4 @@
+import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:isolate';
@@ -56,8 +57,8 @@ class _NativeParallelPatternExampleState
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: Text('Pattern ${widget.patternId}')),
-        body: Column(
+        appBar: StandardPageHeader(title: 'Pattern ${widget.patternId}'),
+    body: Column(
           children: [
             Text(_status, key: const ValueKey('parallel-status')),
             ElevatedButton(

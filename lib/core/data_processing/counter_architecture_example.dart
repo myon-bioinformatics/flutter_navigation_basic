@@ -1,3 +1,4 @@
+import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
 import 'package:flutter/material.dart';
 
 enum CounterArchitecture { mvc, mvvm, mvp, clean, atom }
@@ -128,7 +129,7 @@ class CounterArchitectureExample extends StatelessWidget {
   final String description;
   final CounterArchitecture architecture;
   @override Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(title)),
+    appBar: StandardPageHeader(title: title),
     body: Padding(
       padding: const EdgeInsets.all(16),
       child: Column(

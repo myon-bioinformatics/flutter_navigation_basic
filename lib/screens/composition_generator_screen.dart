@@ -1,3 +1,4 @@
+import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
 import 'package:flutter/material.dart';
 
 import '../config/routes.dart';
@@ -14,12 +15,11 @@ class CompositionGeneratorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final display = DisplayScope.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(display.text('nav.compositionGenerator')),
-        backgroundColor: theme.colorScheme.inversePrimary,
+      appBar: StandardPageHeader(
+        currentRouteName: '/examples/composition-generator',
+        title: display.text('nav.compositionGenerator'),
       ),
       body: Center(
         child: SingleChildScrollView(

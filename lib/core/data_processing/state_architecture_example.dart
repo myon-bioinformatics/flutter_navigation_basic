@@ -1,3 +1,4 @@
+import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -81,7 +82,7 @@ class _StateArchitectureExampleState extends State<StateArchitectureExample> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(widget.title)),
+    appBar: StandardPageHeader(title: widget.title),
     body: Padding(
       padding: const EdgeInsets.all(16),
       child: Column(

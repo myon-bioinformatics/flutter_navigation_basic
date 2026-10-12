@@ -1,3 +1,4 @@
+import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -174,10 +175,8 @@ class _McpIntegrationScreenState extends State<McpIntegrationScreen> {
     final result = display.text(_resultKey, arguments: _resultArgs);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(display.text('mcp.title')),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
+      appBar: StandardPageHeader(
+        currentRouteName: '/examples/external-integration/mcp',title: display.text('mcp.title')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

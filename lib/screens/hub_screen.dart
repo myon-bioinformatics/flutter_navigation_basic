@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../shared/catalog/catalog_search.dart';
 import '../config/routes.dart';
 import '../shared/display/display_scope.dart';
@@ -61,77 +62,66 @@ class _HubScreenState extends State<HubScreen> {
     return StandardPageShell(
       currentRouteName: AppRoutes.hub,
       title: display.text('hub.title'),
+      headerActions: [
+        IconButton(
+          tooltip: display.text('mockApi.title'),
+          icon: const Icon(Icons.api),
+          onPressed: () => Navigator.pushNamed(context, AppRoutes.externalApi),
+        ),
+        IconButton(
+          tooltip: display.text('mcp.title'),
+          icon: const Icon(Icons.hub_outlined),
+          onPressed: () => Navigator.pushNamed(context, AppRoutes.externalMcp),
+        ),
+        Semantics(
+          identifier: 'hub-list-view',
+          container: true,
+          child: IconButton(
+            tooltip: display.text('hub.listViewTooltip'),
+            icon: const Icon(Icons.list),
+            onPressed: () => setState(() => _mode = _ViewMode.list),
+            color: _mode == _ViewMode.list ? Colors.blue : null,
+          ),
+        ),
+        IconButton(
+          tooltip: display.text('hub.gridViewTooltip'),
+          icon: const Icon(Icons.grid_view),
+          onPressed: () => setState(() => _mode = _ViewMode.grid),
+          color: _mode == _ViewMode.grid ? Colors.blue : null,
+        ),
+      ],
       subHeader: PreferredSize(
-        preferredSize: const Size.fromHeight(104),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              height: 48,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-          IconButton(
-            tooltip: display.text('mockApi.title'),
-            icon: const Icon(Icons.api),
-            onPressed: () => Navigator.pushNamed(context, AppRoutes.externalApi),
-          ),
-          IconButton(
-            tooltip: display.text('mcp.title'),
-            icon: const Icon(Icons.hub_outlined),
-            onPressed: () => Navigator.pushNamed(context, AppRoutes.externalMcp),
-          ),
-          Semantics(
-            identifier: 'hub-list-view',
+        preferredSize: const Size.fromHeight(56),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Semantics(
+            identifier: 'hub-search',
             container: true,
-            child: IconButton(
-              tooltip: display.text('hub.listViewTooltip'),
-              icon: const Icon(Icons.list),
-              onPressed: () => setState(() => _mode = _ViewMode.list),
-              color: _mode == _ViewMode.list ? Colors.blue : null,
-            ),
-          ),
-          IconButton(
-            tooltip: display.text('hub.gridViewTooltip'),
-            icon: const Icon(Icons.grid_view),
-            onPressed: () => setState(() => _mode = _ViewMode.grid),
-            color: _mode == _ViewMode.grid ? Colors.blue : null,
-          ),
-
-                ],
+            explicitChildNodes: true,
+            child: TextField(
+              controller: _searchCtrl,
+              decoration: InputDecoration(
+                hintText: display.text('hub.searchHint'),
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: Colors.white,
+                isDense: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Semantics(
-                identifier: 'hub-search',
-                container: true,
-                explicitChildNodes: true,
-                child: TextField(
-                controller: _searchCtrl,
-                decoration: InputDecoration(
-                  hintText: display.text('hub.searchHint'),
-                  prefixIcon: const Icon(Icons.search),
-                  filled: true,
-                  fillColor: Colors.white,
-                  isDense: true,
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24)),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                ),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
       child: _loading
           ? const Center(child: CircularProgressIndicator())
           : _filtered.isEmpty
-              ? Center(child: Text(display.text('hub.empty')))
-              : _mode == _ViewMode.list
-                  ? _buildList()
-                  : _buildGrid(),
+          ? Center(child: Text(display.text('hub.empty')))
+          : _mode == _ViewMode.list
+          ? _buildList()
+          : _buildGrid(),
     );
   }
 
@@ -180,7 +170,8 @@ class _HubScreenState extends State<HubScreen> {
           child: Card(
             elevation: 2,
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(10),
               child: Column(
@@ -190,9 +181,7 @@ class _HubScreenState extends State<HubScreen> {
                   const SizedBox(height: 6),
                   Text(
                     s.name,
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelLarge
+                    style: Theme.of(context).textTheme.labelLarge
                         ?.copyWith(fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center,
                   ),
@@ -213,4 +202,3 @@ class _HubScreenState extends State<HubScreen> {
     );
   }
 }
-

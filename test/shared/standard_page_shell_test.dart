@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/shared/widgets/standard_page_shell.dart';
+import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
 import 'package:flutter_application_1/shared/widgets/tool_door_selector.dart';
 import '../support/display_test_harness.dart';
 
 void main() {
-  testWidgets('narrow common header keeps title readable and language in drawer', (tester) async {
+  testWidgets('narrow common header keeps title readable and language in menu', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -16,12 +17,49 @@ void main() {
         child: Text('Hub content')),
     )));
     await tester.pumpAndSettle();
-    final label = find.text('Navigation Hub');
+    final label = find.text('Navigation Hub 🗺️');
     expect(label, findsOneWidget);
     expect(tester.getSize(label).width, greaterThan(60));
     await tester.tap(find.byKey(const Key('shared-header-menu')));
     await tester.pumpAndSettle();
     expect(find.text('Language'), findsOneWidget);
+  });
+
+  testWidgets('phone keeps common actions above page actions and favorites survive rebuild', (tester) async {
+    tester.view.physicalSize = const Size(320, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    SessionPageFavorites.routes.value = {};
+    addTearDown(() => SessionPageFavorites.routes.value = {});
+    var clears = 0;
+    await tester.pumpWidget(await wrapWithDisplayScope(MaterialApp(
+      home: StandardPageShell(
+        title: 'Request editor', currentRouteName: '/tools/http/request-draft',
+        headerActions: [TextButton(key: const Key('page-clear'),
+          onPressed: () => clears++, child: const Text('Clear draft'))],
+        child: const Text('body'),
+      ),
+    )));
+    await tester.pumpAndSettle();
+    final home = find.byKey(const Key('shared-header-home'));
+    final favorite = find.byKey(const Key('shared-header-favorite'));
+    final menu = find.byKey(const Key('shared-header-menu'));
+    final clear = find.byKey(const Key('page-clear'));
+    expect(tester.getCenter(home).dy, tester.getCenter(menu).dy);
+    expect(tester.getCenter(favorite).dy, tester.getCenter(menu).dy);
+    expect(tester.getTopLeft(clear).dy, greaterThanOrEqualTo(tester.getBottomLeft(home).dy));
+    expect(find.text('Request editor 🌐'), findsOneWidget);
+    await tester.tap(clear);
+    await tester.tap(favorite);
+    await tester.pump();
+    expect(clears, 1);
+    expect(SessionPageFavorites.routes.value, contains('/tools/http/request-draft'));
+    expect(tester.widget<IconButton>(favorite).isSelected, isTrue);
+    await tester.tap(favorite);
+    await tester.pump();
+    expect(SessionPageFavorites.routes.value, isEmpty);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('direct-open page does not expose inert BackButton', (tester) async {
@@ -93,7 +131,7 @@ void main() {
     expect(find.text('home-destination'), findsOneWidget);
   });
 
-  testWidgets('shared menu opens drawer; no duplicate locale picker', (tester) async {
+  testWidgets('shared menu opens sheet; no duplicate locale picker', (tester) async {
     await tester.pumpWidget(await wrapWithDisplayScope(MaterialApp(
       home: const StandardPageShell(
         title: 'Example',
