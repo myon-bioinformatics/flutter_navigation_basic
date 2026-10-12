@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../config/routes.dart';
 import '../shared/display/display_scope.dart';
 import 'generic_screen.dart';
+import '../shared/widgets/standard_page_shell.dart';
 
 enum _ViewMode { list, grid }
 
@@ -65,11 +66,19 @@ class _HubScreenState extends State<HubScreen> {
   @override
   Widget build(BuildContext context) {
     final display = DisplayScope.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(display.text('hub.title')),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
+    return StandardPageShell(
+      currentRouteName: AppRoutes.hub,
+      title: display.text('hub.title'),
+      subHeader: PreferredSize(
+        preferredSize: const Size.fromHeight(104),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: 48,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
           IconButton(
             tooltip: display.text('mockApi.title'),
             icon: const Icon(Icons.api),
@@ -92,41 +101,36 @@ class _HubScreenState extends State<HubScreen> {
             onPressed: () => setState(() => _mode = _ViewMode.grid),
             color: _mode == _ViewMode.grid ? Colors.blue : null,
           ),
-          const SizedBox(width: 8),
-          const DisplayLocalePicker(compact: true),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: TextField(
-              controller: _searchCtrl,
-              decoration: InputDecoration(
-                hintText: display.text('hub.searchHint'),
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.white,
-                isDense: true,
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24)),
-                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+
+                ],
               ),
             ),
-          ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: TextField(
+                controller: _searchCtrl,
+                decoration: InputDecoration(
+                  hintText: display.text('hub.searchHint'),
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.white,
+                  isDense: true,
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24)),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-      body: _loading
+      child: _loading
           ? const Center(child: CircularProgressIndicator())
           : _filtered.isEmpty
               ? Center(child: Text(display.text('hub.empty')))
               : _mode == _ViewMode.list
                   ? _buildList()
                   : _buildGrid(),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.pushNamed(context, AppRoutes.home),
-        icon: const Icon(Icons.home),
-        label: Text(display.text('hub.homeFab')),
-      ),
     );
   }
 
