@@ -96,14 +96,17 @@ test('shared header rapid Home taps allow one confirmation then return from Hub 
   expect(bounds).not.toBeNull();
   const x = bounds!.x + bounds!.width / 2;
   const y = bounds!.y + bounds!.height / 2;
-  for (let i = 0; i < 3; i++) {
+  // Confirm the first pointer event opened the modal before testing its barrier.
+  await press(page, home, !!testInfo.project.use.hasTouch);
+  const dialog = page.getByRole('alertdialog');
+  await expect(dialog).toBeVisible();
+  // Once the dialog covers Home, two more taps must not silently cancel it.
+  for (let i = 0; i < 2; i++) {
     if (testInfo.project.use.hasTouch) await page.touchscreen.tap(x, y);
     else await page.mouse.click(x, y);
   }
   await expect(page.getByText('Return to Home?', { exact: true })).toHaveCount(1);
-  const dialog = page.getByRole('alertdialog');
   await expect(dialog).toHaveCount(1);
-  await expect(dialog).toBeVisible();
   await press(page, dialog.getByRole('button', { name: 'Cancel · Stay here', exact: true }), !!testInfo.project.use.hasTouch);
   await expect(title).toContainText('🗺️');
   await expect(home).toBeEnabled();
