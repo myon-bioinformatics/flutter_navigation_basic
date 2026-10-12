@@ -52,8 +52,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(SessionTextClipboard.entries.value, ['Copied before opening menu']);
 
-    // Dismiss the end drawer through its actual close gesture, not a removed BackButton.
-    await tester.tapAt(const Offset(8, 250));
+    // Close the shared drawer directly; no BackButton is required.
+    tester.state<ScaffoldState>(find.byType(Scaffold).first).closeEndDrawer();
     await tester.pumpAndSettle();
     final navigator = tester.state<NavigatorState>(find.byType(Navigator));
     navigator.pushNamed('/second');
