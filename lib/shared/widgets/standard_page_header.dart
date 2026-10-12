@@ -21,7 +21,11 @@ class StandardPageHeader extends StatelessWidget implements PreferredSizeWidget 
 
   @override
   Widget build(BuildContext context) => AppBar(
-        title: Text(title),
+        title: Semantics(
+          identifier: 'shared-header-title',
+          header: true,
+          child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+        ),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         leading: Navigator.of(context).canPop()
             ? const BackButton(key: Key('shared-header-back'))
@@ -67,7 +71,8 @@ class StandardPageHeader extends StatelessWidget implements PreferredSizeWidget 
           },
         ),
           ...extraActions,
-          if (DisplayScope.maybeOf(context) != null)
+          if (DisplayScope.maybeOf(context) != null &&
+              MediaQuery.sizeOf(context).width >= 600)
             const DisplayLocalePicker(compact: true),
           Builder(builder: (menuContext) => IconButton(
                 key: const Key('shared-header-menu'),
