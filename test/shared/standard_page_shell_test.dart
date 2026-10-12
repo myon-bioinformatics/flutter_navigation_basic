@@ -5,6 +5,16 @@ import 'package:flutter_application_1/shared/widgets/tool_door_selector.dart';
 import '../support/display_test_harness.dart';
 
 void main() {
+  testWidgets('direct-open page does not expose inert BackButton', (tester) async {
+    await tester.pumpWidget(await wrapWithDisplayScope(const MaterialApp(
+      home: StandardPageShell(title: 'Direct', currentRouteName: '/direct',
+        child: Text('direct body')),
+    )));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('shared-header-back')), findsNothing);
+    expect(find.byKey(const Key('shared-header-home')), findsOneWidget);
+  });
+
 
   testWidgets('footer does not cover or intercept body controls', (tester) async {
     var taps = 0;
