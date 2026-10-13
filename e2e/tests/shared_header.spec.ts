@@ -127,13 +127,14 @@ async function selectJapanese(page: Page, touch: boolean) {
   await press(page, menu, touch);
   await press(page, page.getByRole('button', { name: /^Language / }), touch);
   await press(page, page.getByRole('menuitem', { name: 'JPN', exact: true }), touch);
-  await expect(page.getByText('一時クリップボード', { exact: true })).toBeVisible();
+  // Flutter merges adjacent ListTile text into a single semantics text node.
+  await expect(page.getByText('一時クリップボード')).toBeVisible();
   await expect(page.getByText('コピーしたテキストを保存', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: /^言語 / })).toBeVisible();
   // Dismiss the sheet outside its bounds (all viewport sizes).
   if (touch) await page.touchscreen.tap(8, 80);
   else await page.mouse.click(8, 80);
-  await expect(page.getByText('一時クリップボード', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('一時クリップボード')).toHaveCount(0);
 }
 
 test('Japanese shared menu and Home confirmation preserve cancel and navigation @portable', async ({ page }, testInfo) => {
@@ -173,10 +174,10 @@ test('Japanese clipboard save and copy use real system clipboard @portable', asy
   const menu = page.locator('[flt-semantics-identifier="shared-header-menu"]').getByRole('button');
   await press(page, menu, touch);
   await press(page, page.getByRole('button', { name: 'コピーしたテキストを保存', exact: true }), touch);
-  await expect(page.getByText('一時クリップボードに保存しました', { exact: true })).toBeVisible();
-  await expect(page.getByText('locale clipboard regression', { exact: true })).toBeVisible();
+  await expect(page.getByText('一時クリップボードに保存しました')).toBeVisible();
+  await expect(page.getByText('locale clipboard regression')).toBeVisible();
   await page.evaluate(() => navigator.clipboard.writeText('overwritten'));
   await press(page, page.getByRole('button', { name: '保存したテキストをコピー', exact: true }), touch);
-  await expect(page.getByText('システムのクリップボードにコピーしました', { exact: true })).toBeVisible();
+  await expect(page.getByText('システムのクリップボードにコピーしました')).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('locale clipboard regression');
 });

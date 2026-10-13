@@ -230,8 +230,9 @@ void main() {
       final messenger =
           TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
       messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
-        if (call.method == 'Clipboard.getData')
+        if (call.method == 'Clipboard.getData') {
           return {'text': 'standalone text'};
+        }
         return null;
       });
       addTearDown(
