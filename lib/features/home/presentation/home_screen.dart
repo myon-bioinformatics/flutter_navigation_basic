@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../domain/home_controller.dart';
 import '../../../config/routes.dart';
 import '../../../screens/generic_screen.dart';
-import '../../../core/navigation/route_names.dart';
 import '../../../core/navigation/app_tools.dart';
 import '../../../shared/diagnostics/build_diagnostics_card.dart';
 import '../../../shared/display/display_scope.dart';
