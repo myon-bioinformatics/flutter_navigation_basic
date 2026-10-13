@@ -8,6 +8,7 @@ import '../display/display_scope.dart';
 import '../../features/photo_studio/presentation/pick_local_image_bytes.dart';
 import '../../features/photo_studio/data/photo_import_limits.dart';
 import '../../features/photo_studio/data/photo_media_ports.dart';
+import '../../features/photo_studio/presentation/studio_image_preview.dart';
 
 class ClipboardPromptWorkbench extends StatefulWidget {
   const ClipboardPromptWorkbench({super.key, this.imagePicker});
@@ -30,6 +31,8 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
   final _outputController = TextEditingController();
   final _base64Controller = TextEditingController();
 
+  final GlobalKey _imageReferenceKey = GlobalKey();
+
   Uint8List? _imageBytes;
   String? _imageMimeType;
   bool _processingImage = false;
@@ -46,6 +49,22 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
     _outputController.dispose();
     _base64Controller.dispose();
     super.dispose();
+  }
+
+  // The imported image sits above the pick button. Scroll back to it after
+  // layout so a successful import is visible, especially on narrow screens.
+  void _revealImageReference() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final previewContext = _imageReferenceKey.currentContext;
+      if (previewContext == null) return;
+      Scrollable.ensureVisible(
+        previewContext,
+        alignment: 0.05,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   Future<void> _pasteText() async {
@@ -91,6 +110,7 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
       _statusKey = 'clipboardWorkbench.status.attached';
       _statusArgs = {'mimeType': content.mimeType, 'bytes': bytes.length};
     });
+    _revealImageReference();
   }
 
   Future<void> _importLocalImage() async {
@@ -131,6 +151,7 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
           'bytes': normalized.bytes.length,
         };
       });
+      _revealImageReference();
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -211,6 +232,7 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
         _statusKey = 'clipboardWorkbench.status.decoded';
         _statusArgs = {'mimeType': payload.mimeType, 'bytes': payload.bytes.length};
       });
+      _revealImageReference();
     } catch (error) {
       setState(() {
         _statusKey = 'clipboardWorkbench.status.decodeFailed';
@@ -310,6 +332,7 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _ImageReferenceCard(
+                  key: _imageReferenceKey,
                   bytes: _imageBytes,
                   mimeType: _imageMimeType,
                   onRemove: _imageBytes == null
@@ -451,6 +474,7 @@ class _ClipboardPromptWorkbenchState extends State<ClipboardPromptWorkbench> {
 
 class _ImageReferenceCard extends StatelessWidget {
   const _ImageReferenceCard({
+    super.key,
     required this.bytes,
     required this.mimeType,
     required this.onRemove,
@@ -487,19 +511,17 @@ class _ImageReferenceCard extends StatelessWidget {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(12),
-          child: Image.memory(
-            bytes!,
-            height: 220,
+          child: SizedBox(
+            height: 280,
             width: double.infinity,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              return SizedBox(
-                height: 120,
-                child: Center(
-                  child: Text(display.text('clipboardWorkbench.imageReference.previewUnavailable')),
+            child: StudioImagePreview(
+              bytes: bytes!,
+              errorBuilder: (context, error, stackTrace) => Center(
+                child: Text(
+                  display.text('clipboardWorkbench.imageReference.previewUnavailable'),
                 ),
-              );
-            },
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 8),
