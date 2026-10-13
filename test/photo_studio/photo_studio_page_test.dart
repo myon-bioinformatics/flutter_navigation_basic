@@ -10,6 +10,7 @@ import 'package:flutter_application_1/features/photo_studio/domain/studio_frame.
 import 'package:flutter_application_1/features/photo_studio/domain/studio_frame_style.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/compose_studio_image.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/photo_rect_canvas.dart';
+import 'package:flutter_application_1/features/photo_studio/presentation/studio_image_preview.dart';
 import 'package:flutter_application_1/features/photo_studio/data/clipboard_image_read.dart';
 import 'package:flutter_application_1/features/photo_studio/data/photo_media_ports.dart';
 import 'package:flutter_application_1/features/photo_studio/presentation/photo_studio_page.dart';
@@ -263,6 +264,14 @@ void main() {
 
     expect(find.textContaining('Image loaded'), findsOneWidget);
     expect(find.text('No frame selected.'), findsWidgets);
+    expect(find.byType(StudioImagePreview), findsOneWidget);
+    final renderedImage = tester.widget<Image>(
+      find.descendant(
+        of: find.byType(StudioImagePreview),
+        matching: find.byType(Image),
+      ),
+    );
+    expect(renderedImage.fit, BoxFit.contain);
 
     await tester.ensureVisible(find.text('Clear photo'));
     await tester.tap(find.text('Clear photo'));
