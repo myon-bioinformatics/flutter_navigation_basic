@@ -156,6 +156,7 @@ test.describe('Home discovery journeys', () => {
       await press(page, await homeCard(page, target.label), testInfo);
       await waitForFlutter(page);
       await expect(page).toHaveURL(target.route);
+      await settleCanvas(page);
       const path = testInfo.outputPath(`home-journey-${index + 1}.png`);
       await page.screenshot({ path });
       await testInfo.attach(`home-journey-${index + 1}`, { path, contentType: 'image/png' });
@@ -173,6 +174,7 @@ test.describe('Home discovery journeys', () => {
     await press(page, await doorItem(page, 'Photo Studio'), testInfo);
     await waitForFlutter(page);
     await expect(page).toHaveURL(/#\/tools\/media\/photo-studio$/);
+    await settleCanvas(page);
     const path = testInfo.outputPath('door-to-door-photo-studio.png');
     await page.screenshot({ path });
     await testInfo.attach('door-to-door-photo-studio', { path, contentType: 'image/png' });
