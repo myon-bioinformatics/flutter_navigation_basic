@@ -83,7 +83,7 @@ void main() {
     final homeButton = tester.widget<IconButton>(
       find.byKey(const Key('shared-header-home')),
     );
-    expect(homeButton.tooltip, 'Home', reason: 'shared chrome uses the same action on every page');
+    expect(homeButton.tooltip, controller.text('header.home'), reason: 'shared chrome uses the same action on every page');
 
     // Switch back to English so Flutter Color identifiers are asserted
     // against the factual catalog labels.

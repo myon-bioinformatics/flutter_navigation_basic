@@ -120,3 +120,65 @@ test('shared header rapid Home taps allow one confirmation then return from Hub 
   await page.screenshot({ path: screenshot });
   await testInfo.attach('home-navigation', { path: screenshot, contentType: 'image/png' });
 });
+
+// Exercise the production locale picker while the shared menu stays open.
+async function selectJapanese(page: Page, touch: boolean) {
+  const menu = page.locator('[flt-semantics-identifier="shared-header-menu"]').getByRole('button');
+  await press(page, menu, touch);
+  await press(page, page.getByRole('button', { name: /^Language / }), touch);
+  await press(page, page.getByRole('menuitem', { name: 'JPN', exact: true }), touch);
+  // Flutter merges adjacent ListTile text into a single semantics text node.
+  await expect(page.getByText('一時クリップボード')).toBeVisible();
+  await expect(page.getByText('コピーしたテキストを保存', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^言語 / })).toBeVisible();
+  // Dismiss the sheet outside its bounds (all viewport sizes).
+  if (touch) await page.touchscreen.tap(8, 80);
+  else await page.mouse.click(8, 80);
+  await expect(page.getByText('一時クリップボード')).toHaveCount(0);
+}
+
+test('Japanese shared menu and Home confirmation preserve cancel and navigation @portable', async ({ page }, testInfo) => {
+  await page.goto('/#/hub');
+  await waitForFlutter(page, 30_000);
+  const touch = !!testInfo.project.use.hasTouch;
+  await selectJapanese(page, touch);
+  const home = page.locator('[flt-semantics-identifier="shared-header-home"]').getByRole('button');
+  const favorite = page.locator('[flt-semantics-identifier="shared-header-favorite"]').getByRole('button');
+  await expect(home).toHaveText('ホーム');
+  await expect(favorite).toHaveText('このページをお気に入りに追加');
+  await press(page, favorite, touch);
+  await expect(favorite).toHaveText('お気に入りから削除');
+  await press(page, home, touch);
+  const dialog = page.getByRole('alertdialog');
+  await expect(dialog).toContainText('ホームに戻りますか？');
+  await expect(dialog).toContainText('未保存の変更');
+  const stay = dialog.getByRole('button', { name: 'キャンセル · この画面に留まる', exact: true });
+  const go = dialog.getByRole('button', { name: 'ホーム', exact: true });
+  expect((await stay.boundingBox())!.width).toBeGreaterThan((await go.boundingBox())!.width);
+  await press(page, stay, touch);
+  await expect(page.locator('[flt-semantics-identifier="shared-header-title"]')).toContainText('🗺️');
+  await press(page, home, touch);
+  await press(page, go, touch);
+  await expect(page.locator('[flt-semantics-identifier="shared-header-title"]')).toContainText('🏠');
+  await expect(dialog).toHaveCount(0);
+});
+
+test('Japanese clipboard save and copy use real system clipboard @portable', async ({ page, context }, testInfo) => {
+  test.skip(!testInfo.project.name.includes('chromium'), 'Clipboard permissions are supported by Chromium; all outcomes have Widget coverage.');
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('/#/hub');
+  await waitForFlutter(page, 30_000);
+  const touch = !!testInfo.project.use.hasTouch;
+  await selectJapanese(page, touch);
+  await page.evaluate(() => navigator.clipboard.writeText('locale clipboard regression'));
+  const menu = page.locator('[flt-semantics-identifier="shared-header-menu"]').getByRole('button');
+  await press(page, menu, touch);
+  await press(page, page.getByRole('button', { name: 'コピーしたテキストを保存', exact: true }), touch);
+  // Feedback and saved entries are named groups in Flutter's semantics tree.
+  await expect(page.getByRole('group', { name: '一時クリップボードに保存しました', exact: true })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'locale clipboard regression', exact: true })).toBeVisible();
+  await page.evaluate(() => navigator.clipboard.writeText('overwritten'));
+  await press(page, page.getByRole('button', { name: '保存したテキストをコピー', exact: true }), touch);
+  await expect(page.getByRole('group', { name: 'システムのクリップボードにコピーしました', exact: true })).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('locale clipboard regression');
+});
