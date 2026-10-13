@@ -43,6 +43,22 @@ Future<void> _pumpNamedRoute(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(loadTimeRules);
+  setUp(() {
+    // Route/chrome tests should not wait on real asset IO under fake time.
+    // Exercise the real Hub builder with a nonempty deterministic catalogue.
+    ScreensConfig.resetCache(loader: () async => const [
+      ScreenData(
+        screenDataId: 6, name: 'Screen6', title: 'Route fixture', emoji: '🌍',
+        description: 'Deterministic route test catalogue', category: 'navigation',
+        navigationPattern: '', apiPattern: '', themePattern: '', dataPattern: '',
+      ),
+    ]);
+    HomeDoorCatalog.instance.clearDiscoveries();
+  });
+  tearDown(() {
+    ScreensConfig.resetCache();
+    HomeDoorCatalog.instance.clearDiscoveries();
+  });
 
   test('AppNavigation and AppRoutes share canonical + catalogue route keys', () {
     final canonical = AppRouteRegistry.canonicalRoutes.keys.toSet();
@@ -242,6 +258,9 @@ void main() {
         RouteNames.compositionGenerator,
         RouteNames.ironyGenerator,
         RouteNames.counterPlayground,
+        RouteNames.hub,
+        RouteNames.uiShowcase,
+        RouteNames.externalMcp,
       ]) {
         testWidgets(
             'public $route at ${surface.width.toInt()}px has no overflow',

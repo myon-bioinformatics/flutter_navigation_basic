@@ -1,8 +1,10 @@
 import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
+import 'package:flutter_application_1/shared/widgets/standard_page_footer.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+import '../core/navigation/route_names.dart';
 import '../data/mock_api_client.dart';
 import '../shared/display/display_scope.dart';
 import '../shared/mcp/mcp.dart';
@@ -176,7 +178,10 @@ class _McpIntegrationScreenState extends State<McpIntegrationScreen> {
 
     return Scaffold(
       appBar: StandardPageHeader(
-        currentRouteName: '/examples/external-integration/mcp',title: display.text('mcp.title')),
+        currentRouteName: RouteNames.externalMcp, title: display.text('mcp.title')),
+      bottomNavigationBar: const StandardPageFooter(
+        currentRouteName: RouteNames.externalMcp,
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

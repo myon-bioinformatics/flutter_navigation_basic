@@ -1,4 +1,5 @@
 import 'package:flutter_application_1/shared/widgets/standard_page_header.dart';
+import 'package:flutter_application_1/shared/widgets/standard_page_footer.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -319,13 +320,19 @@ class _UiShowcaseScreenState extends State<UiShowcaseScreen> {
               ),
             ],
           ),
-          bottomNavigationBar: narrow
-              ? NavigationBar(
+          // Keep section navigation separate from cross-tool navigation.
+          bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const StandardPageFooter(currentRouteName: AppRoutes.uiShowcase),
+              if (narrow)
+                NavigationBar(
                   selectedIndex: _selectedIndex,
                   onDestinationSelected: (index) => setState(() => _selectedIndex = index),
                   destinations: _bottomDestinations(config),
-                )
-              : null,
+                ),
+            ],
+          ),
         ),
       ),
     );

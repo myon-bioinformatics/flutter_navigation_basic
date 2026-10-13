@@ -26,6 +26,16 @@ Widget _doorHost({
   );
 }
 
+// The FormField takes items as a constructor argument but exposes no items
+// getter. Inspect the public DropdownButton actually built inside the Door.
+Finder _doorDropdown() => find.descendant(
+      of: find.byType(ToolDoorSelector),
+      matching: find.byType(DropdownButton<String>),
+    );
+
+DropdownButton<String> _dropdown(WidgetTester tester) =>
+    tester.widget<DropdownButton<String>>(_doorDropdown());
+
 void main() {
   setUp(() => HomeDoorCatalog.instance.clearDiscoveries());
   tearDown(() => HomeDoorCatalog.instance.clearDiscoveries());
@@ -70,12 +80,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    DropdownButtonFormField<String> dropdown() =>
-        tester.widget<DropdownButtonFormField<String>>(
-          find.byType(DropdownButtonFormField<String>),
-        );
     List<String?> values() =>
-        [for (final item in dropdown().items!) item.value];
+        [for (final item in _dropdown(tester).items!) item.value];
 
     expect(values(), containsAll([RouteNames.hub, RouteNames.uiShowcase, RouteNames.externalMcp]));
     expect(values(), isNot(contains('/screen138')));
@@ -93,7 +99,13 @@ void main() {
     expect(values(), contains('/screen80'));
     expect(values(), isNot(contains('/screen138')));
 
-    dropdown().onChanged!('/screen80');
+    // Exercise the menu and Navigator, not just its onChanged callback.
+    await tester.tap(_doorDropdown());
+    await tester.pumpAndSettle();
+    expect(find.text('Screen138 · old draw'), findsNothing);
+    final destination = find.text('Screen80 · current draw').last;
+    await tester.ensureVisible(destination);
+    await tester.tap(destination);
     await tester.pumpAndSettle();
     expect(find.text('dynamic-screen-80'), findsOneWidget);
   });
@@ -113,12 +125,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final dropdown = tester.widget<DropdownButtonFormField<String>>(
-      find.byType(DropdownButtonFormField<String>),
-    );
+    final dropdown = _dropdown(tester);
     expect(dropdown.items!.map((item) => item.value),
         containsAll(['/screen80', '/screen138']));
-    expect(dropdown.items!.last.enabled, isFalse);
+    expect(dropdown.items!.firstWhere((item) => item.value == '/screen138').enabled, isFalse);
     expect(find.textContaining('Screen138'), findsWidgets);
   });
 
