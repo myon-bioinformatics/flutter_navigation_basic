@@ -4,6 +4,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/features/home/domain/home_controller.dart';
+import 'package:flutter_application_1/config/routes.dart';
+import 'package:flutter_application_1/core/navigation/app_tools.dart';
 import 'package:flutter_application_1/features/home/presentation/home_screen.dart';
 import 'package:flutter_application_1/screens/generic_screen.dart';
 import 'package:flutter_application_1/shared/display/display_scope.dart';
@@ -69,19 +71,51 @@ void main() {
     for (final id in first) {
       expect(find.text('Screen$id · Pattern $id'), findsOneWidget);
     }
+    expect(
+      HomeDoorCatalog.instance.discoveries.map((tool) => tool.routeName),
+      [for (final id in first) AppRoutes.screenRoute(id)],
+    );
+    expect(
+      HomeDoorCatalog.instance.discoveries.map((tool) => tool.label),
+      [for (final id in first) 'Screen$id · Pattern $id'],
+    );
     await tester.tap(find.byIcon(Icons.refresh));
     await tester.pumpAndSettle();
     for (final id in second) {
       expect(find.text('Screen$id · Pattern $id'), findsOneWidget);
     }
+    expect(
+      HomeDoorCatalog.instance.discoveries.map((tool) => tool.routeName),
+      [for (final id in second) AppRoutes.screenRoute(id)],
+    );
+    expect(
+      HomeDoorCatalog.instance.discoveries.map((tool) => tool.label),
+      [for (final id in second) 'Screen$id · Pattern $id'],
+    );
+    expect(
+      HomeDoorCatalog.instance.discoveries.map((tool) => tool.routeName),
+      isNot(contains(AppRoutes.screenRoute(first.first))),
+    );
   });
 
   setUp(() {
+    HomeDoorCatalog.instance.clearDiscoveries();
     ScreensConfig.resetCache(loader: () async => sampleScreens);
   });
 
   tearDown(() {
     ScreensConfig.resetCache();
+    HomeDoorCatalog.instance.clearDiscoveries();
+  });
+
+  test('stable Home cards and Door destinations share route metadata', () {
+    final stable = appTools.map((tool) => tool.routeName).toSet();
+    final home = homeAppTools.map((tool) => tool.routeName).toList();
+    expect(home, hasLength(11));
+    expect(home.toSet(), hasLength(home.length));
+    expect(stable.containsAll(home), isTrue);
+    expect(AppRoutes.routes.keys.toSet().containsAll(home), isTrue);
+    expect(homeAppTools.every((t) => t.homeIcon != null && t.homeSubtitleKey != null), isTrue);
   });
 
   test('runtime consumes proposed Python draw and handles sparse catalog', () {
