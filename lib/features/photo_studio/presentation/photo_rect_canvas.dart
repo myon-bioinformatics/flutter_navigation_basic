@@ -8,6 +8,7 @@ import '../domain/normalized_rect.dart';
 import '../domain/studio_frame.dart';
 import '../domain/studio_frame_style.dart';
 import '../domain/studio_geometry.dart';
+import 'studio_image_preview.dart';
 export 'studio_image_loader.dart' show decodeRasterImageBytes;
 
 int _nextStudioObjectId = 0;
@@ -577,12 +578,7 @@ class _PhotoRectCanvasState extends State<PhotoRectCanvas> {
                   children: [
                     ColoredBox(color: scheme.surfaceContainerHighest),
                     if (widget.imageBytes != null)
-                      Image.memory(
-                        widget.imageBytes!,
-                        fit: BoxFit.contain,
-                        gaplessPlayback: true,
-                        filterQuality: FilterQuality.medium,
-                      )
+                      StudioImagePreview(bytes: widget.imageBytes!)
                     else
                       CustomPaint(
                         painter: _CheckerPainter(scheme.outlineVariant),
