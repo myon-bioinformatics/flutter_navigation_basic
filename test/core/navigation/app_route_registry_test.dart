@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_application_1/config/routes.dart';
 import 'package:flutter_application_1/core/navigation/app_navigation.dart';
 import 'package:flutter_application_1/core/navigation/app_route_registry.dart';
@@ -24,6 +25,17 @@ Future<void> _pumpNamedRoute(
 }) async {
   await tester.binding.setSurfaceSize(surface);
   addTearDown(() => tester.binding.setSurfaceSize(null));
+
+  if (initialRoute == AppRoutes.uiShowcase) {
+    // Start AND finish asset loading/UTF-8 decoding in real async time.
+    // Pumping after a cached future was created in another fake-time test
+    // cannot guarantee that its isolate/IO callbacks will ever complete.
+    await tester.runAsync(() async {
+      const asset = 'assets/ui_showcase.json';
+      rootBundle.evict(asset);
+      await rootBundle.loadString(asset).timeout(const Duration(seconds: 10));
+    });
+  }
 
   await tester.pumpWidget(
     await wrapWithDisplayScope(
