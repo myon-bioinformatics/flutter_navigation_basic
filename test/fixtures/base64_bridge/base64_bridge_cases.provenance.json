@@ -2,8 +2,8 @@
   "schema_version": 1,
   "source_repository": "https://github.com/myon-bioinformatics/Ironmate",
   "source_path": "tests/fixtures/base64_bridge_cases.json",
-  "source_commit": "6acddc3bb5367a6571a32294fcfe12f12483a084",
-  "sha256": "766d0327293ab2404e4a6d0c7c23bfbe523d672823cad4c0d88d11908dd83671",
+  "source_commit": "56020aef912337b96e17becc889b5064356767cf",
+  "sha256": "d792c5c15b33e39b55996f629fb424e66ad4f335e1a74c5f5bac86afffa891e7",
   "vendored_path": "test/fixtures/base64_bridge/base64_bridge_cases.json",
-  "notes": "Pinned from Ironmate main for PR #92 cross-repo Base64ImageBridge contract."
+  "notes": "Pinned from Ironmate PR #93 head (unmerged at pin time; limits 33554432 / 44739244 = PhotoImportLimits.maxInputBytes). Previously pinned to main 6acddc3 (PR #92)."
 }
