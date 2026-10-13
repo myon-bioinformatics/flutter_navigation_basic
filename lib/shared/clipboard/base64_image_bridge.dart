@@ -132,7 +132,9 @@ class Base64ImageBridge {
     if (dataUrl != null) {
       trimmed = trimmed.substring(dataUrl.end);
     } else if (trimmed.length >= 5 && trimmed.substring(0, 5).toLowerCase() == 'data:') {
-      return true;
+      // A malformed header is a format error, not evidence of a byte overflow.
+      // Let decodeText reject it before decoding or allocating image bytes.
+      return false;
     }
     final encoded = trimmed.replaceAll(RegExp(r'\s+'), '');
     return encoded.length > maxBase64Chars(maxBytes);

@@ -10,6 +10,7 @@ import 'package:flutter_application_1/shared/display/display_scope.dart';
 import 'package:flutter_application_1/shared/widgets/clipboard_shelf.dart';
 
 import '../support/display_test_harness.dart';
+import 'base64_bridge_fixtures.dart';
 
 void main() {
   Future<void> pumpShelf(WidgetTester tester) async {
@@ -150,6 +151,25 @@ void main() {
     expect(() => Base64ImageBridge.decodeText(pasted, maxBytes: tightLimit), throwsFormatException);
     expect(Base64ImageBridge.decodeClipboardShelfText(pasted).bytes.length, tightLimit + 192);
   });
+
+  for (final caseData in Base64BridgeFixtures.loadCases().where(
+      (c) => ['not_base64_uri', 'param_quoted'].contains(c['id']))) {
+    testWidgets('malformed ${caseData['id']} shows format error on shelf', (tester) async {
+      final pasted = caseData['text'] as String;
+      final messenger = tester.binding.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'Clipboard.getData') return <String, dynamic>{'text': pasted};
+        return null;
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+      await pumpShelf(tester);
+      await tester.tap(find.text('Paste current clipboard'));
+      await tester.pump(const Duration(milliseconds: 2));
+      expect(find.text(pasted), findsOneWidget);
+      expect(find.textContaining('Data URL must be base64-encoded'), findsOneWidget);
+      expect(find.textContaining('exceeds'), findsNothing);
+    });
+  }
 
   testWidgets('invalid image data URL is kept as text and the reason is shown', (tester) async {
     const pasted = 'data:image/jpeg;base64,iVBORw0KGgr7/z4=';

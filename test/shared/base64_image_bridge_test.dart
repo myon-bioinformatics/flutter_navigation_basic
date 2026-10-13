@@ -180,6 +180,20 @@ void main() {
     });
   });
 
+  test('malformed data URLs reach format validation, not byte preflight', () {
+    final cases = Base64BridgeFixtures.loadCases();
+    for (final id in ['not_base64_uri', 'param_quoted']) {
+      final text = cases.firstWhere((c) => c['id'] == id)['text'] as String;
+      expect(Base64ImageBridge.looksLikeImageText(text), isTrue, reason: id);
+      expect(Base64ImageBridge.textExceedsMaxImageBytes(text, 10_000),
+          isFalse, reason: id);
+      expect(() => Base64ImageBridge.decodeText(text, maxBytes: 10_000),
+          throwsA(isA<FormatException>().having(
+            (e) => e.message, 'format reason', contains('Data URL must be base64-encoded'))),
+          reason: id);
+    }
+  });
+
   group('maxBytes limit', () {
     test('maxBase64Chars matches the Base64 length', () {
       for (var n = 0; n < 20; n++) {
