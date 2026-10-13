@@ -68,6 +68,8 @@ test.describe('Home discovery journeys', () => {
     await page.goto('/');
     await waitForFlutter(page);
     const cards = page.getByText(cardPattern);
+    // Discovery loads asynchronously after the Flutter shell is ready.
+    await expect(cards).toHaveCount(3);
     const labels = await cards.allTextContents();
     expect(labels).toHaveLength(3);
     const ids = labels.map((label) => Number(label.match(/^Screen(\d+) · /)?.[1]));
