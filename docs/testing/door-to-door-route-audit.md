@@ -44,6 +44,15 @@ It captures `home-draw.png`, `source-tool.png`, `door-menu.png`,
 The receipt retains the visited routes, shared-header title, selected IDs,
 project, viewport, PNG sizes and SHA-256 hashes. It asserts expected
 transitions and that Home / Door content is in the viewport before capture.
+The receipt is written on failure too: `stage` is `complete` only after the
+return leg to Home succeeds, otherwise `failed` with `last_capture` naming the
+last completed step. Each project also prints a `::notice` (stage, last capture,
+IDs, route) so the result is readable from check annotations.
+
+Locators follow Flutter's semantics: a Home card (InkWell) merges its title and
+subtitle into one node, so cards are matched by title prefix and required to be
+unique; Door entries are `menuitem`s matched by name. Input is the shared
+browser-test-kit `press` (`e2e/utils/interaction.mjs`).
 Raw screenshots can be compared manually to identify consistent and unusual UI.
 
 This does **not** claim an automated visual-diff oracle, proof of all 198

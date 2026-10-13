@@ -2,18 +2,32 @@ import { test, expect, type Locator, type Page, type TestInfo } from '@playwrigh
 import { createHash } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { waitForFlutter } from '../utils/helpers';
+import { press as kitPress } from '../utils/interaction.mjs';
 
-// Flutter paints the controls; semantics may be covered by a focus node.
-// Use measured, in-viewport pointer/touch input, not a synthetic DOM click.
-async function press(page: Page, target: Locator, testInfo: TestInfo) {
-  await target.scrollIntoViewIfNeeded();
-  await expect(target).toBeInViewport({ ratio: 0.9 });
-  const box = await target.boundingBox();
-  expect(box).not.toBeNull();
-  const x = box!.x + box!.width / 2;
-  const y = box!.y + box!.height / 2;
-  if (testInfo.project.use.hasTouch) await page.touchscreen.tap(x, y);
-  else await page.mouse.click(x, y);
+// Flutter paints the controls: send measured, in-viewport mouse/touch input at
+// the integer centre (browser-test-kit interaction.press), not a DOM click.
+const press = (page: Page, target: Locator, testInfo: TestInfo) =>
+  kitPress(page, target, { touch: !!testInfo.project.use.hasTouch });
+
+const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// A Home card is an InkWell: Flutter merges its title and subtitle into one
+// semantics node, so an exact text match never sees the title alone (same as
+// the merged menu text in shared_header.spec.ts). Match the title as a prefix
+// and require exactly one card.
+async function homeCard(page: Page, title: string) {
+  const card = page.getByText(new RegExp(`^${escape(title)}`));
+  await expect(card).toHaveCount(1);
+  return card;
+}
+
+// Door destinations are exposed as menu items by name.
+async function doorItem(page: Page, name: string | RegExp) {
+  const item = typeof name === 'string'
+    ? page.getByRole('menuitem', { name, exact: true })
+    : page.getByRole('menuitem', { name });
+  await expect(item).toHaveCount(1);
+  return item;
 }
 
 test.describe('Home discovery journeys', () => {
@@ -29,7 +43,7 @@ test.describe('Home discovery journeys', () => {
     for (const [index, target] of targets.entries()) {
       await page.goto('/');
       await waitForFlutter(page);
-      await press(page, page.getByText(target.label, { exact: true }).first(), testInfo);
+      await press(page, await homeCard(page, target.label), testInfo);
       await waitForFlutter(page);
       await expect(page).toHaveURL(target.route);
       const path = testInfo.outputPath(`home-journey-${index + 1}.png`);
@@ -46,7 +60,7 @@ test.describe('Home discovery journeys', () => {
     await waitForFlutter(page);
     await expect(page).toHaveURL(/#\/screen5$/);
     await press(page, page.getByText(/URL Params.*current/).last(), testInfo);
-    await press(page, page.getByText('Photo Studio', { exact: true }).last(), testInfo);
+    await press(page, await doorItem(page, 'Photo Studio'), testInfo);
     await waitForFlutter(page);
     await expect(page).toHaveURL(/#\/tools\/media\/photo-studio$/);
     const path = testInfo.outputPath('door-to-door-photo-studio.png');
@@ -80,52 +94,65 @@ test.describe('Home discovery journeys', () => {
       await testInfo.attach(file, { path, contentType: 'image/png' });
     }
 
-    await page.goto('/');
-    await waitForFlutter(page);
-    const cards = page.getByText(cardPattern);
-    await expect(cards).toHaveCount(3);
-    const labels = await cards.allTextContents();
-    const ids = labels.map((label) => Number(label.match(/^Screen(\d+) · /)?.[1]));
-    expect(ids.every((id) => Number.isInteger(id) && id >= 6 && id <= 198)).toBeTruthy();
-    expect(new Set(ids).size).toBe(3);
+    let ids: number[] = [];
+    let labels: string[] = [];
+    let complete = false;
+    try {
+      await page.goto('/');
+      await waitForFlutter(page);
+      const cards = page.getByText(cardPattern);
+      await expect(cards).toHaveCount(3);
+      labels = await cards.allTextContents();
+      ids = labels.map((label) => Number(label.match(/^Screen(\d+) · /)?.[1]));
+      expect(ids.every((id) => Number.isInteger(id) && id >= 6 && id <= 198)).toBeTruthy();
+      expect(new Set(ids).size).toBe(3);
 
-    await cards.first().scrollIntoViewIfNeeded();
-    await expect(cards.first()).toBeInViewport();
-    await capture('home-draw', 'home-draw.png');
-    await press(page, page.getByText('Photo Studio', { exact: true }).first(), testInfo);
-    await waitForFlutter(page);
-    await expect(page).toHaveURL(/#\/tools\/media\/photo-studio$/);
-    await capture('source-tool', 'source-tool.png');
-    const sourceHeader = await title.innerText();
+      await cards.first().scrollIntoViewIfNeeded();
+      await expect(cards.first()).toBeInViewport();
+      await capture('home-draw', 'home-draw.png');
+      await press(page, await homeCard(page, 'Photo Studio'), testInfo);
+      await waitForFlutter(page);
+      await expect(page).toHaveURL(/#\/tools\/media\/photo-studio$/);
+      await capture('source-tool', 'source-tool.png');
+      const sourceHeader = await title.innerText();
 
-    await press(page, page.getByText(/Photo Studio.*current/).last(), testInfo);
-    const destination = page.getByText(labels[0], { exact: true }).last();
-    await destination.scrollIntoViewIfNeeded();
-    await expect(destination).toBeInViewport();
-    await capture('door-menu', 'door-menu.png', sourceHeader);
-    await press(page, destination, testInfo);
-    await waitForFlutter(page);
-    await expect(page).toHaveURL((url) => url.hash === `#/screen${ids[0]}`);
-    await capture('discovered-screen', 'discovered-screen.png');
+      await press(page, page.getByText(/Photo Studio.*current/).last(), testInfo);
+      // The Door label is homeDiscoveryLabel(); the card text also carries its subtitle.
+      const destination = await doorItem(page, new RegExp(`^Screen${ids[0]} · `));
+      await destination.scrollIntoViewIfNeeded();
+      await expect(destination).toBeInViewport();
+      await capture('door-menu', 'door-menu.png', sourceHeader);
+      await press(page, destination, testInfo);
+      await waitForFlutter(page);
+      await expect(page).toHaveURL((url) => url.hash === `#/screen${ids[0]}`);
+      await capture('discovered-screen', 'discovered-screen.png');
 
-    await page.goto('/');
-    await waitForFlutter(page);
-    await expect(page).toHaveURL(/#\/?$|\/$/);
-    // A complete receipt is only written after the return leg also succeeds.
-    const manifest = testInfo.outputPath('route-audit.json');
-    writeFileSync(manifest, JSON.stringify({
-      schema: 'flutter-door-route-audit/1',
-      stage: 'complete',
-      project: testInfo.project.name,
-      source: 'Home discovery → rendered Door-to-Door',
-      ids, labels,
-      viewport: page.viewportSize(),
-      expected_sha: process.env.EXPECTED_SHA ?? null,
-      ci_sha: process.env.GITHUB_SHA ?? null,
-      run_id: process.env.GITHUB_RUN_ID ?? null,
-      run_attempt: process.env.GITHUB_RUN_ATTEMPT ?? null,
-      captures,
-    }, null, 2));
-    await testInfo.attach('route-audit.json', { path: manifest, contentType: 'application/json' });
+      await page.goto('/');
+      await waitForFlutter(page);
+      await expect(page).toHaveURL(/#\/?$|\/$/);
+      complete = true;
+    } finally {
+      // Written on success and failure; only the return leg completing sets
+      // stage "complete". A failed receipt names the last completed capture.
+      const receipt = {
+        schema: 'flutter-door-route-audit/1',
+        stage: complete ? 'complete' : 'failed',
+        last_capture: captures.at(-1)?.stage ?? null,
+        project: testInfo.project.name,
+        source: 'Home discovery → rendered Door-to-Door',
+        ids, labels,
+        viewport: page.viewportSize(),
+        expected_sha: process.env.EXPECTED_SHA ?? null,
+        ci_sha: process.env.GITHUB_SHA ?? null,
+        run_id: process.env.GITHUB_RUN_ID ?? null,
+        run_attempt: process.env.GITHUB_RUN_ATTEMPT ?? null,
+        captures,
+      };
+      const manifest = testInfo.outputPath('route-audit.json');
+      writeFileSync(manifest, JSON.stringify(receipt, null, 2));
+      await testInfo.attach('route-audit.json', { path: manifest, contentType: 'application/json' });
+      // Job logs and artifacts may be unreadable to reviewing agents; annotations are not.
+      console.log(`::notice title=route-audit ${testInfo.project.name}::stage=${receipt.stage} last=${receipt.last_capture} ids=${ids.join(',')} route=${new URL(page.url()).hash}`);
+    }
   });
 });
