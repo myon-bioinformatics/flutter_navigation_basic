@@ -174,10 +174,11 @@ test('Japanese clipboard save and copy use real system clipboard @portable', asy
   const menu = page.locator('[flt-semantics-identifier="shared-header-menu"]').getByRole('button');
   await press(page, menu, touch);
   await press(page, page.getByRole('button', { name: 'コピーしたテキストを保存', exact: true }), touch);
-  await expect(page.getByText('一時クリップボードに保存しました')).toBeVisible();
-  await expect(page.getByText('locale clipboard regression')).toBeVisible();
+  // Feedback and saved entries are named groups in Flutter's semantics tree.
+  await expect(page.getByRole('group', { name: '一時クリップボードに保存しました', exact: true })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'locale clipboard regression', exact: true })).toBeVisible();
   await page.evaluate(() => navigator.clipboard.writeText('overwritten'));
   await press(page, page.getByRole('button', { name: '保存したテキストをコピー', exact: true }), touch);
-  await expect(page.getByText('システムのクリップボードにコピーしました')).toBeVisible();
+  await expect(page.getByRole('group', { name: 'システムのクリップボードにコピーしました', exact: true })).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('locale clipboard regression');
 });
