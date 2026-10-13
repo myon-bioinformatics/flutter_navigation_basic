@@ -47,24 +47,25 @@ async function doorItem(page: Page, name: string | RegExp) {
   return item;
 }
 
-// Open a Door dropdown and record each attempt (press record = point, viewport
-// ratio, top element). Photo Studio places its Door below the fold; if a DOM
-// scrollIntoView did not move Flutter's canvas, the first tap opens nothing, so
-// scroll Flutter itself with the wheel over its view and press again.
+// Target the interactive dropdown, not a merged ancestor's text. The ancestor
+// includes the title and hint and is 122–130px tall: its centre hits the hint,
+// whereas DropdownButton publishes a button semantics node at the actual field.
+async function doorButton(page: Page, current: string) {
+  const button = page.getByRole('button', { name: new RegExp(`${escape(current)}.*current`) });
+  await expect(button).toHaveCount(1);
+  await expect(button).toBeVisible();
+  return button;
+}
+
+// Record the measured input and require the menu to actually open before
+// looking for a destination. Do not retry the same non-interactive card centre.
 async function openDoor(page: Page, field: Locator, testInfo: TestInfo, attempts: unknown[]) {
   const items = page.locator('[role="menuitem"]');
-  for (const via of ['press', 'wheel+press']) {
-    if (via === 'wheel+press') {
-      const view = page.viewportSize()!;
-      await page.mouse.move(Math.floor(view.width / 2), Math.floor(view.height / 2));
-      for (let i = 0; i < 8; i++) await page.mouse.wheel(0, 600).catch(() => {});
-      await page.waitForTimeout(300);
-    }
-    const record = await press(page, field, testInfo);
-    const opened = await expect(items.first()).toBeVisible({ timeout: 3_000 }).then(() => true, () => false);
-    attempts.push({ via, opened, record });
-    if (opened) return;
-  }
+  const record = await press(page, field, testInfo);
+  const attempt = { via: 'button-press', opened: false, record };
+  attempts.push(attempt);
+  await expect(items.first()).toBeVisible({ timeout: 3_000 });
+  attempt.opened = true;
 }
 
 test.describe('Home discovery journeys', () => {
@@ -111,7 +112,7 @@ test.describe('Home discovery journeys', () => {
     await page.goto('/#/screen5');
     await waitForFlutter(page);
     await expect(page).toHaveURL(/#\/screen5$/);
-    await press(page, page.getByText(/URL Params.*current/).last(), testInfo);
+    await openDoor(page, await doorButton(page, 'URL Params'), testInfo, []);
     await press(page, await doorItem(page, 'Photo Studio'), testInfo);
     await waitForFlutter(page);
     await expect(page).toHaveURL(/#\/tools\/media\/photo-studio$/);
@@ -174,7 +175,7 @@ test.describe('Home discovery journeys', () => {
       const sourceHeader = await title.innerText();
 
       step = 'open-door';
-      await openDoor(page, page.getByText(/Photo Studio.*current/).last(), testInfo, doorAttempts);
+      await openDoor(page, await doorButton(page, 'Photo Studio'), testInfo, doorAttempts);
       // The Door label is homeDiscoveryLabel(); the card text also carries its subtitle.
       step = 'find-door-item';
       const destination = await doorItem(page, new RegExp(`^Screen${ids[0]} · `));
