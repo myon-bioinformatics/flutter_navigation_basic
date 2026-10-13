@@ -1,3 +1,4 @@
+import '../../support/display_test_harness.dart';
 import '../../support/header_finders.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,7 +23,7 @@ void main() {
     for (final entry in _titles.entries) {
       final route = AppRoutes.routes[AppRoutes.screenRoute(entry.key)];
       expect(route, isNotNull, reason: 'missing /screen${entry.key}');
-      await tester.pumpWidget(MaterialApp(home: Builder(builder: route!)));
+      await tester.pumpWidget(await wrapWithDisplayScope(MaterialApp(home: Builder(builder: route!))));
       expect(pageHeaderTitle(entry.value), findsOneWidget,
           reason: '/screen${entry.key} should open ${entry.value}');
       expect(find.textContaining('順序: A, B, C'), findsOneWidget,

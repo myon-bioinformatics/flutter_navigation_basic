@@ -1,3 +1,4 @@
+import '../../support/display_test_harness.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import '../../../lib/config/routes.dart';
@@ -7,7 +8,7 @@ void main() {
     testWidgets('pattern $id executes a real computation', (tester) async {
       final route = AppRoutes.routes[AppRoutes.screenRoute(id)];
       expect(route, isNotNull);
-      await tester.pumpWidget(MaterialApp(home: Builder(builder: route!)));
+      await tester.pumpWidget(await wrapWithDisplayScope(MaterialApp(home: Builder(builder: route!))));
       expect(find.text('未実行'), findsOneWidget);
       await tester.tap(find.text('実行'));
       await tester.pump();

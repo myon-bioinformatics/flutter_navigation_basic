@@ -1,3 +1,4 @@
+import '../../support/display_test_harness.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_001_to_099/pattern_055/view.dart';
@@ -211,7 +212,7 @@ void main() {
 
   for (final (id, title, description, view) in cases) {
     testWidgets('catalogue $id keeps its identity without a fake run', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: view));
+      await tester.pumpWidget(await wrapWithDisplayScope(MaterialApp(home: view)));
       expect(find.text(title), findsOneWidget);
       expect(find.text(description), findsOneWidget);
       expect(find.text('実行'), findsNothing);

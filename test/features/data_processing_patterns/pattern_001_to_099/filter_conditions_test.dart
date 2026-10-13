@@ -1,3 +1,4 @@
+import '../../../support/display_test_harness.dart';
 import '../../../support/header_finders.dart';
 // Shared asset/UI contract for list-selection catalogue examples.
 import 'dart:async';
@@ -89,10 +90,10 @@ void main() {
     testWidgets('$name shows loading, avoids duplicate loads, then shows values', (tester) async {
       final pending = Completer<String>();
       var calls = 0;
-      await tester.pumpWidget(MaterialApp(home: view(_Bundle((_) {
+      await tester.pumpWidget(await wrapWithDisplayScope(MaterialApp(home: view(_Bundle((_) {
         calls++;
         return pending.future;
-      }))));
+      })))));
       expect(pageHeaderTitle('Pattern ${number.toString().padLeft(3, '0')}: $name'), findsOneWidget);
       final button = find.widgetWithText(ElevatedButton, '実行');
       await tester.tap(button);
@@ -109,8 +110,8 @@ void main() {
 
     testWidgets('$name exposes failure and retries without GetX registration', (tester) async {
       var attempts = 0;
-      await tester.pumpWidget(MaterialApp(home: view(_Bundle((_) async =>
-          attempts++ == 0 ? '{"values":null}' : '{"values":[]}'))));
+      await tester.pumpWidget(await wrapWithDisplayScope(MaterialApp(home: view(_Bundle((_) async =>
+          attempts++ == 0 ? '{"values":null}' : '{"values":[]}')))));
       await tester.tap(find.text('実行'));
       await tester.pumpAndSettle();
       expect(find.textContaining('読み込み失敗'), findsOneWidget);
@@ -124,7 +125,7 @@ void main() {
 
     testWidgets('$name ignores a completion after the view is disposed', (tester) async {
       final pending = Completer<String>();
-      await tester.pumpWidget(MaterialApp(home: view(_Bundle((_) => pending.future))));
+      await tester.pumpWidget(await wrapWithDisplayScope(MaterialApp(home: view(_Bundle((_) => pending.future)))));
       await tester.tap(find.text('実行'));
       await tester.pump();
       await tester.pumpWidget(const SizedBox.shrink());

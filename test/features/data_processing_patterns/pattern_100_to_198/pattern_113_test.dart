@@ -1,3 +1,4 @@
+import '../../../support/display_test_harness.dart';
 import '../../../support/header_finders.dart';
 // Pattern 113: DataDeduplicate report boundary.
 import 'dart:async';
@@ -53,12 +54,12 @@ void main() {
   testWidgets('shows loading once and then the generated report', (tester) async {
     final pending = Completer<String>();
     var calls = 0;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(await wrapWithDisplayScope(MaterialApp(
       home: Pattern113View(bundle: _Bundle((_) {
         calls++;
         return pending.future;
       })),
-    ));
+    )));
     expect(pageHeaderTitle('Pattern 113: DataDeduplicate'), findsOneWidget);
     final button = find.widgetWithText(ElevatedButton, '実行');
     await tester.tap(button);
