@@ -33,6 +33,11 @@ async function doorItem(page: Page, name: string | RegExp) {
 test.describe('Home discovery journeys', () => {
   test.setTimeout(90_000);
   test.use({ actionTimeout: 10_000 });
+  test.afterEach(async ({}, testInfo) => {
+    if (testInfo.status === testInfo.expectedStatus) return;
+    const first = (testInfo.error?.message ?? '').split('\n').find((line) => line.trim()) ?? '';
+    console.log(`::notice title=journey ${testInfo.project.name}::${testInfo.title} :: ${first.slice(0, 300)}`);
+  });
 
   test('visits three distinct Home tools and returns each time @portable', async ({ page }, testInfo) => {
     const targets = [
@@ -97,6 +102,7 @@ test.describe('Home discovery journeys', () => {
     let ids: number[] = [];
     let labels: string[] = [];
     let complete = false;
+    let step = 'open-home';
     try {
       await page.goto('/');
       await waitForFlutter(page);
@@ -110,23 +116,28 @@ test.describe('Home discovery journeys', () => {
       await cards.first().scrollIntoViewIfNeeded();
       await expect(cards.first()).toBeInViewport();
       await capture('home-draw', 'home-draw.png');
+      step = 'press-home-photo-studio';
       await press(page, await homeCard(page, 'Photo Studio'), testInfo);
       await waitForFlutter(page);
       await expect(page).toHaveURL(/#\/tools\/media\/photo-studio$/);
       await capture('source-tool', 'source-tool.png');
       const sourceHeader = await title.innerText();
 
+      step = 'open-door';
       await press(page, page.getByText(/Photo Studio.*current/).last(), testInfo);
       // The Door label is homeDiscoveryLabel(); the card text also carries its subtitle.
+      step = 'find-door-item';
       const destination = await doorItem(page, new RegExp(`^Screen${ids[0]} · `));
       await destination.scrollIntoViewIfNeeded();
       await expect(destination).toBeInViewport();
       await capture('door-menu', 'door-menu.png', sourceHeader);
+      step = 'press-door-item';
       await press(page, destination, testInfo);
       await waitForFlutter(page);
       await expect(page).toHaveURL((url) => url.hash === `#/screen${ids[0]}`);
       await capture('discovered-screen', 'discovered-screen.png');
 
+      step = 'return-home';
       await page.goto('/');
       await waitForFlutter(page);
       await expect(page).toHaveURL(/#\/?$|\/$/);
@@ -138,6 +149,12 @@ test.describe('Home discovery journeys', () => {
         schema: 'flutter-door-route-audit/1',
         stage: complete ? 'complete' : 'failed',
         last_capture: captures.at(-1)?.stage ?? null,
+        failed_step: complete ? null : step,
+        // Door entries Flutter exposed at the time (names only), to tell a
+        // closed menu from an item that is not built/named as expected.
+        menu_items: complete ? null : await page.locator('[role="menuitem"]').evaluateAll(
+          (els) => els.map((el) => el.getAttribute('aria-label') ?? el.textContent ?? '').slice(0, 40),
+        ).catch(() => null),
         project: testInfo.project.name,
         source: 'Home discovery → rendered Door-to-Door',
         ids, labels,
@@ -152,7 +169,7 @@ test.describe('Home discovery journeys', () => {
       writeFileSync(manifest, JSON.stringify(receipt, null, 2));
       await testInfo.attach('route-audit.json', { path: manifest, contentType: 'application/json' });
       // Job logs and artifacts may be unreadable to reviewing agents; annotations are not.
-      console.log(`::notice title=route-audit ${testInfo.project.name}::stage=${receipt.stage} last=${receipt.last_capture} ids=${ids.join(',')} route=${new URL(page.url()).hash}`);
+      console.log(`::notice title=route-audit ${testInfo.project.name}::stage=${receipt.stage} last=${receipt.last_capture} failed_step=${receipt.failed_step} ids=${ids.join(',')} route=${new URL(page.url()).hash} menu=${JSON.stringify(receipt.menu_items)?.slice(0, 600)}`);
     }
   });
 });
