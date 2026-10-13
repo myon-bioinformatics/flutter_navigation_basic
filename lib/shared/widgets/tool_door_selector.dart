@@ -19,7 +19,7 @@ class ToolDoorSelector extends StatelessWidget {
   /// Route of the screen hosting this selector (skipped on select).
   final String currentRouteName;
 
-  /// Injectable for tests; defaults to [appTools].
+  /// Injectable for tests; defaults to stable plus last-seen Home discoveries.
   final List<AppTool>? tools;
 
   /// Optional gate before leaving via the selector (e.g. dirty confirm).
@@ -37,12 +37,35 @@ class ToolDoorSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A cold deep link shows stable routes; visiting/refreshing Home publishes
+    // its actual discovery selection and updates open selectors reactively.
+    if (tools != null) return _buildCatalog(context, tools!);
+    return ListenableBuilder(
+      listenable: HomeDoorCatalog.instance,
+      builder: (context, _) => _buildCatalog(
+        context,
+        HomeDoorCatalog.instance.destinations,
+      ),
+    );
+  }
+
+  Widget _buildCatalog(BuildContext context, List<AppTool> available) {
     final display = DisplayScope.of(context);
-    final catalog = tools ?? appTools;
+    final catalog = <AppTool>[...available];
+    // An open numbered screen may no longer be in the latest Home draw.
+    // Keep its current-route label visible, without adding all 193 screens.
+    final present = catalog.any((t) => t.routeName == currentRouteName);
+    if (!present && currentRouteName.startsWith('/screen')) {
+      final id = int.tryParse(currentRouteName.substring('/screen'.length));
+      if (id != null && id >= 6 && id <= 198) {
+        catalog.add(AppTool(routeName: currentRouteName, label: 'Screen$id'));
+      }
+    }
     final current = catalog.cast<AppTool?>().firstWhere(
           (t) => t!.routeName == currentRouteName,
           orElse: () => null,
         );
+    String title(AppTool tool) => tool.label ?? display.text(tool.labelKey!);
 
     return Semantics(
       container: true,
@@ -82,10 +105,10 @@ class ToolDoorSelector extends StatelessWidget {
                             ? display.text(
                                 'tools.doorToDoor.current',
                                 arguments: {
-                                  'name': display.text(tool.labelKey),
+                                  'name': title(tool),
                                 },
                               )
-                            : display.text(tool.labelKey),
+                            : title(tool),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
