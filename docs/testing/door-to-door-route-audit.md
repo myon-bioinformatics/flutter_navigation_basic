@@ -57,6 +57,11 @@ Mobile WebKit rejects Playwright wheel input. That profile retains semantics
 scrolling with viewport/frame checks followed by an actual touchscreen tap;
 its receipt records `mobile-webkit-wheel-unsupported`. It is not skipped and
 does not substitute a synthetic DOM click.
+URL and semantics update before Flutter's canvas route/menu transitions finish.
+Captures therefore wait past the pinned SDK's 300–450ms transitions and browser
+frames. `pixel_guards` stores title-region PNGs and hashes: the destination must
+visually differ from Photo Studio, and the returned Home title must match the
+initial Home title. A receipt cannot be complete with the old menu/dialog image.
 The receipt retains the visited routes, shared-header title, selected IDs,
 project, viewport, PNG sizes and SHA-256 hashes. It asserts expected
 transitions and that Home / Door content is in the viewport before capture.

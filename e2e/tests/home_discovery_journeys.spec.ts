@@ -4,11 +4,21 @@ import { writeFileSync } from 'node:fs';
 import { waitForFlutter } from '../utils/helpers';
 import { press as kitPress } from '../utils/interaction.mjs';
 
+// Flutter's route/menu transitions (300–450ms in the pinned SDK) are painted
+// into the canvas, not CSS animations. Semantics/URL can update before painting.
+async function settleCanvas(page: Page) {
+  await page.waitForTimeout(600);
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  }));
+}
+
 // Flutter paints the controls: send measured, in-viewport mouse/touch input at
 // the integer centre (browser-test-kit interaction.press), not a DOM click.
 async function press(page: Page, target: Locator, testInfo: TestInfo) {
   await expect(target).toHaveCount(1);
   await expect(target).toBeVisible();
+  await settleCanvas(page);
   return kitPress(page, target, { touch: !!testInfo.project.use.hasTouch });
 }
 
@@ -177,11 +187,34 @@ test.describe('Home discovery journeys', () => {
       file: string; bytes: number; sha256: string;
     }> = [];
     const title = page.locator('[flt-semantics-identifier="shared-header-title"]');
+    const pixelGuards: Record<string, { clip: { x: number; y: number; width: number; height: number }; file: string; sha256: string }> = {};
+
+    async function headerPixels(stage: string, reference?: string, different = false) {
+      const box = reference ? pixelGuards[reference].clip : await title.boundingBox();
+      expect(box).not.toBeNull();
+      const clip = { x: Math.floor(box!.x), y: Math.floor(box!.y),
+        width: Math.floor(box!.width), height: Math.floor(box!.height) };
+      let png: Buffer;
+      await expect.poll(async () => {
+        png = await page.screenshot({ clip, animations: 'disabled' });
+        const hash = createHash('sha256').update(png).digest('hex');
+        return !reference || (different ? hash !== pixelGuards[reference].sha256 : hash === pixelGuards[reference].sha256);
+      }, { timeout: 5_000, message: `Canvas header pixels must identify ${stage}` }).toBe(true);
+      const file = `${stage}-header.png`;
+      const path = testInfo.outputPath(file);
+      writeFileSync(path, png!);
+      pixelGuards[stage] = { clip, file, sha256: createHash('sha256').update(png!).digest('hex') };
+      await testInfo.attach(file, { path, contentType: 'image/png' });
+    }
 
     async function capture(stage: string, file: string, sourceHeader?: string) {
+      await settleCanvas(page);
       // An open Flutter dropdown may hide the underlying page's semantics.
       // For that one capture, retain the title measured before opening it.
       const header = sourceHeader ?? await title.innerText();
+      if (stage === 'home-draw' || stage === 'source-tool') await headerPixels(stage);
+      if (stage === 'discovered-screen') await headerPixels(stage, 'source-tool', true);
+      if (stage === 'returned-home') await headerPixels(stage, 'home-draw');
       const path = testInfo.outputPath(file);
       const png = await page.screenshot({ path, animations: 'disabled' });
       expect(png.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
@@ -268,6 +301,7 @@ test.describe('Home discovery journeys', () => {
         run_id: process.env.GITHUB_RUN_ID ?? null,
         run_attempt: process.env.GITHUB_RUN_ATTEMPT ?? null,
         captures,
+        pixel_guards: pixelGuards,
       };
       const manifest = testInfo.outputPath('route-audit.json');
       writeFileSync(manifest, JSON.stringify(receipt, null, 2));
