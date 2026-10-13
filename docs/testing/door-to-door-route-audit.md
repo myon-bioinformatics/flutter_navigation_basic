@@ -48,6 +48,11 @@ relevant Door and header observations are also printed in the job log.
 The `tool-door-dropdown` semantics boundary measures the dropdown field alone.
 The surrounding Card merges its title, hint and selected text; its centre and
 even its merged `button` role are unsuitable for real pointer input.
+Before measuring the field, the journey scrolls the actual Flutter body with
+wheel input and waits for stable in-viewport geometry across browser frames.
+DOM `scrollIntoView` alone can move the accessibility overlay while the canvas
+remains at the top; the Chromium failure PNG demonstrated that mismatch.
+The receipt records those wheel inputs as `door_scrolls`.
 The receipt retains the visited routes, shared-header title, selected IDs,
 project, viewport, PNG sizes and SHA-256 hashes. It asserts expected
 transitions and that Home / Door content is in the viewport before capture.

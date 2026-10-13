@@ -59,6 +59,35 @@ async function doorButton(page: Page, current: string) {
   return button;
 }
 
+// DOM scrollIntoView can move Flutter's semantics overlay without moving the
+// painted canvas (observed in the Chromium failure PNG). Drive the actual
+// scrollable body with wheel input before the kit measures/taps the field.
+async function scrollDoorIntoCanvas(page: Page, field: Locator, scrolls: unknown[]) {
+  const view = page.viewportSize()!;
+  const x = Math.floor(view.width / 2);
+  const y = Math.floor(view.height / 2);
+  const delta = Math.floor(view.height * 0.8);
+  await page.mouse.move(x, y);
+  for (let index = 0; index < 16; index++) {
+    const before = await field.boundingBox();
+    await page.mouse.wheel(0, delta);
+    // Observe browser frames; do not synthesize a DOM scroll/click or retry a
+    // missed tap. Two stable samples after real input mean the body has settled.
+    await page.evaluate(() => new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    }));
+    const after = await field.boundingBox();
+    scrolls.push({ input: 'wheel', x, y, delta_y: delta, before, after });
+    if (index > 0 && before && after && after.y >= 104 &&
+        after.y + after.height <= view.height &&
+        Math.abs(before.y - after.y) < 0.5) {
+      await expect(field).toBeInViewport({ ratio: 0.9 });
+      return;
+    }
+  }
+  throw new Error('Door field did not settle in the viewport after real wheel input');
+}
+
 // Record the measured input and require the menu to actually open before
 // looking for a destination. Do not retry the same non-interactive card centre.
 async function openDoor(page: Page, field: Locator, testInfo: TestInfo, attempts: unknown[]) {
@@ -114,7 +143,9 @@ test.describe('Home discovery journeys', () => {
     await page.goto('/#/screen5');
     await waitForFlutter(page);
     await expect(page).toHaveURL(/#\/screen5$/);
-    await openDoor(page, await doorButton(page, 'URL Params'), testInfo, []);
+    const field = await doorButton(page, 'URL Params');
+    await scrollDoorIntoCanvas(page, field, []);
+    await openDoor(page, field, testInfo, []);
     await press(page, await doorItem(page, 'Photo Studio'), testInfo);
     await waitForFlutter(page);
     await expect(page).toHaveURL(/#\/tools\/media\/photo-studio$/);
@@ -155,6 +186,7 @@ test.describe('Home discovery journeys', () => {
     let complete = false;
     let step = 'open-home';
     const doorAttempts: unknown[] = [];
+    const doorScrolls: unknown[] = [];
     let returnPresses: unknown[] = [];
     try {
       await page.goto('/');
@@ -173,11 +205,14 @@ test.describe('Home discovery journeys', () => {
       await press(page, await homeCard(page, 'Photo Studio'), testInfo);
       await waitForFlutter(page);
       await expect(page).toHaveURL(/#\/tools\/media\/photo-studio$/);
+      step = 'scroll-source-door';
+      const field = await doorButton(page, 'Photo Studio');
+      await scrollDoorIntoCanvas(page, field, doorScrolls);
       await capture('source-tool', 'source-tool.png');
       const sourceHeader = await title.innerText();
 
       step = 'open-door';
-      await openDoor(page, await doorButton(page, 'Photo Studio'), testInfo, doorAttempts);
+      await openDoor(page, field, testInfo, doorAttempts);
       // The Door label is homeDiscoveryLabel(); the card text also carries its subtitle.
       step = 'find-door-item';
       const destination = await doorItem(page, new RegExp(`^Screen${ids[0]} · `));
@@ -203,6 +238,7 @@ test.describe('Home discovery journeys', () => {
         last_capture: captures.at(-1)?.stage ?? null,
         failed_step: complete ? null : step,
         door_attempts: doorAttempts,
+        door_scrolls: doorScrolls,
         return_presses: returnPresses,
         // Door entries Flutter exposed at the time (names only), to tell a
         // closed menu from an item that is not built/named as expected.
