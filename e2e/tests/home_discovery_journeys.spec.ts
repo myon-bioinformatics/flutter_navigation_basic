@@ -54,7 +54,8 @@ async function doorButton(page: Page, current: string) {
   const button = page.locator('[flt-semantics-identifier="tool-door-dropdown"]');
   await expect(button).toHaveCount(1);
   await expect(button).toBeVisible();
-  await expect(button).toContainText(`${current} (current)`);
+  // URL Params also includes its screen number/icon before "(current)".
+  await expect(button).toContainText(new RegExp(`${escape(current)}.*current`));
   return button;
 }
 
