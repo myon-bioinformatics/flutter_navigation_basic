@@ -119,10 +119,16 @@ class HomeDoorCatalog extends ChangeNotifier {
 
   List<AppTool> _discoveries = const [];
   List<AppTool> get discoveries => List.unmodifiable(_discoveries);
-  List<AppTool> get destinations => List.unmodifiable([
-        ...appTools,
-        ..._discoveries,
-      ]);
+  List<AppTool> get destinations {
+    final stable = appTools;
+    // Keep recently displayed Home choices easy to reach on narrow screens,
+    // without hiding the stable Home entry or the established tool catalogue.
+    return List.unmodifiable([
+      stable.first,
+      ..._discoveries,
+      ...stable.skip(1),
+    ]);
+  }
 
   void updateDiscoveries(Iterable<AppTool> proposed) {
     final seen = appTools.map((tool) => tool.routeName).toSet();
