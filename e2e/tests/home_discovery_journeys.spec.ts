@@ -47,13 +47,14 @@ async function doorItem(page: Page, name: string | RegExp) {
   return item;
 }
 
-// Target the interactive dropdown, not a merged ancestor's text. The ancestor
-// includes the title and hint and is 122–130px tall: its centre hits the hint,
-// whereas DropdownButton publishes a button semantics node at the actual field.
+// The Card previously merged the button role with its title and hint (122–130px
+// tall), so even getByRole('button') measured the Card centre. The explicit field
+// semantics boundary now identifies just the actual DropdownButtonFormField.
 async function doorButton(page: Page, current: string) {
-  const button = page.getByRole('button', { name: new RegExp(`${escape(current)}.*current`) });
+  const button = page.locator('[flt-semantics-identifier="tool-door-dropdown"]');
   await expect(button).toHaveCount(1);
   await expect(button).toBeVisible();
+  await expect(button).toContainText(`${current} (current)`);
   return button;
 }
 

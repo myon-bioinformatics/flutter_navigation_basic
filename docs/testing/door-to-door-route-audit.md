@@ -45,6 +45,9 @@ The return leg uses the measured shared Home button and confirmation dialog,
 not a URL reload. Its mouse/touch records are retained in the receipt. On
 failure, `flutter-semantics.json` records names, identifiers and layout boxes;
 relevant Door and header observations are also printed in the job log.
+The `tool-door-dropdown` semantics boundary measures the dropdown field alone.
+The surrounding Card merges its title, hint and selected text; its centre and
+even its merged `button` role are unsuitable for real pointer input.
 The receipt retains the visited routes, shared-header title, selected IDs,
 project, viewport, PNG sizes and SHA-256 hashes. It asserts expected
 transitions and that Home / Door content is in the viewport before capture.

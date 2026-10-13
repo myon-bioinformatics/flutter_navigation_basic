@@ -40,6 +40,49 @@ void main() {
   setUp(() => HomeDoorCatalog.instance.clearDiscoveries());
   tearDown(() => HomeDoorCatalog.instance.clearDiscoveries());
 
+  testWidgets('Door semantics measures the field and its centre opens the menu',
+      (tester) async {
+    final semantics = tester.ensureSemantics();
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    tester.view.devicePixelRatio = 1;
+    try {
+      for (final width in [390.0, 1280.0]) {
+        tester.view.physicalSize = Size(width, 720);
+        await tester.pumpWidget(
+          await wrapWithDisplayScope(
+            _doorHost(
+              tools: const [
+                AppTool(routeName: RouteNames.photoStudio, label: 'Photo Studio'),
+                AppTool(routeName: '/target', label: 'Destination'),
+              ],
+              routes: {
+                '/target': (_) => const Scaffold(body: Text('destination-screen')),
+              },
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final field = find.bySemanticsIdentifier(RegExp(r'^tool-door-dropdown$'));
+        expect(field, findsOneWidget);
+        final fieldBox = tester.getRect(field);
+        final cardBox = tester.getRect(find.byType(Card));
+        expect(fieldBox.height, lessThan(cardBox.height));
+        expect(tester.getSemantics(field).rect.height, fieldBox.height);
+        // Use the geometry exported for accessibility, just as the real-pointer
+        // browser test does. A centre measured from the whole Card misses here.
+        await tester.tapAt(fieldBox.center);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Destination').last);
+        await tester.pumpAndSettle();
+        expect(find.text('destination-screen'), findsOneWidget);
+        await tester.pumpWidget(const SizedBox.shrink());
+      }
+    } finally {
+      semantics.dispose();
+    }
+  });
+
   test('discovery catalogue rejects unknown IDs, duplicates, and non-Home routes', () {
     HomeDoorCatalog.instance.updateDiscoveries(const [
       AppTool(routeName: '/screen138', label: 'Screen138 · first draw'),

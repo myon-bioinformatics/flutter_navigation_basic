@@ -42,10 +42,8 @@ class ToolDoorSelector extends StatelessWidget {
     if (tools != null) return _buildCatalog(context, tools!);
     return ListenableBuilder(
       listenable: HomeDoorCatalog.instance,
-      builder: (context, _) => _buildCatalog(
-        context,
-        HomeDoorCatalog.instance.destinations,
-      ),
+      builder: (context, _) =>
+          _buildCatalog(context, HomeDoorCatalog.instance.destinations),
     );
   }
 
@@ -62,9 +60,9 @@ class ToolDoorSelector extends StatelessWidget {
       }
     }
     final current = catalog.cast<AppTool?>().firstWhere(
-          (t) => t!.routeName == currentRouteName,
-          orElse: () => null,
-        );
+      (t) => t!.routeName == currentRouteName,
+      orElse: () => null,
+    );
     String title(AppTool tool) => tool.label ?? display.text(tool.labelKey!);
 
     return Semantics(
@@ -87,41 +85,46 @@ class ToolDoorSelector extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 10),
-              DropdownButtonFormField<String>(
-                isExpanded: true,
-                value: current?.routeName,
-                decoration: InputDecoration(
-                  labelText: display.text('tools.doorToDoor.label'),
-                  border: const OutlineInputBorder(),
-                  isDense: true,
-                ),
-                items: [
-                  for (final tool in catalog)
-                    DropdownMenuItem<String>(
-                      value: tool.routeName,
-                      enabled: tool.routeName != currentRouteName,
-                      child: Text(
-                        tool.routeName == currentRouteName
-                            ? display.text(
-                                'tools.doorToDoor.current',
-                                arguments: {
-                                  'name': title(tool),
-                                },
-                              )
-                            : title(tool),
-                        overflow: TextOverflow.ellipsis,
+              // Keep the interactive field separate from the Card's title and
+              // hint. Without this boundary Flutter merges the button into the
+              // whole Card and reports a hit box whose centre is above the field.
+              Semantics(
+                identifier: 'tool-door-dropdown',
+                container: true,
+                child: DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  value: current?.routeName,
+                  decoration: InputDecoration(
+                    labelText: display.text('tools.doorToDoor.label'),
+                    border: const OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  items: [
+                    for (final tool in catalog)
+                      DropdownMenuItem<String>(
+                        value: tool.routeName,
+                        enabled: tool.routeName != currentRouteName,
+                        child: Text(
+                          tool.routeName == currentRouteName
+                              ? display.text(
+                                  'tools.doorToDoor.current',
+                                  arguments: {'name': title(tool)},
+                                )
+                              : title(tool),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                ],
-                onChanged: (route) async {
-                  if (route == null || route == currentRouteName) return;
-                  final match = catalog.where((t) => t.routeName == route);
-                  if (match.isEmpty) return;
-                  final gate = beforeNavigate;
-                  if (gate != null && !await gate()) return;
-                  if (!context.mounted) return;
-                  _navigateTo(context, match.first.routeName);
-                },
+                  ],
+                  onChanged: (route) async {
+                    if (route == null || route == currentRouteName) return;
+                    final match = catalog.where((t) => t.routeName == route);
+                    if (match.isEmpty) return;
+                    final gate = beforeNavigate;
+                    if (gate != null && !await gate()) return;
+                    if (!context.mounted) return;
+                    _navigateTo(context, match.first.routeName);
+                  },
+                ),
               ),
             ],
           ),
