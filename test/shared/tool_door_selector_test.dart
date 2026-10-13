@@ -103,9 +103,17 @@ void main() {
     await tester.tap(_doorDropdown());
     await tester.pumpAndSettle();
     expect(find.text('Screen138 · old draw'), findsNothing);
-    final destination = find.text('Screen80 · current draw').last;
-    await tester.ensureVisible(destination);
-    await tester.tap(destination);
+    // The dropdown initially scrolls around the current tool. Featured items
+    // above it can be unbuilt; scroll the popup rather than ensureVisible on
+    // an element that does not exist yet.
+    final destination = find.text('Screen80 · current draw');
+    await tester.scrollUntilVisible(
+      destination,
+      -80,
+      scrollable: find.byType(Scrollable).last,
+      maxScrolls: 20,
+    );
+    await tester.tap(destination.last);
     await tester.pumpAndSettle();
     expect(find.text('dynamic-screen-80'), findsOneWidget);
   });

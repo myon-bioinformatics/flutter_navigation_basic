@@ -36,6 +36,17 @@ Future<void> _pumpNamedRoute(
       ),
     ),
   );
+  // Like the existing Hub harness, let real asset IO (e.g. UI Showcase's
+  // config) complete outside fake time before settling Flutter animations.
+  for (var attempt = 0; attempt < 200; attempt++) {
+    await tester.pump();
+    if (find.byType(CircularProgressIndicator).evaluate().isEmpty) break;
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+  }
+  expect(find.byType(CircularProgressIndicator), findsNothing,
+      reason: '$initialRoute must finish loading before checking its chrome');
   await tester.pumpAndSettle();
   expect(tester.takeException(), isNull);
 }
