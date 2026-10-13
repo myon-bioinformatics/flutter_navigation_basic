@@ -13,7 +13,7 @@ import '../screens/generic_screen.dart';
 /// Tool routes come from [AppRouteRegistry] for the canonical Web/native app.
 class AppRoutes {
   static const String home = RouteNames.home;
-  static const String hub = '/hub';
+  static const String hub = RouteNames.hub;
 
   static const String clipboardShelf = RouteNames.clipboardShelf;
   static const String nowTimeline = RouteNames.nowTimeline;
@@ -27,10 +27,10 @@ class AppRoutes {
       RouteNames.compositionSeedGenerator;
   static const String clipboardWorkbench = RouteNames.clipboardWorkbench;
   static const String httpRequestDraft = RouteNames.httpRequestDraft;
-  static const String uiShowcase = '/examples/ui-showcase';
+  static const String uiShowcase = RouteNames.uiShowcase;
 
   static const String externalApi = '/examples/external-integration/api';
-  static const String externalMcp = '/examples/external-integration/mcp';
+  static const String externalMcp = RouteNames.externalMcp;
   static const String mockApi = '/examples/mock-api';
 
   static String screenRoute(int id) => '/screen$id';
