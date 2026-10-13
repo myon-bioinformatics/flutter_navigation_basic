@@ -62,7 +62,21 @@ async function doorButton(page: Page, current: string) {
 // DOM scrollIntoView can move Flutter's semantics overlay without moving the
 // painted canvas (observed in the Chromium failure PNG). Drive the actual
 // scrollable body with wheel input before the kit measures/taps the field.
-async function scrollDoorIntoCanvas(page: Page, field: Locator, scrolls: unknown[]) {
+async function scrollDoorIntoCanvas(page: Page, field: Locator, scrolls: unknown[], testInfo: TestInfo) {
+  if (testInfo.project.name === 'mobile-webkit') {
+    // Playwright explicitly rejects wheel input in mobile WebKit. Its semantics
+    // scrolling already completed the route in prior runs; keep the real touch
+    // press, with viewport/frame checks, rather than skipping or DOM-clicking.
+    const before = await field.boundingBox();
+    await field.scrollIntoViewIfNeeded();
+    await page.evaluate(() => new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    }));
+    const after = await field.boundingBox();
+    scrolls.push({ input: 'semantics-scroll', reason: 'mobile-webkit-wheel-unsupported', before, after });
+    await expect(field).toBeInViewport({ ratio: 0.9 });
+    return;
+  }
   const view = page.viewportSize()!;
   const x = Math.floor(view.width / 2);
   const y = Math.floor(view.height / 2);
@@ -144,7 +158,7 @@ test.describe('Home discovery journeys', () => {
     await waitForFlutter(page);
     await expect(page).toHaveURL(/#\/screen5$/);
     const field = await doorButton(page, 'URL Params');
-    await scrollDoorIntoCanvas(page, field, []);
+    await scrollDoorIntoCanvas(page, field, [], testInfo);
     await openDoor(page, field, testInfo, []);
     await press(page, await doorItem(page, 'Photo Studio'), testInfo);
     await waitForFlutter(page);
@@ -207,7 +221,7 @@ test.describe('Home discovery journeys', () => {
       await expect(page).toHaveURL(/#\/tools\/media\/photo-studio$/);
       step = 'scroll-source-door';
       const field = await doorButton(page, 'Photo Studio');
-      await scrollDoorIntoCanvas(page, field, doorScrolls);
+      await scrollDoorIntoCanvas(page, field, doorScrolls, testInfo);
       await capture('source-tool', 'source-tool.png');
       const sourceHeader = await title.innerText();
 

@@ -53,6 +53,10 @@ wheel input and waits for stable in-viewport geometry across browser frames.
 DOM `scrollIntoView` alone can move the accessibility overlay while the canvas
 remains at the top; the Chromium failure PNG demonstrated that mismatch.
 The receipt records those wheel inputs as `door_scrolls`.
+Mobile WebKit rejects Playwright wheel input. That profile retains semantics
+scrolling with viewport/frame checks followed by an actual touchscreen tap;
+its receipt records `mobile-webkit-wheel-unsupported`. It is not skipped and
+does not substitute a synthetic DOM click.
 The receipt retains the visited routes, shared-header title, selected IDs,
 project, viewport, PNG sizes and SHA-256 hashes. It asserts expected
 transitions and that Home / Door content is in the viewport before capture.
