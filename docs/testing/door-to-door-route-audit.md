@@ -37,9 +37,9 @@ re-randomization on every `build()`, localization rebuild or route push.
   or browser emulation do not prove physical Android/iOS behavior.
 
 The route-audit journey performs:
-`Home chosen triple → first numbered screen → Door menu → second chosen screen → Home`.
-It captures `home-draw.png`, `first-screen.png`, `door.png`,
-`second-screen.png` and `route-audit.json` in `testInfo.outputPath`
+`Home chosen triple → Photo Studio (stable Home card) → Door menu → selected numbered screen → Home`.
+It captures `home-draw.png`, `source-tool.png`, `door-menu.png`,
+`discovered-screen.png` and `route-audit.json` in `testInfo.outputPath`
 (per test / per Playwright project) and attaches them to the report.
 The receipt retains the visited routes, shared-header title, selected IDs,
 project, viewport, PNG sizes and SHA-256 hashes. It asserts expected
@@ -61,6 +61,16 @@ observed differences, not arbitrary full-catalog snapshot churn.
 | Home actions | Previously 11 repeated inline routes and a different fixed footer list | Now backed by `homeAppTools`; add any new stable Home action in one place |
 | Test UI interactions | Flutter-specific semantics and scroll timing in `e2e/utils/helpers.ts` | Keep framework adapters local until multi-repo evidence warrants extraction |
 | Screenshots/evidence | `diagnostics_evidence.spec.ts`, `shared_header.spec.ts`, this route journey | Follow one evidence vocabulary; do not silently replace stronger canonical metadata receipts with screenshot presence checks |
+
+**Observed structural exception:** `InteractivePatternExample`,
+`NativeParallelPatternExample`, and `PatternSourceLinks` construct their
+own `Scaffold` without a `StandardPageFooter` / `ToolDoorSelector`.
+These numbered routes remain valid **targets** from Door but do not themselves
+provide Door-to-Door onward navigation today. Therefore the portable audit
+starts from a stable Home tool with a known footer rather than assuming any
+random Screen route has one. This gap is a concrete subject for
+[Issue #183](https://github.com/myon-bioinformatics/flutter_navigation_basic/issues/183);
+it is not hidden by a test skip or treated as a proven crash.
 
 ## Cross-repository boundary
 
