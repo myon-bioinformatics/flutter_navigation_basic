@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../features/photo_studio/data/photo_import_limits.dart';
 import '../clipboard/base64_image_bridge.dart';
 import '../display/display_scope.dart';
 
@@ -35,7 +36,7 @@ class ClipboardShelf extends StatefulWidget {
 }
 
 class _ClipboardShelfState extends State<ClipboardShelf> {
-  static const int _maxImageClipboardChars = 4 * 1024 * 1024;
+  static const int _maxImageBytes = PhotoImportLimits.maxInputBytes;
 
   final _manualController = TextEditingController();
   final List<ClipboardShelfItem> _items = [];
@@ -101,24 +102,29 @@ class _ClipboardShelfState extends State<ClipboardShelf> {
       return;
     }
 
-    final imageCandidate = text.startsWith('data:image/') || _looksLikeRawBase64(text);
-    if (imageCandidate && text.length <= _maxImageClipboardChars) {
+    final imageCandidate = Base64ImageBridge.looksLikeImageText(text);
+    Object? imageError;
+    if (imageCandidate && !Base64ImageBridge.textExceedsMaxImageBytes(text, _maxImageBytes)) {
       try {
-        final payload = Base64ImageBridge.decodeText(text);
+        final payload = Base64ImageBridge.decodeClipboardShelfText(text);
         final added = await _addImage(payload.bytes, payload.mimeType);
         if (added) return;
-      } catch (_) {
-        // Preserve the original clipboard value below when image parsing fails.
+      } catch (error) {
+        // Preserve the original clipboard value below, but say why.
+        imageError = error;
       }
+    } else if (imageCandidate) {
+      imageError = FormatException(
+        'Base64 image exceeds $_maxImageBytes bytes.',
+      );
     }
     _addText(text);
-  }
-
-  bool _looksLikeRawBase64(String value) {
-    if (value.length < 80 || value.length > _maxImageClipboardChars || value.length % 4 != 0) {
-      return false;
+    if (imageError != null && mounted) {
+      setState(() {
+        _statusKey = 'clipboardShelf.status.imageFailed';
+        _statusArgs = {'error': imageError};
+      });
     }
-    return RegExp(r'^[A-Za-z0-9+/=\r\n]+$').hasMatch(value);
   }
 
   void _handleInsertedContent(KeyboardInsertedContent content) {

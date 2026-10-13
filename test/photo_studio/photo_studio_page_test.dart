@@ -19,6 +19,7 @@ import 'package:flutter_application_1/shared/widgets/tool_door_selector.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/display_test_harness.dart';
+import '../shared/base64_bridge_fixtures.dart';
 
 final _tinyPng = base64Decode(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
@@ -501,9 +502,40 @@ void main() {
     expect(find.textContaining('Rectangle 1'), findsOneWidget);
   });
 
+  for (final caseData in Base64BridgeFixtures.loadCases().where(
+      (c) => ['not_base64_uri', 'param_quoted'].contains(c['id']))) {
+    testWidgets('paste ${caseData['id']} reports decode error, not too large', (tester) async {
+      final messenger = tester.binding.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'Clipboard.getData') {
+          return <String, dynamic>{'text': caseData['text']};
+        }
+        return null;
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+      var binaryReads = 0;
+      await _pumpPage(tester, page: PhotoStudioPage(
+        clipboardImageReader: () async {
+          binaryReads++;
+          return const ClipboardImageRead.empty();
+        },
+      ));
+      await tester.runAsync(() async {
+        await tester.ensureVisible(find.text('Paste photo'));
+        await tester.tap(find.text('Paste photo'));
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+      });
+      await tester.pump();
+      expect(find.text('Could not decode this image.'), findsOneWidget);
+      expect(find.textContaining('too large'), findsNothing);
+      expect(binaryReads, 0);
+    });
+  }
+
   testWidgets('paste rejects oversized data:image clipboard text', (tester) async {
     final oversized =
-        'data:image/png;base64,${'A' * ((32 * 1024 * 1024) + 64)}';
+        // Over the Base64 length of 32 MiB (4 * ceil(bytes / 3)) plus prefix room.
+        'data:image/png;base64,${'A' * (4 * ((32 * 1024 * 1024 + 2) ~/ 3) + 512)}';
     final messenger =
         tester.binding.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {

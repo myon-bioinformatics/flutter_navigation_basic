@@ -4,7 +4,7 @@
 /// payloads: byte count and decoded pixel count are both capped, then the
 /// document is PNG-normalized and downscaled to [maxDocumentLongEdge].
 abstract final class PhotoImportLimits {
-  /// Maximum accepted raw input bytes (picker / paste / clipboard).
+  /// Maximum accepted raw input bytes (picker / paste / clipboard shelf / Base64 text).
   static const int maxInputBytes = 32 * 1024 * 1024;
 
   /// Maximum width × height after decode (before document downscale).

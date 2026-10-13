@@ -65,4 +65,26 @@ void main() {
       );
     });
   });
+
+  group('sniffImageFormat JPEG marker scanning', () {
+    Uint8List withPrefix(List<int> inserted) {
+      final base = _load('jpeg_exif_orientation_6_markers_64x32.jpg');
+      return Uint8List.fromList([...base.sublist(0, 2), ...inserted, ...base.sublist(2)]);
+    }
+
+    test('XMP APP1 before EXIF APP1 still yields the orientation', () {
+      final xmp = 'http://ns.adobe.com/xap/1.0/\u0000<x/>'.codeUnits;
+      final len = xmp.length + 2;
+      final sniff = sniffImageFormat(
+        withPrefix([0xFF, 0xE1, len >> 8, len & 0xFF, ...xmp]),
+      );
+      expect(sniff.jpegExifOrientation, 6);
+    });
+
+    test('fill bytes before a marker are skipped', () {
+      final sniff = sniffImageFormat(withPrefix([0xFF, 0xFF]).sublist(0));
+      expect(sniff.kind, ImageFormatKind.jpeg);
+      expect(sniff.jpegExifOrientation, 6);
+    });
+  });
 }
