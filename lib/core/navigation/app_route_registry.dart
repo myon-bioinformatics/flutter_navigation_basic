@@ -25,10 +25,10 @@ class AppRouteRegistry {
 
   /// Public catalogue / integration routes used by the canonical app.
   static Map<String, WidgetBuilder> get catalogueRoutes => {
-        '/hub': (_) => const HubScreen(),
-        '/examples/ui-showcase': (_) => const UiShowcaseScreen(),
+        RouteNames.hub: (_) => const HubScreen(),
+        RouteNames.uiShowcase: (_) => const UiShowcaseScreen(),
         '/examples/external-integration/api': (_) => const HttpRequestDraftPage(),
-        '/examples/external-integration/mcp': (_) => const McpIntegrationScreen(),
+        RouteNames.externalMcp: (_) => const McpIntegrationScreen(),
       };
 
   static Map<String, WidgetBuilder> get canonicalRoutes => {
