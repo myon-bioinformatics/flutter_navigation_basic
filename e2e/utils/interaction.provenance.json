@@ -1,10 +1,10 @@
 {
   "schema": "vendor-provenance/1",
   "repository": "https://github.com/myon-bioinformatics/browser-test-kit",
-  "commit": "6aa15cd48702c854eae82f43097ee653e29a1d81",
+  "commit": "e9057c3a0024145e46f59bab8c6b4b3fef82ddb0",
   "source_path": "scripts/interaction.mjs",
   "path": "e2e/utils/interaction.mjs",
-  "sha256": "91cbd4ba97b57174c0c8b2bcfbd7f316fbe6ded3cfd97f0e7a9029f9e9a3a888",
+  "sha256": "4344c701340731767ae469a3b41a1b54040cccd392185a41e992278a156f3b95",
   "license": "MIT (browser-test-kit LICENSE)",
-  "note": "Byte-identical copy. Pinned to browser-test-kit PR #61 head; repin to the merge commit after that PR merges. Edit upstream, not here."
+  "note": "Byte-identical copy. Pinned to browser-test-kit PR #61 head e9057c3 (includes the same-key storage overwrite fix for watch); repin to the merge commit after that PR merges. Edit upstream, not here."
 }

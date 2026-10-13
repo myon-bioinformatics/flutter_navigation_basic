@@ -40,13 +40,27 @@ export async function press(page, target, {touch, ratio = 0.9, timeout = 10000} 
     visible_ratio, box: {x: round(box.x), y: round(box.y), width: round(box.width), height: round(box.height)}, hit};
 }
 
+// Same snapshot function text as _STORAGE in interaction.py.
 const storage = (page) => page.evaluate(() => {
-  const size = (name) => { try { return window[name].length; } catch { return null; } };
-  return {local: size('localStorage'), session: size('sessionStorage')};
+  // Per area: key count and an FNV-1a fingerprint of the sorted key/value pairs,
+  // so an overwrite of an existing key is detected without exposing raw values.
+  const snap = (name) => {
+    try {
+      const store = window[name], entries = [];
+      for (let i = 0; i < store.length; i++) { const k = store.key(i); entries.push([k, store.getItem(k)]); }
+      entries.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+      const text = JSON.stringify(entries);
+      let h = 0x811c9dc5;
+      for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+      return {keys: entries.length, fingerprint: 'fnv1a32:' + (h >>> 0).toString(16).padStart(8, '0')};
+    } catch (e) { return null; }
+  };
+  return {local: snap('localStorage'), session: snap('sessionStorage')};
 });
 
 // Record what a page does while untrusted input is handled: requests, dialogs,
-// uncaught errors, popups and Web Storage size. Dialogs are dismissed.
+// uncaught errors, popups and Web Storage changes (key count + content
+// fingerprint, no raw values). Dialogs are dismissed.
 // Assert late: keep the record as JSON and check it at the end (or with
 // `python -S scripts/interaction.py check record.json`).
 export async function watch(page, {dismissDialogs = true} = {}) {
@@ -64,7 +78,7 @@ export async function watch(page, {dismissDialogs = true} = {}) {
       for (const [name, fn] of Object.entries(handlers)) page.off(name, fn);
       const after = await storage(page);
       const quiet = Object.values(seen).every((list) => list.length === 0)
-        && after.local === before.local && after.session === before.session;
+        && JSON.stringify(after) === JSON.stringify(before);
       return {schema: 'side-effects/1', quiet, ...seen, storage: {before, after}};
     },
   };
