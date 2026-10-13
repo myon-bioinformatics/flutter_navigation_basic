@@ -62,6 +62,17 @@ Captures therefore wait past the pinned SDK's 300–450ms transitions and browse
 frames. `pixel_guards` stores title-region PNGs and hashes: the destination must
 visually differ from Photo Studio, and the returned Home title must match the
 initial Home title. A receipt cannot be complete with the old menu/dialog image.
+`home-draw-header.png` is deliberately captured before Home's list is
+scrolled, while the AppBar is unscrolled. `home-draw.png` still shows
+the featured cards after scrolling into view. Material AppBar applies
+a different `scrolledUnder` tint on that scroll: the failing mobile
+Chromium/WebKit run showed background RGB (203,180,244) when scrolled,
+versus (211,188,253) after returning Home. Byte-exact PNG comparison
+between different AppBar states was a false failure, not a stale page.
+The return-home guard now compares headers captured in the same
+unscrolled state, preserving the destination's separate visual-difference
+check and all real touch/mouse navigation assertions.
+
 The receipt retains the visited routes, shared-header title, selected IDs,
 project, viewport, PNG sizes and SHA-256 hashes. It asserts expected
 transitions and that Home / Door content is in the viewport before capture.
