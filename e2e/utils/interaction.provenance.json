@@ -1,10 +1,10 @@
 {
   "schema": "vendor-provenance/1",
   "repository": "https://github.com/myon-bioinformatics/browser-test-kit",
-  "commit": "f23074d63b4179dccc1db7759f95c893c435872f",
+  "commit": "c48c272e7eaabaeaffd4234ef732bd6f6efbcd80",
   "source_path": "scripts/interaction.mjs",
   "path": "e2e/utils/interaction.mjs",
-  "sha256": "4344c701340731767ae469a3b41a1b54040cccd392185a41e992278a156f3b95",
+  "sha256": "b23b62113dfb5db0028e71305efbd33f7a3924510cb808e051e3221bd7b5cfbe",
   "license": "MIT (browser-test-kit LICENSE)",
-  "note": "Byte-identical copy of browser-test-kit main at the merge of PR #61. Edit upstream, not here."
+  "note": "Byte-identical copy of browser-test-kit main at the merge of PR #62. Edit upstream, not here."
 }
