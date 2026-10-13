@@ -30,6 +30,26 @@ async function doorItem(page: Page, name: string | RegExp) {
   return item;
 }
 
+// Open a Door dropdown and record each attempt (press record = point, viewport
+// ratio, top element). Photo Studio places its Door below the fold; if a DOM
+// scrollIntoView did not move Flutter's canvas, the first tap opens nothing, so
+// scroll Flutter itself with the wheel over its view and press again.
+async function openDoor(page: Page, field: Locator, testInfo: TestInfo, attempts: unknown[]) {
+  const items = page.locator('[role="menuitem"]');
+  for (const via of ['press', 'wheel+press']) {
+    if (via === 'wheel+press') {
+      const view = page.viewportSize()!;
+      await page.mouse.move(Math.floor(view.width / 2), Math.floor(view.height / 2));
+      for (let i = 0; i < 8; i++) await page.mouse.wheel(0, 600).catch(() => {});
+      await page.waitForTimeout(300);
+    }
+    const record = await press(page, field, testInfo);
+    const opened = await expect(items.first()).toBeVisible({ timeout: 3_000 }).then(() => true, () => false);
+    attempts.push({ via, opened, record });
+    if (opened) return;
+  }
+}
+
 test.describe('Home discovery journeys', () => {
   test.setTimeout(90_000);
   test.use({ actionTimeout: 10_000 });
@@ -103,6 +123,7 @@ test.describe('Home discovery journeys', () => {
     let labels: string[] = [];
     let complete = false;
     let step = 'open-home';
+    const doorAttempts: unknown[] = [];
     try {
       await page.goto('/');
       await waitForFlutter(page);
@@ -124,7 +145,7 @@ test.describe('Home discovery journeys', () => {
       const sourceHeader = await title.innerText();
 
       step = 'open-door';
-      await press(page, page.getByText(/Photo Studio.*current/).last(), testInfo);
+      await openDoor(page, page.getByText(/Photo Studio.*current/).last(), testInfo, doorAttempts);
       // The Door label is homeDiscoveryLabel(); the card text also carries its subtitle.
       step = 'find-door-item';
       const destination = await doorItem(page, new RegExp(`^Screen${ids[0]} · `));
@@ -150,6 +171,7 @@ test.describe('Home discovery journeys', () => {
         stage: complete ? 'complete' : 'failed',
         last_capture: captures.at(-1)?.stage ?? null,
         failed_step: complete ? null : step,
+        door_attempts: doorAttempts,
         // Door entries Flutter exposed at the time (names only), to tell a
         // closed menu from an item that is not built/named as expected.
         menu_items: complete ? null : await page.locator('[role="menuitem"]').evaluateAll(
@@ -169,7 +191,7 @@ test.describe('Home discovery journeys', () => {
       writeFileSync(manifest, JSON.stringify(receipt, null, 2));
       await testInfo.attach('route-audit.json', { path: manifest, contentType: 'application/json' });
       // Job logs and artifacts may be unreadable to reviewing agents; annotations are not.
-      console.log(`::notice title=route-audit ${testInfo.project.name}::stage=${receipt.stage} last=${receipt.last_capture} failed_step=${receipt.failed_step} ids=${ids.join(',')} route=${new URL(page.url()).hash} menu=${JSON.stringify(receipt.menu_items)?.slice(0, 600)}`);
+      console.log(`::notice title=route-audit ${testInfo.project.name}::stage=${receipt.stage} last=${receipt.last_capture} failed_step=${receipt.failed_step} ids=${ids.join(',')} route=${new URL(page.url()).hash} menu=${JSON.stringify(receipt.menu_items)?.slice(0, 300)} door=${JSON.stringify(doorAttempts).slice(0, 700)}`);
     }
   });
 });
