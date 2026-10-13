@@ -2,6 +2,9 @@ class RouteNames {
   RouteNames._();
 
   static const String home = '/';
+  static const String hub = '/hub';
+  static const String uiShowcase = '/examples/ui-showcase';
+  static const String externalMcp = '/examples/external-integration/mcp';
   static const String clipboardShelf = '/core/clipboard-shelf';
   static const String nowTimeline = '/tools/time/now-timeline';
   static const String coordinateTool = '/tools/location/coordinates';

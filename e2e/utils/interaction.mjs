@@ -83,3 +83,34 @@ export async function watch(page, {dismissDialogs = true} = {}) {
     },
   };
 }
+
+export const INVENTORY_SELECTOR = 'flt-semantics, [role], button, a, input, select, textarea';
+
+// List what the page exposes for interaction, before choosing what to press.
+// Flutter Web can merge a control into its card (one button-role node ~130px
+// tall around a 40px field): pressing that node's centre misses the field.
+// Compare boxes here, then press an element with its own boundary/identifier.
+// Same function text as _INVENTORY in interaction.py.
+export async function inventory(page, {selector = INVENTORY_SELECTOR, limit = 200} = {}) {
+  const {total, elements} = await page.evaluate(([selector, limit]) => {
+  // Role, aria-label, text, identifier and box of each matching element:
+  // shows when a framework merged a control into a larger container.
+  const all = document.querySelectorAll(selector), elements = [];
+  for (const el of all) {
+    if (elements.length >= limit) break;
+    const r = el.getBoundingClientRect();
+    const text = (el.textContent || '').replace(/\s+/g, ' ').trim();
+    elements.push({
+      tag: el.tagName.toLowerCase(),
+      role: el.getAttribute('role'),
+      aria_label: el.getAttribute('aria-label'),
+      text: text.length > 120 ? text.slice(0, 119) + '…' : text,
+      id: el.getAttribute('flt-semantics-identifier') || el.id || el.getAttribute('data-testid') || null,
+      box: {x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height)},
+      in_viewport: r.width > 0 && r.height > 0 && r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth,
+    });
+  }
+  return {total: all.length, elements};
+}, [selector, limit]);
+  return {schema: 'element-inventory/1', selector, total, truncated: total > elements.length, elements};
+}

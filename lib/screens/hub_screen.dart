@@ -34,7 +34,7 @@ class _HubScreenState extends State<HubScreen> {
     if (mounted) {
       setState(() {
         _all = screens;
-        _filtered = searchCatalog(screens, _searchCtrl.text);
+        _filtered = searchCatalog(_all, _searchCtrl.text);
         _loading = false;
       });
     }
@@ -184,14 +184,20 @@ class _HubScreenState extends State<HubScreen> {
                     style: Theme.of(context).textTheme.labelLarge
                         ?.copyWith(fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    s.title,
-                    style: Theme.of(context).textTheme.labelSmall,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  // Tiles shrink when an extra column fits. Bound the title
+                  // to remaining height instead of overflowing the card.
+                  Flexible(
+                    child: Text(
+                      s.title,
+                      style: Theme.of(context).textTheme.labelSmall,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),

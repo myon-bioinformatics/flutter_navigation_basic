@@ -5,11 +5,16 @@ import 'package:flutter/material.dart';
 import '../domain/home_controller.dart';
 import '../../../config/routes.dart';
 import '../../../screens/generic_screen.dart';
-import '../../../core/navigation/route_names.dart';
+import '../../../core/navigation/app_tools.dart';
 import '../../../shared/diagnostics/build_diagnostics_card.dart';
 import '../../../shared/display/display_scope.dart';
 import '../../../shared/widgets/custom_app_bar.dart';
 import '../../../shared/widgets/home_overview_panel.dart';
+
+/// A Home card and its corresponding Door entry share this exact title.
+String homeDiscoveryLabel(ScreenData screen) => screen.useCaseJa.isNotEmpty
+    ? 'Screen${screen.screenDataId} · ${screen.useCaseJa}'
+    : 'Screen${screen.screenDataId} · ${screen.title}';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.controller, this.discoveryRandom});
@@ -76,11 +81,24 @@ class _HomeScreenState extends State<HomeScreen> {
       final draws = _draws ?? await loadHomeDiscoveryDraws();
       if (!mounted || generation != _generation) return;
       _draws = draws;
-      setState(() => _discoveries = pickHomeDiscoveryScreens(screens, draws, random: widget.discoveryRandom));
+      final selected = pickHomeDiscoveryScreens(
+        screens,
+        draws,
+        random: widget.discoveryRandom,
+      );
+      setState(() => _discoveries = selected);
+      HomeDoorCatalog.instance.updateDiscoveries([
+        for (final screen in selected)
+          AppTool(
+            routeName: AppRoutes.screenRoute(screen.screenDataId),
+            label: homeDiscoveryLabel(screen),
+          ),
+      ]);
     } catch (_) {
       // Discovery is optional: leave the main tools available if the asset fails.
       if (mounted && generation == _generation) {
         setState(() => _discoveries = const []);
+        HomeDoorCatalog.instance.clearDiscoveries();
       }
     }
   }
@@ -127,96 +145,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: display.text('homeOverview.title'),
                   subtitle: display.text('homeOverview.subtitle'),
                   actions: [
-                    // Use the enclosing Navigator without a global key.
-                    HomeOverviewAction(
-                      label: display.text('home.action.clipboardShelfProd.label'),
-                      subtitle:
-                          display.text('home.action.clipboardShelfProd.subtitle'),
-                      icon: Icons.inventory_2_outlined,
-                      onTap: () => Navigator.of(context)
-                          .pushNamed(RouteNames.clipboardShelf),
-                    ),
-                    HomeOverviewAction(
-                      label: display.text('nowTimeline.title'),
-                      subtitle: display.text('home.action.nowTimeline.subtitle'),
-                      icon: Icons.public_outlined,
-                      onTap: () =>
-                          Navigator.of(context).pushNamed(RouteNames.nowTimeline),
-                    ),
-                    HomeOverviewAction(
-                      label: display.text('coordinate.title'),
-                      subtitle:
-                          display.text('home.action.coordinateTool.subtitle'),
-                      icon: Icons.my_location_outlined,
-                      onTap: () => Navigator.of(context)
-                          .pushNamed(RouteNames.coordinateTool),
-                    ),
-                    HomeOverviewAction(
-                      label: display.text('photoStudio.title'),
-                      subtitle: display.text('home.action.photoStudio.subtitle'),
-                      icon: Icons.photo_outlined,
-                      onTap: () =>
-                          Navigator.of(context).pushNamed(RouteNames.photoStudio),
-                    ),
-                    HomeOverviewAction(
-                      label: display.text('httpDraft.title'),
-                      subtitle:
-                          display.text('home.action.httpRequestDraft.subtitle'),
-                      icon: Icons.http_outlined,
-                      onTap: () => Navigator.of(context)
-                          .pushNamed(RouteNames.httpRequestDraft),
-                    ),
-                    HomeOverviewAction(
-                      label: display.text('home.action.hub.label'),
-                      subtitle: display.text('home.action.hub.subtitle'),
-                      icon: Icons.map_outlined,
-                      onTap: () =>
-                          Navigator.of(context).pushNamed(AppRoutes.hub),
-                    ),
-                    HomeOverviewAction(
-                      label: display.text('home.action.uiShowcase.label'),
-                      subtitle: display.text('home.action.uiShowcase.subtitle'),
-                      icon: Icons.dashboard_customize_outlined,
-                      onTap: () =>
-                          Navigator.of(context).pushNamed(AppRoutes.uiShowcase),
-                    ),
-                    HomeOverviewAction(
-                      label: display.text('home.action.mcpIntegration.label'),
-                      subtitle: display.text('home.action.mcpIntegration.subtitle'),
-                      icon: Icons.hub_outlined,
-                      onTap: () =>
-                          Navigator.of(context).pushNamed(AppRoutes.externalMcp),
-                    ),
-                    HomeOverviewAction(
-                      label:
-                          display.text('home.action.counterPlaygroundProd.label'),
-                      subtitle: display
-                          .text('home.action.counterPlaygroundProd.subtitle'),
-                      icon: Icons.exposure_plus_1_outlined,
-                      onTap: () => Navigator.of(context)
-                          .pushNamed(RouteNames.counterPlayground),
-                    ),
-                    HomeOverviewAction(
-                      label: display.text('home.action.ironyGeneratorProd.label'),
-                      subtitle: display
-                          .text('home.action.ironyGeneratorProd.subtitle'),
-                      icon: Icons.auto_awesome_outlined,
-                      onTap: () => Navigator.of(context)
-                          .pushNamed(RouteNames.ironyGenerator),
-                    ),
-                    HomeOverviewAction(
-                      label: display.text('home.action.compositionStudio.label'),
-                      subtitle:
-                          display.text('home.action.compositionStudio.subtitle'),
-                      icon: Icons.music_note_outlined,
-                      onTap: () => Navigator.of(context)
-                          .pushNamed(RouteNames.compositionGenerator),
-                    ),
+                    for (final tool in homeAppTools)
+                      HomeOverviewAction(
+                        label: display.text(tool.homeLabelKey ?? tool.labelKey!),
+                        subtitle: display.text(tool.homeSubtitleKey!),
+                        icon: tool.homeIcon!,
+                        onTap: () => Navigator.of(context).pushNamed(tool.routeName),
+                      ),
                     for (final screen in _discoveries)
                       HomeOverviewAction(
-                        label: screen.useCaseJa.isNotEmpty
-                            ? 'Screen${screen.screenDataId} · ${screen.useCaseJa}'
-                            : 'Screen${screen.screenDataId} · ${screen.title}',
+                        label: homeDiscoveryLabel(screen),
                         subtitle: screen.description,
                         icon: Icons.shuffle_outlined,
                         onTap: () => Navigator.of(context)

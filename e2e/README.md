@@ -173,6 +173,12 @@ real mouse/touch input at the integer centre, which Flutter's canvas hit-tests;
 `el.click()` would bypass that path. `shared_header.spec.ts` uses it. Change the
 upstream file and recopy rather than editing the copy.
 
+The PR #62 copy also exposes `inventory(page, {selector: 'flt-semantics'})`
+for diagnosing merged semantics boxes. Its `aria_label` is the raw attribute,
+not Playwright's computed accessible name; use role/name locators for matching.
+A card's inventory box can include a smaller field, so continue measuring the
+field's own identifier/boundary before real mouse/touch input.
+
 The receipt validator is shared from [browser-test-kit](https://github.com/myon-bioinformatics/browser-test-kit/blob/3a054c777a98300ee272e4458990b849c32a7ef0/docs/screenshot-evidence.md), pinned in the evidence workflow to `3a054c777a98300ee272e4458990b849c32a7ef0`.
 It validates complete project capture sets, every complete retry, PNG structure,
 size/hash, checkout SHA, canonical timestamps and exact run/attempt identity.

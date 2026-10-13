@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_application_1/config/routes.dart';
 import 'package:flutter_application_1/core/navigation/app_navigation.dart';
 import 'package:flutter_application_1/core/navigation/app_route_registry.dart';
@@ -25,6 +26,17 @@ Future<void> _pumpNamedRoute(
   await tester.binding.setSurfaceSize(surface);
   addTearDown(() => tester.binding.setSurfaceSize(null));
 
+  if (initialRoute == AppRoutes.uiShowcase) {
+    // Start AND finish asset loading/UTF-8 decoding in real async time.
+    // Pumping after a cached future was created in another fake-time test
+    // cannot guarantee that its isolate/IO callbacks will ever complete.
+    await tester.runAsync(() async {
+      const asset = 'assets/ui_showcase.json';
+      rootBundle.evict(asset);
+      await rootBundle.loadString(asset).timeout(const Duration(seconds: 10));
+    });
+  }
+
   await tester.pumpWidget(
     await wrapWithDisplayScope(
       MediaQuery(
@@ -36,6 +48,17 @@ Future<void> _pumpNamedRoute(
       ),
     ),
   );
+  // Like the existing Hub harness, let real asset IO (e.g. UI Showcase's
+  // config) complete outside fake time before settling Flutter animations.
+  for (var attempt = 0; attempt < 200; attempt++) {
+    await tester.pump();
+    if (find.byType(CircularProgressIndicator).evaluate().isEmpty) break;
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+  }
+  expect(find.byType(CircularProgressIndicator), findsNothing,
+      reason: '$initialRoute must finish loading before checking its chrome');
   await tester.pumpAndSettle();
   expect(tester.takeException(), isNull);
 }
@@ -43,6 +66,22 @@ Future<void> _pumpNamedRoute(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(loadTimeRules);
+  setUp(() {
+    // Route/chrome tests should not wait on real asset IO under fake time.
+    // Exercise the real Hub builder with a nonempty deterministic catalogue.
+    ScreensConfig.resetCache(loader: () async => const [
+      ScreenData(
+        screenDataId: 6, name: 'Screen6', title: 'Route fixture', emoji: '🌍',
+        description: 'Deterministic route test catalogue', category: 'navigation',
+        navigationPattern: '', apiPattern: '', themePattern: '', dataPattern: '',
+      ),
+    ]);
+    HomeDoorCatalog.instance.clearDiscoveries();
+  });
+  tearDown(() {
+    ScreensConfig.resetCache();
+    HomeDoorCatalog.instance.clearDiscoveries();
+  });
 
   test('AppNavigation and AppRoutes share canonical + catalogue route keys', () {
     final canonical = AppRouteRegistry.canonicalRoutes.keys.toSet();
@@ -242,6 +281,9 @@ void main() {
         RouteNames.compositionGenerator,
         RouteNames.ironyGenerator,
         RouteNames.counterPlayground,
+        RouteNames.hub,
+        RouteNames.uiShowcase,
+        RouteNames.externalMcp,
       ]) {
         testWidgets(
             'public $route at ${surface.width.toInt()}px has no overflow',
