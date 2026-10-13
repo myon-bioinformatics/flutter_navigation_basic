@@ -214,7 +214,13 @@ test.describe('Home discovery journeys', () => {
       // An open Flutter dropdown may hide the underlying page's semantics.
       // For that one capture, retain the title measured before opening it.
       const header = sourceHeader ?? await title.innerText();
-      if (stage === 'home-draw' || stage === 'source-tool') await headerPixels(stage);
+      // Home's Material AppBar applies a different scrolled-under tint once
+      // the discovery cards are scrolled into view. The Home reference is
+      // deliberately captured at scroll offset zero, like the return page.
+      if (stage === 'home-draw' && !pixelGuards['home-draw']) {
+        throw new Error('Unscrolled Home header reference was not captured');
+      }
+      if (stage === 'source-tool') await headerPixels(stage);
       if (stage === 'discovered-screen') await headerPixels(stage, 'source-tool', true);
       if (stage === 'returned-home') await headerPixels(stage, 'home-draw');
       const path = testInfo.outputPath(file);
@@ -247,6 +253,11 @@ test.describe('Home discovery journeys', () => {
       expect(ids.every((id) => Number.isInteger(id) && id >= 6 && id <= 198)).toBeTruthy();
       expect(new Set(ids).size).toBe(3);
 
+      // Capture the reference BEFORE scrolling the Home list. On narrow
+      // profiles the AppBar changes tint while scrolled under, so comparing
+      // that state against an unscrolled returned Home is a false failure.
+      await settleCanvas(page);
+      await headerPixels('home-draw');
       await cards.first().scrollIntoViewIfNeeded();
       await expect(cards.first()).toBeInViewport();
       await capture('home-draw', 'home-draw.png');
