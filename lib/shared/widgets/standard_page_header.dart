@@ -81,38 +81,50 @@ class _StandardPageHeaderState extends State<StandardPageHeader> {
     if (_homeInFlight || canonicalPageRoute(_route(context)) == '/') return;
     setState(() => _homeInFlight = true);
     var navigated = false;
+    final display = DisplayScope.of(context);
     try {
       final destination = await showDialog<bool>(
         context: context,
         // Repeated taps on the covered Home control must not dismiss the modal.
         barrierDismissible: false,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Return to Home?'),
-          content: Text(
-            'Leave $title? Unsaved changes on this screen may be lost.',
+        builder: (_) => DisplayScope(
+          controller: display,
+          child: Builder(
+            builder: (dialogContext) {
+              final display = DisplayScope.of(dialogContext);
+              return AlertDialog(
+                title: Text(display.text('header.confirmTitle')),
+                content: Text(
+                  display.text(
+                    'header.confirmBody',
+                    arguments: {'title': title},
+                  ),
+                ),
+                actions: [
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: FilledButton(
+                          key: const Key('shared-header-stay'),
+                          onPressed: () => Navigator.pop(dialogContext, false),
+                          child: Text(display.text('header.stay')),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton(
+                          key: const Key('shared-header-confirm-home'),
+                          onPressed: () => Navigator.pop(dialogContext, true),
+                          child: Text(display.text('header.home')),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
           ),
-          actions: [
-            Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: FilledButton(
-                    key: const Key('shared-header-stay'),
-                    onPressed: () => Navigator.pop(dialogContext, false),
-                    child: const Text('Cancel · Stay here'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton(
-                    key: const Key('shared-header-confirm-home'),
-                    onPressed: () => Navigator.pop(dialogContext, true),
-                    child: const Text('Home'),
-                  ),
-                ),
-              ],
-            ),
-          ],
         ),
       );
       if (destination == true && context.mounted) {
@@ -126,45 +138,43 @@ class _StandardPageHeaderState extends State<StandardPageHeader> {
   }
 
   void _menu(BuildContext context) {
-    final display = DisplayScope.maybeOf(context);
+    final display = DisplayScope.of(context);
     showModalBottomSheet<void>(
       context: context,
       useSafeArea: true,
       isScrollControlled: true,
-      builder: (_) => Builder(
-        builder: (sheetContext) {
-          final content = FractionallySizedBox(
-            heightFactor: 0.75,
-            child: ListView(
-              children: [
-                if (showLocalePicker && display != null)
-                  const ListTile(
-                    title: Text('Language'),
-                    trailing: DisplayLocalePicker(compact: true),
+      builder: (_) => DisplayScope(
+        controller: display,
+        child: Builder(
+          builder: (sheetContext) {
+            final display = DisplayScope.of(sheetContext);
+            final content = FractionallySizedBox(
+              heightFactor: 0.75,
+              child: ListView(
+                children: [
+                  if (showLocalePicker)
+                    ListTile(
+                      title: Text(display.text('header.language')),
+                      trailing: const DisplayLocalePicker(compact: true),
+                    ),
+                  ListTile(
+                    leading: const Icon(Icons.star_outline),
+                    title: Text(display.text('header.favorites')),
+                    subtitle: Text(display.text('header.favoritesHint')),
                   ),
-                const ListTile(
-                  leading: Icon(Icons.star_outline),
-                  title: Text('Favorites'),
-                  subtitle: Text(
-                    'The star remembers this page until the app reloads.',
+                  const SessionClipboardDrawerSection(),
+                  const Divider(),
+                  ListTile(
+                    leading: const Icon(Icons.route_outlined),
+                    title: Text(display.text('header.navigation')),
+                    subtitle: Text(display.text('header.navigationHint')),
                   ),
-                ),
-                const SessionClipboardDrawerSection(),
-                const Divider(),
-                const ListTile(
-                  leading: Icon(Icons.route_outlined),
-                  title: Text('Navigation'),
-                  subtitle: Text(
-                    'Use the Door-to-Door selector below to move between tools.',
-                  ),
-                ),
-              ],
-            ),
-          );
-          return display == null
-              ? content
-              : DisplayScope(controller: display, child: content);
-        },
+                ],
+              ),
+            );
+            return content;
+          },
+        ),
       ),
     );
   }
@@ -175,6 +185,7 @@ class _StandardPageHeaderState extends State<StandardPageHeader> {
   @override
   Widget build(BuildContext context) {
     final route = _route(context);
+    final display = DisplayScope.of(context);
     return AppBar(
       titleSpacing: 8,
       leadingWidth: 40,
@@ -204,7 +215,7 @@ class _StandardPageHeaderState extends State<StandardPageHeader> {
           'shared-header-home',
           IconButton(
             key: const Key('shared-header-home'),
-            tooltip: 'Home',
+            tooltip: display.text('header.home'),
             icon: const Icon(Icons.home_outlined),
             onPressed: _homeInFlight ? null : () => _home(context),
           ),
@@ -216,8 +227,8 @@ class _StandardPageHeaderState extends State<StandardPageHeader> {
             IconButton(
               key: const Key('shared-header-favorite'),
               tooltip: favorites.contains(route)
-                  ? 'Remove favorite'
-                  : 'Favorite this page',
+                  ? display.text('header.removeFavorite')
+                  : display.text('header.favorite'),
               isSelected: favorites.contains(route),
               icon: const Icon(Icons.star_outline),
               selectedIcon: const Icon(Icons.star),
@@ -229,7 +240,7 @@ class _StandardPageHeaderState extends State<StandardPageHeader> {
           'shared-header-menu',
           IconButton(
             key: const Key('shared-header-menu'),
-            tooltip: 'Menu',
+            tooltip: display.text('header.menu'),
             icon: const Icon(Icons.menu),
             onPressed: () => _menu(context),
           ),

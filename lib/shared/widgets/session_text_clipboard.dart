@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../display/display_scope.dart';
+
 /// Volatile app-session text clipboard. No disk, preferences or web storage.
 /// A full page reload resets this static state, while navigation preserves it.
 class SessionTextClipboard {
@@ -11,8 +13,10 @@ class SessionTextClipboard {
 
   static bool save(String text) {
     if (text.isEmpty || text.length > maxChars) return false;
-    entries.value = [text, ...entries.value.where((item) => item != text)]
-        .take(maxEntries).toList(growable: false);
+    entries.value = [
+      text,
+      ...entries.value.where((item) => item != text),
+    ].take(maxEntries).toList(growable: false);
     return true;
   }
 
@@ -27,7 +31,9 @@ class SessionClipboardDrawerSection extends StatefulWidget {
       _SessionClipboardDrawerSectionState();
 }
 
-class _SessionClipboardDrawerSectionState extends State<SessionClipboardDrawerSection> {
+class _SessionClipboardDrawerSectionState
+    extends State<SessionClipboardDrawerSection> {
+  // Store the result key so an existing notification follows locale changes.
   String? _feedback;
 
   Future<void> _saveFromSystemClipboard() async {
@@ -36,67 +42,78 @@ class _SessionClipboardDrawerSectionState extends State<SessionClipboardDrawerSe
       if (!mounted) return;
       setState(() {
         _feedback = value == null || value.isEmpty
-            ? 'No copied text to save'
+            ? 'sessionClipboard.noText'
             : SessionTextClipboard.save(value)
-                ? 'Saved to temporary clipboard'
-                : 'Text is too large to save';
+            ? 'sessionClipboard.saved'
+            : 'sessionClipboard.tooLarge';
       });
     } catch (_) {
-      if (mounted) setState(() => _feedback = 'Cannot read system clipboard');
+      if (mounted) setState(() => _feedback = 'sessionClipboard.readFailed');
     }
   }
 
   Future<void> _copy(String value) async {
     try {
       await Clipboard.setData(ClipboardData(text: value));
-      if (mounted) setState(() => _feedback = 'Copied to system clipboard');
+      if (mounted) setState(() => _feedback = 'sessionClipboard.copied');
     } catch (_) {
-      if (mounted) setState(() => _feedback = 'Cannot copy to system clipboard');
+      if (mounted) setState(() => _feedback = 'sessionClipboard.copyFailed');
     }
   }
 
   @override
-  Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const ListTile(
-            leading: Icon(Icons.content_paste_outlined),
-            title: Text('Temporary clipboard'),
-            subtitle: Text('Text only · kept until page reload'),
+  Widget build(BuildContext context) {
+    final display = DisplayScope.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ListTile(
+          leading: const Icon(Icons.content_paste_outlined),
+          title: Text(display.text('sessionClipboard.title')),
+          subtitle: Text(display.text('sessionClipboard.subtitle')),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: FilledButton.icon(
+            key: const Key('session-clipboard-save'),
+            onPressed: _saveFromSystemClipboard,
+            icon: const Icon(Icons.save_outlined),
+            label: Text(display.text('sessionClipboard.save')),
           ),
+        ),
+        if (_feedback != null)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: FilledButton.icon(
-              key: const Key('session-clipboard-save'),
-              onPressed: _saveFromSystemClipboard,
-              icon: const Icon(Icons.save_outlined),
-              label: const Text('Save copied text'),
+            padding: const EdgeInsets.all(12),
+            child: Text(
+              display.text(_feedback!),
+              key: const Key('session-clipboard-feedback'),
             ),
           ),
-          if (_feedback != null)
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(_feedback!, key: const Key('session-clipboard-feedback')),
-            ),
-          ValueListenableBuilder<List<String>>(
-            valueListenable: SessionTextClipboard.entries,
-            builder: (context, saved, _) => Column(
-              children: [
-                if (saved.isEmpty) const ListTile(title: Text('Nothing saved yet')),
-                for (var i = 0; i < saved.length; i++)
-                  ListTile(
-                    key: Key('session-clipboard-entry-$i'),
-                    title: Text(saved[i], maxLines: 2, overflow: TextOverflow.ellipsis),
-                    trailing: IconButton(
-                      key: Key('session-clipboard-copy-$i'),
-                      tooltip: 'Copy saved text',
-                      onPressed: () => _copy(saved[i]),
-                      icon: const Icon(Icons.copy_outlined),
-                    ),
+        ValueListenableBuilder<List<String>>(
+          valueListenable: SessionTextClipboard.entries,
+          builder: (context, saved, _) => Column(
+            children: [
+              if (saved.isEmpty)
+                ListTile(title: Text(display.text('sessionClipboard.empty'))),
+              for (var i = 0; i < saved.length; i++)
+                ListTile(
+                  key: Key('session-clipboard-entry-$i'),
+                  title: Text(
+                    saved[i],
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-              ],
-            ),
+                  trailing: IconButton(
+                    key: Key('session-clipboard-copy-$i'),
+                    tooltip: display.text('sessionClipboard.copy'),
+                    onPressed: () => _copy(saved[i]),
+                    icon: const Icon(Icons.copy_outlined),
+                  ),
+                ),
+            ],
           ),
-        ],
-      );
+        ),
+      ],
+    );
+  }
 }

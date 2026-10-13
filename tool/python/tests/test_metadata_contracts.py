@@ -59,3 +59,15 @@ def test_jpeg_fixture_geometry():
             return
         offset += 2 + length
     pytest.fail('JPEG has no supported SOF frame')
+
+
+def test_shared_chrome_translations_preserve_title_placeholder():
+    locales = json.loads((ROOT / 'assets/display/app_text.json').read_text(encoding='utf-8'))['locales']
+    english = locales['eng']
+    keys = {key for key in english if key.startswith(('header.', 'sessionClipboard.'))}
+    assert len(keys) == 23
+    for locale, values in locales.items():
+        assert keys <= values.keys(), locale
+        assert values['header.confirmBody'].count('{title}') == 1, locale
+        for key in keys:
+            assert values[key].strip(), f'{locale}:{key}'
