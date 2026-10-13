@@ -2,6 +2,7 @@ import { test, expect, type Locator, type Page } from '@playwright/test';
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { waitForFlutter } from '../utils/helpers';
+import { press as kitPress } from '../utils/interaction.mjs';
 
 // Controls are immediately available after Flutter loads; fail with a useful
 // locator error instead of spending the full test timeout on a missing action.
@@ -9,17 +10,12 @@ test.use({ actionTimeout: 5_000 });
 test.setTimeout(60_000);
 
 // Flutter focus semantics may cover a child DOM hit target while forwarding
-// native pointer events correctly. Measure the visible control, tap it, and
-// verify the resulting production state.
+// native pointer events correctly. The shared kit press measures the visible
+// control and sends real mouse/touch input at its integer centre
+// (browser-test-kit docs/interaction.md); verify the resulting production state.
 async function press(page: Page, button: Locator, hasTouch: boolean) {
-  await expect(button).toBeVisible();
   await expect(button).toBeEnabled();
-  const bounds = await button.boundingBox();
-  expect(bounds).not.toBeNull();
-  const x = bounds!.x + bounds!.width / 2;
-  const y = bounds!.y + bounds!.height / 2;
-  if (hasTouch) await page.touchscreen.tap(x, y);
-  else await page.mouse.click(x, y);
+  return kitPress(page, button, { touch: hasTouch });
 }
 
 const pages: Array<[string, boolean]> = [
@@ -92,12 +88,9 @@ test('shared header rapid Home taps allow one confirmation then return from Hub 
   const title = page.locator('[flt-semantics-identifier="shared-header-title"]');
   await expect(title).toContainText('🗺️');
   const home = page.locator('[flt-semantics-identifier="shared-header-home"]').getByRole('button');
-  const bounds = await home.boundingBox();
-  expect(bounds).not.toBeNull();
-  const x = bounds!.x + bounds!.width / 2;
-  const y = bounds!.y + bounds!.height / 2;
   // Confirm the first pointer event opened the modal before testing its barrier.
-  await press(page, home, !!testInfo.project.use.hasTouch);
+  // The later taps reuse the measured integer point, now covered by the dialog.
+  const { x, y } = await press(page, home, !!testInfo.project.use.hasTouch);
   const dialog = page.getByRole('alertdialog');
   await expect(dialog).toBeVisible();
   // Once the dialog covers Home, two more taps must not silently cancel it.
