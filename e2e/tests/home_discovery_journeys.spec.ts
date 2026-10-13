@@ -6,8 +6,25 @@ import { press as kitPress } from '../utils/interaction.mjs';
 
 // Flutter paints the controls: send measured, in-viewport mouse/touch input at
 // the integer centre (browser-test-kit interaction.press), not a DOM click.
-const press = (page: Page, target: Locator, testInfo: TestInfo) =>
-  kitPress(page, target, { touch: !!testInfo.project.use.hasTouch });
+async function press(page: Page, target: Locator, testInfo: TestInfo) {
+  await expect(target).toHaveCount(1);
+  await expect(target).toBeVisible();
+  return kitPress(page, target, { touch: !!testInfo.project.use.hasTouch });
+}
+
+// Exercise the rendered return leg, including the shared unsaved-work dialog.
+// A page.goto('/') would only prove that a fresh Home page can load.
+async function returnHome(page: Page, testInfo: TestInfo) {
+  const home = page.locator('[flt-semantics-identifier="shared-header-home"]').getByRole('button');
+  const records = [await press(page, home, testInfo)];
+  const dialog = page.getByRole('alertdialog');
+  await expect(dialog).toBeVisible();
+  records.push(await press(page, dialog.getByRole('button', { name: 'Home', exact: true }), testInfo));
+  await expect(dialog).toHaveCount(0);
+  await expect(page).toHaveURL(/#\/?$|\/$/);
+  await expect(page.locator('[flt-semantics-identifier="shared-header-title"]')).toContainText('🏠');
+  return records;
+}
 
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -53,10 +70,22 @@ async function openDoor(page: Page, field: Locator, testInfo: TestInfo, attempts
 test.describe('Home discovery journeys', () => {
   test.setTimeout(90_000);
   test.use({ actionTimeout: 10_000 });
-  test.afterEach(async ({}, testInfo) => {
+  test.afterEach(async ({ page }, testInfo) => {
     if (testInfo.status === testInfo.expectedStatus) return;
     const first = (testInfo.error?.message ?? '').split('\n').find((line) => line.trim()) ?? '';
     console.log(`::notice title=journey ${testInfo.project.name}::${testInfo.title} :: ${first.slice(0, 300)}`);
+    const snapshot = await page.locator('flt-semantics').evaluateAll((elements) => elements.map((el) => {
+      const box = el.getBoundingClientRect();
+      return { role: el.getAttribute('role'), id: el.getAttribute('flt-semantics-identifier'),
+        name: el.getAttribute('aria-label'), text: el.textContent?.slice(0, 180),
+        box: { x: box.x, y: box.y, width: box.width, height: box.height } };
+    }).filter((el) => el.role || el.id || (el.text && el.text.length < 180))).catch(() => []);
+    await testInfo.attach('flutter-semantics.json', {
+      body: JSON.stringify(snapshot, null, 2), contentType: 'application/json',
+    });
+    // Keep the relevant DOM observations in logs as well as the artifact.
+    console.log(`journey-semantics ${testInfo.project.name} ${JSON.stringify(snapshot.filter((el) =>
+      /door|current|Photo Studio|Screen\d+|shared-header/i.test(`${el.id} ${el.name} ${el.text}`)))}`);
   });
 
   test('visits three distinct Home tools and returns each time @portable', async ({ page }, testInfo) => {
@@ -74,9 +103,7 @@ test.describe('Home discovery journeys', () => {
       const path = testInfo.outputPath(`home-journey-${index + 1}.png`);
       await page.screenshot({ path });
       await testInfo.attach(`home-journey-${index + 1}`, { path, contentType: 'image/png' });
-      await page.goto('/');
-      await waitForFlutter(page);
-      await expect(page).toHaveURL(/#\/?$|\/$/);
+      await returnHome(page, testInfo);
     }
   });
 
@@ -91,6 +118,7 @@ test.describe('Home discovery journeys', () => {
     const path = testInfo.outputPath('door-to-door-photo-studio.png');
     await page.screenshot({ path });
     await testInfo.attach('door-to-door-photo-studio', { path, contentType: 'image/png' });
+    await returnHome(page, testInfo);
   });
 
   test('Home draw → stable tool Door → drawn screen with screenshot evidence @portable', async ({ page }, testInfo) => {
@@ -124,6 +152,7 @@ test.describe('Home discovery journeys', () => {
     let complete = false;
     let step = 'open-home';
     const doorAttempts: unknown[] = [];
+    let returnPresses: unknown[] = [];
     try {
       await page.goto('/');
       await waitForFlutter(page);
@@ -159,9 +188,8 @@ test.describe('Home discovery journeys', () => {
       await capture('discovered-screen', 'discovered-screen.png');
 
       step = 'return-home';
-      await page.goto('/');
-      await waitForFlutter(page);
-      await expect(page).toHaveURL(/#\/?$|\/$/);
+      returnPresses = await returnHome(page, testInfo);
+      await capture('returned-home', 'returned-home.png');
       complete = true;
     } finally {
       // Written on success and failure; only the return leg completing sets
@@ -172,6 +200,7 @@ test.describe('Home discovery journeys', () => {
         last_capture: captures.at(-1)?.stage ?? null,
         failed_step: complete ? null : step,
         door_attempts: doorAttempts,
+        return_presses: returnPresses,
         // Door entries Flutter exposed at the time (names only), to tell a
         // closed menu from an item that is not built/named as expected.
         menu_items: complete ? null : await page.locator('[role="menuitem"]').evaluateAll(

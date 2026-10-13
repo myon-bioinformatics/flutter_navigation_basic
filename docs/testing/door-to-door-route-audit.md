@@ -39,8 +39,12 @@ re-randomization on every `build()`, localization rebuild or route push.
 The route-audit journey performs:
 `Home chosen triple → Photo Studio (stable Home card) → Door menu → selected numbered screen → Home`.
 It captures `home-draw.png`, `source-tool.png`, `door-menu.png`,
-`discovered-screen.png` and `route-audit.json` in `testInfo.outputPath`
+`discovered-screen.png`, `returned-home.png` and `route-audit.json` in `testInfo.outputPath`
 (per test / per Playwright project) and attaches them to the report.
+The return leg uses the measured shared Home button and confirmation dialog,
+not a URL reload. Its mouse/touch records are retained in the receipt. On
+failure, `flutter-semantics.json` records names, identifiers and layout boxes;
+relevant Door and header observations are also printed in the job log.
 The receipt retains the visited routes, shared-header title, selected IDs,
 project, viewport, PNG sizes and SHA-256 hashes. It asserts expected
 transitions and that Home / Door content is in the viewport before capture.
