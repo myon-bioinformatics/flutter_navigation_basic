@@ -4,6 +4,42 @@ import '../display/display_scope.dart';
 import '../navigation/page_identities.g.dart';
 import 'session_text_clipboard.dart';
 
+// Standalone widgets without an app DisplayScope retain their English UI.
+// The scoped app path always resolves through the existing locale catalog.
+const _standaloneText = <String, String>{
+  "header.home": "Home",
+  "header.menu": "Menu",
+  "header.favorite": "Favorite this page",
+  "header.removeFavorite": "Remove favorite",
+  "header.confirmTitle": "Return to Home?",
+  "header.confirmBody":
+      "Leave {title}? Unsaved changes on this screen may be lost.",
+  "header.stay": "Cancel \u00b7 Stay here",
+  "header.language": "Language",
+  "header.favorites": "Favorites",
+  "header.favoritesHint": "The star remembers this page until the app reloads.",
+  "header.navigation": "Navigation",
+  "header.navigationHint":
+      "Use the Door-to-Door selector below to move between tools.",
+};
+
+Widget _withDisplay(DisplayController? display, Widget child) =>
+    display == null ? child : DisplayScope(controller: display, child: child);
+
+String _text(
+  BuildContext context,
+  String key, {
+  Map<String, Object?> arguments = const {},
+}) {
+  final display = DisplayScope.maybeOf(context);
+  if (display != null) return display.text(key, arguments: arguments);
+  var value = _standaloneText[key] ?? key;
+  for (final entry in arguments.entries) {
+    value = value.replaceAll('{${entry.key}}', '${entry.value ?? ""}');
+  }
+  return value;
+}
+
 /// Favorites are a session-only prototype: reload starts a new collection.
 class SessionPageFavorites {
   SessionPageFavorites._();
@@ -81,21 +117,21 @@ class _StandardPageHeaderState extends State<StandardPageHeader> {
     if (_homeInFlight || canonicalPageRoute(_route(context)) == '/') return;
     setState(() => _homeInFlight = true);
     var navigated = false;
-    final display = DisplayScope.of(context);
+    final display = DisplayScope.maybeOf(context);
     try {
       final destination = await showDialog<bool>(
         context: context,
         // Repeated taps on the covered Home control must not dismiss the modal.
         barrierDismissible: false,
-        builder: (_) => DisplayScope(
-          controller: display,
-          child: Builder(
+        builder: (_) => _withDisplay(
+          display,
+          Builder(
             builder: (dialogContext) {
-              final display = DisplayScope.of(dialogContext);
               return AlertDialog(
-                title: Text(display.text('header.confirmTitle')),
+                title: Text(_text(dialogContext, 'header.confirmTitle')),
                 content: Text(
-                  display.text(
+                  _text(
+                    dialogContext,
                     'header.confirmBody',
                     arguments: {'title': title},
                   ),
@@ -108,7 +144,7 @@ class _StandardPageHeaderState extends State<StandardPageHeader> {
                         child: FilledButton(
                           key: const Key('shared-header-stay'),
                           onPressed: () => Navigator.pop(dialogContext, false),
-                          child: Text(display.text('header.stay')),
+                          child: Text(_text(dialogContext, 'header.stay')),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -116,7 +152,7 @@ class _StandardPageHeaderState extends State<StandardPageHeader> {
                         child: OutlinedButton(
                           key: const Key('shared-header-confirm-home'),
                           onPressed: () => Navigator.pop(dialogContext, true),
-                          child: Text(display.text('header.home')),
+                          child: Text(_text(dialogContext, 'header.home')),
                         ),
                       ),
                     ],
@@ -138,36 +174,37 @@ class _StandardPageHeaderState extends State<StandardPageHeader> {
   }
 
   void _menu(BuildContext context) {
-    final display = DisplayScope.of(context);
+    final display = DisplayScope.maybeOf(context);
     showModalBottomSheet<void>(
       context: context,
       useSafeArea: true,
       isScrollControlled: true,
-      builder: (_) => DisplayScope(
-        controller: display,
-        child: Builder(
+      builder: (_) => _withDisplay(
+        display,
+        Builder(
           builder: (sheetContext) {
-            final display = DisplayScope.of(sheetContext);
             final content = FractionallySizedBox(
               heightFactor: 0.75,
               child: ListView(
                 children: [
-                  if (showLocalePicker)
+                  if (showLocalePicker && display != null)
                     ListTile(
-                      title: Text(display.text('header.language')),
+                      title: Text(_text(sheetContext, 'header.language')),
                       trailing: const DisplayLocalePicker(compact: true),
                     ),
                   ListTile(
                     leading: const Icon(Icons.star_outline),
-                    title: Text(display.text('header.favorites')),
-                    subtitle: Text(display.text('header.favoritesHint')),
+                    title: Text(_text(sheetContext, 'header.favorites')),
+                    subtitle: Text(_text(sheetContext, 'header.favoritesHint')),
                   ),
                   const SessionClipboardDrawerSection(),
                   const Divider(),
                   ListTile(
                     leading: const Icon(Icons.route_outlined),
-                    title: Text(display.text('header.navigation')),
-                    subtitle: Text(display.text('header.navigationHint')),
+                    title: Text(_text(sheetContext, 'header.navigation')),
+                    subtitle: Text(
+                      _text(sheetContext, 'header.navigationHint'),
+                    ),
                   ),
                 ],
               ),
@@ -185,7 +222,6 @@ class _StandardPageHeaderState extends State<StandardPageHeader> {
   @override
   Widget build(BuildContext context) {
     final route = _route(context);
-    final display = DisplayScope.of(context);
     return AppBar(
       titleSpacing: 8,
       leadingWidth: 40,
@@ -215,7 +251,7 @@ class _StandardPageHeaderState extends State<StandardPageHeader> {
           'shared-header-home',
           IconButton(
             key: const Key('shared-header-home'),
-            tooltip: display.text('header.home'),
+            tooltip: _text(context, 'header.home'),
             icon: const Icon(Icons.home_outlined),
             onPressed: _homeInFlight ? null : () => _home(context),
           ),
@@ -227,8 +263,8 @@ class _StandardPageHeaderState extends State<StandardPageHeader> {
             IconButton(
               key: const Key('shared-header-favorite'),
               tooltip: favorites.contains(route)
-                  ? display.text('header.removeFavorite')
-                  : display.text('header.favorite'),
+                  ? _text(context, 'header.removeFavorite')
+                  : _text(context, 'header.favorite'),
               isSelected: favorites.contains(route),
               icon: const Icon(Icons.star_outline),
               selectedIcon: const Icon(Icons.star),
@@ -240,7 +276,7 @@ class _StandardPageHeaderState extends State<StandardPageHeader> {
           'shared-header-menu',
           IconButton(
             key: const Key('shared-header-menu'),
-            tooltip: display.text('header.menu'),
+            tooltip: _text(context, 'header.menu'),
             icon: const Icon(Icons.menu),
             onPressed: () => _menu(context),
           ),

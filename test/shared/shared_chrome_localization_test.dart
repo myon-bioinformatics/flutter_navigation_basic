@@ -224,4 +224,73 @@ void main() {
       );
     },
   );
+  testWidgets(
+    'standalone header and clipboard preserve the no-scope contract',
+    (tester) async {
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'Clipboard.getData')
+          return {'text': 'standalone text'};
+        return null;
+      });
+      addTearDown(
+        () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+      );
+      final navigator = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigator,
+          initialRoute: '/detail',
+          routes: {
+            '/': (_) => const Scaffold(body: Text('home-destination')),
+            '/detail': (_) => const Scaffold(
+              appBar: StandardPageHeader(
+                title: 'Standalone',
+                currentRouteName: '/detail',
+              ),
+              body: Text('draft'),
+            ),
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<IconButton>(find.byKey(const Key('shared-header-home')))
+            .tooltip,
+        'Home',
+      );
+      await tester.tap(find.byKey(const Key('shared-header-menu')));
+      await tester.pumpAndSettle();
+      expect(find.byType(DisplayLocalePicker), findsNothing);
+      expect(find.text('Temporary clipboard'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('session-clipboard-save')));
+      await tester.pumpAndSettle();
+      expect(find.text('Saved to temporary clipboard'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('session-clipboard-copy-0')));
+      await tester.pumpAndSettle();
+      expect(find.text('Copied to system clipboard'), findsOneWidget);
+      navigator.currentState!.pop();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('shared-header-home')));
+      await tester.pumpAndSettle();
+      expect(find.text('Return to Home?'), findsOneWidget);
+      expect(
+        find.text(
+          'Leave Standalone? Unsaved changes on this screen may be lost.',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const Key('shared-header-stay')));
+      await tester.pumpAndSettle();
+      expect(find.text('draft'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('shared-header-home')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('shared-header-confirm-home')));
+      await tester.pumpAndSettle();
+      expect(find.text('home-destination'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

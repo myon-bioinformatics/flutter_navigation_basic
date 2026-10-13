@@ -1,4 +1,3 @@
-import '../../support/display_test_harness.dart';
 import '../../support/header_finders.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -22,7 +21,7 @@ const _names = <int, String>{
 Future<void> _open(WidgetTester tester, int id) async {
   final route = AppRoutes.routes[AppRoutes.screenRoute(id)];
   expect(route, isNotNull, reason: 'missing /screen$id');
-  await tester.pumpWidget(await wrapWithDisplayScope(MaterialApp(home: Builder(builder: route!))));
+  await tester.pumpWidget(MaterialApp(home: Builder(builder: route!)));
 }
 
 void main() {

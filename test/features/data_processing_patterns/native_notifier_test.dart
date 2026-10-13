@@ -1,4 +1,3 @@
-import '../../support/display_test_harness.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/features/data_processing_patterns/pattern_100_to_198/pattern_158/view.dart';
@@ -11,7 +10,7 @@ void main() {
   ];
   for (final (name, view) in cases) {
     testWidgets('$name changes, resets and disposes state', (tester) async {
-      await tester.pumpWidget(await wrapWithDisplayScope(MaterialApp(home: view)));
+      await tester.pumpWidget(MaterialApp(home: view));
       expect(find.text('カウント: 0'), findsOneWidget);
       expect(find.textContaining(name), findsWidgets);
       await tester.tap(find.text('加算'));

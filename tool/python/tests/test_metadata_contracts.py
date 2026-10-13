@@ -71,3 +71,13 @@ def test_shared_chrome_translations_preserve_title_placeholder():
         assert values['header.confirmBody'].count('{title}') == 1, locale
         for key in keys:
             assert values[key].strip(), f'{locale}:{key}'
+
+
+def test_standalone_chrome_fallbacks_match_catalog_english():
+    import re
+    english = json.loads((ROOT / 'assets/display/app_text.json').read_text(encoding='utf-8'))['locales']['eng']
+    for name, prefix in [('standard_page_header', 'header.'), ('session_text_clipboard', 'sessionClipboard.')]:
+        source = (ROOT / f'lib/shared/widgets/{name}.dart').read_text(encoding='utf-8')
+        table = source.split('const _standaloneText = <String, String>{', 1)[1].split('};', 1)[0]
+        fallbacks = {json.loads(key): json.loads(value) for key, value in re.findall(r'("[^"\n]+"):\s*("[^"\n]+")', table)}
+        assert fallbacks == {key: value for key, value in english.items() if key.startswith(prefix)}

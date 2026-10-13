@@ -1,4 +1,3 @@
-import '../../support/display_test_harness.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -41,7 +40,7 @@ void main() {
     });
     testWidgets('command 0$id view selects its own asset', (tester) async {
       final bundle = _RecordingBundle('{"schema":"collection-command/1","values":["ok"]}');
-      await tester.pumpWidget(await wrapWithDisplayScope(MaterialApp(home: _viewFor(id, bundle))));
+      await tester.pumpWidget(MaterialApp(home: _viewFor(id, bundle)));
       await tester.tap(find.text('実行'));
       await tester.pumpAndSettle();
       expect(bundle.requestedPath, path);

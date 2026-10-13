@@ -3,6 +3,25 @@ import 'package:flutter/services.dart';
 
 import '../display/display_scope.dart';
 
+// Standalone widgets without an app DisplayScope retain their English UI.
+// The scoped app path always resolves through the existing locale catalog.
+const _standaloneText = <String, String>{
+  "sessionClipboard.title": "Temporary clipboard",
+  "sessionClipboard.subtitle": "Text only \u00b7 kept until page reload",
+  "sessionClipboard.save": "Save copied text",
+  "sessionClipboard.empty": "Nothing saved yet",
+  "sessionClipboard.copy": "Copy saved text",
+  "sessionClipboard.noText": "No copied text to save",
+  "sessionClipboard.saved": "Saved to temporary clipboard",
+  "sessionClipboard.tooLarge": "Text is too large to save",
+  "sessionClipboard.readFailed": "Cannot read system clipboard",
+  "sessionClipboard.copied": "Copied to system clipboard",
+  "sessionClipboard.copyFailed": "Cannot copy to system clipboard",
+};
+
+String _text(BuildContext context, String key) =>
+    DisplayScope.maybeOf(context)?.text(key) ?? _standaloneText[key] ?? key;
+
 /// Volatile app-session text clipboard. No disk, preferences or web storage.
 /// A full page reload resets this static state, while navigation preserves it.
 class SessionTextClipboard {
@@ -63,14 +82,13 @@ class _SessionClipboardDrawerSectionState
 
   @override
   Widget build(BuildContext context) {
-    final display = DisplayScope.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ListTile(
           leading: const Icon(Icons.content_paste_outlined),
-          title: Text(display.text('sessionClipboard.title')),
-          subtitle: Text(display.text('sessionClipboard.subtitle')),
+          title: Text(_text(context, 'sessionClipboard.title')),
+          subtitle: Text(_text(context, 'sessionClipboard.subtitle')),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -78,14 +96,14 @@ class _SessionClipboardDrawerSectionState
             key: const Key('session-clipboard-save'),
             onPressed: _saveFromSystemClipboard,
             icon: const Icon(Icons.save_outlined),
-            label: Text(display.text('sessionClipboard.save')),
+            label: Text(_text(context, 'sessionClipboard.save')),
           ),
         ),
         if (_feedback != null)
           Padding(
             padding: const EdgeInsets.all(12),
             child: Text(
-              display.text(_feedback!),
+              _text(context, _feedback!),
               key: const Key('session-clipboard-feedback'),
             ),
           ),
@@ -94,7 +112,7 @@ class _SessionClipboardDrawerSectionState
           builder: (context, saved, _) => Column(
             children: [
               if (saved.isEmpty)
-                ListTile(title: Text(display.text('sessionClipboard.empty'))),
+                ListTile(title: Text(_text(context, 'sessionClipboard.empty'))),
               for (var i = 0; i < saved.length; i++)
                 ListTile(
                   key: Key('session-clipboard-entry-$i'),
@@ -105,7 +123,7 @@ class _SessionClipboardDrawerSectionState
                   ),
                   trailing: IconButton(
                     key: Key('session-clipboard-copy-$i'),
-                    tooltip: display.text('sessionClipboard.copy'),
+                    tooltip: _text(context, 'sessionClipboard.copy'),
                     onPressed: () => _copy(saved[i]),
                     icon: const Icon(Icons.copy_outlined),
                   ),
