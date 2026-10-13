@@ -27,6 +27,101 @@ Widget _doorHost({
 }
 
 void main() {
+  setUp(() => HomeDoorCatalog.instance.clearDiscoveries());
+  tearDown(() => HomeDoorCatalog.instance.clearDiscoveries());
+
+  test('discovery catalogue rejects unknown IDs, duplicates, and non-Home routes', () {
+    HomeDoorCatalog.instance.updateDiscoveries(const [
+      AppTool(routeName: '/screen138', label: 'Screen138 · first draw'),
+      AppTool(routeName: '/screen138', label: 'duplicate'),
+      AppTool(routeName: '/screen5', label: 'old fixed route'),
+      AppTool(routeName: '/screen199', label: 'out of range'),
+      AppTool(routeName: '/screen80', label: 'Screen80 · second'),
+      AppTool(routeName: '/screen87', label: 'Screen87 · third'),
+      AppTool(routeName: '/screen75', label: 'ignored fourth'),
+    ]);
+    expect(
+      HomeDoorCatalog.instance.discoveries.map((tool) => tool.routeName),
+      ['/screen138', '/screen80', '/screen87'],
+    );
+    expect(
+      HomeDoorCatalog.instance.destinations.map((tool) => tool.routeName).toSet().length,
+      HomeDoorCatalog.instance.destinations.length,
+    );
+    HomeDoorCatalog.instance.clearDiscoveries();
+    expect(HomeDoorCatalog.instance.destinations.map((tool) => tool.routeName),
+        appTools.map((tool) => tool.routeName));
+  });
+
+  testWidgets('Door follows refreshed Home selections and navigates selected screen',
+      (tester) async {
+    await tester.pumpWidget(
+      await wrapWithDisplayScope(
+        MaterialApp(
+          initialRoute: RouteNames.photoStudio,
+          routes: {
+            RouteNames.photoStudio: (_) => const Scaffold(
+                  body: ToolDoorSelector(currentRouteName: RouteNames.photoStudio),
+                ),
+            '/screen80': (_) => const Scaffold(body: Text('dynamic-screen-80')),
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    DropdownButtonFormField<String> dropdown() =>
+        tester.widget<DropdownButtonFormField<String>>(
+          find.byType(DropdownButtonFormField<String>),
+        );
+    List<String?> values() =>
+        [for (final item in dropdown().items!) item.value];
+
+    expect(values(), containsAll([RouteNames.hub, RouteNames.uiShowcase, RouteNames.externalMcp]));
+    expect(values(), isNot(contains('/screen138')));
+
+    HomeDoorCatalog.instance.updateDiscoveries(const [
+      AppTool(routeName: '/screen138', label: 'Screen138 · old draw'),
+    ]);
+    await tester.pump();
+    expect(values(), contains('/screen138'));
+
+    HomeDoorCatalog.instance.updateDiscoveries(const [
+      AppTool(routeName: '/screen80', label: 'Screen80 · current draw'),
+    ]);
+    await tester.pump();
+    expect(values(), contains('/screen80'));
+    expect(values(), isNot(contains('/screen138')));
+
+    dropdown().onChanged!('/screen80');
+    await tester.pumpAndSettle();
+    expect(find.text('dynamic-screen-80'), findsOneWidget);
+  });
+
+  testWidgets('a deep linked numbered page remains marked current after Home refresh',
+      (tester) async {
+    HomeDoorCatalog.instance.updateDiscoveries(const [
+      AppTool(routeName: '/screen80', label: 'Screen80 · featured'),
+    ]);
+    await tester.pumpWidget(
+      await wrapWithDisplayScope(
+        const MaterialApp(
+          home: Scaffold(
+            body: ToolDoorSelector(currentRouteName: '/screen138'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final dropdown = tester.widget<DropdownButtonFormField<String>>(
+      find.byType(DropdownButtonFormField<String>),
+    );
+    expect(dropdown.items!.map((item) => item.value),
+        containsAll(['/screen80', '/screen138']));
+    expect(dropdown.items!.last.enabled, isFalse);
+    expect(find.textContaining('Screen138'), findsWidgets);
+  });
+
   testWidgets('ToolDoorSelector lists tools and skips current route',
       (tester) async {
     final navigated = <String>[];
