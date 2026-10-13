@@ -164,6 +164,15 @@ canonical metadata and HTML report. Missing receipts or PNGs fail the job.
 Artifacts expire after 14 days. This focused lane is separate from change-selected full E2E
 and pixel-baseline comparison; its GREEN result includes successful capture.
 
+### Shared pointer input
+
+`utils/interaction.mjs` is a byte-identical copy of browser-test-kit
+`scripts/interaction.mjs` (commit and SHA-256 in `utils/interaction.provenance.json`).
+Its `press` scrolls a control into view, requires it inside the viewport and sends
+real mouse/touch input at the integer centre, which Flutter's canvas hit-tests;
+`el.click()` would bypass that path. `shared_header.spec.ts` uses it. Change the
+upstream file and recopy rather than editing the copy.
+
 The receipt validator is shared from [browser-test-kit](https://github.com/myon-bioinformatics/browser-test-kit/blob/3a054c777a98300ee272e4458990b849c32a7ef0/docs/screenshot-evidence.md), pinned in the evidence workflow to `3a054c777a98300ee272e4458990b849c32a7ef0`.
 It validates complete project capture sets, every complete retry, PNG structure,
 size/hash, checkout SHA, canonical timestamps and exact run/attempt identity.
