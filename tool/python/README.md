@@ -189,3 +189,13 @@ this consumer's lock remains the authority for adopted bytes.
 (`changed`, `ratio`, `bbox`, `max_delta`) for two images; either side may be `ZIP::member`, so a downloaded
 Playwright evidence zip is compared without extracting it. `--clip` is in CSS px and is scaled by the image's
 real width, so DPR-2 screenshots are clipped correctly. Exit 0 identical, 1 differs, 2 input error.
+
+The CLI delegates to `vendor/image_diff.py`, copied byte-for-byte from
+`browser-test-kit#66` commit `627c14071df7a1b3a58833036e7ea5898bb13e6f`
+(Draft, unmerged at adoption). The lock records commit, Git blob and SHA-256;
+the existing `vendor/browser-test-kit-LICENSE` covers this source.
+Tests are adapted from `tests/python/test_image_diff.py` at the same commit
+(paths/import target only), with additional RGBA channel regressions.
+The maximum RGBA channel delta must exceed tolerance (0..255). Files and
+uncompressed ZIP members have a 64 MiB pre/post-read limit. Nonfinite numbers
+and invalid/out-of-bounds clips return exit 2. DPR crops use rounded pixels.
