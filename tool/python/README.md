@@ -199,3 +199,11 @@ Tests are adapted from `tests/python/test_image_diff.py` at the same commit
 The maximum RGBA channel delta must exceed tolerance (0..255). Files and
 uncompressed ZIP members have a 64 MiB pre/post-read limit. Nonfinite numbers
 and invalid/out-of-bounds clips return exit 2. DPR crops use rounded pixels.
+
+Ownership update: browser-test-kit #66 was closed for relocation to parent #82.
+The current lock adopts parent `scripts/image_diff.py` at
+`75444f9dbaed9b627d360dffdc61c570627acdbb` (PR #82, unmerged at adoption),
+with `vendor/parent-LICENSE`. Its Git blob remains
+`7c3a44314eda81a81b80f08fe060dc6581fffa22`: identical to the former #66
+implementation. The #66 details above describe the original adoption history.
+The parent owns implementation changes; Flutter owns only its CLI adapter.

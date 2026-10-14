@@ -130,7 +130,8 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
     lock = json.loads((PYTHON_DIR / "vendor.lock.json").read_text(encoding="utf-8"))
     assert lock["schema"] == "vendor-lock/1"
     expected = {
-        ("myon-bioinformatics/browser-test-kit", "scripts/image_diff.py", "tool/python/vendor/image_diff.py"),
+        ("myon-bioinformatics/myon-bioinformatics", "LICENSE", "tool/python/vendor/parent-LICENSE"),
+        ("myon-bioinformatics/myon-bioinformatics", "scripts/image_diff.py", "tool/python/vendor/image_diff.py"),
         ("myon-bioinformatics/yourself", "yourself.py", "tool/python/vendor/yourself.py"),
         ("myon-bioinformatics/yourself", "LICENSE", "tool/python/vendor/yourself-LICENSE"),
         ("myon-bioinformatics/xprobe", "xprobe.py", "tool/python/vendor/xprobe.py"),
