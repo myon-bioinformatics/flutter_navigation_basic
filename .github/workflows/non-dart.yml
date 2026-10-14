@@ -7,9 +7,9 @@ name: Non-Dart checks
 # boundaries without running the full non-Dart suite or booting Flutter.
 on:
   pull_request:
-    branches: ["main"]
+    # Also validate #189 while it is stacked on the image-diff prerequisite #187.
+    branches: ["main", "feat/image-diff-tool"]
     paths:
-      - "python/**"
       - "python/**"
       - "assets/time/**"
       - "assets/data_processing/**"
@@ -23,7 +23,6 @@ on:
   push:
     branches: ["main"]
     paths:
-      - "python/**"
       - "python/**"
       - "assets/time/**"
       - "assets/data_processing/**"
@@ -108,7 +107,7 @@ jobs:
           validation_browser=false
           for f in "${files[@]}"; do
             case "$f" in
-              python/*|python/*|assets/time/*|assets/data_processing/*|test/fixtures/photo_studio/import_compat/*|lib/features/*_patterns/*)
+              python/*|assets/time/*|assets/data_processing/*|test/fixtures/photo_studio/import_compat/*|lib/features/*_patterns/*)
                 python=true
                 ;;
               e2e/*)

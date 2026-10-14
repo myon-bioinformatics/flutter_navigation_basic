@@ -119,7 +119,7 @@ def actions_summary(pytestconfig: pytest.Config):
 
 @pytest.fixture
 def classify_workflow_asset(tmp_path):
-    """Run a workflow's real path classifier with one asset-only Git diff."""
+    """Run a workflow's real path classifier with one or more changed paths."""
     def classify(workflow, asset_path, event="pull_request"):
         step = next(step for step in workflow["jobs"]["changes"]["steps"]
                     if step.get("id") == "filter")
@@ -134,7 +134,8 @@ def classify_workflow_asset(tmp_path):
                         lambda match: replacements[match[1]], step["run"])
         # Only the diff source is substituted; execute the actual case arms and
         # output writes so an omitted CI selector cannot pass a text-only check.
-        script = "git() { printf '%s\\n' " + shlex.quote(asset_path) + "; }\n" + script
+        paths = [asset_path] if isinstance(asset_path, str) else asset_path
+        script = "git() { printf '%s\\n' " + " ".join(map(shlex.quote, paths)) + "; }\n" + script
         output = tmp_path / "workflow-outputs"
         output.write_text("", encoding="utf-8")
         subprocess.run(

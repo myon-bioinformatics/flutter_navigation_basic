@@ -100,7 +100,7 @@ Prefer pytest-like outcome receipts (`passed` / `failed` / `skipped` / `xfailed`
 
 Non-Dart checks live in `.github/workflows/non-dart.yml` (Python stdlib in Docker,
 pytest oracles, optional Playwright). Keep Flutter/`Pages` free of those startups
-unless a shared golden under `python/fixtures` or `python/fixtures` changes.
+unless a shared golden under `python/fixtures` changes.
 
 ### Pattern catalogue boundary
 

@@ -4,7 +4,8 @@ on:
   push:
     branches: ["main"]
   pull_request:
-    branches: ["main"]
+    # Also validate #189 while it is stacked on the image-diff prerequisite #187.
+    branches: ["main", "feat/image-diff-tool"]
 
 # Rapid PR pushes cancel superseded runs so pinned/Android Flutter setup
 # is not paid for abandoned SHAs.
@@ -55,18 +56,18 @@ jobs:
           for f in "${files[@]}"; do
             case "$f" in
               # Shared goldens: Python oracle + Dart consumers must both run.
-              python/fixtures/*|python/fixtures/*)
+              python/fixtures/*)
                 python=true
                 flutter=true
                 ;;
-              python/generate_pattern_smoke_test.py|python/check_pattern_smoke_mutations.py|python/tests/test_pattern_smoke_generator.py|python/pattern_contracts.py|python/metadata_contracts.py|python/generate_pattern_contracts.py|python/tests/test_pattern_contracts.py|python/tests/test_metadata_contracts.py)
+              python/generate_pattern_smoke_test.py|python/check_pattern_smoke_mutations.py|python/tests/test_pattern_smoke_generator.py|python/pattern_contracts.py|python/metadata_contracts.py|python/generate_pattern_contracts.py|python/tests/test_pattern_contracts.py|python/tests/test_metadata_contracts.py|python/generate_repository_metadata.py)
                 python=true
                 flutter=true
                 ;;
-              python/*|python/*)
+              python/*)
                 python=true
                 ;;
-              lib/*|test/*|assets/*|web/*|android/*|ios/*|linux/*|macos/*|windows/*|pubspec.yaml|pubspec.lock|analysis_options.yaml|python/*|javascript/*|ci/*|docker/*|build_tools/*|.github/workflows/dart.yml)
+              lib/*|test/*|assets/*|web/*|android/*|ios/*|linux/*|macos/*|windows/*|pubspec.yaml|pubspec.lock|analysis_options.yaml|javascript/*|ci/*|docker/*|build_tools/*|.github/workflows/dart.yml)
                 flutter=true
                 ;;
             esac
