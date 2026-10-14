@@ -182,3 +182,10 @@ lock. Exact source pins, LICENSEs, test-only dependencies and Pages/MCP/runtime
 behavior are unchanged. Central topology intent is owned by the parent's
 `vendor-consumers.json`; recommended baselines belong to `vendor-catalog.json`;
 this consumer's lock remains the authority for adopted bytes.
+
+## Screenshot comparison
+
+`python3 tool/python/image_diff.py A B [--clip X,Y,W,H --viewport-width W] [--tolerance N]` prints one line
+(`changed`, `ratio`, `bbox`, `max_delta`) for two images; either side may be `ZIP::member`, so a downloaded
+Playwright evidence zip is compared without extracting it. `--clip` is in CSS px and is scaled by the image's
+real width, so DPR-2 screenshots are clipped correctly. Exit 0 identical, 1 differs, 2 input error.
