@@ -15,7 +15,7 @@ REFACTOR = ROOT / ".github/workflows/structure-refactor-validation.yml"
 DART = ROOT / ".github/workflows/dart.yml"
 COLLECTOR = (
     "myon-bioinformatics/myon-bioinformatics/.github/workflows/"
-    "reusable-junit-identity.yml@d45076d0bacda1f00b3b763cbf33d129387ae4d0"
+    "reusable-junit-identity.yml@652608b16c73ecd1e39db848abba3d08a00a8a3a"
 )
 COMMAND = (
     'python tool/python/test.py --pytest -- --oracle-mode=local --outcomes-json '

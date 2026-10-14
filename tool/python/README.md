@@ -149,27 +149,26 @@ python3 tool/python/build_artifact_report.py --compare before.json after.json
 Vendored modules under `tool/python/vendor/` are test/build inputs copied from
 public upstream repositories. Their exact upstream commit, Git blob and SHA-256
 identities, plus each upstream LICENSE, are recorded in
-`tool/python/vendor.lock.json` (`vendor-lock/1`); every entry tracks
-`refs/heads/main`. Repository metadata is produced by the vendored
+`tool/python/vendor.lock.json` (`vendor-lock/1`); every entry pins a full
+40-hex upstream commit in `ref` and `commit`. Repository metadata is produced by the vendored
 `gh_identity.py`; the former Ironmate modules (`73157cb7`) were removed after
 the switch (#169), and their output bytes remain pinned as frozen hashes in
 `tests/test_repository_metadata.py`.
 
 Ordinary Non-Dart CI uses the shared stdlib-only `vendor_sync.py` pinned at
-`380d877cd85837f36cf6030d626ee8bb7dfa28cb`. A locked lane first recreates the checked-in files from their fixed
-commit and runs the metadata regressions. The normal pytest lane then resolves
-each configured ref in a disposable checkout, verifies the candidate bytes and
-runs the existing Python suite against that candidate. The resolved lock and
-files are retained as Actions artifacts. CI never writes back to the repository,
-pushes a branch, opens a PR, or requires an update token. Pages and application
-builds continue to use the checked-in baseline.
+`f907560c2b9b3f7a0f78f4434f547f91cb2ef954`. A locked lane verifies the manifest,
+recreates the checked-in files from their pinned commits, and runs the metadata
+regressions. The pytest lane runs the existing Python suite against the
+checked-in baseline only (no upstream `update` lane). CI never writes back to
+the repository, pushes a branch, opens a PR, or requires an update token.
+Pages and application builds continue to use the checked-in baseline.
 
 
 ## Lock-derived evidence staging
 
 Vendor artifact membership is now derived exclusively by the parent
 `vendor_stage.py`, checked out with `vendor_sync.py` at full commit
-`380d877cd85837f36cf6030d626ee8bb7dfa28cb`. Workflow uploads point to its generated
+`f907560c2b9b3f7a0f78f4434f547f91cb2ef954`. Workflow uploads point to its generated
 directory; adding a locked source or LICENSE needs no upload path-list edit.
 Artifact names and repository-relative paths inside each artifact are preserved.
 `vendor-evidence.json` is additional metadata with byte hashes and separate
@@ -177,7 +176,7 @@ locked/candidate, runtime receipt, and legacy projection classifications.
 
 Staging runs even after a failed test, verifies every locked byte, and fails
 nonzero on missing or modified members. It does not certify tests or promotion.
-Locked runs exclude promotion receipts; candidate runs include one when present.
+Locked runs exclude promotion receipts; the former candidate lane was removed.
 Legacy projection formats, when present, remain consumer-owned outputs of the
 lock. Exact source pins, LICENSEs, test-only dependencies and Pages/MCP/runtime
 behavior are unchanged. Central topology intent is owned by the parent's
