@@ -3,7 +3,7 @@
   "files": [
     {
       "repository": "myon-bioinformatics/yourself",
-      "ref": "refs/heads/main",
+      "ref": "eebdc95b1b037cfe6d3e9089ec9de8ef5488d2cb",
       "commit": "eebdc95b1b037cfe6d3e9089ec9de8ef5488d2cb",
       "source": "yourself.py",
       "destination": "tool/python/vendor/yourself.py",
@@ -12,7 +12,7 @@
     },
     {
       "repository": "myon-bioinformatics/xprobe",
-      "ref": "refs/heads/main",
+      "ref": "37d582ee4039d2803335b54e855ed770caedabfc",
       "commit": "37d582ee4039d2803335b54e855ed770caedabfc",
       "source": "xprobe.py",
       "destination": "tool/python/vendor/xprobe.py",
@@ -21,7 +21,7 @@
     },
     {
       "repository": "myon-bioinformatics/browser-test-kit",
-      "ref": "refs/heads/main",
+      "ref": "0f73f07530040461914af53cc469b893d4b4cbdd",
       "commit": "0f73f07530040461914af53cc469b893d4b4cbdd",
       "source": "scripts/gh_ops.py",
       "destination": "tool/python/vendor/gh_ops.py",
@@ -30,7 +30,7 @@
     },
     {
       "repository": "myon-bioinformatics/browser-test-kit",
-      "ref": "refs/heads/main",
+      "ref": "0f73f07530040461914af53cc469b893d4b4cbdd",
       "commit": "0f73f07530040461914af53cc469b893d4b4cbdd",
       "source": "scripts/check_evidence.py",
       "destination": "tool/python/vendor/check_evidence.py",
@@ -39,7 +39,7 @@
     },
     {
       "repository": "myon-bioinformatics/browser-test-kit",
-      "ref": "refs/heads/main",
+      "ref": "0f73f07530040461914af53cc469b893d4b4cbdd",
       "commit": "0f73f07530040461914af53cc469b893d4b4cbdd",
       "source": "scripts/jsonl_digest.py",
       "destination": "tool/python/vendor/jsonl_digest.py",
@@ -48,7 +48,7 @@
     },
     {
       "repository": "myon-bioinformatics/cli_args",
-      "ref": "refs/heads/main",
+      "ref": "d849c17f5e7c18037e2ab2c04bc71eee3e22cd35",
       "commit": "d849c17f5e7c18037e2ab2c04bc71eee3e22cd35",
       "source": "cli_args.py",
       "destination": "tool/python/vendor/cli_args.py",
@@ -57,7 +57,7 @@
     },
     {
       "repository": "myon-bioinformatics/yourself",
-      "ref": "refs/heads/main",
+      "ref": "eebdc95b1b037cfe6d3e9089ec9de8ef5488d2cb",
       "commit": "eebdc95b1b037cfe6d3e9089ec9de8ef5488d2cb",
       "source": "LICENSE",
       "destination": "tool/python/vendor/yourself-LICENSE",
@@ -66,7 +66,7 @@
     },
     {
       "repository": "myon-bioinformatics/xprobe",
-      "ref": "refs/heads/main",
+      "ref": "37d582ee4039d2803335b54e855ed770caedabfc",
       "commit": "37d582ee4039d2803335b54e855ed770caedabfc",
       "source": "LICENSE",
       "destination": "tool/python/vendor/xprobe-LICENSE",
@@ -75,7 +75,7 @@
     },
     {
       "repository": "myon-bioinformatics/browser-test-kit",
-      "ref": "refs/heads/main",
+      "ref": "0f73f07530040461914af53cc469b893d4b4cbdd",
       "commit": "0f73f07530040461914af53cc469b893d4b4cbdd",
       "source": "LICENSE",
       "destination": "tool/python/vendor/browser-test-kit-LICENSE",
@@ -84,7 +84,7 @@
     },
     {
       "repository": "myon-bioinformatics/cli_args",
-      "ref": "refs/heads/main",
+      "ref": "d849c17f5e7c18037e2ab2c04bc71eee3e22cd35",
       "commit": "d849c17f5e7c18037e2ab2c04bc71eee3e22cd35",
       "source": "LICENSE",
       "destination": "tool/python/vendor/cli_args-LICENSE",
@@ -93,7 +93,7 @@
     },
     {
       "repository": "myon-bioinformatics/browser-test-kit",
-      "ref": "refs/heads/main",
+      "ref": "0f73f07530040461914af53cc469b893d4b4cbdd",
       "commit": "0f73f07530040461914af53cc469b893d4b4cbdd",
       "source": "scripts/check_png.py",
       "destination": "tool/python/vendor/check_png.py",
@@ -102,7 +102,7 @@
     },
     {
       "repository": "myon-bioinformatics/gh_identity",
-      "ref": "refs/heads/main",
+      "ref": "68ba77ede5456e37ac50964c91003d64573c2983",
       "commit": "68ba77ede5456e37ac50964c91003d64573c2983",
       "source": "gh_identity.py",
       "destination": "tool/python/vendor/gh_identity.py",
@@ -111,7 +111,7 @@
     },
     {
       "repository": "myon-bioinformatics/gh_identity",
-      "ref": "refs/heads/main",
+      "ref": "68ba77ede5456e37ac50964c91003d64573c2983",
       "commit": "68ba77ede5456e37ac50964c91003d64573c2983",
       "source": "LICENSE",
       "destination": "tool/python/vendor/gh_identity-LICENSE",

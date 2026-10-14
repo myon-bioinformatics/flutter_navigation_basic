@@ -147,7 +147,8 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
     entries = lock["files"]
     assert {(entry["repository"], entry["source"], entry["destination"]) for entry in entries} == expected
     for entry in entries:
-        assert entry["ref"] == "refs/heads/main"
+        assert entry["ref"] == entry["commit"]
+        assert len(entry["ref"]) == 40 and set(entry["ref"]) <= set("0123456789abcdef")
     # The former Ironmate producer was replaced by gh_identity (#169) and removed.
     assert not any((vendor / name).exists() for name in (
         "repository_metadata_contract.py", "repository_metadata_generator.py", "Ironmate-LICENSE"))
@@ -162,11 +163,12 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
     assert not (vendor / "repository_metadata_provenance.json").exists()
 
     workflow = (ROOT / ".github/workflows/non-dart.yml").read_text(encoding="utf-8")
-    assert workflow.count("ref: 380d877cd85837f36cf6030d626ee8bb7dfa28cb") == 2
-    assert workflow.count("vendor_sync.py update --manifest tool/python/vendor.lock.json") == 1
+    pin = "f907560c2b9b3f7a0f78f4434f547f91cb2ef954"
+    assert workflow.count(f"ref: {pin}") == 1
+    assert "vendor_sync.py update --manifest tool/python/vendor.lock.json" not in workflow
     assert workflow.count("vendor_sync.py materialize --manifest tool/python/vendor.lock.json") == 1
     assert not any(token in workflow for token in ("VENDOR_UPDATE_TOKEN", "VENDOR_UPDATES_ENABLED", "GH_TOKEN"))
-    assert "380d877cd85837f36cf6030d626ee8bb7dfa28cb" in (PYTHON_DIR / "README.md").read_text(encoding="utf-8")
+    assert pin in (PYTHON_DIR / "README.md").read_text(encoding="utf-8")
 
 
 def test_pages_generates_only_after_checkout_gate_and_embeds_asset():
