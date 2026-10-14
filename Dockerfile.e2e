@@ -56,8 +56,8 @@ RUN case "$CURL_PYTHON_RUNTIME" in true|false) ;; *) exit 2 ;; esac \
     && flutter pub get \
     && cmp /tmp/pubspec.lock pubspec.lock \
     && flutter build web --release -t lib/main.dart --dart-define=E2E=true --base-href "/" --dart-define=CURL_PYTHON_RUNTIME=${CURL_PYTHON_RUNTIME}
-RUN deno run --no-config --no-lock --no-remote tool/docker/toolchain_smoke.ts
+RUN deno run --no-config --no-lock --no-remote docker/toolchain_smoke.ts
 
 EXPOSE 8080
-ENTRYPOINT ["tool/docker/e2e-entrypoint.sh"]
+ENTRYPOINT ["docker/e2e-entrypoint.sh"]
 CMD ["test", "--project", "chromium", "--project", "firefox", "--project", "webkit", "--project", "mobile-chromium", "--project", "mobile-webkit", "--grep", "@portable", "--max-failures", "1", "tests/hub_navigation.spec.ts", "tests/screen_navigation.spec.ts", "tests/photo_studio.spec.ts", "tests/photo_studio_ingress.spec.ts", "tests/photo_studio_format_matrix.spec.ts"]

@@ -13,9 +13,9 @@ on:
     paths:
       - 'lib/**'
       - 'test/**'
-      - 'tool/python/**'
-      - 'tool/ci/numbered_routes.toml'
-      - 'tool/javascript/**'
+      - 'python/**'
+      - 'ci/numbered_routes.toml'
+      - 'javascript/**'
       - 'assets/data_processing/**'
       - 'pubspec.yaml'
       - 'pubspec.lock'
@@ -41,14 +41,14 @@ jobs:
       - name: Install pytest
         run: python -m pip install 'pytest>=8'
       - name: Verify Python boundaries and producer/asset parity
-        run: python -m pytest tool/python/tests/test_pattern_catalogue_boundary.py tool/python/tests/test_collection_assets.py tool/python/tests/test_collection_transform.py tool/python/tests/test_state_reducer.py tool/python/tests/test_workflow_patterns.py tool/python/tests/test_validation_patterns.py tool/python/tests/test_conversion_patterns.py tool/python/tests/test_validation_http.py tool/python/tests/test_upload_artifact_version.py tool/python/tests/test_pattern_responsibility_audit.py tool/python/tests/test_render_pattern_status.py tool/python/tests/test_check_route_observations.py tool/python/tests/test_node_test_runner.py tool/python/tests/test_multi_test_runner.py -q --junitxml=python-refactor-junit.xml
+        run: python -m pytest python/tests/test_pattern_catalogue_boundary.py python/tests/test_collection_assets.py python/tests/test_collection_transform.py python/tests/test_state_reducer.py python/tests/test_workflow_patterns.py python/tests/test_validation_patterns.py python/tests/test_conversion_patterns.py python/tests/test_validation_http.py python/tests/test_upload_artifact_version.py python/tests/test_pattern_responsibility_audit.py python/tests/test_render_pattern_status.py python/tests/test_check_route_observations.py python/tests/test_node_test_runner.py python/tests/test_multi_test_runner.py -q --junitxml=python-refactor-junit.xml
       - name: Export responsibility inventory
-        run: python -S tool/python/pattern_responsibility_audit.py --json --check > pattern-responsibility.json
+        run: python -S python/pattern_responsibility_audit.py --json --check > pattern-responsibility.json
       - name: Render all 198 pattern statuses
         run: |
           # On pull_request, github.sha is the merge ref; report the PR head and
           # name the merged tree that was actually audited.
-          python3 -S tool/python/render_pattern_status.py pattern-responsibility.json pattern-status.md \
+          python3 -S python/render_pattern_status.py pattern-responsibility.json pattern-status.md \
             --head "${{ github.event.pull_request.head.sha || github.sha }}" --tree "$(git rev-parse HEAD)"
       - name: Upload readable 198-pattern status report
         if: always()
@@ -94,14 +94,14 @@ jobs:
         # Folded scalar: no shell line continuations needed (a plain scalar keeps
         # "\\" literally and bash then passes stray "\" arguments).
         run: >-
-          python3 -S tool/python/check_route_observations.py build/test-results/route-observations.json
+          python3 -S python/check_route_observations.py build/test-results/route-observations.json
           --head-sha "${{ github.event.pull_request.head.sha || github.sha }}"
           --run-id "${{ github.run_id }}"
           --receipt build/test-results/route-verification.json
       - name: Export route-verified responsibility inventory
         if: always()
         run: |
-          python3 -S tool/python/pattern_responsibility_audit.py --json --check \
+          python3 -S python/pattern_responsibility_audit.py --json --check \
             --route-verification build/test-results/route-verification.json \
             --route-head-sha "${{ github.event.pull_request.head.sha || github.sha }}" \
             --route-run-id "${{ github.run_id }}" \
@@ -126,12 +126,12 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          python3 -S tool/python/flutter_machine_junit.py build/test-results/flutter-events.jsonl build/test-results/flutter.xml
-          python3 -S tool/python/validate_runner_junit.py build/test-results/flutter.xml
-          python3 -S tool/python/flutter_machine_junit.py build/test-results/flutter-pinned-events.jsonl build/test-results/flutter-pinned.xml
-          python3 -S tool/python/validate_runner_junit.py build/test-results/flutter-pinned.xml
-          python3 -S tool/python/flutter_machine_junit.py build/test-results/flutter-curl-runtime-events.jsonl build/test-results/flutter-curl-runtime.xml
-          python3 -S tool/python/validate_runner_junit.py build/test-results/flutter-curl-runtime.xml
+          python3 -S python/flutter_machine_junit.py build/test-results/flutter-events.jsonl build/test-results/flutter.xml
+          python3 -S python/validate_runner_junit.py build/test-results/flutter.xml
+          python3 -S python/flutter_machine_junit.py build/test-results/flutter-pinned-events.jsonl build/test-results/flutter-pinned.xml
+          python3 -S python/validate_runner_junit.py build/test-results/flutter-pinned.xml
+          python3 -S python/flutter_machine_junit.py build/test-results/flutter-curl-runtime-events.jsonl build/test-results/flutter-curl-runtime.xml
+          python3 -S python/validate_runner_junit.py build/test-results/flutter-curl-runtime.xml
       - name: Preserve Flutter JUnit and raw events
         if: always()
         uses: actions/upload-artifact@v7
@@ -166,12 +166,12 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build/test-results
-          python3 -S tool/python/test.py --node \
+          python3 -S python/test.py --node \
             --node-report build/test-results/node.xml \
             --node-receipt build/test-results/node-summary.json
       - name: Validate native JUnit report
         if: always()
-        run: python3 -S tool/python/validate_runner_junit.py build/test-results/node.xml
+        run: python3 -S python/validate_runner_junit.py build/test-results/node.xml
       - name: Preserve Node JUnit
         if: always()
         uses: actions/upload-artifact@v7

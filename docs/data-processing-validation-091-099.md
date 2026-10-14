@@ -2,8 +2,8 @@
 
 ## Responsibility and actual scope
 
-- `tool/python/validation_patterns.py`: standalone Python 3 stdlib-only CLI, JSON stdin/stdout.
-- `tool/python/tests/test_validation_patterns.py`: normal, invalid, boundary, and form aggregation contracts.
+- `python/validation_patterns.py`: standalone Python 3 stdlib-only CLI, JSON stdin/stdout.
+- `python/tests/test_validation_patterns.py`: normal, invalid, boundary, and form aggregation contracts.
 - Flutter `/screen091`–`/screen099` show the shared `ValidationPatternLinks` (source links only). The nine legacy `view.dart` files were never reachable from a route and have been removed. **No Flutter→Python execution bridge is wired yet;** interactive input runs in the local browser form below.
 
 | Pattern | Operation | Contract / limitation |
@@ -30,7 +30,7 @@
 ローカルで以下を実行し、`http://127.0.0.1:8765/` を開く。
 
 ```sh
-python3 -S tool/python/validation_http.py --port 8765
+python3 -S python/validation_http.py --port 8765
 ```
 
 入力欄・検証種別・検証ボタンがあり、JavaScript `fetch` からPythonの `/validate` を呼び、実際の検証結果を表示する。サーバーは127.0.0.1にのみbindする開発用デモで、公開運用や個人情報の入力は想定しない。
@@ -39,7 +39,7 @@ python3 -S tool/python/validation_http.py --port 8765
 
 **重要な境界:** Pythonの検証実行そのものはFlutterへ組み込んでいない。`/screen091`〜`/screen099` にはGitHub上の実装・テストへの静的導線を接続済みだが、Web配布環境でのPython API実行は提供しない。各パターンの完成度は引き続き**限定実装**。
 
-テスト: `tool/python/tests/test_validation_http.py`（HTTP入力画面、実API応答、不正入力）。ブラウザ操作は `e2e/tests/validation_http.spec.ts` が空いているポートでこのサーバーを起動し、Chromium で検証ボタンから結果表示まで確認する。Non-Dart checks の Validation browser contract が、その JUnit を collector の必須レポートにする。portable の Flutter E2E とは別ジョブ。
+テスト: `python/tests/test_validation_http.py`（HTTP入力画面、実API応答、不正入力）。ブラウザ操作は `e2e/tests/validation_http.spec.ts` が空いているポートでこのサーバーを起動し、Chromium で検証ボタンから結果表示まで確認する。Non-Dart checks の Validation browser contract が、その JUnit を collector の必須レポートにする。portable の Flutter E2E とは別ジョブ。
 
 ## 番号付きFlutterルートへの接続方針（2026-10-11）
 

@@ -9,12 +9,12 @@ entry point, and runtime. Investigation / regression — **not** HEIC conversion
 | --- | --- |
 | `test/fixtures/photo_studio/import_compat/cases.json` | Case definitions (generator-owned; **no** measured outcomes) |
 | `test/fixtures/photo_studio/import_compat/evidence/*.json` | Measured outcomes per environment (never overwritten by generator) |
-| `tool/python/generate_photo_import_fixtures.py` | Regenerates binaries + `cases.json` only |
+| `python/generate_photo_import_fixtures.py` | Regenerates binaries + `cases.json` only |
 
 ```bash
 # Optional regen (needs ffmpeg, heif-enc/x265 plugin, Pillow):
-python3 -m pip install -r tool/python/requirements.txt
-python3 tool/python/generate_photo_import_fixtures.py
+python3 -m pip install -r python/requirements.txt
+python3 python/generate_photo_import_fixtures.py
 ```
 
 CI runs the generator in stdlib-only `--check` mode: it verifies `cases.json`,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'build_metadata.dart';
+import 'build_tools/build_metadata.dart';
 
 class BuildDiagnosticsCard extends StatefulWidget {
   const BuildDiagnosticsCard({

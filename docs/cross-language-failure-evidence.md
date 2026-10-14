@@ -36,7 +36,7 @@ Go / other CLI ─┘                 └─ JUnit XML (when available)
 ## Current state
 
 Python already proves this contract with a controlled failing child in
-`tool/python/tests/test_junit_evidence.py`: the same child is run with and
+`python/tests/test_junit_evidence.py`: the same child is run with and
 without JUnit, both return code 1, and xprobe imports only compact failure/error
 identity.
 
@@ -52,7 +52,7 @@ when their implementation slice needs them.
 
 ## Intentional-red child runs
 
-`tool/python/expected_child_failure.py` is the language-neutral process boundary
+`python/expected_child_failure.py` is the language-neutral process boundary
 for cases where the child is *supposed* to fail.
 By default each child is bounded to 30 seconds, and captured stdout/stderr are
 capped at 1 MiB per stream; timeout and truncation are recorded in the receipt. It does not know Flutter,

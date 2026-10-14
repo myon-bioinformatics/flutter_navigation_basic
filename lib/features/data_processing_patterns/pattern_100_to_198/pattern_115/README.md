@@ -6,15 +6,15 @@
 制約定義によるデータ整合性チェック。
 
 ## 実装と検証
-- 計算処理: `tool/python/collection_transform.py` の `constraint` 操作
-- Python回帰テスト: `tool/python/tests/test_collection_transform.py`
+- 計算処理: `python/collection_transform.py` の `constraint` 操作
+- Python回帰テスト: `python/tests/test_collection_transform.py`
 - CLI仕様: `docs/collection-transform.md`
 - UI: `view.dart` はFlutterの情報表示境界。Pythonプロセスの直接呼び出しは行わない。
 - 旧GetX Controller／ダミーService／message Modelは削除済み。
 
 ## CLIの起動例
 ```sh
-python -S tool/python/collection_transform.py --input input.json
+python -S python/collection_transform.py --input input.json
 ```
 
 入力JSONに `"operation": "constraint"` と `"values"` を含める。

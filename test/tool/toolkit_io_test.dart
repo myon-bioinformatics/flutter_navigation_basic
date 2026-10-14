@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../tool/src/toolkit_io.dart';
+import '../../build_tools/src/toolkit_io.dart';
 
 void main() {
   group('directorySize', () {

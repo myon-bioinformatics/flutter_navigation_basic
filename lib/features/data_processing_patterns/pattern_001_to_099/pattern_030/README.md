@@ -20,12 +20,12 @@ Navigator.of(context).push(
 ```
 
 ```sh
-python -S tool/python/list_selection.py --input tool/python/fixtures/distinct_filter_input.json --output assets/data_processing/distinct_filter.json --check
+python -S python/list_selection.py --input python/fixtures/distinct_filter_input.json --output assets/data_processing/distinct_filter.json --check
 ```
 
 Remove `--check` to generate. The existing shared Flutter
 `filter_conditions_test.dart` covers this view as well; Python tests live in
-`tool/python/tests/test_distinct_filter.py`. Pattern 086 now deliberately
+`python/tests/test_distinct_filter.py`. Pattern 086 now deliberately
 reuses this exact processor/result asset because its documented responsibility
 is the same deduplication contract; Pattern 113 remains a separate validation
 candidate. See `docs/list-selection.md` and Issue #144.

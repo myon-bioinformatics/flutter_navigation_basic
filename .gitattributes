@@ -1,14 +1,14 @@
 # Public vendored Python/LICENSE bytes are verified against Git blob + SHA-256.
-tool/python/vendor/yourself.py -text
-tool/python/vendor/xprobe.py -text
-tool/python/vendor/gh_ops.py -text
-tool/python/vendor/check_evidence.py -text
-tool/python/vendor/jsonl_digest.py -text
-tool/python/vendor/cli_args.py -text
-tool/python/vendor/gh_identity.py -text
-tool/python/vendor/gh_identity-LICENSE -text
-tool/python/vendor/yourself-LICENSE -text
-tool/python/vendor/xprobe-LICENSE -text
-tool/python/vendor/browser-test-kit-LICENSE -text
-tool/python/vendor/cli_args-LICENSE -text
-tool/python/vendor/check_png.py -text
+python/vendor/yourself.py -text
+python/vendor/xprobe.py -text
+python/vendor/gh_ops.py -text
+python/vendor/check_evidence.py -text
+python/vendor/jsonl_digest.py -text
+python/vendor/cli_args.py -text
+python/vendor/gh_identity.py -text
+python/vendor/gh_identity-LICENSE -text
+python/vendor/yourself-LICENSE -text
+python/vendor/xprobe-LICENSE -text
+python/vendor/browser-test-kit-LICENSE -text
+python/vendor/cli_args-LICENSE -text
+python/vendor/check_png.py -text

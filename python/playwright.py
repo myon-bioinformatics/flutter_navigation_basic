@@ -1,0 +1,175 @@
+"""Thin stdlib-only CLI wrapper around the repository Playwright setup."""
+
+from __future__ import annotations
+
+import argparse
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+E2E_DIR = ROOT / "e2e"
+PLAYWRIGHT_CLI = E2E_DIR / "node_modules" / "@playwright" / "test" / "cli.js"
+
+
+def _node() -> str:
+    return "node.exe" if os.name == "nt" else "node"
+
+
+def _playwright_prefix() -> list[str]:
+    if not PLAYWRIGHT_CLI.is_file():
+        print(
+            "error: Playwright is not installed. Run 'cd e2e && npm install' first.",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+    return [_node(), str(PLAYWRIGHT_CLI)]
+
+
+def _run(args: list[str]) -> int:
+    completed = subprocess.run(args, cwd=E2E_DIR, check=False)
+    return completed.returncode
+
+
+def _playwright_test_args(
+    *,
+    projects: list[str] | None,
+    headed: bool,
+    grep: str | None,
+    extra: list[str],
+) -> list[str]:
+    args = [*_playwright_prefix(), "test"]
+    for project in projects or []:
+        # Keep every project as one --project=value token. Playwright's
+        # space-separated form can greedily consume a following spec path.
+        args.append(f"--project={project}")
+    if headed:
+        args.append("--headed")
+    if grep:
+        args.append(f"--grep={grep}")
+    args.extend(extra)
+    return args
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Run flutter_navigation_basic Playwright commands from Python."
+    )
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    test = sub.add_parser("test", help="Run Playwright tests.")
+    test.add_argument("--project", action="append", dest="projects")
+    test.add_argument("--headed", action="store_true")
+    test.add_argument("--grep")
+    test.add_argument("extra", nargs=argparse.REMAINDER)
+
+    list_cmd = sub.add_parser("list", help="List Playwright tests without running them.")
+    list_cmd.add_argument("extra", nargs=argparse.REMAINDER)
+
+    snapshot = sub.add_parser(
+        "snapshot",
+        help="Run visual snapshot tests (Chromium by default).",
+    )
+    snapshot.add_argument("--project", default="chromium")
+    snapshot.add_argument("--headed", action="store_true")
+    snapshot.add_argument("--grep")
+    snapshot.add_argument(
+        "--update",
+        action="store_true",
+        help="Update Playwright snapshot baselines.",
+    )
+    snapshot.add_argument("extra", nargs=argparse.REMAINDER)
+
+    evidence = sub.add_parser(
+        "photo-evidence",
+        help="Run the bounded Photo Studio MJS evidence runner.",
+    )
+    evidence.add_argument("--browser", default="chromium", choices=("chromium", "firefox", "webkit"))
+    evidence.add_argument("--base-url", default="http://localhost:8080")
+    evidence.add_argument("--fixture", required=True)
+    evidence.add_argument("--output", default="test-results/photo-studio-evidence.png")
+    evidence.add_argument("--timeout-ms", type=int, default=30000)
+
+    interaction = sub.add_parser(
+        "interaction",
+        help="Drive Flutter E2E-only drag/animation/selection routes via Playwright.",
+    )
+    interaction.add_argument("--project", default="chromium")
+    interaction.add_argument(
+        "--kind",
+        choices=("portable", "gesture", "all"),
+        default="portable",
+        help="Use portable click tests, native pointer gestures, or both.",
+    )
+    interaction.add_argument("--headed", action="store_true")
+
+    report = sub.add_parser("report", help="Open the Playwright HTML report.")
+    report.add_argument("extra", nargs=argparse.REMAINDER)
+
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+
+    if not E2E_DIR.is_dir():
+        print(f"error: missing e2e directory: {E2E_DIR}", file=sys.stderr)
+        return 2
+
+    if args.command == "test":
+        return _run(
+            _playwright_test_args(
+                projects=args.projects,
+                headed=args.headed,
+                grep=args.grep,
+                extra=args.extra,
+            )
+        )
+
+    if args.command == "list":
+        return _run([*_playwright_prefix(), "test", "--list", *args.extra])
+
+    if args.command == "snapshot":
+        cmd = _playwright_test_args(
+            projects=[args.project],
+            headed=args.headed,
+            grep=args.grep,
+            extra=["tests/visual_snapshot.spec.ts", *args.extra],
+        )
+        if args.update:
+            cmd.append("--update-snapshots")
+        return _run(cmd)
+
+    if args.command == "photo-evidence":
+        script = E2E_DIR / "scripts" / "photo_studio_evidence.mjs"
+        return _run([
+            _node(),
+            str(script),
+            f"--browser={args.browser}",
+            f"--baseURL={args.base_url}",
+            f"--fixture={Path(args.fixture).resolve()}",
+            f"--output={args.output}",
+            f"--timeout={args.timeout_ms}",
+        ])
+
+    if args.command == "interaction":
+        grep = None if args.kind == "all" else f"@{args.kind}"
+        return _run(
+            _playwright_test_args(
+                projects=[args.project],
+                headed=args.headed,
+                grep=grep,
+                extra=["tests/pattern_interactions.spec.ts"],
+            )
+        )
+
+    if args.command == "report":
+        return _run([*_playwright_prefix(), "show-report", *args.extra])
+
+    raise AssertionError(f"unhandled command: {args.command}")
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -4,7 +4,7 @@ Pattern 113 treats “データ重複排除バリデーション” as a validat
 responsibility, not as another implementation of Pattern 030/086 stable
 deduplication.
 
-The shared stdlib-only `tool/python/list_selection.py` command accepts
+The shared stdlib-only `python/list_selection.py` command accepts
 `{"operation":"deduplicate_report","values":[...]}`. It applies the same
 canonical JSON identity rules used by distinct selection, then emits one report
 record with `input_count`, `unique_count`, `duplicate_count` and

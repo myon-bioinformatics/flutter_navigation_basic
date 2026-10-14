@@ -11,7 +11,7 @@ After implementation, verify with the smallest relevant repository-supported che
 
 - Inspect related tests before and after changing behavior.
 - Add or update tests when behavior changes or a bug is fixed.
-- Prefer existing test harnesses under `test/` and toolkit scripts under `tool/`.
+- Prefer existing test harnesses under `test/` and toolkit scripts under `build_tools/`, `python/`.
 - Failures caused by this change should be investigated and fixed when safe.
 - Re-run after each fix.
 - If a check cannot run in the current environment, say so explicitly in the PR.
@@ -24,16 +24,16 @@ When relevant and available:
 2. `flutter test` (or a focused test path for the change)
 3. `flutter build web` / production entrypoint build when web output is affected
 4. `actionlint` when `.github/workflows/` changes
-5. repository toolkit checks already wired in CI (`tool/inspect.dart`, `tool/check_versions.dart`, timezone oracle, GetX-free shell checks, allowlisted `tool/python` pytest)
+5. repository toolkit checks already wired in CI (`build_tools/inspect.dart`, `build_tools/check_versions.dart`, timezone oracle, GetX-free shell checks, allowlisted `python` pytest)
 
 ## Notes specific to this repository
 
-- `assets/diagnostics/build_metadata.json` is refreshed by `dart run tool/dev.dart meta` for GitHub Pages builds. Do not write tests that assume that mutable asset remains a legacy fixture.
+- `assets/diagnostics/build_metadata.json` is refreshed by `dart run build_tools/dev.dart meta` for GitHub Pages builds. Do not write tests that assume that mutable asset remains a legacy fixture.
 - Prefer parsing fixtures via `BuildMetadata.fromJson` (or equivalent pure helpers) when testing diagnostics metadata compatibility.
-- Pip Python deps are allowlisted only at `tool/python/requirements.txt` for light calculation/oracle tests. Keep Flutter widget tests in Dart.
-- Shared calculation goldens live under `tool/python/fixtures/` and should be asserted from both Dart and pytest when both exist.
+- Pip Python deps are allowlisted only at `python/requirements.txt` for light calculation/oracle tests. Keep Flutter widget tests in Dart.
+- Shared calculation goldens live under `python/fixtures/` and should be asserted from both Dart and pytest when both exist.
 - GitHub Pages deploys via `workflow_run` only after the Flutter workflow succeeds on `main`.
-- Use `python3 tool/python/test.py --actions-latest` (or `dart run tool/dev.dart py --actions-latest`) to reuse the latest CI conclusion instead of re-checking jobs by hand.
+- Use `python3 python/test.py --actions-latest` (or `dart run build_tools/dev.dart py --actions-latest`) to reuse the latest CI conclusion instead of re-checking jobs by hand.
 - Prefer stdlib one-liners (`python3 -m json.tool`, `python3 -m zipfile`, `python3 -m http.server`) for quick inspection of receipts and artifacts.
 
 ## Sharded CI recovery
@@ -49,7 +49,7 @@ When a sharded Flutter job fails:
 ## Pattern catalogues vs core suites
 
 - Pinned Flutter shards run the **full** suite (including `test/features/*_patterns`).
-- Latest-stable shards run **core** paths listed in `tool/ci/flutter_core_test_paths.txt` only (suite-load cost of ~792 pattern files dominated wall time; no single outlier test to skip).
+- Latest-stable shards run **core** paths listed in `ci/flutter_core_test_paths.txt` only (suite-load cost of ~792 pattern files dominated wall time; no single outlier test to skip).
 - Prefer documenting known gaps with pytest `xfail(reason="known: …")` or Flutter `@Skip('known: …')` so outcome receipts surface `xfailed` instead of silent omission.
 
 ## Expensive job startups (pinned / Android)
@@ -62,5 +62,5 @@ When a sharded Flutter job fails:
 
 - `.github/workflows/non-dart.yml` owns Python stdlib oracles (Docker `python:3.12-slim`), pytest oracles, Playwright install smoke (`e2e/`), and manual Playwright E2E (`workflow_dispatch`).
 - Timezone / requirements allowlist checks run there — not inside the Flutter gate.
-- Shared goldens (`tool/python/fixtures/**`, `tool/time/fixtures/**`) still dual-gate Flutter + Non-Dart.
+- Shared goldens (`python/fixtures/**`, `python/fixtures/**`) still dual-gate Flutter + Non-Dart.
 - actionlint remains the existing Docker workflow for `.github/workflows/**`.

@@ -8,26 +8,26 @@ This repository keeps repeatable diagnostics in Dart so local development, CI, a
 - Choose developer-tool ownership by boundary and total maintenance cost: prefer Python stdlib for generic filesystem/JSON/Git/Actions/archive/network/oracle work; Dart for Flutter/app-aware behavior; Playwright Node/Python for browser evidence; and optional Deno one-file CLIs when TypeScript + built-in web APIs materially reduce setup.
 - Prefer **stdlib-first** scripts for non-compiled helpers and avoid adding a second implementation merely to change language.
 - Python stdlib / `python -m` remain preferred for simple OS/network/packaging/Actions tasks.
-- **Pip dependencies are allowlisted only at `tool/python/requirements.txt`** for
+- **Pip dependencies are allowlisted only at `python/requirements.txt`** for
   dev/test tooling (**pytest only**; no pydantic). Root-level or app-tree
   `requirements.txt` files remain prohibited. Production formulas keep one authoritative runtime implementation. Prefer language-neutral golden fixtures; a Python stdlib/pytest oracle is appropriate only when it is independently derived from a specification, invariant, known values, or materially different algorithm. A line-for-line Dart translation is not an independent oracle and must not become a second production source of truth.
 - Runtime Flutter dependencies must never be added merely to support developer diagnostics.
 - Network probes and mocks are developer/test utilities; they are not shipped as application runtime features.
 - Generated diagnostics live under `build/` and are git-ignored.
 
-See `tool/python/README.md` for pytest setup, `--actions-latest`, and stdlib one-liners.
+See `python/README.md` for pytest setup, `--actions-latest`, and stdlib one-liners.
 
 ```bash
-python3 tool/python/test.py --actions-latest --json
-dart run tool/dev.dart py --actions-latest
-python3 -m json.tool tool/python/fixtures/coordinate_area_cases.json | head
-python3 tool/python/build_artifact_report.py --root build/web --output build/diagnostics/web-build.json
-python3 tool/python/build_artifact_report.py --compare before.json after.json
+python3 python/test.py --actions-latest --json
+dart run build_tools/dev.dart py --actions-latest
+python3 -m json.tool python/fixtures/coordinate_area_cases.json | head
+python3 python/build_artifact_report.py --root build/web --output build/diagnostics/web-build.json
+python3 python/build_artifact_report.py --compare before.json after.json
 ```
 
 `build_artifact_report.py` is a stdlib-only, report-only size summary (counts,
 categories, largest files, gzip estimate, before/after delta). It does not
-replace `tool/build_metadata.dart` / `tool/inspect.dart` and does not enforce
+replace `build_tools/build_metadata.dart` / `build_tools/inspect.dart` and does not enforce
 budgets or require dual CI builds.
 
 
@@ -36,10 +36,10 @@ budgets or require dual CI builds.
 Use the dispatcher for normal work:
 
 ```bash
-dart run tool/dev.dart check
-dart run tool/dev.dart full
-dart run tool/dev.dart bundle
-dart run tool/dev.dart all
+dart run build_tools/dev.dart check
+dart run build_tools/dev.dart full
+dart run build_tools/dev.dart bundle
+dart run build_tools/dev.dart all
 ```
 
 - `check`: dependency resolution, lockfile reproducibility, inspect, analyze, test.
@@ -52,7 +52,7 @@ The dispatcher also exposes `inspect`, `versions`, `net`, and `mock`. Each under
 ## Repository inspector
 
 ```bash
-dart run tool/inspect.dart
+dart run build_tools/inspect.dart
 ```
 
 Reports:
@@ -70,14 +70,14 @@ Reports:
 Machine-readable output:
 
 ```bash
-dart run tool/inspect.dart --json
+dart run build_tools/inspect.dart --json
 ```
 
 ## Repeatable health check
 
 ```bash
-dart run tool/check.dart
-dart run tool/check.dart --full
+dart run build_tools/check.dart
+dart run build_tools/check.dart --full
 ```
 
 The full mode includes the canonical release web entrypoint and prints its build size. Each step reports its duration and exit status.
@@ -86,7 +86,7 @@ The full mode includes the canonical release web entrypoint and prints its build
 
 ```bash
 flutter pub upgrade
-dart run tool/check_versions.dart
+dart run build_tools/check_versions.dart
 ```
 
 Uses `dart pub outdated --json` and parses the result in Dart. Packages omitted because they are already current are treated as non-stale. CI runs this after upgrading dependencies in the moving stable lane, so both the resolved version and latest version come from Pub. The pinned lane retains its committed lockfile. For local compatibility testing, run analyze/tests/build after the upgrade and review lockfile changes before committing them.
@@ -94,18 +94,18 @@ Uses `dart pub outdated --json` and parses the result in Dart. Packages omitted 
 ## Network probe
 
 ```bash
-python3 tool/python/net_probe.py https://example.com
-# or: dart run tool/dev.dart net https://example.com
+python3 python/net_probe.py https://example.com
+# or: dart run build_tools/dev.dart net https://example.com
 ```
 
 Shows DNS resolution, TCP connection details, TLS peer-certificate metadata for HTTPS, HTTP status/headers/body-byte count, redirects, and timings. DNS, TCP, TLS, and HTTP are all bounded by a timeout so a stalled peer does not leave the probe hanging indefinitely. Sockets are closed on both success and exception paths.
 
-Python stdlib, not Dart: this is a generic network diagnostic with no Flutter-specific dependency (unlike, say, `tool/mock_http_server.dart`, which reuses this app's own Dart HTTP mocking code and stays Dart for that reason).
+Python stdlib, not Dart: this is a generic network diagnostic with no Flutter-specific dependency (unlike, say, `build_tools/mock_http_server.dart`, which reuses this app's own Dart HTTP mocking code and stays Dart for that reason).
 
 ## Local HTTP mock/stub
 
 ```bash
-dart run tool/mock_http_server.dart --port 8787
+dart run build_tools/mock_http_server.dart --port 8787
 ```
 
 Built with `dart:io` plus the verified `crypto` package for Digest/HMAC
@@ -169,7 +169,7 @@ fixtures. Endpoints:
 Example:
 
 ```bash
-dart run tool/dev.dart net http://127.0.0.1:8787/health
+dart run build_tools/dev.dart net http://127.0.0.1:8787/health
 curl -s -H 'Authorization: Bearer demo-bearer-token' \
   http://127.0.0.1:8787/auth/bearer
 SESSION=$(curl -s -D - -o /tmp/mcp-init.json -X POST http://127.0.0.1:8787/mcp \
@@ -185,8 +185,8 @@ curl -s -X POST http://127.0.0.1:8787/mcp \
 ## Diagnostic bundle
 
 ```bash
-dart run tool/dev.dart bundle
-dart run tool/dev.dart bundle --output build/my-diagnostics.zip
+dart run build_tools/dev.dart bundle
+dart run build_tools/dev.dart bundle --output build/my-diagnostics.zip
 ```
 
 The Dart orchestrator collects reusable diagnostics under `build/diagnostics/`, including inspector JSON, Flutter version and doctor output, dependency/outdated information, pub dependency graph, and Git status. It then uses only the Python standard-library `zipfile` module to create and verify the ZIP.
@@ -214,15 +214,15 @@ See [`MULTIPLATFORM_RUNTIME_OWNERSHIP.md`](./MULTIPLATFORM_RUNTIME_OWNERSHIP.md)
 
 ### Canonical repository identity and portable tooling (#123 / Ironmate #49)
 
-`dart run tool/dev.dart meta` (and Android size diagnostics) generates canonical
-JSON/JSONL using `tool/python/generate_repository_metadata.py`, then reads that
+`dart run build_tools/dev.dart meta` (and Android size diagnostics) generates canonical
+JSON/JSONL using `python/generate_repository_metadata.py`, then reads that
 record into the existing Flutter build diagnostics. Python 3 and Git are required
-for generation. The producer is the vendored `tool/python/vendor/gh_identity.py`
+for generation. The producer is the vendored `python/vendor/gh_identity.py`
 (`repository_metadata_v1`, gh_identity #34 and #35), pinned with Git blob ID and SHA-256 in
-`tool/python/vendor.lock.json`. Its output is byte-for-byte the former Ironmate
+`python/vendor.lock.json`. Its output is byte-for-byte the former Ironmate
 `73157cb7` schema v1 record apart from `generated_at`. The Ironmate files were
 removed after the switch (#169); the former output bytes and Python version
-labels stay pinned as frozen values in `tool/python/tests/test_repository_metadata.py`.
+labels stay pinned as frozen values in `python/tests/test_repository_metadata.py`.
 
 The Python adapter requests Python plus `git` / `gh` / `node` / `npm` / `npx`
 versions through `gh_identity.tool_versions(..., include_python=True)`.
@@ -250,7 +250,7 @@ not `GITHUB_SHA`. Branch follows the producer's `GITHUB_HEAD_REF`,
 `GITHUB_REF_NAME`, checkout branch order (`detached` outside GitHub when detached).
 
 To refresh the upstream pin, keep the producer, contract and license tied to the
-same exact source commit and update their identities in `tool/python/vendor.lock.json`.
+same exact source commit and update their identities in `python/vendor.lock.json`.
 Run the Python repository metadata tests and Flutter build metadata adapter/model
 tests before changing the pin. The consumer regressions exercise all-present,
 partial and empty tooling with fixed observation inputs while preserving the

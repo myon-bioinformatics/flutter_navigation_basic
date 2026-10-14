@@ -27,12 +27,12 @@ in CI so an omitted model cannot silently disappear from coverage.
 Run from the repository root after `flutter pub get`:
 
 ```sh
-python3 -S tool/python/generate_pattern_contracts.py --check
-dart run tool/export_pattern_contracts.dart build/test-results/pattern-contracts.json
-python3 -S tool/python/pattern_contracts.py build/test-results/pattern-contracts.json --junit build/test-results/pattern-contracts.xml
+python3 -S python/generate_pattern_contracts.py --check
+dart run build_tools/export_pattern_contracts.dart build/test-results/pattern-contracts.json
+python3 -S python/pattern_contracts.py build/test-results/pattern-contracts.json --junit build/test-results/pattern-contracts.xml
 flutter test test/contracts/metadata_export_test.dart
-python3 -S tool/python/metadata_contracts.py build/test-results/metadata-contracts.json
-python3 -m pytest tool/python/tests/test_pattern_contracts.py tool/python/tests/test_metadata_contracts.py tool/python/tests/test_header_contracts.py
+python3 -S python/metadata_contracts.py build/test-results/metadata-contracts.json
+python3 -m pytest python/tests/test_pattern_contracts.py python/tests/test_metadata_contracts.py python/tests/test_header_contracts.py
 ```
 
 To inspect a single decision, open `cases["api/001"]` in the pattern JSON, edit a
@@ -76,7 +76,7 @@ in-memory prototype and reset on reload.
 `e2e/tests/shared_header.spec.ts` exercises 12 representative routes on the
 existing five-browser matrix (desktop Chromium/Firefox/WebKit and mobile browser
 emulations). It saves screenshots and measured `header-contract.json` files.
-`tool/python/header_contracts.py` checks visible geometry, common-row alignment,
+`python/header_contracts.py` checks visible geometry, common-row alignment,
 secondary-row separation, and emoji. Button toggling and menu opening are tested
 in the real browser. Emulation does not claim physical Android/iPhone evidence.
 The existing Diagnostics workflow additionally validates screenshots and

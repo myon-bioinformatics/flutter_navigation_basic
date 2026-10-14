@@ -14,11 +14,11 @@ No new route, Screen 199/200 or dependency is added.
 ## Generate and verify
 
 ```sh
-python -S tool/python/list_selection.py --input tool/python/fixtures/filter_basic_input.json --output assets/data_processing/filter_basic.json --check
-python -S tool/python/list_selection.py --input tool/python/fixtures/filter_multiple_input.json --output assets/data_processing/filter_multiple.json --check
-python -S tool/python/list_selection.py --input tool/python/fixtures/filter_nested_input.json --output assets/data_processing/filter_nested.json --check
-python -S tool/python/list_selection.py --input tool/python/fixtures/distinct_filter_input.json --output assets/data_processing/distinct_filter.json --check
-python -S tool/python/list_selection.py --input tool/python/fixtures/deduplicate_report_input.json --output assets/data_processing/deduplicate_report.json --check
+python -S python/list_selection.py --input python/fixtures/filter_basic_input.json --output assets/data_processing/filter_basic.json --check
+python -S python/list_selection.py --input python/fixtures/filter_multiple_input.json --output assets/data_processing/filter_multiple.json --check
+python -S python/list_selection.py --input python/fixtures/filter_nested_input.json --output assets/data_processing/filter_nested.json --check
+python -S python/list_selection.py --input python/fixtures/distinct_filter_input.json --output assets/data_processing/distinct_filter.json --check
+python -S python/list_selection.py --input python/fixtures/deduplicate_report_input.json --output assets/data_processing/deduplicate_report.json --check
 ```
 
 Remove `--check` to generate; omit `--output` for stdout; `--input -` reads stdin.
@@ -83,7 +83,7 @@ GetX-free. The earlier duplicate Dart `list_filters.dart` remains removed.
 
 ## Collection assets and test ownership
 
-`tool/python/tests/test_collection_assets.py` uses one explicit recipe table for
+`python/tests/test_collection_assets.py` uses one explicit recipe table for
 all checked-in outputs of the two collection producers:
 
 | Producer | Checked-in assets | Cases |
@@ -104,7 +104,7 @@ The comparison is read-only; it never regenerates a stale asset during a test.
 Run the shared drift check and the existing producer behavior tests with:
 
 ```sh
-python tool/python/test.py --pytest -- tests/test_collection_assets.py tests/test_collection_window.py tests/test_collection_structure.py --junitxml=../../build/test-results/collection-assets.xml
+python python/test.py --pytest -- tests/test_collection_assets.py tests/test_collection_window.py tests/test_collection_structure.py --junitxml=../../build/test-results/collection-assets.xml
 ```
 
 Data-processing asset-only changes now select Non-Dart's existing Python/JUnit

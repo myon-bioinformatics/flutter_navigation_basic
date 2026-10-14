@@ -2,7 +2,7 @@
 
 Every distinct public page has a stable emoji. Numbered catalogue pages use
 `assets/screens.json`, also consumed by Hub. Tool pages are listed in
-`tool/python/generate_page_identities.py`. That source generates the synchronous
+`python/generate_page_identities.py`. That source generates the synchronous
 Dart registry used by the shared header, including during catalogue loading.
 Do not choose a title emoji from translated text or use a shared fallback.
 
@@ -50,7 +50,7 @@ https://myon-bioinformatics.github.io/flutter_navigation_basic/#/
 `🏠 → 🥐` gives `#/` then `#/examples/irony-generator`; chains such as
 `🏠 → 🗺️ → 🌍 ↔ 🕶️` expand left to right. Each URL opens that page directly,
 so any listed page can be reached from a browser address bar or a link.
-`tool/python/tests/test_emoji_transition_one_liner.py` runs the documented
+`python/tests/test_emoji_transition_one_liner.py` runs the documented
 line itself.
 
 Four catalogue emojis previously collided with tool pages and are reassigned:
@@ -60,9 +60,9 @@ same assignments. All other catalogue assignments remain stable.
 After an intentional assignment change, run:
 
 ```sh
-python3 tool/python/generate_page_identities.py
+python3 python/generate_page_identities.py
 flutter test test/contracts/metadata_export_test.dart
-python3 -S tool/python/metadata_contracts.py build/test-results/metadata-contracts.json
+python3 -S python/metadata_contracts.py build/test-results/metadata-contracts.json
 ```
 
 The thin Flutter exporter reads the actual public route table, registry, aliases,

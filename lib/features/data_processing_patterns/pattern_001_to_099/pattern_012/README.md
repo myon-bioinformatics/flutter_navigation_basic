@@ -1,8 +1,8 @@
 # Pattern 012: SortCustom
 
 ## 機能と責務
-- Python: `tool/python/collection_query_patterns.py` の `custom_sort` が実際の並べ替えを担当。
-- Pythonテスト: `tool/python/tests/test_collection_query_patterns.py` がソートの契約を検証。
+- Python: `python/collection_query_patterns.py` の `custom_sort` が実際の並べ替えを担当。
+- Pythonテスト: `python/tests/test_collection_query_patterns.py` がソートの契約を検証。
 - Dart: `view.dart` は画面の説明と利用可能な範囲を表示するだけ。FlutterからPython CLIへの実行接続は未実装。
 - 旧Controller・Service・Modelと、固定成功文字列を検証していた旧Dartテストは削除済み。
 

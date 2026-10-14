@@ -62,7 +62,7 @@ Instruction ownership:
 - Reuse existing utilities, patterns, and feature structure when possible.
 - Avoid large refactors that are not required to complete the task.
 - Do not add dependencies unless the task cannot be completed with current packages.
-  Exception: allowlisted pip deps may live only in `tool/python/requirements.txt`
+  Exception: allowlisted pip deps may live only in `python/requirements.txt`
   for dev/test Python tooling (pytest only; no pydantic). Do not add root-level
   `requirements.txt` files. Formula oracles for app math live in Dart tests.
 - For scripts/tests that need no compile step, prefer each language's **standard
@@ -89,25 +89,25 @@ On failure:
 
 Pinned Flutter CI splits suites to cut wall time on ordinary feature PRs:
 
-- **Pinned core** (`tool/ci/flutter_core_test_paths.txt`) — always on Flutter-touching PRs, including the thin metadata JSON exporter
-- **Pinned patterns** (`tool/ci/flutter_pattern_test_paths.txt`, generated smoke, dedicated API models, and data-processing catalogue files) —
+- **Pinned core** (`ci/flutter_core_test_paths.txt`) — always on Flutter-touching PRs, including the thin metadata JSON exporter
+- **Pinned patterns** (`ci/flutter_pattern_test_paths.txt`, generated smoke, dedicated API models, and data-processing catalogue files) —
   only when pattern sources/tests (or that path list) change; always on `main`
 - Repetitive API/navigation/UI-theme models execute through both the generated Flutter smoke suite and the independent pinned gate JSON producer/Python contract oracle
 - Latest-stable shards still smoke **core** paths only
 
 Prefer pytest-like outcome receipts (`passed` / `failed` / `skipped` / `xfailed` /
-`xpassed` / `error`) via `tool/python` when documenting known gaps.
+`xpassed` / `error`) via `python` when documenting known gaps.
 
 Non-Dart checks live in `.github/workflows/non-dart.yml` (Python stdlib in Docker,
 pytest oracles, optional Playwright). Keep Flutter/`Pages` free of those startups
-unless a shared golden under `tool/python/fixtures` or `tool/time/fixtures` changes.
+unless a shared golden under `python/fixtures` or `python/fixtures` changes.
 
 ### Pattern catalogue boundary
 
 The Docker E2E build does not consume the generated `*_patterns` catalogues. Keep
 those trees out of the Docker context only while no non-catalogue Dart source
 imports them. The focused guard is
-`tool/python/tests/test_pattern_catalogue_boundary.py`; it checks tracked Dart
+`python/tests/test_pattern_catalogue_boundary.py`; it checks tracked Dart
 imports and the two exact `.dockerignore` rules, while preserving
 `test/fixtures/photo_studio/import_compat`.
 

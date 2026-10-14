@@ -9,7 +9,7 @@
     "mode": "release",
     "artifactBytes": null,
     "analysisJsonBytes": null,
-    "note": "Tracked deterministic fallback only (no live SHA/sizes). Pages/release always regenerate via `dart run tool/dev.dart meta` after checkout; do not treat this file as the deployed commit identity."
+    "note": "Tracked deterministic fallback only (no live SHA/sizes). Pages/release always regenerate via `dart run build_tools/dev.dart meta` after checkout; do not treat this file as the deployed commit identity."
   },
   "repository": {
     "sourceBytes": null,

@@ -10,7 +10,7 @@ or evidence; avoid duplicating test implementations.
 | `claude.yml` — Claude | Comment/dispatch agent, OAuth and different permissions | Keep separate from CI |
 | `curl-runtime.yml` — Python curl runtime browser contract | Containerized Python-enabled Flutter Web runtime E2E | Keep; distinct from static browser tests |
 | `dart.yml` — Flutter | Primary Flutter/Android/iOS/test/JUnit matrix and main push gate | Keep |
-| `diagnostics-evidence.yml` — Diagnostics screenshot evidence | Browser screenshots for diagnostics paths | Keep separate for artifact/evidence scope; consider narrowing broad `tool/python/**` trigger only after measuring coverage |
+| `diagnostics-evidence.yml` — Diagnostics screenshot evidence | Browser screenshots for diagnostics paths | Keep separate for artifact/evidence scope; consider narrowing broad `python/**` trigger only after measuring coverage |
 | `docker-e2e-verify.yml` — Docker E2E snapshot generation (manual) | Manually build image and generate snapshot baselines with `--update` | Keep manual, renamed to avoid implying read-only verification |
 | `flutter-pages.yml` — Flutter Web Pages | Deploy only after successful main Flutter workflow; deployment permissions | Keep separate |
 | `non-dart.yml` — Non-Dart checks | Python/Playwright/browser adapter and canonical JUnit | Keep; real browser adapter smoke now also triggers when `test.py` or `multi_test_runner.py` changes |
@@ -24,7 +24,7 @@ or evidence; avoid duplicating test implementations.
    becomes a **required expected report** when the E2E lane is selected.
    Its attempt history is a separate short-retention artifact.
 3. The Non-Dart classifier selects the adapter smoke for changes to
-   `tool/python/multi_test_runner.py` or `tool/python/test.py`, even when
+   `python/multi_test_runner.py` or `python/test.py`, even when
    no `e2e/**` file changed. This avoids the previous evidence gap.
 4. Refactor smoke now uses checkout/setup-python/setup-node v7, consistent
    with the other maintained CI workflows.
@@ -40,7 +40,7 @@ Android/iOS behavior. Browser emulation remains browser evidence only.
 
 - Pin the actionlint reusable workflow to an immutable parent commit when its
   compatibility is verified, rather than silently using mutable `@main`.
-- Measure whether the diagnostics workflow's broad `tool/python/**` trigger
+- Measure whether the diagnostics workflow's broad `python/**` trigger
   is cost-effective before narrowing it.
 - Review path-filter and JUnit-collection contracts after the new browser
   adapter smoke is green on the same PR head.

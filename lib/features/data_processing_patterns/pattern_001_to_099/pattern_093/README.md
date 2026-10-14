@@ -4,9 +4,9 @@
 パスワード強度チェック実装。
 
 ## 責務と実装範囲
-- Python: `tool/python/validation_patterns.py` の `password` が処理を担当。
-- テスト: `tool/python/tests/test_validation_patterns.py`。契約と制約は `docs/data-processing-validation-091-099.md`。
-- ブラウザ: `tool/python/validation_http.py` のローカル入力画面から実際に検証できる。
+- Python: `python/validation_patterns.py` の `password` が処理を担当。
+- テスト: `python/tests/test_validation_patterns.py`。契約と制約は `docs/data-processing-validation-091-099.md`。
+- ブラウザ: `python/validation_http.py` のローカル入力画面から実際に検証できる。
 - Flutter: `/screen093` は共通の `ValidationPatternLinks` で、実装・テスト・入力画面・契約への GitHub リンクを表示・コピーできる。
 - 旧カタログの `view.dart` は、どの route からも使われていなかったため削除した。旧 Controller・Service・Model はない。
 

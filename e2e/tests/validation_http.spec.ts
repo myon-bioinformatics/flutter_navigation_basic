@@ -9,7 +9,7 @@ let baseURL = '';
 let dialogs: string[] = [];
 
 function startServer(): Promise<string> {
-  const script = path.resolve(__dirname, '../../tool/python/validation_http.py');
+  const script = path.resolve(__dirname, '../../python/validation_http.py');
   const child = spawn('python3', ['-S', script, '--port', '0'], {
     stdio: ['ignore', 'pipe', 'pipe'],
   });

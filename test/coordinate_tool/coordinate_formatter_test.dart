@@ -450,7 +450,7 @@ void main() {
     });
 
     test('matches shared golden vectors for zoom and span policy', () async {
-      final raw = await File('tool/python/fixtures/coordinate_area_cases.json').readAsString();
+      final raw = await File('python/fixtures/coordinate_area_cases.json').readAsString();
       final payload = jsonDecode(raw) as Map<String, dynamic>;
       final cases = payload['cases'] as List<dynamic>;
 

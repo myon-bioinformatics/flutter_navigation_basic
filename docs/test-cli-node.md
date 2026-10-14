@@ -4,15 +4,15 @@ This is a local, stdlib-only orchestration layer, not a replacement for the
 language-native test runners or the existing failure-identity JUnit collector.
 
 ```sh
-python3 tool/python/test.py --pytest
-python3 tool/python/test.py --node
-python3 tool/python/test.py --python            # explicit Python-only (alias --pytest/--py)
-python3 tool/python/test.py --python -x         # pytest stops at first failure
-python3 tool/python/test.py --python --node    # both runners, nonzero if either fails
-python3 tool/python/test.py --print-message "from: agent; test complete"
-python3 tool/python/test.py --node --node-name-pattern 'request'
-python3 tool/python/test.py --node --node-test-file tool/javascript/tests/example.test.mjs
-python3 tool/python/test.py --node --node-receipt build/test-results/node-summary.json
+python3 python/test.py --pytest
+python3 python/test.py --node
+python3 python/test.py --python            # explicit Python-only (alias --pytest/--py)
+python3 python/test.py --python -x         # pytest stops at first failure
+python3 python/test.py --python --node    # both runners, nonzero if either fails
+python3 python/test.py --print-message "from: agent; test complete"
+python3 python/test.py --node --node-name-pattern 'request'
+python3 python/test.py --node --node-test-file javascript/tests/example.test.mjs
+python3 python/test.py --node --node-receipt build/test-results/node-summary.json
 ```
 
 - Python remains `pytest`; Node remains `node --test`. The wrapper uses

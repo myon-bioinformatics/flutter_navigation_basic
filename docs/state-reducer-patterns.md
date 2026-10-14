@@ -3,8 +3,8 @@
 A Python standard-library JSON CLI provides a bounded real state transition engine.
 
 ```sh
-echo '{"mode":"redux","initial":0,"actions":[{"type":"increment","value":2}]}' | python -S tool/python/state_reducer.py
-python -m pytest tool/python/tests/test_state_reducer.py -q
+echo '{"mode":"redux","initial":0,"actions":[{"type":"increment","value":2}]}' | python -S python/state_reducer.py
+python -m pytest python/tests/test_state_reducer.py -q
 ```
 
 `mode` is `event_state` (164) or `redux` (165).

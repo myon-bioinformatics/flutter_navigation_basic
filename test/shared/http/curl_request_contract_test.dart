@@ -44,7 +44,7 @@ Map<String, Object?> _snapshot(CurlImportResult result) {
 
 void main() {
   final fixture = jsonDecode(
-    File('tool/python/fixtures/curl_request_cases.json')
+    File('python/fixtures/curl_request_cases.json')
         .readAsStringSync(encoding: utf8),
   ) as Map<String, dynamic>;
   final cases = fixture['cases'] as List<dynamic>;

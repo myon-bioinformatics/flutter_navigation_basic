@@ -25,7 +25,7 @@ Shared policy lives in `AGENTS.md`. Follow that constitution; this file covers C
 
 - Explore relevant paths yourself; do not wait for exact file lists.
 - Multiple related files may be edited.
-- Prefer current project structure (`lib/features`, `lib/core`, `tool/`, tests).
+- Prefer current project structure (`lib/features`, `lib/core`, `build_tools/`, `python/`, tests).
 - Reuse existing utilities instead of inventing parallel helpers.
 - Do not add new dependencies unless necessary for the task.
 - Do not mix unrelated cleanup into the task.

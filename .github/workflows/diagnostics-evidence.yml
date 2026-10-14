@@ -7,8 +7,8 @@ on:
       - 'lib/shared/diagnostics/**'
       - 'lib/shared/widgets/home_overview_panel.dart'
       - 'lib/features/home/**'
-      - 'tool/src/repository_metadata.dart'
-      - 'tool/python/**'
+      - 'src/repository_metadata.dart'
+      - 'python/**'
       - 'e2e/**'
       - '.github/workflows/diagnostics-evidence.yml'
       - '.github/workflows/flutter-pages.yml'
@@ -18,8 +18,8 @@ on:
       - 'lib/shared/diagnostics/**'
       - 'lib/shared/widgets/home_overview_panel.dart'
       - 'lib/features/home/**'
-      - 'tool/src/repository_metadata.dart'
-      - 'tool/python/**'
+      - 'src/repository_metadata.dart'
+      - 'python/**'
       - 'e2e/**'
       - '.github/workflows/diagnostics-evidence.yml'
       - '.github/workflows/flutter-pages.yml'
@@ -60,8 +60,8 @@ jobs:
       - name: Build the Pages entrypoint with canonical metadata
         run: |
           flutter pub get
-          python3 tool/python/generate_repository_metadata.py --expected-sha "$EXPECTED_SHA"
-          dart run tool/dev.dart meta --platform web --repository-metadata build/diagnostics/repository/repository-metadata.json
+          python3 python/generate_repository_metadata.py --expected-sha "$EXPECTED_SHA"
+          dart run build_tools/dev.dart meta --platform web --repository-metadata build/diagnostics/repository/repository-metadata.json
           flutter build web --release -t lib/main.dart --base-href '/'
       - name: Install browsers
         working-directory: e2e

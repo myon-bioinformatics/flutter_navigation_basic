@@ -9,8 +9,8 @@ on:
   pull_request:
     branches: ["main"]
     paths:
-      - "tool/python/**"
-      - "tool/time/**"
+      - "python/**"
+      - "python/**"
       - "assets/time/**"
       - "assets/data_processing/**"
       - "test/fixtures/photo_studio/import_compat/**"
@@ -23,8 +23,8 @@ on:
   push:
     branches: ["main"]
     paths:
-      - "tool/python/**"
-      - "tool/time/**"
+      - "python/**"
+      - "python/**"
       - "assets/time/**"
       - "assets/data_processing/**"
       - "test/fixtures/photo_studio/import_compat/**"
@@ -108,7 +108,7 @@ jobs:
           validation_browser=false
           for f in "${files[@]}"; do
             case "$f" in
-              tool/python/*|tool/time/*|assets/time/*|assets/data_processing/*|test/fixtures/photo_studio/import_compat/*|lib/features/*_patterns/*)
+              python/*|python/*|assets/time/*|assets/data_processing/*|test/fixtures/photo_studio/import_compat/*|lib/features/*_patterns/*)
                 python=true
                 ;;
               e2e/*)
@@ -121,15 +121,15 @@ jobs:
                 playwright=true
                 ;;
             esac
-            # Independent classifier: tool/python/* already matches in the
+            # Independent classifier: python/* already matches in the
             # previous case, so these exact files need their own case block.
             case "$f" in
-              tool/python/multi_test_runner.py|tool/python/test.py)
+              python/multi_test_runner.py|python/test.py)
                 e2e=true
                 ;;
             esac
             case "$f" in
-              .dockerignore|lib/*.dart|test/*.dart|tool/python/tests/test_pattern_catalogue_boundary.py|.github/workflows/non-dart.yml)
+              .dockerignore|lib/*.dart|test/*.dart|python/tests/test_pattern_catalogue_boundary.py|.github/workflows/non-dart.yml)
                 pattern_boundary=true
                 ;;
             esac
@@ -140,7 +140,7 @@ jobs:
                 playwright=true
                 ;;
             esac
-            # Any requirements.txt (including outside tool/python) must hit allowlist.
+            # Any requirements.txt (including outside python) must hit allowlist.
             case "$f" in
               requirements.txt|*/requirements.txt)
                 python=true
@@ -149,7 +149,7 @@ jobs:
             # Chromium contract for the loopback validation page. It does not
             # boot Flutter, so keep it off the portable five-project suite.
             case "$f" in
-              tool/python/validation_http.py|tool/python/validation_patterns.py|tool/python/tests/test_validation_http.py|tool/python/tests/test_validation_patterns.py|e2e/tests/validation_http.spec.ts|e2e/playwright.config.ts|.github/workflows/non-dart.yml)
+              python/validation_http.py|python/validation_patterns.py|python/tests/test_validation_http.py|python/tests/test_validation_patterns.py|e2e/tests/validation_http.spec.ts|e2e/playwright.config.ts|.github/workflows/non-dart.yml)
                 validation_browser=true
                 ;;
             esac
@@ -186,13 +186,13 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: tool/python/requirements.txt
+          cache-dependency-path: python/requirements.txt
 
       - name: Install Python test dependencies
-        run: python -m pip install -r tool/python/requirements.txt
+        run: python -m pip install -r python/requirements.txt
 
       - name: Check pattern catalogue boundary
-        run: python -m pytest -q tool/python/tests/test_pattern_catalogue_boundary.py
+        run: python -m pytest -q python/tests/test_pattern_catalogue_boundary.py
 
   # Stdlib-only: no pip. Runs in an official Python container (Docker pattern).
   python-stdlib:
@@ -222,8 +222,8 @@ jobs:
           count=0
           # Word-splitting on paths is fine: requirements.txt paths have no spaces.
           for path in $(git ls-files | grep -E '(^|/)requirements\.txt$' || true); do
-            if [ "$path" != "tool/python/requirements.txt" ]; then
-              echo "::error::Only tool/python/requirements.txt is allowed for pip deps. Found: $path"
+            if [ "$path" != "python/requirements.txt" ]; then
+              echo "::error::Only python/requirements.txt is allowed for pip deps. Found: $path"
               exit 1
             fi
             count=$((count + 1))
@@ -232,15 +232,15 @@ jobs:
 
       - name: Verify stdlib timezone oracle
         run: |
-          python tool/time/verify_timezone.py
-          python tool/time/generate_timezone_cases.py --check
-          python tool/time/generate_zone_table.py --check
+          python python/verify_timezone.py
+          python python/generate_timezone_cases.py --check
+          python python/generate_zone_table.py --check
 
       - name: Verify photo fixture drift
-        run: python tool/python/generate_photo_import_fixtures.py --check
+        run: python python/generate_photo_import_fixtures.py --check
 
       - name: Verify generated pattern smoke test
-        run: python tool/python/generate_pattern_smoke_test.py --check
+        run: python python/generate_pattern_smoke_test.py --check
 
   python-vendor-locked:
     name: Python vendor locked baseline
@@ -265,36 +265,36 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -S .vendor-sync-tools/vendor_sync.py check --manifest tool/python/vendor.lock.json
+          python -S .vendor-sync-tools/vendor_sync.py check --manifest python/vendor.lock.json
           python -S - <<'PY'
           import json
           from pathlib import Path
-          lock = json.loads(Path("tool/python/vendor.lock.json").read_text(encoding="utf-8"))
+          lock = json.loads(Path("python/vendor.lock.json").read_text(encoding="utf-8"))
           for entry in lock["files"]:
               Path(entry["destination"]).unlink()
           PY
-          python -S .vendor-sync-tools/vendor_sync.py materialize --manifest tool/python/vendor.lock.json
-          python -S .vendor-sync-tools/vendor_sync.py check --manifest tool/python/vendor.lock.json
+          python -S .vendor-sync-tools/vendor_sync.py materialize --manifest python/vendor.lock.json
+          python -S .vendor-sync-tools/vendor_sync.py check --manifest python/vendor.lock.json
 
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: tool/python/requirements.txt
+          cache-dependency-path: python/requirements.txt
 
       - name: Install Python test dependencies
-        run: python -m pip install -r tool/python/requirements.txt
+        run: python -m pip install -r python/requirements.txt
 
       - name: Run locked metadata regressions
-        run: python -m pytest -q tool/python/tests/test_repository_metadata.py
+        run: python -m pytest -q python/tests/test_repository_metadata.py
 
       - name: Stage canonical vendor evidence
         if: always()
         shell: bash
         run: >-
           python -S .vendor-sync-tools/vendor_stage.py
-          --manifest tool/python/vendor.lock.json --kind locked --output build/vendor-evidence-locked
+          --manifest python/vendor.lock.json --kind locked --output build/vendor-evidence-locked
       - name: Preserve locked metadata vendor snapshot
         if: always()
         uses: actions/upload-artifact@v7
@@ -320,18 +320,18 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: tool/python/requirements.txt
+          cache-dependency-path: python/requirements.txt
 
       - name: Install Python test dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r tool/python/requirements.txt
+          pip install -r python/requirements.txt
 
       - name: Run pytest
         env:
           FLUTTER_FAILURE_EVIDENCE: ${{ github.workspace }}/build/controlled-failure
         run: >-
-          python tool/python/test.py --pytest -- --oracle-mode=local
+          python python/test.py --pytest -- --oracle-mode=local
           --outcomes-json "$GITHUB_WORKSPACE/build/diagnostics/python-oracle/pytest_outcomes.json"
           --junitxml="$GITHUB_WORKSPACE/build/test-results/python-3.12.xml"
 
@@ -339,7 +339,7 @@ jobs:
         if: always()
         run: |
           mkdir -p build/diagnostics/pattern-stubs
-          python tool/python/pattern_stub_audit.py --json > build/diagnostics/pattern-stubs/baseline.json
+          python python/pattern_stub_audit.py --json > build/diagnostics/pattern-stubs/baseline.json
           python -m json.tool build/diagnostics/pattern-stubs/baseline.json
       - name: Preserve pattern stub baseline
         if: always()
@@ -431,11 +431,11 @@ jobs:
 
       - name: Run real browser through shared Python Playwright adapter
         run: |
-          python3 tool/python/test.py --external-runner playwright-node \
+          python3 python/test.py --external-runner playwright-node \
             --test-file e2e/tests/runner_adapter_smoke.spec.ts \
             --test-report build/test-results/playwright-adapter.xml \
             --test-history build/test-results/playwright-adapter-attempts.json
-          python3 -S tool/python/validate_runner_junit.py build/test-results/playwright-adapter.xml
+          python3 -S python/validate_runner_junit.py build/test-results/playwright-adapter.xml
 
       - name: Preserve shared Playwright adapter evidence
         if: always()
@@ -508,15 +508,15 @@ jobs:
           junit_dir="$GITHUB_WORKSPACE/build/test-results"
           mkdir -p "$junit_dir"
           PLAYWRIGHT_JUNIT_OUTPUT_FILE="$junit_dir/playwright-portable.xml" \
-            python3 ../tool/python/playwright.py test --project chromium --project firefox --project webkit --project mobile-chromium --project mobile-webkit --grep @portable tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts tests/photo_studio_ingress.spec.ts tests/photo_studio_format_matrix.spec.ts tests/shared_header.spec.ts tests/home_discovery_journeys.spec.ts
+            python3 ../python/playwright.py test --project chromium --project firefox --project webkit --project mobile-chromium --project mobile-webkit --grep @portable tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts tests/photo_studio_ingress.spec.ts tests/photo_studio_format_matrix.spec.ts tests/shared_header.spec.ts tests/home_discovery_journeys.spec.ts
           # Later Playwright invocations replace their default output folders.
           # Preserve the five-browser screenshots and JSON before that happens.
           mkdir -p ../build/playwright-portable
           cp -R test-results playwright-report ../build/playwright-portable/
           PLAYWRIGHT_JUNIT_OUTPUT_FILE="$junit_dir/playwright-interaction-portable.xml" \
-            python3 ../tool/python/playwright.py interaction --project chromium --kind portable
+            python3 ../python/playwright.py interaction --project chromium --kind portable
           PLAYWRIGHT_JUNIT_OUTPUT_FILE="$junit_dir/playwright-interaction-gesture.xml" \
-            python3 ../tool/python/playwright.py interaction --project chromium --kind gesture
+            python3 ../python/playwright.py interaction --project chromium --kind gesture
 
       - name: Preserve junit-playwright-e2e
         if: always()
@@ -569,7 +569,7 @@ jobs:
           set -euo pipefail
           mkdir -p "$GITHUB_WORKSPACE/build/test-results"
           PLAYWRIGHT_JUNIT_OUTPUT_FILE="$GITHUB_WORKSPACE/build/test-results/validation-browser.xml" \
-            python3 ../tool/python/playwright.py test --project=chromium tests/validation_http.spec.ts
+            python3 ../python/playwright.py test --project=chromium tests/validation_http.spec.ts
 
       - name: Preserve junit-validation-browser
         if: always()

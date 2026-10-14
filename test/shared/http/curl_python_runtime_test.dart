@@ -9,7 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   var sequence = 0;
   String newId() => 'runtime-test-${sequence++}';
-  final fixture = jsonDecode(File('tool/python/fixtures/curl_request_cases.json')
+  final fixture = jsonDecode(File('python/fixtures/curl_request_cases.json')
       .readAsStringSync()) as Map<String, dynamic>;
   List<Map<String, Object>> rows(List<RequestField> values) => [
     for (final field in values)
