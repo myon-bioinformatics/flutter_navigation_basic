@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/shared/diagnostics/build_metadata.dart';
 
-import '../../../src/repository_metadata.dart';
+import '../../../build_tools/src/repository_metadata.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/shared/diagnostics/build_diagnostics_card.dart';
 import 'package:flutter_application_1/shared/widgets/home_overview_panel.dart';
