@@ -165,7 +165,7 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
     assert not (vendor / "repository_metadata_provenance.json").exists()
 
     workflow = (ROOT / ".github/workflows/non-dart.yml").read_text(encoding="utf-8")
-    pin = "f907560c2b9b3f7a0f78f4434f547f91cb2ef954"
+    pin = "ab17b409d82f95abc81116af7ff0d3e7bdc4158c"
     assert workflow.count(f"ref: {pin}") == 1
     assert "vendor_sync.py update --manifest tool/python/vendor.lock.json" not in workflow
     assert workflow.count("vendor_sync.py materialize --manifest tool/python/vendor.lock.json") == 1
