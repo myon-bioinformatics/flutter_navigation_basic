@@ -5,7 +5,7 @@ Web デバッグ対応 Playwright E2E テスト for flutter_navigation_basic。
 ## CI
 
 - PR で `e2e/` を触ると **Non-Dart** workflow が install + `--list` smoke に加えて full portable E2E を自動選択する。
-- full E2E（web build + Chromium / Firefox / WebKit + mobile emulation）は、`e2e/**`、entrypoint/routes/navigation、Home、Photo Studio、Clipboard Shelf、`lib/screens/**`、または Non-Dart workflow 自身が変わったときだけ自動実行する。その他の Dart/Python 変更では走らない。手動の `run_playwright=true/false` 切替は廃止し、**Non-Dart checks → Run workflow** は入力なしの強制再実行としてだけ残す。Flutter/Pages workflow とは分離したまま。visual snapshot spec は baseline 未登録の間は portable E2E から分離し、`python tool/python/playwright.py snapshot --update` で明示的に生成する。
+- full E2E（web build + Chromium / Firefox / WebKit + mobile emulation）は、`e2e/**`、entrypoint/routes/navigation、Home、Photo Studio、Clipboard Shelf、`lib/screens/**`、または Non-Dart workflow 自身が変わったときだけ自動実行する。その他の Dart/Python 変更では走らない。手動の `run_playwright=true/false` 切替は廃止し、**Non-Dart checks → Run workflow** は入力なしの強制再実行としてだけ残す。Flutter/Pages workflow とは分離したまま。visual snapshot spec は baseline 未登録の間は portable E2E から分離し、`python python/playwright.py snapshot --update` で明示的に生成する。
 
 ## セットアップ
 
@@ -28,13 +28,13 @@ Python 側の追加依存はなく、stdlib の `subprocess` から既存の `e2
 
 ```bash
 # 全テスト
-python tool/python/playwright.py test
+python python/playwright.py test
 
 # Chromium のみ
-python tool/python/playwright.py test --project chromium
+python python/playwright.py test --project chromium
 
 # portable 5-project allowlist（Photo Studio を含む）
-python tool/python/playwright.py test \
+python python/playwright.py test \
   --project chromium --project firefox --project webkit \
   --project mobile-chromium --project mobile-webkit \
   --grep @portable \
@@ -42,23 +42,23 @@ python tool/python/playwright.py test \
   tests/photo_studio_ingress.spec.ts tests/photo_studio_format_matrix.spec.ts
 
 # テスト一覧（CI smoke と同用途）
-python tool/python/playwright.py list
+python python/playwright.py list
 
 # Visual snapshot 検証（既定は Chromium）
-python tool/python/playwright.py snapshot
+python python/playwright.py snapshot
 
 # Visual snapshot の基準画像を更新
-python tool/python/playwright.py snapshot --update
+python python/playwright.py snapshot --update
 
 # Photo Studio smoke/evidence (Flutter Web must already be on :8080)
-python tool/python/playwright.py photo-evidence \
+python python/playwright.py photo-evidence \
   --browser chromium \
   --fixture test/fixtures/photo_studio/import_compat/png_opaque_2x2.png \
   --output test-results/photo-studio-evidence.png \
   --timeout-ms 30000
 
 # HTML report
-python tool/python/playwright.py report
+python python/playwright.py report
 ```
 
 Windows の cmd でも同じコマンドを利用できます。Python wrapper は `npx.cmd` を直接起動せず、`node node_modules/@playwright/test/cli.js` を呼ぶため、Windows の `.cmd` 実行差異を避けます。
@@ -67,7 +67,7 @@ Playwright config は Chromium / Firefox / WebKit の3 projectを定義してお
 
 ## Docker（Flutter/Node/Playwright を何もインストールしていない環境向け）
 
-`Dockerfile.e2e` は「Flutter web release ビルド → 配信 → `tool/python/playwright.py` 実行」を1イメージに固めたものです。CI の自動選択 `playwright` ジョブ（`.github/workflows/non-dart.yml`）と同じ手順・同じ Flutter/Node バージョンをコンテナ内で再現するので、ホスト側に Flutter SDK も Node もなくても、`docker` さえあれば実行・再現できます。
+`Dockerfile.e2e` は「Flutter web release ビルド → 配信 → `python/playwright.py` 実行」を1イメージに固めたものです。CI の自動選択 `playwright` ジョブ（`.github/workflows/non-dart.yml`）と同じ手順・同じ Flutter/Node バージョンをコンテナ内で再現するので、ホスト側に Flutter SDK も Node もなくても、`docker` さえあれば実行・再現できます。
 
 ```bash
 # プロジェクトルートで（初回はFlutter/Node/Chromium/Firefox/WebKitのダウンロードが入るため数分かかります）
@@ -84,7 +84,7 @@ docker run --rm flutter-nav-e2e test --project chromium --grep @portable \
   tests/hub_navigation.spec.ts tests/screen_navigation.spec.ts tests/photo_studio.spec.ts \
   tests/photo_studio_ingress.spec.ts
 
-# Visual snapshot のスクショを撮りたいだけなら（コンテナ内の tool/python/playwright.py にそのまま引数が渡る）
+# Visual snapshot のスクショを撮りたいだけなら（コンテナ内の python/playwright.py にそのまま引数が渡る）
 docker run --rm \
   -v "$PWD/e2e/playwright-report:/repo/e2e/playwright-report" \
   -v "$PWD/e2e/test-results:/repo/e2e/test-results" \
@@ -140,10 +140,10 @@ e2e/
     ├── helpers.ts
     └── constants.ts
 
-tool/python/
+python/
 └── playwright.py               # stdlib-only Playwright CLI wrapper
 
-tool/docker/
+docker/
 └── e2e-entrypoint.sh           # Dockerfile.e2e's entrypoint (serve + run)
 
 Dockerfile.e2e                  # Flutter build + Playwright, containerized

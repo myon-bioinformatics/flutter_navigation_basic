@@ -3,7 +3,7 @@
 The catalogue numbers do not require one Dart implementation each.
 Run the read-only stdlib inventory:
 
-    python -S tool/python/pattern_responsibility_audit.py --json --check
+    python -S python/pattern_responsibility_audit.py --json --check
 
 It produces per-pattern source files, evidence status, proposed owner,
 related standalone CLI and test, stale README flag and known limitations.

@@ -70,7 +70,7 @@ class BuildMetadata {
   static Future<BuildMetadata> load() async {
     // Reads the tracked fallback asset in local/default builds. CI Pages and
     // release paths rewrite assets/diagnostics/build_metadata.json with
-    // `dart run tool/dev.dart meta` before packaging, so deployed UIs show
+    // `dart run build_tools/dev.dart meta` before packaging, so deployed UIs show
     // the real commit — never rely on the checked-in placeholder as truth.
     final raw = await rootBundle.loadString('assets/diagnostics/build_metadata.json');
     final json = jsonDecode(raw) as Map<String, dynamic>;

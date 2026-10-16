@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generator": "tool/python/generate_photo_import_fixtures.py",
+  "generator": "python/generate_photo_import_fixtures.py",
   "limits": {
     "maxInputBytes": 33554432,
     "maxPixels": 40000000,

@@ -9,14 +9,14 @@ PR #145 の **Refactor smoke** ワークフローを開き、同一headの artif
 
 - PR: https://github.com/myon-bioinformatics/flutter_navigation_basic/pull/145
 - CI: https://github.com/myon-bioinformatics/flutter_navigation_basic/actions/workflows/structure-refactor-validation.yml
-- 監査本体: `tool/python/pattern_responsibility_audit.py`
-- 可読表の生成: `tool/python/render_pattern_status.py`
+- 監査本体: `python/pattern_responsibility_audit.py`
+- 可読表の生成: `python/render_pattern_status.py`
 
 ローカル生成（Python標準ライブラリのみ）：
 
 ```sh
-python3 -S tool/python/pattern_responsibility_audit.py --json --check > pattern-responsibility.json
-python3 -S tool/python/render_pattern_status.py pattern-responsibility.json pattern-status.md --head "$(git rev-parse HEAD)"
+python3 -S python/pattern_responsibility_audit.py --json --check > pattern-responsibility.json
+python3 -S python/render_pattern_status.py pattern-responsibility.json pattern-status.md --head "$(git rev-parse HEAD)"
 ```
 
 **必ずheadを照合すること。** CIの成功・失敗・実行中を区別し、別コミットの監査表を最新結果として扱わない。
@@ -41,10 +41,10 @@ python3 -S tool/python/render_pattern_status.py pattern-responsibility.json patt
 アプリ本体から `lib/features/*_patterns` への import は 0 件で、各パターンの `view.dart` は
 どの route からも到達しない。そこで監査の第一の軸を「`/screenNNN` が実際に何を表示するか」に変えた。
 
-- 期待値: `tool/ci/numbered_routes.toml`（**人が書く**。198 件の行き先 Widget。コメント可）
+- 期待値: `ci/numbered_routes.toml`（**人が書く**。198 件の行き先 Widget。コメント可）
 - 実測: `test/core/navigation/numbered_routes_observation_test.dart` が 198 本の route を実行時に解決し、
   `build/test-results/route-observations.json` に Widget の種別と id を書き出す（**機械が書く**。期待値は読まない）。
-- 判定: `tool/python/check_route_observations.py` が TOML と JSON を照合し、件数・種別・id の
+- 判定: `python/check_route_observations.py` が TOML と JSON を照合し、件数・種別・id の
   どれかが違えば失敗する。Refactor smoke で実測の直後に実行する。
 - 監査: `route`（Widget）、`reachability`（`shared` / `dedicated` / `generic`）、`provision`
   （`shared_interaction` / `shared_source_links` / `shared_native_example` / `dedicated_feature_page` / `generic_catalogue`）、

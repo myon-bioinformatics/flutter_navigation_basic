@@ -12,9 +12,9 @@ Initial setup (Flutter, Node, and a real browser are required at least once):
   python -m http.server 8080 --bind 127.0.0.1 --directory build/web
 
 With the server running, execute any of these from the repo root:
-  python tool/python/playwright.py interaction --project chromium --kind portable
-  python tool/python/playwright.py interaction --project chromium --kind gesture
-  python tool/python/playwright.py interaction --project chromium --kind all
+  python python/playwright.py interaction --project chromium --kind portable
+  python python/playwright.py interaction --project chromium --kind gesture
+  python python/playwright.py interaction --project chromium --kind all
 
 Direct Node CLI, identical test file and existing Playwright install:
   node e2e/node_modules/@playwright/test/cli.js test --config e2e/playwright.config.ts --project=chromium --grep=@gesture e2e/tests/pattern_interactions.spec.ts

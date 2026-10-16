@@ -17,8 +17,8 @@ For browser-generic concepts, browser-test-kit is the preferred vocabulary owner
 | `TOOLING_LANGUAGE_DOGMA` | cross-cutting candidate; tooling specialization of `FRAMEWORK_AS_GOAL` | “Dart by default” or “Python always simpler” forces an unnatural runtime | Boundary-first ownership by total implementation/dependency/ops cost | review-only |
 | `PIP_AT_APP_ROOT` | flutter-local | General Python requirements turn dev tooling into an undeclared app runtime | Scoped allowlist; stdlib first | Non-Dart requirements allowlist |
 | `SILENT_KNOWN_GAP` | cross-cutting candidate | Removing/omitting a failing case makes CI green by hiding the gap | Keep the case as explicit xfail/known gap | pytest/Flutter outcome receipts; paired with `SKIP_EQUALS_XFAIL` |
-| `SKIP_EQUALS_XFAIL` | cross-cutting candidate | Treating every skip as a known failure erases environment-gate semantics | Preserve passed/failed/skipped/xfailed/xpassed/error | `tool/python/outcomes.py`; paired with `SILENT_KNOWN_GAP` |
-| `CORRUPT_REPORT_EQUALS_EMPTY_GREEN` | cross-cutting candidate | Malformed reporter output can look like zero failures | Corrupt/non-object records are errors | `tool/python/tests/test_outcomes.py` |
+| `SKIP_EQUALS_XFAIL` | cross-cutting candidate | Treating every skip as a known failure erases environment-gate semantics | Preserve passed/failed/skipped/xfailed/xpassed/error | `python/outcomes.py`; paired with `SILENT_KNOWN_GAP` |
+| `CORRUPT_REPORT_EQUALS_EMPTY_GREEN` | cross-cutting candidate | Malformed reporter output can look like zero failures | Corrupt/non-object records are errors | `python/tests/test_outcomes.py` |
 | `FULL_CATALOGUE_EVERYWHERE` | flutter-local | Thousands of reference tests in every compatibility lane make startup dominate signal | Full pinned lane + focused moving/core lanes | CI shard/path design; mobile `@portable` subset |
 | `STALE_ACTIONS_GREEN` | cross-cutting candidate | A previous SHA's green run is reused as current proof | Gate receipts against git HEAD | Actions freshness tooling/tests |
 | `CLI_ARG_GREEDINESS` | cross-cutting; browser-test-kit stable | Space-separated Playwright `--project chromium <spec>` can consume the spec as another project | Exact argv tests; `--project=chromium` | `test_playwright_cli.py`; upstream stable ID |
@@ -40,7 +40,7 @@ For browser-generic concepts, browser-test-kit is the preferred vocabulary owner
 | `PATH_FILTER_BLIND_SPOT` | cross-cutting candidate | CI path filters omit shared config/lock/core inputs | Treat path filters as executable contracts | workflow tests/review |
 | `GENERATED_CODE_AS_SOURCE` | cross-cutting candidate | Dart/Markdown/TS generated from JSON is hand-edited or accumulates business logic | JSON/schema is authoritative; generated files are deterministic projections with headers and drift checks | executable photo/time generator `--check` + review |
 | `CODEGEN_FOR_ALGORITHM` | cross-cutting candidate | Python/Deno generates arbitrary Dart product algorithms rather than repetitive adapters/data | Generate mechanical data/types/tests/docs only; keep algorithms in their runtime owner | review-only |
-| `GOLDEN_WITHOUT_PROVENANCE` | cross-cutting candidate | Expected JSON is copied from the implementation under test and merely freezes its bug | Golden metadata names spec/known-value/provenance; independently derive computational expectations | canonical example: `tool/time/generate_timezone_cases.py` records `Python stdlib zoneinfo / system IANA tzdata`; fixture review/oracle tests |
+| `GOLDEN_WITHOUT_PROVENANCE` | cross-cutting candidate | Expected JSON is copied from the implementation under test and merely freezes its bug | Golden metadata names spec/known-value/provenance; independently derive computational expectations | canonical example: `python/generate_timezone_cases.py` records `Python stdlib zoneinfo / system IANA tzdata`; fixture review/oracle tests |
 
 ## Pytest-specific guidance
 

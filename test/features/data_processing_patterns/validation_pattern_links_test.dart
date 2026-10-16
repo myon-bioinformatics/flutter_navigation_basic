@@ -9,9 +9,9 @@ import 'package:flutter_application_1/config/routes.dart';
 const _ref = String.fromEnvironment('SOURCE_REF', defaultValue: 'main');
 const _base = 'https://github.com/myon-bioinformatics/flutter_navigation_basic/blob/$_ref/';
 const _links = <String, String>{
-  'Python実装': '${_base}tool/python/validation_patterns.py',
-  'Pythonテスト': '${_base}tool/python/tests/test_validation_patterns.py',
-  'ローカル入力画面': '${_base}tool/python/validation_http.py',
+  'Python実装': '${_base}python/validation_patterns.py',
+  'Pythonテスト': '${_base}python/tests/test_validation_patterns.py',
+  'ローカル入力画面': '${_base}python/validation_http.py',
   '利用方法・制約': '${_base}docs/data-processing-validation-091-099.md',
 };
 const _names = <int, String>{

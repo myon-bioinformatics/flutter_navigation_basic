@@ -72,7 +72,7 @@ void main() {
     );
     final result = await Process.run('python3', [
       '-S',
-      'tool/python/metadata_contracts.py',
+      'python/metadata_contracts.py',
       output.path,
     ]);
     expect(result.exitCode, 0, reason: '${result.stdout}\n${result.stderr}');

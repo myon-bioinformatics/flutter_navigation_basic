@@ -46,7 +46,7 @@ for (const [route, requiresSecondary] of pages) {
     const output = testInfo.outputPath('header-contract.json');
     writeFileSync(output, JSON.stringify(snapshot, null, 2));
     await testInfo.attach('header-contract', { path: output, contentType: 'application/json' });
-    const oracle = spawnSync('python3', ['-S', '../tool/python/header_contracts.py', output], { encoding: 'utf8' });
+    const oracle = spawnSync('python3', ['-S', '../python/header_contracts.py', output], { encoding: 'utf8' });
     expect(oracle.error, String(oracle.error)).toBeUndefined();
     expect(oracle.status, oracle.stdout + oracle.stderr).toBe(0);
     const favorite = node('shared-header-favorite').getByRole('button');

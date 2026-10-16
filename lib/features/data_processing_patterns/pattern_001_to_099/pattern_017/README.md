@@ -1,8 +1,8 @@
 # Pattern 017: TagFilter
 
 ## 責務と実装状態
-- Python: `tool/python/collection_query_patterns.py` の `tag` で独立した実処理を実装。
-- テスト: `tool/python/tests/test_collection_query_patterns.py` で処理契約を検証。
+- Python: `python/collection_query_patterns.py` の `tag` で独立した実処理を実装。
+- テスト: `python/tests/test_collection_query_patterns.py` で処理契約を検証。
 - Dart: `view.dart` は説明画面のみ。FlutterからPythonを呼び出す経路は未接続。
 - 旧Controller・Service・Modelと固定成功文言を検証する旧テストは削除済み。
 

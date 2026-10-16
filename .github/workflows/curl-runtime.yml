@@ -6,12 +6,12 @@ on:
     paths:
       - "Dockerfile.e2e"
       - ".dockerignore"
-      - "tool/docker/**"
-      - "tool/python/curl_*.py"
-      - "tool/python/playwright.py"
-      - "tool/python/vendor/**"
-      - "tool/python/tests/test_curl*.py"
-      - "tool/python/tests/test_docker_curl_runtime.py"
+      - "docker/**"
+      - "python/curl_*.py"
+      - "python/playwright.py"
+      - "python/vendor/**"
+      - "python/tests/test_curl*.py"
+      - "python/tests/test_docker_curl_runtime.py"
       - "lib/shared/http/**"
       - "lib/core/platform/**"
       - "lib/features/http_request_draft/**"
@@ -56,7 +56,7 @@ jobs:
           set -euo pipefail
           mkdir -p e2e/test-results build/curl-runtime
           docker image inspect flutter-nav-curl-runtime:ci --format '{{.Id}}' > build/curl-runtime/image-id.txt
-          python3 -S tool/python/generate_repository_metadata.py \
+          python3 -S python/generate_repository_metadata.py \
             --root . \
             --repository "${GITHUB_REPOSITORY}" \
             --output-dir build/curl-runtime/repository
@@ -86,7 +86,7 @@ jobs:
           PY
           mapfile -t snapshots < <(find e2e/test-results -name python-curl-import.png -type f)
           test "${#snapshots[@]}" -ge 5
-          python3 -S tool/python/vendor/check_png.py "${snapshots[@]}"
+          python3 -S python/vendor/check_png.py "${snapshots[@]}"
       - name: Keep browser snapshots, traces, JUnit and toolchain evidence
         if: always()
         uses: actions/upload-artifact@v7

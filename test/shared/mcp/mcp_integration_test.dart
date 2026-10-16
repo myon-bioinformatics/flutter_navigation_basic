@@ -8,7 +8,7 @@ import 'package:flutter_application_1/shared/mcp/mcp.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_application_1/shared/http/mock_auth.dart';
-import '../../../tool/src/mock_mcp.dart';
+import '../../../build_tools/src/mock_mcp.dart';
 
 void main() {
   group('McpSessionClient', () {

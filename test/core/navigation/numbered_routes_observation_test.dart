@@ -12,7 +12,7 @@ import 'package:flutter_application_1/screens/generic_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Observed (widget kind, id). Unknown widgets keep their runtime type and
-/// id -1 so they can never match tool/ci/numbered_routes.toml.
+/// id -1 so they can never match ci/numbered_routes.toml.
 (String, int) _observe(Widget widget) => switch (widget) {
       GenericScreen(:final screenId) => ('GenericScreen', screenId),
       InteractivePatternExample(:final patternId) =>
@@ -29,7 +29,7 @@ import 'package:flutter_test/flutter_test.dart';
     };
 
 /// Observation only: this test never reads the expected TOML. It records what
-/// every /screenN route really builds; tool/python/check_route_observations.py
+/// every /screenN route really builds; python/check_route_observations.py
 /// compares that record with the hand-written expectations.
 void main() {
   testWidgets('resolve every numbered route and record what it builds',

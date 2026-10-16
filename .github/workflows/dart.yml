@@ -55,18 +55,18 @@ jobs:
           for f in "${files[@]}"; do
             case "$f" in
               # Shared goldens: Python oracle + Dart consumers must both run.
-              tool/python/fixtures/*|tool/time/fixtures/*)
+              python/fixtures/*)
                 python=true
                 flutter=true
                 ;;
-              tool/python/generate_pattern_smoke_test.py|tool/python/check_pattern_smoke_mutations.py|tool/python/tests/test_pattern_smoke_generator.py|tool/python/pattern_contracts.py|tool/python/metadata_contracts.py|tool/python/generate_pattern_contracts.py|tool/python/tests/test_pattern_contracts.py|tool/python/tests/test_metadata_contracts.py)
+              python/generate_pattern_smoke_test.py|python/check_pattern_smoke_mutations.py|python/tests/test_pattern_smoke_generator.py|python/pattern_contracts.py|python/metadata_contracts.py|python/generate_pattern_contracts.py|python/tests/test_pattern_contracts.py|python/tests/test_metadata_contracts.py|python/generate_repository_metadata.py)
                 python=true
                 flutter=true
                 ;;
-              tool/python/*|tool/time/*)
+              python/*)
                 python=true
                 ;;
-              lib/*|test/*|assets/*|web/*|android/*|ios/*|linux/*|macos/*|windows/*|pubspec.yaml|pubspec.lock|analysis_options.yaml|tool/*|.github/workflows/dart.yml)
+              lib/*|test/*|assets/*|web/*|android/*|ios/*|linux/*|macos/*|windows/*|pubspec.yaml|pubspec.lock|analysis_options.yaml|javascript/*|ci/*|docker/*|build_tools/*|.github/workflows/dart.yml)
                 flutter=true
                 ;;
             esac
@@ -82,7 +82,7 @@ jobs:
             esac
             case "$f" in
               # Pattern catalogue sources, generated smoke, and their CI selection.
-              test/features/*_patterns/*|tool/python/generate_pattern_smoke_test.py|tool/python/check_pattern_smoke_mutations.py|tool/python/tests/test_pattern_smoke_generator.py|.github/workflows/dart.yml|lib/features/*_patterns/*|assets/screens.json|tool/ci/flutter_pattern_test_paths.txt|lib/core/services/base_controller.dart|pubspec.yaml|pubspec.lock)
+              test/features/*_patterns/*|python/generate_pattern_smoke_test.py|python/check_pattern_smoke_mutations.py|python/tests/test_pattern_smoke_generator.py|.github/workflows/dart.yml|lib/features/*_patterns/*|assets/screens.json|ci/flutter_pattern_test_paths.txt|lib/core/services/base_controller.dart|pubspec.yaml|pubspec.lock)
                 patterns=true
                 ;;
             esac
@@ -95,7 +95,7 @@ jobs:
               flutter=true
               android=true
               ios=true
-            elif [[ "$f" == ".github/workflows/non-dart.yml" || "$f" == tool/ci/* ]]; then
+            elif [[ "$f" == ".github/workflows/non-dart.yml" || "$f" == ci/* ]]; then
               flutter=true
             fi
           done
@@ -154,7 +154,7 @@ jobs:
           fi
 
       - name: Inspect repository with shared toolkit
-        run: dart run tool/inspect.dart --json
+        run: dart run build_tools/inspect.dart --json
 
       - name: Analyze project source
         run: flutter analyze --no-fatal-infos
@@ -162,10 +162,10 @@ jobs:
       - name: Export and validate production Dart contracts
         run: |
           set -euo pipefail
-          python3 -S tool/python/generate_pattern_contracts.py --check
-          dart run tool/export_pattern_contracts.dart build/test-results/pattern-contracts.json
-          python3 -S tool/python/pattern_contracts.py build/test-results/pattern-contracts.json --junit build/test-results/pattern-contracts.xml
-          python3 -S tool/python/validate_runner_junit.py build/test-results/pattern-contracts.xml
+          python3 -S python/generate_pattern_contracts.py --check
+          dart run build_tools/export_pattern_contracts.dart build/test-results/pattern-contracts.json
+          python3 -S python/pattern_contracts.py build/test-results/pattern-contracts.json --junit build/test-results/pattern-contracts.xml
+          python3 -S python/validate_runner_junit.py build/test-results/pattern-contracts.xml
 
       - name: Preserve Dart contract JSON and Python JUnit
         if: always()
@@ -207,7 +207,7 @@ jobs:
 
       - name: Run sharded core tests
         run: |
-          mapfile -t paths < <(grep -vE '^\s*(#|$)' tool/ci/flutter_core_test_paths.txt)
+          mapfile -t paths < <(grep -vE '^\s*(#|$)' ci/flutter_core_test_paths.txt)
           mkdir -p build/test-results
           flutter test --total-shards=2 --shard-index=${{ matrix.shard }} "${paths[@]}" --file-reporter json:build/test-results/flutter-core-${{ matrix.shard }}.jsonl
 
@@ -215,8 +215,8 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          python3 -S tool/python/flutter_machine_junit.py build/test-results/flutter-core-${{ matrix.shard }}.jsonl build/test-results/flutter-core-${{ matrix.shard }}.xml
-          python3 -S tool/python/validate_runner_junit.py build/test-results/flutter-core-${{ matrix.shard }}.xml
+          python3 -S python/flutter_machine_junit.py build/test-results/flutter-core-${{ matrix.shard }}.jsonl build/test-results/flutter-core-${{ matrix.shard }}.xml
+          python3 -S python/validate_runner_junit.py build/test-results/flutter-core-${{ matrix.shard }}.xml
 
       - name: Preserve core shard JUnit and raw events
         if: always()
@@ -256,11 +256,11 @@ jobs:
         run: flutter pub get
 
       - name: Verify generated pattern smoke test is current
-        run: python3 -S tool/python/generate_pattern_smoke_test.py --check
+        run: python3 -S python/generate_pattern_smoke_test.py --check
 
       - name: Verify smoke rejects real service mutations
         if: matrix.shard == 0
-        run: python3 -S tool/python/check_pattern_smoke_mutations.py
+        run: python3 -S python/check_pattern_smoke_mutations.py
 
       - name: Preserve expected mutation failures
         if: always() && matrix.shard == 0
@@ -273,7 +273,7 @@ jobs:
 
       - name: Run sharded pattern catalogue tests
         run: |
-          mapfile -t paths < <(grep -vE '^\s*(#|$)' tool/ci/flutter_pattern_test_paths.txt)
+          mapfile -t paths < <(grep -vE '^\s*(#|$)' ci/flutter_pattern_test_paths.txt)
           mkdir -p build/test-results
           flutter test --total-shards=4 --shard-index=${{ matrix.shard }} "${paths[@]}" --file-reporter json:build/test-results/flutter-patterns-${{ matrix.shard }}.jsonl
 
@@ -281,8 +281,8 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          python3 -S tool/python/flutter_machine_junit.py build/test-results/flutter-patterns-${{ matrix.shard }}.jsonl build/test-results/flutter-patterns-${{ matrix.shard }}.xml
-          python3 -S tool/python/validate_runner_junit.py build/test-results/flutter-patterns-${{ matrix.shard }}.xml
+          python3 -S python/flutter_machine_junit.py build/test-results/flutter-patterns-${{ matrix.shard }}.jsonl build/test-results/flutter-patterns-${{ matrix.shard }}.xml
+          python3 -S python/validate_runner_junit.py build/test-results/flutter-patterns-${{ matrix.shard }}.xml
 
       - name: Preserve patterns shard JUnit and raw events
         if: always()
@@ -311,15 +311,15 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: tool/python/requirements.txt
+          cache-dependency-path: python/requirements.txt
 
       - name: Install Python test dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r tool/python/requirements.txt
+          pip install -r python/requirements.txt
 
       - name: Run pytest
-        run: python tool/python/test.py --pytest -- --oracle-mode=local --outcomes-json build/diagnostics/python-oracle/pytest_outcomes.json
+        run: python python/test.py --pytest -- --oracle-mode=local --outcomes-json build/diagnostics/python-oracle/pytest_outcomes.json
 
       - name: Write local oracle receipt
         if: always()
@@ -389,7 +389,7 @@ jobs:
 
       - name: Verify resolved direct packages are latest stable
         if: matrix.shard == 0
-        run: dart run tool/check_versions.dart
+        run: dart run build_tools/check_versions.dart
 
       - name: Analyze on latest stable
         if: matrix.shard == 0
@@ -397,7 +397,7 @@ jobs:
 
       - name: Run core (non-pattern) sharded tests on latest stable
         run: |
-          mapfile -t paths < <(grep -vE '^\s*(#|$)' tool/ci/flutter_core_test_paths.txt)
+          mapfile -t paths < <(grep -vE '^\s*(#|$)' ci/flutter_core_test_paths.txt)
           mkdir -p build/test-results
           flutter test --total-shards=2 --shard-index=${{ matrix.shard }} "${paths[@]}" --file-reporter json:build/test-results/flutter-latest-${{ matrix.shard }}.jsonl
 
@@ -405,8 +405,8 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          python3 -S tool/python/flutter_machine_junit.py build/test-results/flutter-latest-${{ matrix.shard }}.jsonl build/test-results/flutter-latest-${{ matrix.shard }}.xml
-          python3 -S tool/python/validate_runner_junit.py build/test-results/flutter-latest-${{ matrix.shard }}.xml
+          python3 -S python/flutter_machine_junit.py build/test-results/flutter-latest-${{ matrix.shard }}.jsonl build/test-results/flutter-latest-${{ matrix.shard }}.xml
+          python3 -S python/validate_runner_junit.py build/test-results/flutter-latest-${{ matrix.shard }}.xml
 
       - name: Preserve latest stable shard JUnit and raw events
         if: always()
@@ -486,7 +486,7 @@ jobs:
         run: flutter pub get
 
       - name: Measure canonical Android arm64 release
-        run: dart run tool/dev.dart size
+        run: dart run build_tools/dev.dart size
 
       - name: Show size summary
         run: cat build/diagnostics/android-arm64/summary.txt

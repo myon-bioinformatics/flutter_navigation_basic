@@ -21,8 +21,8 @@ class ConversionPatternLinks extends StatelessWidget {
         name: names[patternId]!,
         limitation: '限定実装: Pythonで実行可能。Flutterからの変換実行は未接続。',
         links: const [
-          ('Python実装', 'tool/python/conversion_patterns.py'),
-          ('Pythonテスト', 'tool/python/tests/test_conversion_patterns.py'),
+          ('Python実装', 'python/conversion_patterns.py'),
+          ('Pythonテスト', 'python/tests/test_conversion_patterns.py'),
           ('利用方法・制約', 'docs/data-processing-conversion-103-110.md'),
         ],
       );

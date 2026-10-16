@@ -54,7 +54,7 @@ or mobile dependencies.
 ```sh
 flutter pub get
 flutter build web --release -t lib/main.dart --base-href / --dart-define=CURL_PYTHON_RUNTIME=true
-python -S tool/python/curl_runtime_server.py --web-root build/web --port 8080
+python -S python/curl_runtime_server.py --web-root build/web --port 8080
 # Open http://127.0.0.1:8080/#/tools/http/request-draft (not localhost).
 ```
 

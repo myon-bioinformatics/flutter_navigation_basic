@@ -9,18 +9,18 @@ timers, fetch, clicks and their asynchronous lifecycles.
 
 ```sh
 # Existing native Node suite, with a single bounded retry of the same files
-python3 tool/python/test.py --node --retry-failed
+python3 python/test.py --node --retry-failed
 
 # Deno: explicit selected file; Deno must be installed
-python3 tool/python/test.py --external-runner deno \
-  --test-file tool/javascript/tests/example.test.mjs --retry-failed
+python3 python/test.py --external-runner deno \
+  --test-file javascript/tests/example.test.mjs --retry-failed
 
 # Playwright Node: requires e2e dependencies and browser installation
-python3 tool/python/test.py --external-runner playwright-node \
+python3 python/test.py --external-runner playwright-node \
   --test-file e2e/tests/example.spec.ts --retry-failed
 
 # Playwright Python: requires pytest + pytest-playwright and installed browsers
-python3 tool/python/test.py --external-runner playwright-python \
+python3 python/test.py --external-runner playwright-python \
   --test-file path/to/test_browser.py --retry-failed
 ```
 
@@ -65,7 +65,7 @@ changing line numbers or timestamps can create different patterns.
 
 The Non-Dart `Playwright install smoke` job installs Chromium, Firefox and
 WebKit and executes `e2e/tests/runner_adapter_smoke.spec.ts` through
-`python3 tool/python/test.py --external-runner playwright-node`.
+`python3 python/test.py --external-runner playwright-node`.
 The spec clicks a real browser button and waits for a timer-driven DOM update.
 The same Playwright config also covers mobile browser emulation; this is not
 physical Android/iOS evidence. The job uploads native JUnit and the attempt

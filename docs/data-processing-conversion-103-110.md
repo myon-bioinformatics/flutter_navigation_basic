@@ -11,8 +11,8 @@
 | 109 | Encoding | UTF-8文字列とBase64の相互変換 |
 | 110 | DataMasking | 末尾N文字を残す文字列マスク |
 
-実装: `tool/python/conversion_patterns.py`
-テスト: `tool/python/tests/test_conversion_patterns.py`
+実装: `python/conversion_patterns.py`
+テスト: `python/tests/test_conversion_patterns.py`
 
 ## 入力契約の要点
 

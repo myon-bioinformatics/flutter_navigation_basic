@@ -9,8 +9,8 @@ import 'package:flutter_application_1/config/routes.dart';
 const _ref = String.fromEnvironment('SOURCE_REF', defaultValue: 'main');
 const _base = 'https://github.com/myon-bioinformatics/flutter_navigation_basic/blob/$_ref/';
 const _links = <String, String>{
-  'Python実装': '${_base}tool/python/conversion_patterns.py',
-  'Pythonテスト': '${_base}tool/python/tests/test_conversion_patterns.py',
+  'Python実装': '${_base}python/conversion_patterns.py',
+  'Pythonテスト': '${_base}python/tests/test_conversion_patterns.py',
   '利用方法・制約': '${_base}docs/data-processing-conversion-103-110.md',
 };
 const _names = <int, String>{

@@ -16,7 +16,7 @@ This is an audit and migration rubric, not a request for a wholesale rewrite.
 
 ## Current repository signal
 
-The repository is strongly Dart-shaped: the current tree contains thousands of `.dart` files, including a large historical API-pattern catalogue, while Python is already established under `tool/python/` for stdlib diagnostics, pytest/oracles, artifact inspection, network probing, fixture generation, and Playwright wrapping. Browser E2E already uses TypeScript/Node Playwright.
+The repository is strongly Dart-shaped: the current tree contains thousands of `.dart` files, including a large historical API-pattern catalogue, while Python is already established under `python/` for stdlib diagnostics, pytest/oracles, artifact inspection, network probing, fixture generation, and Playwright wrapping. Browser E2E already uses TypeScript/Node Playwright.
 
 That means “Dart by default everywhere” is no longer an accurate description of the actual architecture. The project is already multi-runtime; the next step is to make ownership intentional.
 
@@ -127,7 +127,7 @@ A Python oracle is not automatically independent merely because it uses another 
 2. an independently derived oracle using a different algorithm, invariant, or authoritative specification;
 3. only then a second-language implementation when independence can be explained.
 
-A line-for-line Dart-to-Python translation is not an oracle: it can reproduce the same bug and violates `DUPLICATE_RUNTIME_SOURCE`. Python remains valuable for readable verification, but independence matters more than language. The canonical existing example is `tool/time/generate_timezone_cases.py`: its golden records `Python stdlib zoneinfo / system IANA tzdata` as provenance, independently of the Dart implementation under test.
+A line-for-line Dart-to-Python translation is not an oracle: it can reproduce the same bug and violates `DUPLICATE_RUNTIME_SOURCE`. Python remains valuable for readable verification, but independence matters more than language. The canonical existing example is `python/generate_timezone_cases.py`: its golden records `Python stdlib zoneinfo / system IANA tzdata` as provenance, independently of the Dart implementation under test.
 
 ### Browser-native surface boundary
 
@@ -141,7 +141,7 @@ Potential follow-up targets include simple catalogue-like lists such as composit
 
 ### 3. Mock/protocol infrastructure
 
-`tool/mock_http_server.dart` is substantial and currently has a reason to remain Dart where it reuses app-side protocol behavior. Split the question:
+`build_tools/mock_http_server.dart` is substantial and currently has a reason to remain Dart where it reuses app-side protocol behavior. Split the question:
 
 - contracts that intentionally prove the Dart implementation stay Dart;
 - generic fixture serving/protocol probes may move to Python stdlib or Deno if doing so removes custom code;
@@ -183,7 +183,7 @@ Python stdlib is the preferred first generator when it gives the smallest readab
 
 Generated code must be deliberately boring: a mechanical representation of the JSON contract, not a place where product algorithms are authored. **Do not use Python to generate arbitrary Dart business logic merely because it can.** If the generator must understand Flutter navigation/state/widget semantics, the boundary is probably wrong.
 
-The repository already proves the **JSON-golden generation** half of this pattern: `tool/time/generate_timezone_cases.py` deterministically generates reference JSON for Dart tests and CI enforces its `--check` drift check. Its `source: Python stdlib zoneinfo / system IANA tzdata` provenance is the canonical in-repo example of an independently derived golden. The photo-import tooling also generates binaries + `cases.json` while measured evidence remains separate, but it is a local/manual regeneration tool and CI consumes committed binaries rather than enforcing the generator. **Generating Dart/Markdown/TS source from a golden is a new, not-yet-implemented extension in this repository**, not an already-proven precedent.
+The repository already proves the **JSON-golden generation** half of this pattern: `python/generate_timezone_cases.py` deterministically generates reference JSON for Dart tests and CI enforces its `--check` drift check. Its `source: Python stdlib zoneinfo / system IANA tzdata` provenance is the canonical in-repo example of an independently derived golden. The photo-import tooling also generates binaries + `cases.json` while measured evidence remains separate, but it is a local/manual regeneration tool and CI consumes committed binaries rather than enforcing the generator. **Generating Dart/Markdown/TS source from a golden is a new, not-yet-implemented extension in this repository**, not an already-proven precedent.
 
 ### Generator contract
 
@@ -300,7 +300,7 @@ For each proposed Dart -> Python/data/web/Deno migration:
 
 ## Suggested follow-up slices
 
-1. **Tooling audit:** inventory `tool/*.dart` and classify keep-Dart / Python-stdlib / Deno / delete-or-merge. No migrations yet.
+1. **Tooling audit:** inventory `build_tools/*.dart` and classify keep-Dart / Python-stdlib / Deno / delete-or-merge. No migrations yet.
 2. **Data audit:** identify static Dart catalogues that can become language-neutral assets without runtime duplication.
 3. **Browser matrix:** add Android-oriented Chromium and iPhone/iOS-oriented WebKit projects to E2E and exact parity/evidence checks.
 4. **Representative product paths:** choose a small set of real user flows for all browser projects; do not multiply thousands of catalogue tests by five projects.

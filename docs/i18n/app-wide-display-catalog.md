@@ -60,4 +60,4 @@ clipboard image bytes / content insertion — not Base64-only.
 
 Photo Studio geometry is owned by Dart (`StudioGeometry` + table-driven cases in
 `test/photo_studio/studio_geometry_test.dart`). There is no Python geometry
-oracle or shared JSON fixture under `tool/python/`.
+oracle or shared JSON fixture under `python/`.

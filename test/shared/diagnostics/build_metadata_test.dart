@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/shared/diagnostics/build_metadata.dart';
 
-import '../../../tool/src/repository_metadata.dart';
+import '../../../build_tools/src/repository_metadata.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/shared/diagnostics/build_diagnostics_card.dart';
 import 'package:flutter_application_1/shared/widgets/home_overview_panel.dart';
@@ -19,7 +19,7 @@ void main() {
       canonical =
           jsonDecode(
                 File(
-                  'tool/python/fixtures/repository_metadata_v1.json',
+                  'python/fixtures/repository_metadata_v1.json',
                 ).readAsStringSync(),
               )
               as Map<String, dynamic>;
@@ -124,7 +124,7 @@ void main() {
     final canonical =
         jsonDecode(
               File(
-                'tool/python/fixtures/repository_metadata_v1.json',
+                'python/fixtures/repository_metadata_v1.json',
               ).readAsStringSync(),
             )
             as Map<String, dynamic>;
@@ -240,7 +240,7 @@ void main() {
       // Prefer an inline legacy fixture for the "revision missing" case.
       // The checked-in assets/diagnostics/build_metadata.json is now the
       // deterministic neutral fallback (asserted in BuildMetadata.load),
-      // and CI still refreshes it via `dart run tool/dev.dart meta` before
+      // and CI still refreshes it via `dart run build_tools/dev.dart meta` before
       // the GitHub Pages web build — so do not use that live asset here.
       final metadata = BuildMetadata.fromJson(const {
         'app': {'version': '0.1.0', 'buildNumber': 1, 'stage': 'pre-beta'},

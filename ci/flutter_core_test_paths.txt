@@ -1,0 +1,21 @@
+# Non-pattern Flutter test paths for pinned-core and latest-stable CI shards.
+# Pattern catalogues (~38 files incl. one generated smoke test) run in the dedicated pinned-patterns job
+# (ci/flutter_pattern_test_paths.txt) so ordinary feature PRs do not pay
+# the full suite-load cost on every shard.
+# Lines starting with # are ignored.
+
+test/photo_studio
+test/coordinate_tool
+test/core
+test/now_timeline
+test/screens
+test/shared
+test/tool
+test/features/composition_generator
+test/features/home
+test/features/counter_playground_controller_test.dart
+test/features/counter_battle_effect_test.dart
+test/features/irony_generator_interaction_test.dart
+
+# Actual Dart decoding exported to the Python integrity oracle.
+test/contracts

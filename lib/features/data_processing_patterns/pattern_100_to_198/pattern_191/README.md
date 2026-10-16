@@ -3,8 +3,8 @@
 Saga パターンによる分散トランザクション (擬似)。
 
 ## 実装と検証
-- Python標準ライブラリの独立CLI: `tool/python/workflow_patterns.py` operation `saga`
-- pytest: `tool/python/tests/test_workflow_patterns.py`
+- Python標準ライブラリの独立CLI: `python/workflow_patterns.py` operation `saga`
+- pytest: `python/tests/test_workflow_patterns.py`
 - 境界仕様: `docs/workflow-patterns.md`
 - 元のServiceは100ms待つ成功ダミーだったため削除した。
 - Flutter `view.dart` はナビゲーション互換の説明画面であり、CLI実行は未接続。

@@ -35,7 +35,7 @@ void main() {
 
     test('matches the Python zoneinfo oracle fixture from PR #30', () {
       final fixture = jsonDecode(
-        File('tool/time/fixtures/timezone_cases.json').readAsStringSync(),
+        File('python/fixtures/timezone_cases.json').readAsStringSync(),
       ) as Map<String, dynamic>;
       final cases = fixture['cases'] as List<dynamic>;
 

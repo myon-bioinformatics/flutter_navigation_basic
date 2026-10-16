@@ -23,8 +23,8 @@ The generator uses Python's standard-library `zoneinfo` and the host's IANA
 TZPATH. No runtime Python dependency or pinned pip tzdata is introduced.
 
 ```sh
-python3 tool/time/generate_zone_table.py          # regenerate deliberately
-python3 tool/time/generate_zone_table.py --check  # compare committed content
+python3 python/generate_zone_table.py          # regenerate deliberately
+python3 python/generate_zone_table.py --check  # compare committed content
 ```
 
 `--check` compares all asset fields except the advisory `tzdata_version`

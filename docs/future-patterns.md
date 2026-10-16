@@ -1,6 +1,6 @@
 # Async reference catalogue (121–126)
 
-The original Dart services were 100 ms delayed-success placeholders, not real Future implementations. Node.js 22+ has a dependency-free JSON CLI at \`tool/javascript/future_patterns.mjs\`, and its contract is checked by \`node --test tool/javascript/tests/*.test.mjs\`.
+The original Dart services were 100 ms delayed-success placeholders, not real Future implementations. Node.js 22+ has a dependency-free JSON CLI at \`javascript/future_patterns.mjs\`, and its contract is checked by \`node --test javascript/tests/*.test.mjs\`.
 
 Input is a JSON object with \`mode\` and a single \`task\` (or \`tasks\` for wait/any); a task has \`value\`, optional \`delay_ms\` (0..1000), and optional nonempty \`reject\` string. CLI outputs \`{"schema":"future-patterns/1","mode":"...","value":...}\` on stdout; rejected/invalid inputs exit 2 with stderr only.
 

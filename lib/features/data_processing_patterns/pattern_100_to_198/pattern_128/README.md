@@ -6,12 +6,12 @@
 StreamController による手動 Stream 制御。
 
 ## 実装先と検証
-- Node.js標準機能のみの参照CLI: `tool/javascript/stream_patterns.mjs` の `controller`
-- テスト: `tool/javascript/tests/stream_patterns.test.mjs`
+- Node.js標準機能のみの参照CLI: `javascript/stream_patterns.mjs` の `controller`
+- テスト: `javascript/tests/stream_patterns.test.mjs`
 - 契約とDart Streamとの違い: `docs/stream-patterns.md`
 - Flutter `view.dart` は説明画面であり、Nodeへの実行連携は未接続。
 - 旧GetX Controller、ダミーService、message Modelは削除。
 
 ```sh
-node tool/javascript/stream_patterns.mjs --input input.json
+node javascript/stream_patterns.mjs --input input.json
 ```
