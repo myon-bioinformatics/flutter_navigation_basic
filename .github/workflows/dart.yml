@@ -4,8 +4,7 @@ on:
   push:
     branches: ["main"]
   pull_request:
-    # Also validate #189 while it is stacked on the image-diff prerequisite #187.
-    branches: ["main", "feat/image-diff-tool"]
+    branches: ["main"]
 
 # Rapid PR pushes cancel superseded runs so pinned/Android Flutter setup
 # is not paid for abandoned SHAs.

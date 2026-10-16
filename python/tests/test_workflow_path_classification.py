@@ -94,5 +94,5 @@ def test_non_dart_event_filters_have_no_duplicates():
 
 
 @pytest.mark.parametrize('name', ['dart.yml', 'non-dart.yml'])
-def test_stacked_refactor_base_runs_ci_without_retargeting(name):
-    assert 'feat/image-diff-tool' in workflow(name)[True]['pull_request']['branches']
+def test_retargeted_refactor_runs_ci_on_main(name):
+    assert workflow(name)[True]['pull_request']['branches'] == ['main']

@@ -7,8 +7,7 @@ name: Non-Dart checks
 # boundaries without running the full non-Dart suite or booting Flutter.
 on:
   pull_request:
-    # Also validate #189 while it is stacked on the image-diff prerequisite #187.
-    branches: ["main", "feat/image-diff-tool"]
+    branches: ["main"]
     paths:
       - "python/**"
       - "assets/time/**"
