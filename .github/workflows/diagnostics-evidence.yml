@@ -67,7 +67,7 @@ jobs:
         working-directory: e2e
         run: |
           npm install
-          npx playwright install --with-deps chromium firefox webkit
+          npx playwright install --with-deps --only-shell chromium firefox webkit
       - name: Assert visible metadata and capture success evidence
         working-directory: e2e
         run: |
