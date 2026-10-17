@@ -1,3 +1,5 @@
+// Independent page/context fixtures; schedule cases across bounded workers.
+test.describe.configure({ mode: 'parallel' });
 import {test,expect,Page} from '@playwright/test';
 import {waitForFlutter} from '../utils/helpers';
 

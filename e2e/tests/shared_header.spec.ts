@@ -1,3 +1,5 @@
+// Independent page/context fixtures; schedule cases across bounded workers.
+test.describe.configure({ mode: 'parallel' });
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
@@ -156,7 +158,7 @@ test('Japanese shared menu and Home confirmation preserve cancel and navigation 
   await expect(dialog).toHaveCount(0);
 });
 
-test('Japanese clipboard save and copy use real system clipboard @portable', async ({ page, context }, testInfo) => {
+test('Japanese clipboard save and copy use real system clipboard @portable', { lock: 'system-clipboard' }, async ({ page, context }, testInfo) => {
   test.skip(!testInfo.project.name.includes('chromium'), 'Clipboard permissions are supported by Chromium; all outcomes have Widget coverage.');
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.goto('/#/hub');

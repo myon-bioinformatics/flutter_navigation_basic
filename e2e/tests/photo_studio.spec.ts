@@ -1,3 +1,5 @@
+// Independent page/context fixtures; schedule cases across bounded workers.
+test.describe.configure({ mode: 'parallel' });
 import { test, expect } from '@playwright/test';
 import {
   openPhotoStudio,

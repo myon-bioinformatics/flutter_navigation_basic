@@ -1,3 +1,5 @@
+// Independent page/context fixtures; schedule cases across bounded workers.
+test.describe.configure({ mode: 'parallel' });
 import { test, expect } from '../utils/observed_test';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -25,7 +27,7 @@ test.describe('Photo Studio ingress audit', () => {
     expect((await waitPhotoImportOutcome(page)).kind).toBe('rendered');
   });
 
-  test('paste text data URL reaches the same success state @portable @chromium-clipboard', async ({ page, context, browserName }) => {
+  test('paste text data URL reaches the same success state @portable @chromium-clipboard', { lock: 'system-clipboard' }, async ({ page, context, browserName }) => {
     test.skip(browserName !== 'chromium', 'Playwright clipboard permissions are Chromium-only in this lane');
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await openPhotoStudio(page);
@@ -63,7 +65,7 @@ test.describe('Clipboard image bridge', () => {
     await page.screenshot({ path: test.info().outputPath('clipboard-image-preview.png') });
   });
 
-  test('Base64 paste, PNG resize, copy and preview round trip @portable @chromium-clipboard', async ({ page, context, browserName, baseURL }) => {
+  test('Base64 paste, PNG resize, copy and preview round trip @portable @chromium-clipboard', { lock: 'system-clipboard' }, async ({ page, context, browserName, baseURL }) => {
     test.skip(browserName !== 'chromium', 'Real clipboard permissions are exercised in Chromium');
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.goto(new URL('#/core/clipboard-shelf', baseURL!).href);
