@@ -285,7 +285,7 @@ jobs:
         run: python -m pip install -r python/requirements.txt
 
       - name: Run locked metadata regressions
-        run: python -m pytest -q python/tests/test_repository_metadata.py
+        run: python -m pytest -q python/tests/test_flutter_navigation_basic_repository_metadata.py
 
       - name: Stage canonical vendor evidence
         if: always()

@@ -2,6 +2,7 @@
 python/vendor/yourself.py -text
 python/vendor/xprobe.py -text
 python/vendor/gh_ops.py -text
+python/vendor/myon-bioinformatics-LICENSE -text
 python/vendor/check_evidence.py -text
 python/vendor/jsonl_digest.py -text
 python/vendor/cli_args.py -text

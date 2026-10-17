@@ -153,7 +153,7 @@ identities, plus each upstream LICENSE, are recorded in
 40-hex upstream commit in `ref` and `commit`. Repository metadata is produced by the vendored
 `gh_identity.py`; the former Ironmate modules (`73157cb7`) were removed after
 the switch (#169), and their output bytes remain pinned as frozen hashes in
-`tests/test_repository_metadata.py`.
+`tests/test_flutter_navigation_basic_repository_metadata.py`.
 
 Ordinary Non-Dart CI uses the shared stdlib-only `vendor_sync.py` pinned at
 `1eda992aa6fa31a902e2c06428e53ab17e8fe3c1`. A locked lane verifies the manifest,
@@ -194,7 +194,7 @@ The CLI delegates to `vendor/image_diff.py`, copied byte-for-byte from
 `browser-test-kit` `scripts/image_diff.py` at the commit pinned in
 `vendor.lock.json` (Git blob and SHA-256 recorded there). The existing
 `vendor/browser-test-kit-LICENSE` covers this source. Tests are adapted from
-`tests/python/test_image_diff.py` at the same adoption commit (paths/import
+`tests/python/test_flutter_navigation_basic_image_diff.py` at the same adoption commit (paths/import
 target only), with additional RGBA channel regressions. The maximum RGBA channel
 delta must exceed tolerance (0..255). Files and uncompressed ZIP members have a
 64 MiB pre/post-read limit. Nonfinite numbers and invalid/out-of-bounds clips
