@@ -135,7 +135,8 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
         ("myon-bioinformatics/yourself", "LICENSE", "python/vendor/yourself-LICENSE"),
         ("myon-bioinformatics/xprobe", "xprobe.py", "python/vendor/xprobe.py"),
         ("myon-bioinformatics/xprobe", "LICENSE", "python/vendor/xprobe-LICENSE"),
-        ("myon-bioinformatics/browser-test-kit", "scripts/gh_ops.py", "python/vendor/gh_ops.py"),
+        ("myon-bioinformatics/myon-bioinformatics", "gh_ops.py", "python/vendor/gh_ops.py"),
+        ("myon-bioinformatics/myon-bioinformatics", "LICENSE", "python/vendor/myon-bioinformatics-LICENSE"),
         ("myon-bioinformatics/browser-test-kit", "scripts/check_evidence.py", "python/vendor/check_evidence.py"),
         ("myon-bioinformatics/browser-test-kit", "scripts/check_png.py", "python/vendor/check_png.py"),
         ("myon-bioinformatics/browser-test-kit", "scripts/jsonl_digest.py", "python/vendor/jsonl_digest.py"),
@@ -144,6 +145,7 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
         ("myon-bioinformatics/cli_args", "LICENSE", "python/vendor/cli_args-LICENSE"),
         ("myon-bioinformatics/gh_identity", "gh_identity.py", "python/vendor/gh_identity.py"),
         ("myon-bioinformatics/gh_identity", "LICENSE", "python/vendor/gh_identity-LICENSE"),
+        ("myon-bioinformatics/browser-test-kit", "scripts/interaction.mjs", "e2e/utils/interaction.mjs"),
     }
     entries = lock["files"]
     assert {(entry["repository"], entry["source"], entry["destination"]) for entry in entries} == expected
