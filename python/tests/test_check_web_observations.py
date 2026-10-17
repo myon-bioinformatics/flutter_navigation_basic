@@ -208,3 +208,6 @@ def test_published_workflow_retains_original_failure_seed_replays_and_artifacts(
     assert 'check_web_observations.py e2e/test-results/replay-time-timeline' in source
     assert 'check_web_observations.py e2e/test-results/replay-screen91' in source
     assert 'published-pages.xml' in source
+    assert 'build/test-results/replay-time-timeline.xml' in source
+    assert 'build/test-results/replay-screen91.xml' in source
+    assert 'PLAYWRIGHT_JUNIT_OUTPUT_FILE=' in source
