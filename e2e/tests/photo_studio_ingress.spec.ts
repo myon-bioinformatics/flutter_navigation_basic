@@ -7,6 +7,7 @@ import {
   waitPhotoImportOutcome,
 } from '../utils/photo_studio';
 import { tapSemantics, waitForFlutter } from '../utils/helpers';
+import { press } from '../utils/interaction.mjs';
 
 const pngFixtureName = 'png_opaque_64x32.png';
 const pngFixture = path.resolve(
@@ -71,7 +72,9 @@ test.describe('Clipboard image bridge', () => {
       `data:image/png;base64,${fs.readFileSync(pngFixture).toString('base64')}`);
     await tapSemantics(page, 'Paste Base64 image');
     await expect(page.getByRole('button', { name: 'Remove', exact: true })).toBeVisible();
-    await tapSemantics(page, 'Copy image as Base64 · 2/3');
+    const copy = page.getByRole('button', { name: 'Copy image as Base64 · 2/3', exact: true });
+    await expect(copy).toBeEnabled();
+    await press(page, copy);
     await expect(page.getByText(/Resized to 2\/3, encoded as PNG Base64/)).toBeVisible();
     const text = await page.evaluate(() => navigator.clipboard.readText());
     expect(text).toMatch(/^data:image\/png;base64,/);
@@ -89,7 +92,7 @@ test.describe('Clipboard image bridge', () => {
       } finally { bitmap.close(); }
     }, text);
     expect(corners).toEqual([[255, 0, 0, 255], [0, 255, 0, 255], [0, 0, 255, 255], [255, 255, 0, 255]]);
-    await tapSemantics(page, 'Remove');
+    await press(page, page.getByRole('button', { name: 'Remove', exact: true }));
     await expect(page.getByRole('button', { name: 'Remove', exact: true })).toHaveCount(0);
     await tapSemantics(page, 'Paste Base64 image');
     await expect(page.getByRole('button', { name: 'Remove', exact: true })).toBeVisible();
