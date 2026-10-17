@@ -58,9 +58,9 @@ jobs:
         env:
           PLAYWRIGHT_HTML_OPEN: never
         run: |
-          python python/playwright.py pages --base-url https://myon-bioinformatics.github.io/flutter_navigation_basic/ --light --seed 39036084029:1 --explore-steps 3 --route /tools/time/now-timeline -- --output test-results/replay-time-timeline
+          PLAYWRIGHT_JUNIT_OUTPUT_FILE=${{ github.workspace }}/build/test-results/replay-time-timeline.xml python python/playwright.py pages --base-url https://myon-bioinformatics.github.io/flutter_navigation_basic/ --light --seed 39036084029:1 --explore-steps 3 --route /tools/time/now-timeline -- --output test-results/replay-time-timeline
           python -S python/check_web_observations.py e2e/test-results/replay-time-timeline
-          python python/playwright.py pages --base-url https://myon-bioinformatics.github.io/flutter_navigation_basic/ --light --seed 39036904077:1 --explore-steps 3 --route /screen91 -- --output test-results/replay-screen91
+          PLAYWRIGHT_JUNIT_OUTPUT_FILE=${{ github.workspace }}/build/test-results/replay-screen91.xml python python/playwright.py pages --base-url https://myon-bioinformatics.github.io/flutter_navigation_basic/ --light --seed 39036904077:1 --explore-steps 3 --route /screen91 -- --output test-results/replay-screen91
           python -S python/check_web_observations.py e2e/test-results/replay-screen91
       - name: Observe all public pages without a Flutter or native build
         env:
@@ -84,6 +84,8 @@ jobs:
             e2e/test-results/replay-screen91/
             e2e/playwright-report/
             build/test-results/published-pages.xml
+            build/test-results/replay-time-timeline.xml
+            build/test-results/replay-screen91.xml
             build/test-results/page-navigation-regression.xml
           if-no-files-found: error
           retention-days: 14
