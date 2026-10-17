@@ -11,6 +11,11 @@ const catalogue = process.env.FLUTTER_WEB_ROUTES
   ? JSON.parse(process.env.FLUTTER_WEB_ROUTES) : { routes: [] };
 for (const route of catalogue.routes as string[]) {
   test(`public page ${route} @portable @page-observation`, async ({ page, baseURL }, info) => {
+    info.annotations.push(
+      { type: 'exploration_seed', description: process.env.FLUTTER_WEB_EXPLORE_SEED || 'local' },
+      { type: 'exploration_steps', description: process.env.FLUTTER_WEB_EXPLORE_STEPS || '0' },
+      { type: 'route', description: route },
+    );
     const response = await page.goto(new URL(`#${route}`, baseURL!).href);
     expect(response?.ok()).toBeTruthy();
     await waitForFlutter(page, 30_000);

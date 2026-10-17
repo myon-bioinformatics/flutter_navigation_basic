@@ -1,10 +1,11 @@
-// Independent page/context fixtures; schedule cases across bounded workers.
-test.describe.configure({ mode: 'parallel' });
 import { test, expect, type Locator, type Page, type TestInfo } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { waitForFlutter } from '../utils/helpers';
 import { press as kitPress } from '../utils/interaction.mjs';
+
+// Independent page/context fixtures; schedule cases across bounded workers.
+test.describe.configure({ mode: 'parallel' });
 
 // Flutter's route/menu transitions (300–450ms in the pinned SDK) are painted
 // into the canvas, not CSS animations. Semantics/URL can update before painting.

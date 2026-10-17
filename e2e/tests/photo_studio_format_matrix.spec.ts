@@ -1,9 +1,10 @@
-// Independent page/context fixtures; schedule cases across bounded workers.
-test.describe.configure({ mode: 'parallel' });
 import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { openPhotoStudio, pickPhotoFixture, waitPhotoImportOutcome } from '../utils/photo_studio';
+
+// Independent page/context fixtures; schedule cases across bounded workers.
+test.describe.configure({ mode: 'parallel' });
 
 const fixtureDir = path.resolve(
   process.cwd(),

@@ -1,5 +1,3 @@
-// Independent page/context fixtures; schedule cases across bounded workers.
-test.describe.configure({ mode: 'parallel' });
 import { test, expect } from '../utils/observed_test';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -10,6 +8,9 @@ import {
 } from '../utils/photo_studio';
 import { tapSemantics, waitForFlutter } from '../utils/helpers';
 import { press } from '../utils/interaction.mjs';
+
+// Independent page/context fixtures; schedule cases across bounded workers.
+test.describe.configure({ mode: 'parallel' });
 
 const pngFixtureName = 'png_opaque_64x32.png';
 const pngFixture = path.resolve(

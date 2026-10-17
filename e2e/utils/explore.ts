@@ -1,4 +1,5 @@
 import { expect, type Page, type TestInfo } from '@playwright/test';
+import { writeFile } from 'node:fs/promises';
 import { choice } from './explore_plan.mjs';
 import { press } from './interaction.mjs';
 
@@ -30,6 +31,7 @@ export async function explore(page: Page, info: TestInfo, route: string, seed: s
           const values = ['', '0', '-1', '日本語🙂', 'a'.repeat(128)];
           const field = fields.nth(action.index!);
           // Native number/date controls reject arbitrary text before app code.
+          record.label = await field.getAttribute('aria-label') || await field.getAttribute('placeholder');
           const type = await field.getAttribute('type');
           record.value = type === 'number' ? '0' : values[choice(seed, route, `value-${step}`, values.length)];
           if (!type || ['text', 'search', 'email', 'url', 'tel', 'number'].includes(type)) {
@@ -42,6 +44,7 @@ export async function explore(page: Page, info: TestInfo, route: string, seed: s
           await page.mouse.wheel(0, choice(seed, route, `scroll-${step}`, 2) ? 400 : -400);
         } else await page.keyboard.press(action.kind === 'tab' ? 'Tab' : 'Escape');
         await expect(page.locator('flt-glass-pane')).toBeAttached({ timeout: 3000 });
+        record.after_url = page.url();
         expect(errors, 'Uncaught JavaScript errors during exploration').toEqual([]);
       } catch (error) {
         record.error = String(error);
@@ -50,9 +53,11 @@ export async function explore(page: Page, info: TestInfo, route: string, seed: s
     }
   } finally {
     page.off('pageerror', onError);
-    await info.attach('exploration.json', { body: Buffer.from(JSON.stringify({
+    const output = info.outputPath('exploration.json');
+    await writeFile(output, JSON.stringify({
       schema: 'flutter-web-exploration/1', seed, route, steps, actions, errors,
       worker: info.workerIndex, parallel_slot: info.parallelIndex,
-    }, null, 2)), contentType: 'application/json' });
+    }, null, 2));
+    await info.attach('exploration.json', { path: output, contentType: 'application/json' });
   }
 }

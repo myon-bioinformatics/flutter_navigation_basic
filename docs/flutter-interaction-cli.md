@@ -184,7 +184,8 @@ Actions choose among visible editable fields, selected local buttons, Tab,
 Escape and scrolling. Generated field values include empty, numeric, Japanese,
 emoji and long text. The runner re-inventories after each operation and reuses
 the existing real-pointer helper. Each test attaches `exploration.json` with
-seed, route, actual action/value/label, errors and worker/slot. This is sampled
+seed, route, actual action/value/label, errors and worker/slot. JUnit testcase
+properties include the seed, route and step budget, and link the action receipt. This is sampled
 exploration, not exhaustive paths or an assertion that every business result
 is correct. File pickers, exports, clipboard and unrestricted deletion remain
 in dedicated regression tests. DOM changes may change candidate selection;

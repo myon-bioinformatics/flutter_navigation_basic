@@ -1,7 +1,8 @@
-// Independent page/context fixtures; schedule cases across bounded workers.
-test.describe.configure({ mode: 'parallel' });
 import {test,expect,Page} from '@playwright/test';
 import {waitForFlutter} from '../utils/helpers';
+
+// Independent page/context fixtures; schedule cases across bounded workers.
+test.describe.configure({ mode: 'parallel' });
 
 // The /examples/data-processing-interactions/<id> aliases exist only in
 // `flutter build --dart-define=E2E=true`. In code, the numbered /screenNNN routes

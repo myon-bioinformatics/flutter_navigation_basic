@@ -51,7 +51,7 @@ test('actual Playwright workers overlap, replace a failed worker, and finish rem
       test('after replacement',async()=>{});`);
     writeFileSync(path.join(dir, 'b.spec.cjs'), header + `
       test('concurrent work',async()=>{await new Promise(r=>setTimeout(r,1200))});
-      test('remaining work',async()=>{});`);
+      test('remaining work',async({},info)=>{info.annotations.push({type:'exploration_seed',description:'replay-42'})});`);
     const result = spawnSync(process.execPath, [cli, 'test', '-c', path.join(dir, 'playwright.config.cjs')],
       { encoding: 'utf8', timeout: 30_000, env: { ...process.env, PLAYWRIGHT_HTML_OPEN: 'never' } });
     assert.equal(result.status, 1, result.stderr);
@@ -69,6 +69,7 @@ test('actual Playwright workers overlap, replace a failed worker, and finish rem
     const xml = readFileSync(path.join(dir, 'junit.xml'), 'utf8');
     assert.match(xml, /tests="4"/);
     assert.match(xml, /failures="1"/);
+    assert.match(xml, /name="exploration_seed" value="replay-42"/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

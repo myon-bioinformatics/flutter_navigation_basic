@@ -1,10 +1,11 @@
-// Independent page/context fixtures; schedule cases across bounded workers.
-test.describe.configure({ mode: 'parallel' });
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { waitForFlutter } from '../utils/helpers';
 import { press as kitPress } from '../utils/interaction.mjs';
+
+// Independent page/context fixtures; schedule cases across bounded workers.
+test.describe.configure({ mode: 'parallel' });
 
 // Controls are immediately available after Flutter loads; fail with a useful
 // locator error instead of spending the full test timeout on a missing action.
