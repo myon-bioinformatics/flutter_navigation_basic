@@ -49,6 +49,14 @@ jobs:
       - name: Check worker replacement and deterministic exploration without a browser
         working-directory: e2e
         run: node --test unit_tests/execution.test.mjs
+      - name: Replay Back-navigation capture race on the four observed routes
+        env:
+          PLAYWRIGHT_HTML_OPEN: never
+          PLAYWRIGHT_JUNIT_OUTPUT_FILE: ${{ github.workspace }}/build/test-results/page-navigation-regression.xml
+        run: |
+          mkdir -p build/test-results
+          python python/playwright.py pages --base-url https://myon-bioinformatics.github.io/flutter_navigation_basic/ --light --seed 39029437046:1 --explore-steps 3 --route /screen32 --route /screen87 --route /screen96 --route /screen169 -- --output test-results/page-navigation-regression
+          python -S python/check_web_observations.py e2e/test-results/page-navigation-regression
       - name: Observe all public pages without a Flutter or native build
         env:
           PLAYWRIGHT_HTML_OPEN: never
@@ -66,7 +74,9 @@ jobs:
           name: published-web-observations
           path: |
             e2e/test-results/published-pages/
+            e2e/test-results/page-navigation-regression/
             e2e/playwright-report/
             build/test-results/published-pages.xml
+            build/test-results/page-navigation-regression.xml
           if-no-files-found: error
           retention-days: 14

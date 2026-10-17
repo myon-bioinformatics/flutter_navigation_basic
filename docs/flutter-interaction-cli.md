@@ -198,3 +198,10 @@ that navigates away is followed by returning to the original route before the
 normal observation fixture captures its receipt. Browserless scheduler checks
 run with `cd e2e && node --test unit_tests/execution.test.mjs`; these start real
 Playwright worker processes without installing or launching a browser engine.
+
+Back navigation can leave Flutter's semantics root attached while its controls
+are being rebuilt. Observation capture polls the existing inventory for up to
+five seconds and uses that same nonempty snapshot; persistent empty/truncated
+captures still fail. The workflow first replays the four routes/seed that
+exposed this race, validates their saved receipts, then runs the changing-seed
+full sweep. Regression output is kept separately from all-page coverage.

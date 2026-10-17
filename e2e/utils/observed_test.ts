@@ -30,16 +30,23 @@ export const test = base.extend<{ observation: void }>({
     let revision: string | null = null;
     let screenshot: { file: string; sha256: string; bytes: number } | null = null;
     try {
-      const elements = await inventory(page, {
-        selector: '[flt-semantics-identifier], [role="button"]', limit: 2000,
-      });
-      if (elements.truncated) throw new Error('control inventory truncated');
+      let elements: Awaited<ReturnType<typeof inventory>>;
+      // Hash navigation keeps the root attached while Flutter rebuilds children.
+      // Use the actual nonempty poll snapshot without a second inventory race.
+      await expect.poll(async () => {
+        elements = await inventory(page, {
+          selector: '[flt-semantics-identifier], [role="button"]', limit: 2000,
+        });
+        return elements.elements.filter((node: { aria_label: string | null }) =>
+          !/^(SHA:|Commit )/.test(node.aria_label || '')).length;
+      }, { timeout: 5000, message: 'Flutter control inventory after navigation' }).toBeGreaterThan(0);
+      if (elements!.truncated) throw new Error('control inventory truncated');
       display = {
         ...await page.evaluate(() => ({
           viewport: { width: innerWidth, height: innerHeight },
           device_scale_factor: devicePixelRatio, user_agent: navigator.userAgent,
         })),
-        controls: elements.elements
+        controls: elements!.elements
           .filter((node: { aria_label: string | null }) => !/^(SHA:|Commit )/.test(node.aria_label || ''))
           .map((node: { id: string | null; aria_label: string | null; text: string; tag: string;
               box: { x: number; y: number; width: number; height: number }; in_viewport: boolean }) => ({
