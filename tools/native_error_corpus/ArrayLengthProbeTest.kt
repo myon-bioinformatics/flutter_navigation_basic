@@ -6,14 +6,15 @@ import org.junit.Test
 
 // Exceptions deliberately escape to the original Gradle JUnit report.
 class ArrayLengthProbeTest {
-    private fun observe(count: Int) {
+    private fun observe(caseId: String, count: Int) {
         val items = IntArray(count)
-        println("XPROBE_LENGTH_RESULT=" + count + ":" + items.size)
+        println("XPROBE_CASE_RESULT=" + caseId + ":" + items.size)
         assertEquals(count, items.size)
     }
-    @Test fun empty() = observe(0)
-    @Test fun three() = observe(3)
-    @Test fun negative() = observe(-1)
+    @Test fun empty() = observe("empty", 0)
+    @Test fun three() = observe("three", 3)
+    @Test fun negative() = observe("negative", -1)
+    /* SEEDED_CASES */
     @Test fun bounds() { IntArray(1)[5] }
     @Test fun null_assert() { val value: String? = null; value!!.length }
     @Test fun bad_cast() { val value: Any = "text"; value as Int }
@@ -22,3 +23,4 @@ class ArrayLengthProbeTest {
     @Test fun invalid_json() { error("must remain unobserved") }
     @Test fun divide_zero() { 1 / listOf(0).first() }
 }
+

@@ -16,7 +16,7 @@ def test_real_python_and_node_controls_without_native_install(tmp_path):
     targets = [("python", [sys.executable, "-S", str(root / "tools/native_error_corpus/array_length.py")]),
                ("node", ["node", str(root / "tools/native_error_corpus/array_length.mjs")])]
     for language, command in targets:
-        for case in cli.load_cases(root):
+        for case in cli.case_manifest(root, "replay:1")["cases"]:
             record = cli.invoke(command, root, tmp_path, language + case["name"],
                                 payload=json.dumps(case["input"]).encode(), timeout=10)
             assert cli.classify(record, case, language) == case["expected"]
@@ -87,7 +87,7 @@ def test_native_baseline_failure_still_measures_companions(monkeypatch, tmp_path
     assert result["context"]["healthy_build_executed_current_run"] is True
     assert "reuse disabled" in result["context"]["baseline_reuse_rejected"]
     assert not result["passed"]
-    assert len(result["results"]) == 19
+    assert len(result["results"]) == 27
     assert all(row["passed"] for row in result["results"][1:])
 
 
@@ -103,13 +103,13 @@ def test_kotlin_capture_uses_native_junit_and_restores_temporary_source(monkeypa
             assert destination.is_file()
             xml = root / "build/app/test-results/testDebugUnitTest/TEST-com.example.flutter_application_1.ArrayLengthProbeTest.xml"
             xml.parent.mkdir(parents=True)
-            xml.write_text(kotlin_xml(full=True), encoding="utf-8")
+            xml.write_text(manifest_kotlin_xml(cli.case_manifest(root, "replay:1")["cases"]), encoding="utf-8")
             return {"returncode": 1, "error_type": None, "stdout": "", "stderr": "expected native test failure"}
         if command[0] in (sys.executable, "node"):
             return original(command, *args, **kwargs)
         return {"returncode": 0, "error_type": None, "stdout": "", "stderr": ""}
     monkeypatch.setattr(cli, "invoke", invoke)
-    result = cli.capture(root, tmp_path / "out", "kotlin")
+    result = cli.capture(root, tmp_path / "out", "kotlin", seed="replay:1")
     assert result["passed"]
     assert not destination.exists()
     assert (tmp_path / "out/kotlin-original-junit.xml").is_file()
@@ -125,3 +125,117 @@ def test_kotlin_capture_uses_native_junit_and_restores_temporary_source(monkeypa
 def test_historical_build_reuse_fails_closed_without_complete_identity(tmp_path, metadata):
     with pytest.raises(ValueError, match="reuse disabled"):
         cli.reuse_baseline(tmp_path, tmp_path, "kotlin", tmp_path / "prior.json", metadata)
+
+
+
+def manifest_kotlin_xml(cases):
+    import xml.etree.ElementTree as ET
+    root = ET.Element("testsuite")
+    output = []
+    for case in cases:
+        test = ET.SubElement(root, "testcase", name=case["name"],
+                             classname="com.example.flutter_application_1.ArrayLengthProbeTest")
+        if "kotlin_unobserved" in case:
+            ET.SubElement(test, "skipped")
+        elif "error" in case["expected"]:
+            ET.SubElement(test, "failure", type=case["kotlin_types"][0])
+        else:
+            output.append("XPROBE_CASE_RESULT=" + case["name"] + ":" + str(case["expected"]["length"]))
+    ET.SubElement(root, "system-out").text = "\n".join(output)
+    return ET.tostring(root, encoding="unicode")
+
+
+def test_seed_replay_diversity_fixed_controls_and_ranges():
+    root = Path(__file__).resolve().parents[2]
+    first = cli.case_manifest(root, "run:1")
+    assert first == cli.case_manifest(root, "run:1")
+    other = cli.case_manifest(root, "run:2")
+    assert first["cases"][9:] != other["cases"][9:]
+    fixed = cli.load_cases(root)
+    assert len(fixed) == 9
+    for seed in ["run:1", "run:2", "", "日本語"] + [str(i) for i in range(100)]:
+        manifest = cli.case_manifest(root, seed)
+        assert manifest["cases"][:9] == fixed
+        cases = {case["name"]: case for case in manifest["cases"]}
+        assert len(cases) == 13
+        assert cases["boundary_one"]["input"]["count"] == 1
+        assert 2 <= cases["seeded_length"]["input"]["count"] <= 16
+        assert -16 <= cases["seeded_negative"]["input"]["count"] <= -2
+        assert 1 <= cases["seeded_bounds"]["input"]["index"] <= 16
+        assert manifest["fixed_case_ids"] == [case["name"] for case in fixed]
+        assert len(manifest["sampled_case_ids"]) == 4
+
+
+def test_default_seed_run_and_attempt(monkeypatch):
+    monkeypatch.setenv("GITHUB_RUN_ID", "123")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "2")
+    assert cli.default_seed() == "123:2"
+
+
+def test_rendered_kotlin_uses_manifest_and_case_ids():
+    root = Path(__file__).resolve().parents[2]
+    cases = cli.case_manifest(root, "replay:1")["cases"]
+    source = cli.render_kotlin((root / "tools/native_error_corpus/ArrayLengthProbeTest.kt").read_text(), cases)
+    assert "/* SEEDED_CASES */" not in source
+    assert source.count("@Test") == 13
+    for case in cases[9:12]:
+        assert 'observe("' + case["name"] + '", ' + str(case["input"]["count"]) + ')' in source
+    assert "IntArray(1)[" + str(cases[12]["input"]["index"]) + "]" in source
+    assert "XPROBE_CASE_RESULT=" in source
+
+
+def test_kotlin_duplicate_count_is_disambiguated_by_case_id(tmp_path):
+    root = Path(__file__).resolve().parents[2]
+    cases = cli.case_manifest(root, "replay:1")["cases"]
+    # The sampled count can collide with fixed 'three'; IDs must still distinguish results.
+    cases[10]["input"]["count"] = 3
+    cases[10]["expected"]["length"] = 3
+    path = tmp_path / "junit.xml"
+    xml = manifest_kotlin_xml(cases)
+    path.write_text(xml)
+    actual = cli.kotlin_result(path, cases)
+    assert actual["three"] == actual["seeded_length"] == {"length": 3}
+    path.write_text(xml.replace("seeded_length:3", "seeded_length:2"))
+    assert cli.kotlin_result(path, cases)["seeded_length"] == {"length": 2}
+    for broken in (xml.replace("XPROBE_CASE_RESULT=seeded_length:3", ""),
+                   xml.replace("XPROBE_CASE_RESULT=seeded_length:3", "XPROBE_CASE_RESULT=three:3"),
+                   xml.replace("java.lang.NegativeArraySizeException", "java.lang.AssertionError"),
+                   xml.replace("<skipped />", "")):
+        path.write_text(broken)
+        with pytest.raises(ValueError):
+            cli.kotlin_result(path, cases)
+
+
+@pytest.mark.parametrize("returncode,stdout,stderr,error_type", [
+    (0, '{"length":999}', "", None),
+    (0, "not JSON", "", None),
+    (1, "", "wrong error", None),
+    (None, "", "RangeError", "FileNotFoundError"),
+    (None, "", "RangeError", "TimeoutExpired"),
+])
+def test_sampled_unexpected_results_fail(returncode, stdout, stderr, error_type):
+    root = Path(__file__).resolve().parents[2]
+    cases = cli.case_manifest(root, "replay:1")["cases"]
+    record = dict(returncode=returncode, stdout=stdout, stderr=stderr, error_type=error_type)
+    for case in cases[9:]:
+        assert cli.classify(record, case, "dart") != case["expected"]
+
+
+def test_manifest_receipt_hash_and_replay(monkeypatch, tmp_path):
+    import hashlib
+    root = Path(__file__).resolve().parents[2]
+    original = cli.invoke
+    def invoke(command, *args, **kwargs):
+        if command[0] in (sys.executable, "node"):
+            return original(command, *args, **kwargs)
+        return {"returncode": 7, "error_type": None, "stdout": "", "stderr": "SDK unavailable"}
+    monkeypatch.setattr(cli, "invoke", invoke)
+    receipts = [cli.capture(root, tmp_path / str(i), "dart", seed="exact:replay") for i in range(2)]
+    manifests = [(tmp_path / str(i) / "case-manifest.json").read_bytes() for i in range(2)]
+    assert manifests[0] == manifests[1]
+    assert receipts[0]["context"]["manifest_sha256"] == hashlib.sha256(manifests[0]).hexdigest()
+    assert receipts[0]["context"]["seed"] == "exact:replay"
+    assert receipts[0]["context"]["generator_version"] == cli.GENERATOR_VERSION
+    assert len(receipts[0]["context"]["fixed_case_ids"]) == 9
+    assert len(receipts[0]["context"]["sampled_case_ids"]) == 4
+    assert not receipts[0]["passed"]

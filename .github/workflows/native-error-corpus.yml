@@ -2,6 +2,11 @@ name: One-shot native error corpus
 
 on:
   workflow_dispatch:
+    inputs:
+      seed:
+        description: Optional seed to replay a bounded native case manifest
+        required: false
+        type: string
   pull_request:
     types: [labeled]
 
@@ -62,10 +67,11 @@ jobs:
       - name: Build once and measure native / Python / Node controls
         env:
           CAPTURE_LANGUAGE: ${{ matrix.language }}
+          CAPTURE_SEED: ${{ inputs.seed || format('{0}:{1}', github.run_id, github.run_attempt) }}
         shell: bash
         run: |
           ulimit -c 0
-          python -S python/capture_native_errors.py --language "$CAPTURE_LANGUAGE" --output "build/native-error-corpus/$CAPTURE_LANGUAGE" --probe-tools .native-probe-tools
+          python -S python/capture_native_errors.py --language "$CAPTURE_LANGUAGE" --output "build/native-error-corpus/$CAPTURE_LANGUAGE" --probe-tools .native-probe-tools --seed "$CAPTURE_SEED"
       - name: Preserve actual failures and acceptance results separately
         if: always()
         uses: actions/upload-artifact@v7
@@ -74,3 +80,4 @@ jobs:
           path: build/native-error-corpus/${{ matrix.language }}/
           if-no-files-found: error
           retention-days: 90
+

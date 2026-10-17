@@ -11,11 +11,11 @@
 
 | CIの言語 | 正常アプリビルドの基準 | 新しく実行するプローブ |
 |---|---|---|
-| Dart / Ubuntu | Flutter Web debug | Flutter同梱Dart VMで9条件 |
-| Kotlin / Ubuntu | Flutter Android arm64 debug | アプリのGradle/JUnitで8条件＋JSON未観測1件 |
-| Swift / macOS | Flutter iOS simulator debug / no-codesign | XcodeでコンパイルしたSwift CLIで9条件 |
+| Dart / Ubuntu | Flutter Web debug | Flutter同梱Dart VMで13条件 |
+| Kotlin / Ubuntu | Flutter Android arm64 debug | アプリのGradle/JUnitで12条件＋JSON未観測1件 |
+| Swift / macOS | Flutter iOS simulator debug / no-codesign | XcodeでコンパイルしたSwift CLIで13条件 |
 
-**各ジョブでPythonとNodeも9条件ずつ新しく実行する。** JSのboundsはDataView、整数解析・
+**各ジョブでPythonとNodeも13条件ずつ新しく実行する。** JSのboundsはDataView、整数解析・
 ゼロ除算はBigIntを使う。JS/Pythonの型キャスト等の共通仕様は独立の明示ガードで実装する。
 各言語の元の例外・終了コードを同じものとして捏造せず、共通分類と原文を並べて残す。
 
@@ -27,6 +27,26 @@ JSON解析エラーと扱わず、JUnitの明示skipと`context.unobserved`に�
 iOSシミュレータ上のアプリ操作／OS権限を検証したという意味ではない。
 Dart VMとWebビルド出力、JVMとAndroid実機、macOS Swift CLIとiOSアプリを区別する。
 追加のアプリ固有エラーはこの分類で済ませず、別の入力・期待条件・実行環境を持たせる。
+
+## 再現できる小さなシード入力
+
+既存の9固定条件は変更せず、別枠で4条件だけ追加する。
+配列長1の境界成功、配列長2〜16の成功、配列長-2〜-16の意図した失敗、
+1要素配列に対するindex 1〜16の範囲外失敗。確保する配列は最大16要素。
+無制限fuzz、リトライ、タイムアウトの延長は行わない。
+
+既定seedはGITHUB_RUN_ID:GITHUB_RUN_ATTEMPT（ローカルではlocal:1）。
+--seedで明示指定でき、手動workflowのseed欄でも再現できる。
+generator version・seed・case IDのJSONタプルをSHA-256でハッシュし、
+有限の範囲に写像する。同一version/seedなら3言語ジョブとPython/Nodeで
+同一manifestになる。有限範囲なので異なるseedでも同じ値になる場合がある。
+UIテスト側のseedとは独立している。
+
+case-manifest.jsonとそのSHA-256、seed、generator version、入力、
+固定/追加case ID一覧をreceiptに保存する。固定カバレッジと追加サンプルは
+別々に記録し、サンプル数を固定カテゴリの増加とは扱わない。
+Kotlinも同じmanifestから一時ソースを生成し、実際の生成ソースとハッシュを残す。
+正常値の出力はcountではなくcase IDで照合するので、既存値3との衝突も識別できる。
 
 ## 起動
 
@@ -66,7 +86,8 @@ python -S python/capture_native_errors.py --language dart --output build/native-
 - `receipt.json`: 共有入力、実測値、期待値、元ログ、ソースハッシュ、Git SHA、
   Flutter/Dart/Node/JDK/Xcode/Gradleの実測情報とメタ情報取得の失敗。
 - `*.stdout.log`, `*.stderr.log`: 元のバイト列。JSONにはUTF-8置換表示とバイトハッシュも保存。
-- `source-*`: 実際に使った5言語の小さなプローブと9条件の入力仕様。
+- `source-*`: 5言語のプローブ、固定9条件の仕様、Kotlinの生成済み実行ソース。
+- `case-manifest.json`: 13条件の入力・期待値と再現用seed/version。
 - `kotlin-original-junit.xml`: Gradleが出したJUnit原文（Kotlinジョブ）。
 - `acceptance.xml`: 正常例・意図した負例・Python／Nodeの期待条件が成立したか。
 - `observed-failures.xml`: 実際のプロセス失敗を含むJUnit。故意の失敗例として保存する。
@@ -77,3 +98,4 @@ JUnitとJSON／ログを対で残す。
 
 SDKなしの検査は`python -m pytest python/tests/test_capture_native_errors.py`。
 これはPython／Nodeの実測と解析・制御の回帰検査であり、3ネイティブ言語の代用実測ではない。
+

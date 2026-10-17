@@ -4,6 +4,7 @@ Run in a disposable CI checkout. No SDK installation, deployment or permanent
 source mutation here. The workflow supplies the toolchains and pinned xprobe.
 """
 import argparse
+import copy
 import hashlib
 import json
 import os
@@ -66,6 +67,54 @@ def load_cases(root):
     return cases
 
 
+GENERATOR_VERSION = "bounded-native-cases/1"
+
+
+def default_seed():
+    return os.environ.get("GITHUB_RUN_ID", "local") + ":" + os.environ.get("GITHUB_RUN_ATTEMPT", "1")
+
+
+def case_manifest(root, seed):
+    """Keep the nine fixed controls intact; sample only three bounded inputs."""
+    fixed = load_cases(root)
+    by_name = {case["name"]: case for case in fixed}
+
+    def sample(case_id, low, high):
+        # JSON tuple encoding avoids ambiguous concatenation of seed and ID.
+        digest = hashlib.sha256(json.dumps([GENERATOR_VERSION, seed, case_id],
+                                          ensure_ascii=True, separators=(",", ":")).encode()).digest()
+        return low + int.from_bytes(digest, "big") % (high - low + 1)
+
+    sampled = []
+    for name, template, field, value in (
+        ("boundary_one", "three", "count", 1),
+        ("seeded_length", "three", "count", sample("seeded_length", 2, 16)),
+        ("seeded_negative", "negative", "count", -sample("seeded_negative", 2, 16)),
+        ("seeded_bounds", "bounds", "index", sample("seeded_bounds", 1, 16)),
+    ):
+        case = copy.deepcopy(by_name[template])
+        case["name"] = name
+        case["input"][field] = value
+        if "length" in case["expected"]:
+            case["expected"]["length"] = value
+        sampled.append(case)
+    return {"generator_version": GENERATOR_VERSION, "seed": seed,
+            "fixed_case_ids": [case["name"] for case in fixed],
+            "sampled_case_ids": [case["name"] for case in sampled],
+            "cases": fixed + sampled}
+
+
+def render_kotlin(template, cases):
+    """Render only bounded integer literals from the shared manifest."""
+    by_name = {case["name"]: case for case in cases}
+    return template.replace("    /* SEEDED_CASES */", "\n".join(
+        '    @Test fun ' + name + '() = observe("' + name + '", ' +
+        str(by_name[name]["input"]["count"]) + ')'
+        for name in ("boundary_one", "seeded_length", "seeded_negative")
+    ) + '\n    @Test fun seeded_bounds() { IntArray(1)[' +
+        str(by_name["seeded_bounds"]["input"]["index"]) + '] }')
+
+
 def classify(record, case, language):
     """Match explicit per-language diagnostics; never accept a launch/timeout error."""
     if isinstance(case, int):  # historical array-only reader
@@ -88,7 +137,8 @@ def classify(record, case, language):
 
 def kotlin_result(xml_path, cases=None):
     """Read actual printed values/failure types, with one explicit unsupported case."""
-    if cases is None:  # read the first array-only capture too
+    legacy = cases is None
+    if legacy:  # read the first array-only capture too
         cases = [{"name": name, "input": {"count": count},
                   "kotlin_types": ["java.lang.NegativeArraySizeException"]} for name, count in CASES]
     root = ET.parse(xml_path).getroot()
@@ -99,7 +149,7 @@ def kotlin_result(xml_path, cases=None):
         raise ValueError("unexpected native JUnit producer")
     observed = {}
     output = "\n".join(root.itertext())
-    lengths = re.findall(r"XPROBE_LENGTH_RESULT=(-?\d+):(\d+)", output)
+    lengths = re.findall(r"XPROBE_LENGTH_RESULT=(-?\d+):(\d+)", output) if legacy else re.findall(r"XPROBE_CASE_RESULT=([a-z_]+):(\d+)", output)
     specifications = {case["name"]: case for case in cases}
     for test in tests:
         name = test.get("name")
@@ -118,7 +168,7 @@ def kotlin_result(xml_path, cases=None):
             observed[name] = case.get("expected", {"error": "invalid_array_length"})
         else:
             count = case["input"]["count"]
-            matches = [int(size) for item, size in lengths if int(item) == count]
+            matches = [int(size) for item, size in lengths if (int(item) == count if legacy else item == name)]
             if error is not None or len(matches) != 1:
                 raise ValueError("missing successful Kotlin output")
             observed[name] = {"length": matches[0]}
@@ -133,15 +183,21 @@ def reuse_baseline(root, out, language, receipt, metadata):
     raise ValueError("historical build reuse disabled: incomplete environment fingerprint")
 
 
-def capture(root, out, language, *, timeout=1500, baseline_receipt=None):
+def capture(root, out, language, *, timeout=1500, baseline_receipt=None, seed=None):
     root, out = Path(root).resolve(), Path(out).resolve()
     out.mkdir(parents=True, exist_ok=True)
     fixtures = root / "tools/native_error_corpus"
-    cases = load_cases(root)
+    manifest = case_manifest(root, default_seed() if seed is None else seed)
+    manifest_bytes = (json.dumps(manifest, sort_keys=True, ensure_ascii=True, indent=2) + "\n").encode()
+    (out / "case-manifest.json").write_bytes(manifest_bytes)
+    cases = manifest["cases"]
     rows = []
     context = {"language": language, "scope": "one-shot-native-error-sweep",
                "native_app_runtime_verified": False,
                "run_id": os.environ.get("GITHUB_RUN_ID"), "attempt": os.environ.get("GITHUB_RUN_ATTEMPT")}
+    context.update(seed=manifest["seed"], generator_version=GENERATOR_VERSION,
+                   manifest_sha256=hashlib.sha256(manifest_bytes).hexdigest(),
+                   fixed_case_ids=manifest["fixed_case_ids"], sampled_case_ids=manifest["sampled_case_ids"])
     metadata = {}
     commands = [["git", "rev-parse", "HEAD"], ["flutter", "--version", "--machine"], ["flutter", "doctor", "-v"],
                 ["dart", "--version"], ["node", "--version"]]
@@ -186,8 +242,11 @@ def capture(root, out, language, *, timeout=1500, baseline_receipt=None):
             destination = root / "android/app/src/test/java/com/example/flutter_application_1/ArrayLengthProbeTest.kt"
             if destination.exists():
                 raise ValueError("refusing to overwrite an existing native probe")
-            destination.write_bytes((fixtures / "ArrayLengthProbeTest.kt").read_bytes())
+            rendered = render_kotlin((fixtures / "ArrayLengthProbeTest.kt").read_text(encoding="utf-8"), cases)
+            destination.write_text(rendered, encoding="utf-8")
             try:
+                (out / "source-rendered-ArrayLengthProbeTest.kt").write_text(rendered, encoding="utf-8")
+                context["rendered_kotlin_sha256"] = hashlib.sha256(rendered.encode()).hexdigest()
                 xml = root / "build/app/test-results/testDebugUnitTest/TEST-com.example.flutter_application_1.ArrayLengthProbeTest.xml"
                 if xml.exists():
                     raise ValueError("stale probe JUnit exists; use a fresh checkout")
@@ -239,10 +298,11 @@ def main(argv=None):
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--probe-tools", type=Path, required=True)
     parser.add_argument("--baseline-receipt", type=Path)
+    parser.add_argument("--seed", help="Replay seed; defaults to GITHUB_RUN_ID:GITHUB_RUN_ATTEMPT (local:1 locally)")
     args = parser.parse_args(argv)
     sys.path.insert(0, str(args.probe_tools.resolve()))
     from contract_probe import write_junit
-    result = capture(Path(__file__).resolve().parents[1], args.output, args.language, baseline_receipt=args.baseline_receipt)
+    result = capture(Path(__file__).resolve().parents[1], args.output, args.language, baseline_receipt=args.baseline_receipt, seed=args.seed)
     (args.output / "receipt.json").write_text(json.dumps(result, ensure_ascii=True, indent=2), encoding="utf-8")
     write_junit(result, args.output / "acceptance.xml")
     write_junit(result, args.output / "observed-failures.xml", observations=True)
@@ -252,3 +312,4 @@ def main(argv=None):
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
