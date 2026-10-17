@@ -170,3 +170,41 @@ def test_matching_hash_cannot_make_a_header_only_png_valid(tmp_path):
     (tmp_path / 'web-observation.png').write_bytes(raw)
     data['screenshot'].update(bytes=len(raw), sha256=hashlib.sha256(raw).hexdigest())
     assert check.validate(data, tmp_path)
+
+
+def test_bounded_shared_browser_execution_is_immutable_and_preserves_failure_boundaries():
+    """Upstream engine tests cover live disappearing DOM; Flutter guards the locked copy."""
+    root = Path(__file__).resolve().parents[2]
+    lock = json.loads((root / 'python/vendor.lock.json').read_text(encoding='utf-8'))
+    assert len(lock['files']) == 17
+    row = next(item for item in lock['files']
+               if item['destination'] == 'e2e/utils/browser_execution.mjs')
+    assert row['repository'] == 'myon-bioinformatics/browser-test-kit'
+    assert row['source'] == 'scripts/browser_execution.mjs'
+    assert row['ref'] == row['commit'] == '8d8512fefea38993e5b3695c0706075cf05071ad'
+    source = (root / row['destination']).read_bytes()
+    assert hashlib.sha256(source).hexdigest() == row['sha256']
+    text = source.decode('utf-8')
+    assert 'candidateTimeout = 250' in text
+    assert 'item[method]({ timeout: candidateTimeout })' in text
+    assert 'inventory.budget_exhausted = true' in text
+    assert "check.outcome = 'unavailable_after_inventory'" in text
+    assert "check.outcome = 'error'" in text
+    assert 'throw new ExplorationError(error' in text
+    assert 'inventories, errors' in text
+
+
+def test_published_workflow_retains_original_failure_seed_replays_and_artifacts():
+    source = (Path(__file__).resolve().parents[2] /
+              '.github/workflows/web-observations.yml').read_text(encoding='utf-8')
+    for seed, route, directory in (
+        ('39036084029:1', '/tools/time/now-timeline', 'replay-time-timeline'),
+        ('39036904077:1', '/screen91', 'replay-screen91'),
+    ):
+        assert '--seed ' + seed in source
+        assert '--route ' + route in source
+        assert 'test-results/' + directory in source
+        assert 'e2e/test-results/' + directory + '/' in source
+    assert 'check_web_observations.py e2e/test-results/replay-time-timeline' in source
+    assert 'check_web_observations.py e2e/test-results/replay-screen91' in source
+    assert 'published-pages.xml' in source
