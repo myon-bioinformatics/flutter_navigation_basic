@@ -82,3 +82,75 @@ cannot establish that changed native code still compiles. Keep the native
 checks for native inputs/releases. Cross-language conversion should begin with
 bounded pure functions and shared JSON inputs/outputs; this change does not
 implement a general Dart-to-Kotlin/Swift translator.
+
+## Observe every public page, then check the saved evidence without a browser
+
+The existing route declarations currently describe **215 public routes**: all
+198 numbered routes plus canonical tools, catalogue pages and legacy aliases.
+`pages` reads `RouteNames`, `AppRouteRegistry`, `AppRoutes`' mock API alias and
+`ci/numbered_routes.toml`; it does not maintain another hand-written route list.
+E2E-only aliases and arbitrary query/input combinations are outside this list.
+
+After the one-time Node/browser setup above:
+
+```bash
+python python/playwright.py pages --base-url https://myon-bioinformatics.github.io/flutter_navigation_basic/ --light
+```
+
+This defaults to one headless Chromium project, reuses one browser process,
+and starts no Flutter/native build. Each route gets an isolated page/context.
+Use repeated `--route /hub --route /tools/media/photo-studio` to select routes,
+`--project webkit` for another installed engine, or `-- --list` to list without
+launching a browser. Extra Playwright flags follow `--`, for example
+`-- --output /tmp/pages-observation --max-failures=3`.
+
+Each route writes `web-observation.json` and a viewport PNG beneath the normal
+Playwright output directory (`e2e/test-results` by default), with HTML-report
+attachments. The receipt records the URL, served build SHA, route-source hashes,
+test outcome, fixture identity when applicable, browser/Node version, viewport,
+device scale, semantic control labels/identifiers and CSS-pixel boxes, bounded
+console errors/warnings and failed requests, and the screenshot SHA-256. It
+collects existing Flutter accessibility metadata rather than changing Dart.
+Input values and clipboard contents are not collected. Console messages may
+still include app-generated diagnostics; use dedicated test data.
+
+The existing Photo Studio/clipboard ingress tests attach the same receipts for
+actual image operations. The all-page sweep is a load/display smoke check;
+it does not automatically click every button, open every dropdown, or prove
+that every feature works. A viewport capture does not inspect content that has
+not been scrolled into view or lazily created. Mobile projects emulate Web;
+these receipts do not claim native iOS/Android execution.
+
+Run the following as often as needed, with **only Python stdlib**:
+
+```bash
+python -S python/check_web_observations.py e2e/test-results --expected-sha FULL_DEPLOYED_COMMIT_SHA
+python -S python/check_web_observations.py NEW_PAGES --baseline OLD_PAGES --tolerance 2
+```
+
+The first command checks all saved pages against their recorded catalogue,
+rejecting missing/duplicate pages, mixed catalogues/builds, failed/skipped tests,
+incomplete captures, uncaught JS errors, and altered/missing screenshots.
+Start a full sweep in a fresh output directory; do not mix ingress receipts,
+partial/sharded output, or previous runs in that directory. Combine all shards
+before checking coverage. A filtered sweep verifies only its selected routes.
+The second accepts whole capture directories or individual receipt files, and
+compares control counts, labels, visibility and geometry in CSS
+pixels; viewport/device scale and project must match. Browser-version changes
+remain in the receipts for review; this is not pixel equivalence.
+
+The equivalent existing Python entrypoint is
+`python python/playwright.py check-observation PATH ...`. It imports no browser
+package and starts no Node process. Success certifies the **saved observation**,
+not newly edited Dart, a new render, or a native build. Browser recapture is
+still needed after a relevant UI/runtime change. Old screenshots/logs are not
+a substitute for compiling changed native code.
+
+All-page capture uses the manual **Published Web page observations** workflow,
+with the same command. Changes to the collector itself also exercise it against
+the published Pages build in one Chromium job; ordinary app PRs do not acquire
+a new 215-page browser matrix. This verifies collector code and the deployed
+site, not the unbuilt app changes in a PR. The existing ingress lane exercises the collector; the existing
+Python oracle lane checks receipt validation and coverage offline. Retain useful
+capture directories as normal CI artifacts or baselines outside the source tree;
+do not commit accumulated videos, screenshots or build caches.
