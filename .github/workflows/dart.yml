@@ -64,7 +64,7 @@ jobs:
               python/*)
                 python=true
                 ;;
-              lib/*|test/*|assets/*|web/*|android/*|ios/*|linux/*|macos/*|windows/*|pubspec.yaml|pubspec.lock|analysis_options.yaml|javascript/*|ci/*|docker/*|build_tools/*|.github/workflows/dart.yml)
+              lib/*|test/*|assets/*|web/*|android/*|ios/*|linux/*|macos/*|windows/*|pubspec.yaml|pubspec.lock|analysis_options.yaml|javascript/*|ci/*|docker/*|build_tools/*|.github/workflows/dart.yml|.github/actions/build-companions/*)
                 flutter=true
                 ;;
             esac
@@ -160,7 +160,11 @@ jobs:
         run: flutter analyze --no-fatal-infos
 
       - name: Build Flutter web
-        run: flutter build web --release --base-href "/flutter_navigation_basic/"
+        uses: ./.github/actions/build-companions
+        with:
+          target: web
+          id: pinned
+          command: '["flutter","build","web","--release","--base-href","/flutter_navigation_basic/"]'
 
 
   # Execute the actual production models/services with Dart SDK only. Keep the
@@ -450,7 +454,11 @@ jobs:
 
       - name: Build canonical web entrypoint on latest stable
         if: matrix.shard == 0
-        run: flutter build web --release -t lib/main.dart --base-href "/flutter_navigation_basic/"
+        uses: ./.github/actions/build-companions
+        with:
+          target: web
+          id: latest-${{ matrix.shard }}
+          command: '["flutter","build","web","--release","-t","lib/main.dart","--base-href","/flutter_navigation_basic/"]'
 
   # The shared collector reads junit-* artifacts of this run only. Plan the
   # expected reports from the same path-filter outputs the shard jobs use, so a

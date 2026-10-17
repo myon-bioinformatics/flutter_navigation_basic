@@ -99,3 +99,7 @@ JUnitとJSON／ログを対で残す。
 SDKなしの検査は`python -m pytest python/tests/test_capture_native_errors.py`。
 これはPython／Nodeの実測と解析・制御の回帰検査であり、3ネイティブ言語の代用実測ではない。
 
+## 通常ビルドでもPython／Nodeを測定する
+
+一回限りのnative採取とは別に、既存の通常ビルドにもcompanionを接続する。
+対象、証跡、表示差の扱いは[portable-build-observations.md](portable-build-observations.md)を参照。

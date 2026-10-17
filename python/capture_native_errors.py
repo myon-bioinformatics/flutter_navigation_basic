@@ -4,6 +4,7 @@ Run in a disposable CI checkout. No SDK installation, deployment or permanent
 source mutation here. The workflow supplies the toolchains and pinned xprobe.
 """
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import copy
 import hashlib
 import json
@@ -113,6 +114,26 @@ def render_kotlin(template, cases):
         for name in ("boundary_one", "seeded_length", "seeded_negative")
     ) + '\n    @Test fun seeded_bounds() { IntArray(1)[' +
         str(by_name["seeded_bounds"]["input"]["index"]) + '] }')
+
+
+def companion_rows(root, out, cases, *, workers=2):
+    """Fresh, bounded Python/Node processes shared by native and ordinary builds."""
+    fixtures = Path(root) / "tools/native_error_corpus"
+    targets = (("python", [sys.executable, "-S", str(fixtures / "array_length.py")]),
+               ("node", ["node", str(fixtures / "array_length.mjs")]))
+    def execute(task):
+        target, command, case = task
+        record = invoke(command, root, out, target + "-" + case["name"],
+                        payload=json.dumps(case["input"]).encode(), timeout=30)
+        actual = classify(record, case, target)
+        return {**record, "name": case["name"], "target": target, "input": case["input"],
+                "value": actual, "expected": case["expected"],
+                "passed": json.dumps(actual, sort_keys=True) == json.dumps(case["expected"], sort_keys=True),
+                "case_context": None, "expectation_kind": "companion-control",
+                "error_origin": "target_exit" if record["returncode"] not in (0, None) else None}
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        return list(pool.map(execute, [(target, command, case)
+                                      for target, command in targets for case in cases]))
 
 
 def classify(record, case, language):
@@ -278,12 +299,7 @@ def capture(root, out, language, *, timeout=1500, baseline_receipt=None, seed=No
                     record = invoke(native, root, out, language + "-" + case["name"],
                                     payload=json.dumps(case["input"]).encode(), timeout=30)
                     add(case["name"], language, classify(record, case, language), case["expected"], record, case["input"])
-    for target, command in (("python", [sys.executable, "-S", str(fixtures / "array_length.py")]),
-                             ("node", ["node", str(fixtures / "array_length.mjs")])):
-        for case in cases:
-            record = invoke(command, root, out, target + "-" + case["name"],
-                            payload=json.dumps(case["input"]).encode(), timeout=30)
-            add(case["name"], target, classify(record, case, target), case["expected"], record, case["input"])
+    rows.extend(companion_rows(root, out, cases))
     return {"schema": "portable-io-results/1", "scope": context["scope"],
             "passed": all(row["passed"] for row in rows), "results": rows, "context": context,
             "collector_environment": {"python": sys.version, "platform": sys.platform},

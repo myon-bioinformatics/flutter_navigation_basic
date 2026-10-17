@@ -269,3 +269,5 @@ exercise the fallback itself. First pushes without a usable base keep coverage.
 Tests execute the real Non-Dart classifier for pure Dart and mixed diffs, check
 exclusive ownership, and check the selected JUnit/receipt. The locked Non-Dart
 workflow bytes and parent registration are unchanged.
+
+Flutterの実ビルドに同席するPython／Nodeの測定は、[ビルド観測方針](../docs/portable-build-observations.md)を参照。

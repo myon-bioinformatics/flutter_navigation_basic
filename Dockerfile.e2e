@@ -55,7 +55,8 @@ ENV CURL_RUNTIME_E2E=${CURL_PYTHON_RUNTIME}
 RUN case "$CURL_PYTHON_RUNTIME" in true|false) ;; *) exit 2 ;; esac \
     && flutter pub get \
     && cmp /tmp/pubspec.lock pubspec.lock \
-    && flutter build web --release -t lib/main.dart --dart-define=E2E=true --base-href "/" --dart-define=CURL_PYTHON_RUNTIME=${CURL_PYTHON_RUNTIME}
+    && python3 -S python/capture_build_companions.py --target web --output build/build-companions/docker \
+        --build-command "[\"flutter\",\"build\",\"web\",\"--release\",\"-t\",\"lib/main.dart\",\"--dart-define=E2E=true\",\"--base-href\",\"/\",\"--dart-define=CURL_PYTHON_RUNTIME=${CURL_PYTHON_RUNTIME}\"]"
 RUN deno run --no-config --no-lock --no-remote docker/toolchain_smoke.ts
 
 EXPOSE 8080
