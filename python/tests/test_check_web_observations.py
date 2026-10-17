@@ -135,3 +135,14 @@ def test_cli_remainder_separator_reaches_runner_as_options(monkeypatch):
     assert playwright.main(['pages', '--base-url', 'https://example.test/', '--', '--list']) == 0
     assert calls[0][-1] == '--list'
     assert '--' not in calls[0]
+
+
+def test_flutter_home_url_normalization_is_not_a_missing_page(tmp_path):
+    data = receipt(tmp_path/'home', '/')
+    data['url'] = 'https://example.test/app/'
+    data['catalogue']['routes'] = ['/']
+    (tmp_path/'home'/'web-observation.json').write_text(json.dumps(data))
+    assert check.main([str(tmp_path)]) == 0
+    other = copy.deepcopy(data)
+    other['url'] += '#/'
+    assert check.compare(data, other, 2) == []

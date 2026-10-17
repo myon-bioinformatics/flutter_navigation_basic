@@ -16,6 +16,11 @@ import sys
 from urllib.parse import urlsplit
 
 
+def _route(data):
+    # Flutter normalizes Home from #/ to an empty fragment. Both mean '/'.
+    return urlsplit(data['url']).fragment or '/'
+
+
 def _number(value):
     return type(value) in (int, float) and math.isfinite(value)
 
@@ -85,7 +90,7 @@ def compare(baseline, observed, tolerance):
     for key in ('test', 'project', 'fixture'):
         if baseline[key] != observed[key]:
             errors.append(f'{key} mismatch')
-    if urlsplit(baseline['url']).fragment != urlsplit(observed['url']).fragment:
+    if _route(baseline) != _route(observed):
         errors.append('route mismatch')
     for key in ('browser',):
         if baseline['runtime'][key] != observed['runtime'][key]:
@@ -145,7 +150,7 @@ def main(argv=None):
                     catalogue = current
                 elif current != catalogue:
                     problems.append('mixed page catalogues')
-                key = (data['project'], urlsplit(data['url']).fragment.lstrip('#'))
+                key = (data['project'], _route(data))
                 if key in seen:
                     problems.append('duplicate page receipt: ' + str(key))
                 seen.add(key)
@@ -177,7 +182,7 @@ def main(argv=None):
                     problems += ['baseline: ' + issue for issue in issues]
                     if issues:
                         continue
-                    key = (data['project'], urlsplit(data['url']).fragment)
+                    key = (data['project'], _route(data))
                     if key in prior:
                         problems.append('duplicate baseline receipt: ' + str(key))
                     prior[key] = data

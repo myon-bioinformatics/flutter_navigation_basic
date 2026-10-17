@@ -10,7 +10,7 @@ for (const route of catalogue.routes as string[]) {
     const response = await page.goto(new URL(`#${route}`, baseURL!).href);
     expect(response?.ok()).toBeTruthy();
     await waitForFlutter(page, 30_000);
-    await expect(page).toHaveURL(new RegExp(`#${route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`));
+    await expect(page).toHaveURL(url => (url.hash.slice(1) || '/') === route);
     await expect(page.locator('flt-semantics').first()).toBeAttached();
     // Loading a route is smoke evidence, not proof that all controls work.
   });
