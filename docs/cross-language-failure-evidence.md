@@ -36,7 +36,7 @@ Go / other CLI ─┘                 └─ JUnit XML (when available)
 ## Current state
 
 Python already proves this contract with a controlled failing child in
-`python/tests/test_junit_evidence.py`: the same child is run with and
+`python/tests/test_flutter_navigation_basic_junit_evidence.py`: the same child is run with and
 without JUnit, both return code 1, and xprobe imports only compact failure/error
 identity.
 
