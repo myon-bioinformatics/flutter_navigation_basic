@@ -113,6 +113,50 @@ def test_parent_gh_ops_open_prs_maps_search_items_to_pull_rows(gh_ops, monkeypat
     }]
 
 
+def test_parent_gh_ops_open_prs_search_item_author_none_becomes_empty(gh_ops, monkeypatch):
+    def search(query, **kwargs):
+        return {
+            "items": [{
+                "repository": "octo/demo",
+                "number": 7,
+                "draft": False,
+                "updated_at": "2026-10-17T01:00:00Z",
+                "author": None,
+                "title": "No author",
+                "url": "https://github.com/octo/demo/pull/7",
+            }],
+            "total_count": 1,
+            "complete": True,
+            "truncated": False,
+        }
+
+    monkeypatch.setattr(gh_ops.gh_identity, "search", search)
+    row = gh_ops.open_prs("octo", limit=1)["pulls"][0]
+    assert row["author"] == ""
+
+
+def test_parent_gh_ops_open_prs_search_item_draft_none_becomes_false(gh_ops, monkeypatch):
+    def search(query, **kwargs):
+        return {
+            "items": [{
+                "repository": "octo/demo",
+                "number": 8,
+                "draft": None,
+                "updated_at": "2026-10-17T02:00:00Z",
+                "author": "bob",
+                "title": "Draft unknown",
+                "url": "https://github.com/octo/demo/pull/8",
+            }],
+            "total_count": 1,
+            "complete": True,
+            "truncated": False,
+        }
+
+    monkeypatch.setattr(gh_ops.gh_identity, "search", search)
+    row = gh_ops.open_prs("octo", limit=1)["pulls"][0]
+    assert row["draft"] is False
+
+
 def test_parent_gh_ops_open_prs_maps_gh_identity_search_error(gh_ops, monkeypatch):
     def search(query, **kwargs):
         raise gh_ops.gh_identity.Error("forbidden")
