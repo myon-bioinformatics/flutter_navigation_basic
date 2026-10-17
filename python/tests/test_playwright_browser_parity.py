@@ -92,16 +92,19 @@ def test_ci_and_docker_install_only_browser_engines() -> None:
     dockerfile = (ROOT / "Dockerfile.e2e").read_text(encoding="utf-8")
 
     expected_install = "playwright install --with-deps chromium firefox webkit"
+    # CI runs headless only, so Chromium installs just its headless shell (no full build).
+    ci_install = "playwright install --with-deps --only-shell chromium firefox webkit"
     workflow_installs = _install_lines(workflow)
     docker_installs = _install_lines(dockerfile)
 
     # The regular smoke/auto-E2E lanes install the full configured engine set.
     # The validation page contract is Chromium-only and is not a portable project.
     assert workflow_installs == [
-        f"npx {expected_install}",
-        f"npx {expected_install}",
-        "npx playwright install --with-deps chromium",
+        f"npx {ci_install}",
+        f"npx {ci_install}",
+        "npx playwright install --with-deps --only-shell chromium",
     ]
+    # The local Docker image keeps the full build so headed debugging still works.
     assert docker_installs == [f"&& npx --prefix e2e {expected_install}"]
 
     # Project/profile names are not Playwright browser-install targets.
