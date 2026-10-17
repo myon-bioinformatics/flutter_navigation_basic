@@ -36,6 +36,22 @@ full Playwright E2E are different proof surfaces, while Pages and Claude have
 distinct permissions. The change does not assert that all suites test native
 Android/iOS behavior. Browser emulation remains browser evidence only.
 
+## Python oracle evidence ownership
+
+The full Python pytest suite and `python-oracle-summary` artifact belong to
+`non-dart.yml`; `dart.yml` no longer starts a second full Python suite on
+Flutter-touching changes. The Flutter gate still exports production Dart
+contracts and validates them with Python stdlib tools.
+
+Pages uses a successful Flutter run for the exact target SHA and generates
+canonical metadata from that checkout. It does not download the Python oracle
+artifact. The separate Non-Dart workflow remains independently required for
+Python verification; a Flutter/Pages success is not evidence of its success.
+Use `python/test.py --actions-latest --workflow "Non-Dart checks"` for Python
+status and add `--download-artifact python-oracle-summary` to retrieve evidence.
+The workflow executable gate is regression-tested against stale, failed,
+cancelled, pending, and absent runs.
+
 ## Follow-up, not in this PR
 
 - Pin the actionlint reusable workflow to an immutable parent commit when its

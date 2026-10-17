@@ -5,7 +5,7 @@ Examples:
   python3 python/test.py
   python3 python/test.py --actions-latest
   python3 python/test.py --actions-latest --json
-  python3 python/test.py --actions-latest --download-artifact python-oracle-summary
+  python3 python/test.py --actions-latest --workflow "Non-Dart checks" --download-artifact python-oracle-summary
   python3 python/test.py --pytest -k zoom
   python3 python/test.py --flutter-outcomes build/diagnostics/flutter-test.json
   python3 python/test.py --node --node-receipt build/test-results/node-summary.json
