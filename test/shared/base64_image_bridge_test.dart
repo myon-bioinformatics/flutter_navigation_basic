@@ -45,6 +45,7 @@ Base64ImagePayload legacyDecodeWithoutMagicBytes(String input) {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   final b64 = base64Encode(_png);
 
   group('Ironmate base64_bridge_cases.json contract', () {
@@ -268,6 +269,21 @@ void main() {
     final onePixel = Base64ImageBridge.targetDimensions(width: 1, height: 1);
     expect(onePixel.width, 1);
     expect(onePixel.height, 1);
+  });
+
+  test('encodes resized PNG with the requested dimensions and long-edge cap', () async {
+    final source = base64Decode(
+      'iVBORw0KGgoAAAANSUhEUgAAAEAAAAAgCAIAAAAt/+nTAAAAPElEQVR42u3PsQkAMADDsPz/dPpDIUOLwLtRmkxLHw8AAAAAAAAAAADgY8D60GYaAAAAAAAAAAAAAMB1BzcU9ohWRXGEAAAAAElFTkSuQmCC',
+    );
+    final scaled = await Base64ImageBridge.downscaleToPng(source);
+    expect(scaled.mimeType, 'image/png');
+    var header = ByteData.sublistView(scaled.bytes);
+    expect(header.getUint32(16), 43);
+    expect(header.getUint32(20), 21);
+    final capped = await Base64ImageBridge.downscaleToPng(source, maxLongEdge: 10);
+    header = ByteData.sublistView(capped.bytes);
+    expect(header.getUint32(16), 10);
+    expect(header.getUint32(20), 5);
   });
 
   test('rejects invalid resize inputs', () {

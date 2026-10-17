@@ -42,3 +42,43 @@ they are not evidence from physical iOS/Android hardware.
 Re-running a test against an unchanged build does not require rebuilding.
 Changing Dart does require hot reload/recompile or rebuilding web artifacts.
 Web pages must not get an unrestricted endpoint for shell/Python CLI execution.
+## Test an existing Web build without Flutter
+
+The existing Python wrapper can run the image-ingress and clipboard checks
+against a local server or a published Pages build. It starts Node/Playwright,
+not Flutter, Dart, Xcode, or an Android build. The URL selects existing bytes;
+testing production does not validate an unbuilt local patch.
+
+Install the browser test tools once (`e2e` already declares Playwright):
+
+```bash
+cd e2e
+npm install
+npx playwright install --only-shell chromium
+cd ..
+```
+
+Then the normal one-line check is:
+
+```bash
+python python/playwright.py test --base-url https://myon-bioinformatics.github.io/flutter_navigation_basic/ --light --project chromium --grep "Clipboard image bridge" tests/photo_studio_ingress.spec.ts
+```
+
+`--light` disables video and traces; assertions and failure screenshots remain.
+The tests use the committed 64x32 PNG, exercise pick/resize and Base64/copy/paste,
+and check encoded PNG dimensions and corner pixels. A successful text decode
+alone is not image-rendering or PNG-encoding evidence. Headless Chromium still
+requires a browser engine, but needs no mobile SDK or Flutter build.
+
+For browserless Python/Node checks use the existing entrypoint:
+
+```bash
+python python/test.py --python --node -x
+```
+
+These results have different scopes: unit/contract checks, existing-Web browser
+checks, and native iOS/Android checks. Captured build logs and old artifacts
+cannot establish that changed native code still compiles. Keep the native
+checks for native inputs/releases. Cross-language conversion should begin with
+bounded pure functions and shared JSON inputs/outputs; this change does not
+implement a general Dart-to-Kotlin/Swift translator.

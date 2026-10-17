@@ -14,7 +14,9 @@ export type PhotoImportOutcome =
   | { kind: 'timeout'; signal: null };
 
 export async function openPhotoStudio(page: Page) {
-  await page.goto(photoStudioRoute);
+  await page.goto(process.env.FLUTTER_WEB_BASE_URL
+    ? new URL('#/tools/media/photo-studio', process.env.FLUTTER_WEB_BASE_URL).href
+    : photoStudioRoute);
   await waitForFlutter(page);
 }
 

@@ -7,6 +7,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,8 +29,13 @@ def _playwright_prefix() -> list[str]:
     return [_node(), str(PLAYWRIGHT_CLI)]
 
 
-def _run(args: list[str]) -> int:
-    completed = subprocess.run(args, cwd=E2E_DIR, check=False)
+def _run(args: list[str], *, base_url: str | None = None, light: bool = False) -> int:
+    env = os.environ.copy()
+    if base_url is not None:
+        env["FLUTTER_WEB_BASE_URL"] = base_url
+    if light:
+        env["FLUTTER_WEB_LIGHT"] = "1"
+    completed = subprocess.run(args, cwd=E2E_DIR, env=env, check=False)
     return completed.returncode
 
 
@@ -63,6 +69,8 @@ def build_parser() -> argparse.ArgumentParser:
     test.add_argument("--project", action="append", dest="projects")
     test.add_argument("--headed", action="store_true")
     test.add_argument("--grep")
+    test.add_argument("--base-url", help="Existing HTTP(S) web build; no Flutter build is started")
+    test.add_argument("--light", action="store_true", help="Disable video and trace recording")
     test.add_argument("extra", nargs=argparse.REMAINDER)
 
     list_cmd = sub.add_parser("list", help="List Playwright tests without running them.")
@@ -119,13 +127,26 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     if args.command == "test":
+        if args.base_url is not None:
+            try:
+                url = urlsplit(args.base_url)
+                valid = (url.scheme in ("http", "https") and bool(url.hostname)
+                         and url.username is None and url.password is None
+                         and not url.query and not url.fragment)
+            except ValueError:
+                valid = False
+            if not valid:
+                print("error: base URL must be HTTP(S), without credentials, query or fragment", file=sys.stderr)
+                return 2
         return _run(
             _playwright_test_args(
                 projects=args.projects,
                 headed=args.headed,
                 grep=args.grep,
                 extra=args.extra,
-            )
+            ),
+            base_url=args.base_url,
+            light=args.light,
         )
 
     if args.command == "list":
