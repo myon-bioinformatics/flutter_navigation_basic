@@ -16,6 +16,7 @@ on:
       - 'e2e/tests/page_observations.spec.ts'
       - 'e2e/playwright.config.ts'
       - 'e2e/utils/browser_execution.mjs'
+      - 'e2e/utils/flutter_worker_policy.mjs'
       - 'e2e/utils/explore*'
       - 'python/playwright.py'
 

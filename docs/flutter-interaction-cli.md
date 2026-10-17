@@ -229,3 +229,18 @@ xprobe's existing `cases_from_junit` integration is already used through
 browser process lifetime. BlueProbe's saved-HTML extraction/comparison adapters
 remain its owner; these control/screenshot receipts do not invent a second HTML
 scraper. The owner is browser-test-kit PR #84, merged at `4be0f0d20b4cb6418ae97f64f3ca6aea6a75292c`; the consumer pin uses that default-branch merge commit.
+
+### Flutter resource headroom
+
+The normal video-enabled browser lane caps the upstream automatic budget at two
+workers; light published observations retain the upstream maximum of four.
+Explicit FLUTTER_WEB_WORKERS and Playwright --workers overrides remain available.
+This is Flutter application policy, not a fork of the generic budget algorithm.
+
+Main run 39031572540 and consumer run 39031731568 both exhausted the unchanged
+30-second total budget in the same two WebKit catalogue cases with four workers
+(194 passed, 2 failed, 9 existing skips; about 11 minutes). The affected controls
+were present and the tests had progressed through multiple queries. Reducing
+simultaneous software-rendered/video work provides headroom without removing
+assertions, skipping cases, increasing timeouts or enabling retries. The portable
+suite tests heavy/light policy, low-resource behavior and explicit overrides.
