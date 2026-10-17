@@ -3,22 +3,25 @@
 日常のPRとは分けて、CIに既に用意するFlutter／Android／Xcodeの環境で実測する。
 採取済みのログを読むだけでPython／Nodeの実装が合格したことにはしない。
 
-## 最初の採取範囲
+## 最初の一巡: 正常2条件＋負例7種類
 
-共通入力は配列長`0, 3, -1`。非負なら実際に構築した配列の長さを出し、負なら実際の
-言語エラーを逃がして診断を残す。各実装が独立に期待条件を満たすことを検査する。
+`tools/native_error_corpus/cases.json`に共有入力・期待結果・言語ごとの診断条件を明示する。
+期待するエラーは、負の配列長、範囲外アクセス、null、型キャスト、不正な整数、不正なJSON、
+整数のゼロ除算。配列長0・3の正常例も実行する。
 
-| CIの言語 | 最初に確認するアプリの正常ビルド | その環境での実測 |
+| CIの言語 | 正常アプリビルドの基準 | 新しく実行するプローブ |
 |---|---|---|
-| Dart / Ubuntu | `flutter build web --debug` | Flutter同梱Dart VMで`List.filled` |
-| Kotlin / Ubuntu | `flutter build apk --debug`（arm64のみ） | アプリのGradle/JUnitで`IntArray` |
-| Swift / macOS | `flutter build ios --simulator --debug --no-codesign` | Xcodeの`swiftc`でコンパイルした標準配列 |
+| Dart / Ubuntu | Flutter Web debug | Flutter同梱Dart VMで9条件 |
+| Kotlin / Ubuntu | Flutter Android arm64 debug | アプリのGradle/JUnitで8条件＋JSON未観測1件 |
+| Swift / macOS | Flutter iOS simulator debug / no-codesign | XcodeでコンパイルしたSwift CLIで9条件 |
 
-**各ジョブでPythonとNodeも3入力を実行する。** Pythonは明示した非負長の仕様を
-独立のガードで実装し、Nodeは`new Array(count)`を使う。共通の失敗分類は
-`invalid_array_length`、元の終了コード・例外ログは変換せず保持する。
-正常結果はログに書かれた実測値から読む。Kotlinの成功もJUnitの印字値を解析し、
-期待値の丸写しで補完しない。負例のエラー種別や必要な印字が欠ければ失敗にする。
+**各ジョブでPythonとNodeも9条件ずつ新しく実行する。** JSのboundsはDataView、整数解析・
+ゼロ除算はBigIntを使う。JS/Pythonの型キャスト等の共通仕様は独立の明示ガードで実装する。
+各言語の元の例外・終了コードを同じものとして捏造せず、共通分類と原文を並べて残す。
+
+Kotlinの現在のJVMテスト依存には実体のJSONパーサがない。Androidのmockによる別の失敗を
+JSON解析エラーと扱わず、JUnitの明示skipと`context.unobserved`に残す。その他のskipや
+予想外の例外、成功結果・診断の欠落は合格にしない。Kotlinの正常値も実際の印字を解析する。
 
 これは言語プリミティブの最初の負例コーパス。Flutterのビュー、Androidデバイスや
 iOSシミュレータ上のアプリ操作／OS権限を検証したという意味ではない。
@@ -38,10 +41,20 @@ Dart VMとWebビルド出力、JVMとAndroid実機、macOS Swift CLIとiOSアプ
 - SDKや正常ビルドの失敗を、意図した言語エラーとして合格にしない。
   ネイティブの基準ビルドに失敗してもPython／Nodeは実測して証跡を残す。
 
-ワークフロー内の入口:
+## 前回の正常ビルドの再利用
+
+前回の成功run `39033656033`の言語別artifactをread-onlyの`actions: read`で取得する。
+正常build成功、同じ言語・ビルドコマンド、Flutter/engine/Dartのrevision、Xcode/Swiftまたは
+JDKの実測版、対象の追跡済みソース・ロック・設定・assetが一致する場合だけ再利用する。
+Git比較にはworking treeの変更も含め、過去結果を今回実行したように扱わない。
+
+一致した場合は`healthy_build_executed_current_run: false`と元run/SHAを残す。
+証跡が欠落・失効している、ツールチェーンや入力が違う、比較できない場合は実ビルドへ戻す。
+前回の小さな配列長プローブの成功を、今回の新しいエラープローブの実行として流用しない。
+90日でartifactが失効した後も、欠落を合格に置き換えず実ビルドを行う。
 
 ```sh
-python -S python/capture_native_errors.py --language dart --output build/native-error-corpus/dart --probe-tools .native-probe-tools
+python -S python/capture_native_errors.py --language dart --output build/native-error-corpus/dart --probe-tools .native-probe-tools --baseline-receipt .native-baseline/receipt.json
 ```
 
 `.native-probe-tools`はworkflowの完全SHAに固定したxprobe checkout。
@@ -57,7 +70,7 @@ python -S python/capture_native_errors.py --language dart --output build/native-
 - `receipt.json`: 共有入力、実測値、期待値、元ログ、ソースハッシュ、Git SHA、
   Flutter/Dart/Node/JDK/Xcode/Gradleの実測情報とメタ情報取得の失敗。
 - `*.stdout.log`, `*.stderr.log`: 元のバイト列。JSONにはUTF-8置換表示とバイトハッシュも保存。
-- `source-*`: 実際に使った5言語の小さなプローブ。
+- `source-*`: 実際に使った5言語の小さなプローブと9条件の入力仕様。
 - `kotlin-original-junit.xml`: Gradleが出したJUnit原文（Kotlinジョブ）。
 - `acceptance.xml`: 正常例・意図した負例・Python／Nodeの期待条件が成立したか。
 - `observed-failures.xml`: 実際のプロセス失敗を含むJUnit。故意の失敗例として保存する。

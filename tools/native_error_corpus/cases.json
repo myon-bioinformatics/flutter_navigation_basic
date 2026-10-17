@@ -1,0 +1,215 @@
+{
+  "schema": "native-error-sweep/1",
+  "cases": [
+    {
+      "name": "empty",
+      "input": {
+        "operation": "array_length",
+        "count": 0
+      },
+      "expected": {
+        "length": 0
+      }
+    },
+    {
+      "name": "three",
+      "input": {
+        "operation": "array_length",
+        "count": 3
+      },
+      "expected": {
+        "length": 3
+      }
+    },
+    {
+      "name": "negative",
+      "input": {
+        "operation": "array_length",
+        "count": -1
+      },
+      "expected": {
+        "error": "invalid_array_length"
+      },
+      "markers": {
+        "dart": [
+          "RangeError"
+        ],
+        "swift": [
+          "count < 0"
+        ],
+        "python": [
+          "ValueError",
+          "negative array length"
+        ],
+        "node": [
+          "RangeError"
+        ]
+      },
+      "kotlin_types": [
+        "java.lang.NegativeArraySizeException"
+      ]
+    },
+    {
+      "name": "bounds",
+      "input": {
+        "operation": "bounds",
+        "index": 5
+      },
+      "expected": {
+        "error": "out_of_bounds"
+      },
+      "markers": {
+        "dart": [
+          "RangeError"
+        ],
+        "swift": [
+          "Index out of range"
+        ],
+        "python": [
+          "IndexError"
+        ],
+        "node": [
+          "RangeError"
+        ]
+      },
+      "kotlin_types": [
+        "java.lang.ArrayIndexOutOfBoundsException",
+        "java.lang.IndexOutOfBoundsException"
+      ]
+    },
+    {
+      "name": "null_assert",
+      "input": {
+        "operation": "null_assert",
+        "value": null
+      },
+      "expected": {
+        "error": "null_value"
+      },
+      "markers": {
+        "dart": [
+          "Null check operator"
+        ],
+        "swift": [
+          "Unexpectedly found nil"
+        ],
+        "python": [
+          "AttributeError"
+        ],
+        "node": [
+          "TypeError"
+        ]
+      },
+      "kotlin_types": [
+        "java.lang.NullPointerException",
+        "kotlin.KotlinNullPointerException"
+      ]
+    },
+    {
+      "name": "bad_cast",
+      "input": {
+        "operation": "bad_cast",
+        "value": "text"
+      },
+      "expected": {
+        "error": "invalid_cast"
+      },
+      "markers": {
+        "dart": [
+          "not a subtype"
+        ],
+        "swift": [
+          "Could not cast value"
+        ],
+        "python": [
+          "TypeError"
+        ],
+        "node": [
+          "TypeError"
+        ]
+      },
+      "kotlin_types": [
+        "java.lang.ClassCastException"
+      ]
+    },
+    {
+      "name": "invalid_integer",
+      "input": {
+        "operation": "invalid_integer",
+        "value": "not-an-integer"
+      },
+      "expected": {
+        "error": "invalid_integer"
+      },
+      "markers": {
+        "dart": [
+          "FormatException"
+        ],
+        "swift": [
+          "Unexpectedly found nil"
+        ],
+        "python": [
+          "ValueError"
+        ],
+        "node": [
+          "SyntaxError"
+        ]
+      },
+      "kotlin_types": [
+        "java.lang.NumberFormatException"
+      ]
+    },
+    {
+      "name": "invalid_json",
+      "input": {
+        "operation": "invalid_json",
+        "value": "{"
+      },
+      "expected": {
+        "error": "invalid_json"
+      },
+      "markers": {
+        "dart": [
+          "FormatException"
+        ],
+        "swift": [
+          "NSCocoaErrorDomain"
+        ],
+        "python": [
+          "JSONDecodeError"
+        ],
+        "node": [
+          "SyntaxError"
+        ]
+      },
+      "kotlin_unobserved": "No JSON parser in the existing JVM test dependencies"
+    },
+    {
+      "name": "divide_zero",
+      "input": {
+        "operation": "divide_zero",
+        "value": 0
+      },
+      "expected": {
+        "error": "division_by_zero"
+      },
+      "markers": {
+        "dart": [
+          "IntegerDivisionByZeroException"
+        ],
+        "swift": [
+          "Division by zero"
+        ],
+        "python": [
+          "ZeroDivisionError"
+        ],
+        "node": [
+          "RangeError"
+        ]
+      },
+      "kotlin_types": [
+        "java.lang.ArithmeticException"
+      ]
+    }
+  ]
+}
