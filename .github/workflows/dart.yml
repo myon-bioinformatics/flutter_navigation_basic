@@ -333,7 +333,10 @@ jobs:
           pip install -r python/requirements.txt
 
       - name: Run pytest
-        run: python python/test.py --pytest -- --oracle-mode=local --outcomes-json build/diagnostics/python-oracle/pytest_outcomes.json --junitxml=build/test-results/python-fallback.xml
+        run: >-
+          python python/test.py --pytest -- --oracle-mode=local
+          --outcomes-json "$GITHUB_WORKSPACE/build/diagnostics/python-oracle/pytest_outcomes.json"
+          --junitxml="$GITHUB_WORKSPACE/build/test-results/python-fallback.xml"
 
       - name: Validate fallback JUnit
         run: python3 -S python/validate_runner_junit.py build/test-results/python-fallback.xml
@@ -364,7 +367,7 @@ jobs:
               "mode": "local",
               "repository": "${{ github.repository }}",
               "ref": "${{ github.ref_name }}",
-              "sha": "${{ github.sha }}",
+              "sha": "${{ github.event.pull_request.head.sha || github.sha }}",
               "run_id": ${{ github.run_id }},
               "run_attempt": ${{ github.run_attempt }},
               "server_url": "${{ github.server_url }}",

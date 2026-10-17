@@ -46,8 +46,10 @@ def test_pure_dart_diff_selects_fallback_job_junit_and_receipt(classify_workflow
     fallback = jobs['python-oracle-fallback']
     assert fallback['if'] == "needs.changes.outputs.flutter == 'true' && needs.changes.outputs.oracle_fallback == 'true'"
     steps = fallback['steps']
-    assert any('--junitxml=build/test-results/python-fallback.xml' in s.get('run', '') for s in steps)
+    assert any('--junitxml="$GITHUB_WORKSPACE/build/test-results/python-fallback.xml"' in s.get('run', '') for s in steps)
     assert any(s.get('with', {}).get('name') == 'python-oracle-summary' for s in steps)
+    command = next(s['run'] for s in steps if s.get('name') == 'Run pytest')
+    assert '--outcomes-json "$GITHUB_WORKSPACE/build/diagnostics/python-oracle/pytest_outcomes.json"' in command
     run, reports = _run_plan(jobs['junit-plan'], {'FLUTTER': 'true', 'PATTERNS': 'false', 'PYTHON_FALLBACK': 'true'})
     assert run == 'true' and 'junit-python-fallback/python-fallback.xml' in reports
     assert 'python-oracle-fallback' in jobs['junit-identity']['needs']
