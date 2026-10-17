@@ -6,7 +6,11 @@ small @portable representative-flow subset.
 """
 
 from pathlib import Path
+import json
 import re
+import shlex
+
+import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_ENGINES = {"chromium", "firefox", "webkit"}
@@ -43,10 +47,25 @@ def test_auto_ci_and_docker_build_the_same_flutter_entrypoint() -> None:
     workflow = (ROOT / ".github" / "workflows" / "non-dart.yml").read_text(encoding="utf-8")
     dockerfile = (ROOT / "Dockerfile.e2e").read_text(encoding="utf-8")
 
-    ci_target = _flutter_web_target(workflow)
-    docker_target = _flutter_web_target(dockerfile)
+    ci_argv = _ci_build_argv(workflow)
+    docker_argv = _docker_build_argv(dockerfile)
+    ci_target = ci_argv[ci_argv.index('-t') + 1]
+    docker_target = docker_argv[docker_argv.index('-t') + 1]
 
     assert ci_target == docker_target == "lib/main.dart"
+
+
+def _ci_build_argv(text):
+    steps = yaml.safe_load(text)['jobs']['playwright']['steps']
+    build = next(step for step in steps if step.get('uses') == './.github/actions/build-companions')
+    assert build['with']['target'] == 'web'
+    return json.loads(build['with']['command'])
+
+
+def _docker_build_argv(text):
+    line = next(line for line in text.splitlines() if '--build-command ' in line)
+    command = shlex.split(line)[1]
+    return json.loads(command)
 
 
 def test_e2e_semantics_define_is_pinned_to_browser_builds() -> None:
@@ -56,12 +75,10 @@ def test_e2e_semantics_define_is_pinned_to_browser_builds() -> None:
     pages_workflow = (ROOT / ".github" / "workflows" / "flutter-pages.yml").read_text(encoding="utf-8")
     main = (ROOT / "lib" / "main.dart").read_text(encoding="utf-8")
 
-    expected_build = (
-        'flutter build web --release -t lib/main.dart '
-        '--dart-define=E2E=true --base-href "/"'
-    )
-    assert expected_build in workflow
-    assert expected_build in dockerfile
+    expected = ['flutter', 'build', 'web', '--release', '-t', 'lib/main.dart',
+                '--dart-define=E2E=true', '--base-href', '/']
+    assert _ci_build_argv(workflow) == expected
+    assert _docker_build_argv(dockerfile) == [*expected, '--dart-define=CURL_PYTHON_RUNTIME=${CURL_PYTHON_RUNTIME}']
 
     assert "--dart-define=E2E=true" not in dart_workflow
     assert "--dart-define=E2E=true" not in pages_workflow

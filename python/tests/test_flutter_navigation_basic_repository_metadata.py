@@ -146,6 +146,7 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
         ("myon-bioinformatics/gh_identity", "gh_identity.py", "python/vendor/gh_identity.py"),
         ("myon-bioinformatics/gh_identity", "LICENSE", "python/vendor/gh_identity-LICENSE"),
         ("myon-bioinformatics/browser-test-kit", "scripts/interaction.mjs", "e2e/utils/interaction.mjs"),
+        ("myon-bioinformatics/browser-test-kit", "scripts/browser_execution.mjs", "e2e/utils/browser_execution.mjs"),
     }
     entries = lock["files"]
     assert {(entry["repository"], entry["source"], entry["destination"]) for entry in entries} == expected
@@ -178,7 +179,7 @@ def test_pages_generates_only_after_checkout_gate_and_embeds_asset():
     workflow = (ROOT / ".github/workflows/flutter-pages.yml").read_text()
     assert "github.event.workflow_run.head_branch == 'main'" in workflow
     assert workflow.index("Verify checkout matches gated SHA") < workflow.index("generate_repository_metadata.py --expected-sha")
-    assert workflow.index("generate_repository_metadata.py --expected-sha") < workflow.index("meta --platform web --repository-metadata") < workflow.index("flutter build web")
+    assert workflow.index("generate_repository_metadata.py --expected-sha") < workflow.index("meta --platform web --repository-metadata") < workflow.index("uses: ./.github/actions/build-companions")
     assert "assets/diagnostics/build_metadata.json" in (ROOT / "pubspec.yaml").read_text()
 
 

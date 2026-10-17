@@ -42,10 +42,38 @@ export const test = base.extend<{ observation: void }>({
       }, { timeout: 5000, message: 'Flutter control inventory after navigation' }).toBeGreaterThan(0);
       if (elements!.truncated) throw new Error('control inventory truncated');
       display = {
-        ...await page.evaluate(() => ({
-          viewport: { width: innerWidth, height: innerHeight },
-          device_scale_factor: devicePixelRatio, user_agent: navigator.userAgent,
-        })),
+        ...await page.evaluate(() => {
+          const probe = document.createElement('div');
+          probe.style.cssText = 'position:fixed;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
+          document.body.append(probe);
+          const css = getComputedStyle(probe);
+          const safeArea = { top: parseFloat(css.paddingTop), right: parseFloat(css.paddingRight),
+            bottom: parseFloat(css.paddingBottom), left: parseFloat(css.paddingLeft) };
+          probe.remove();
+          const visual = window.visualViewport;
+          return {
+            viewport: { width: innerWidth, height: innerHeight },
+            device_scale_factor: devicePixelRatio, user_agent: navigator.userAgent,
+            reported_platform: navigator.platform, max_touch_points: navigator.maxTouchPoints,
+            language: navigator.language, languages: [...navigator.languages],
+            time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            screen: { width: screen.width, height: screen.height,
+              available_width: screen.availWidth, available_height: screen.availHeight,
+              color_depth: screen.colorDepth, orientation: screen.orientation?.type ?? null },
+            window: { outer_width: outerWidth, outer_height: outerHeight },
+            document: { client_width: document.documentElement.clientWidth,
+              client_height: document.documentElement.clientHeight,
+              scroll_width: document.documentElement.scrollWidth,
+              scroll_height: document.documentElement.scrollHeight },
+            visual_viewport: visual ? { width: visual.width, height: visual.height,
+              offset_left: visual.offsetLeft, offset_top: visual.offsetTop, scale: visual.scale } : null,
+            safe_area_css_px: safeArea,
+            input: { coarse: matchMedia('(pointer: coarse)').matches,
+              hover: matchMedia('(hover: hover)').matches },
+            preferences: { dark: matchMedia('(prefers-color-scheme: dark)').matches,
+              reduced_motion: matchMedia('(prefers-reduced-motion: reduce)').matches },
+          };
+        }),
         controls: elements!.elements
           .filter((node: { aria_label: string | null }) => !/^(SHA:|Commit )/.test(node.aria_label || ''))
           .map((node: { id: string | null; aria_label: string | null; text: string; tag: string;
@@ -76,7 +104,8 @@ export const test = base.extend<{ observation: void }>({
         parallel_slot: info.parallelIndex, elapsed_ms: Date.now() - started },
       exploration: { seed: process.env.FLUTTER_WEB_EXPLORE_SEED ?? null,
         steps: Number(process.env.FLUTTER_WEB_EXPLORE_STEPS || '0') },
-      runtime: { browser: browserName, browser_version: browser.version(), node: process.version,
+      runtime: { execution_kind: 'web-browser', native_os_verified: false,
+        browser: browserName, browser_version: browser.version(), node: process.version,
         platform: process.platform, display },
       fixture: info.file.endsWith('photo_studio_ingress.spec.ts') && !info.title.includes('non-image')
         ? { file: path.basename(fixture), sha256: hash(fs.readFileSync(fixture)) } : null,

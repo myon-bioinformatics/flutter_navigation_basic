@@ -137,7 +137,11 @@ jobs:
         env:
           GATED_SHA: ${{ steps.gated.outputs.sha }}
         # SOURCE_REF pins in-app GitHub source links to the deployed commit.
-        run: flutter build web --release --base-href "/flutter_navigation_basic/" --dart-define=SOURCE_REF="$GATED_SHA"
+        uses: ./.github/actions/build-companions
+        with:
+          target: web
+          id: pages
+          command: '["flutter","build","web","--release","--base-href","/flutter_navigation_basic/","--dart-define=SOURCE_REF=${{ steps.gated.outputs.sha }}"]'
 
       - name: Configure Pages
         uses: actions/configure-pages@v6

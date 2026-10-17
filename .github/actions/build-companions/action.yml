@@ -1,0 +1,45 @@
+name: Build with Python and Node observations
+description: One real Flutter build and fresh companion controls on the same runner
+inputs:
+  target:
+    description: Actual build target (independent of runner OS)
+    required: true
+  command:
+    description: JSON argv for the existing build command
+    required: true
+  id:
+    description: Unique evidence name within the job
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v7
+      with:
+        python-version: '3.12'
+    - uses: actions/setup-node@v7
+      with:
+        node-version: '22'
+    - uses: actions/checkout@v7
+      with:
+        repository: myon-bioinformatics/xprobe
+        ref: 1fddf44b1afdccfa91c801891e7a806c8e8f7d18
+        path: .build-probe-tools
+        persist-credentials: false
+    - name: Build once and measure companions even after build failure
+      shell: bash
+      env:
+        BUILD_COMMAND: ${{ inputs.command }}
+        BUILD_TARGET: ${{ inputs.target }}
+        EVIDENCE_ID: ${{ inputs.id }}
+      run: |
+        python -S python/capture_build_companions.py --target "$BUILD_TARGET" \
+          --build-command "$BUILD_COMMAND" --output "build/build-companions/$EVIDENCE_ID" \
+          --probe-tools .build-probe-tools
+    - name: Keep current build, acceptance and intentional failure evidence
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: build-companions-${{ github.job }}-${{ inputs.id }}
+        path: build/build-companions/${{ inputs.id }}/
+        if-no-files-found: error
+        retention-days: 90

@@ -10,6 +10,8 @@ on:
     branches: ["main"]
     paths:
       - "python/**"
+      - "tools/native_error_corpus/**"
+      - ".github/actions/build-companions/**"
       - "assets/time/**"
       - "assets/data_processing/**"
       - "test/fixtures/photo_studio/import_compat/**"
@@ -23,6 +25,8 @@ on:
     branches: ["main"]
     paths:
       - "python/**"
+      - "tools/native_error_corpus/**"
+      - ".github/actions/build-companions/**"
       - "assets/time/**"
       - "assets/data_processing/**"
       - "test/fixtures/photo_studio/import_compat/**"
@@ -106,14 +110,14 @@ jobs:
           validation_browser=false
           for f in "${files[@]}"; do
             case "$f" in
-              python/*|assets/time/*|assets/data_processing/*|test/fixtures/photo_studio/import_compat/*|lib/features/*_patterns/*)
+              python/*|tools/native_error_corpus/*|assets/time/*|assets/data_processing/*|test/fixtures/photo_studio/import_compat/*|lib/features/*_patterns/*)
                 python=true
                 ;;
               e2e/*)
                 e2e=true
                 playwright=true
                 ;;
-              .github/workflows/non-dart.yml)
+              .github/workflows/non-dart.yml|.github/actions/build-companions/*)
                 workflow=true
                 python=true
                 playwright=true
@@ -482,7 +486,12 @@ jobs:
       - name: Install Flutter deps and build web
         run: |
           flutter pub get
-          flutter build web --release -t lib/main.dart --dart-define=E2E=true --base-href "/"
+      - name: Build Web and measure Python / Node
+        uses: ./.github/actions/build-companions
+        with:
+          target: web
+          id: portable-e2e
+          command: '["flutter","build","web","--release","-t","lib/main.dart","--dart-define=E2E=true","--base-href","/"]'
 
       - name: Install Playwright
         working-directory: e2e

@@ -104,4 +104,11 @@ if [[ "$playwright_exit" -eq 0 ]]; then
 else
   log ERROR playwright "failed exit_code=$playwright_exit"
 fi
+# Image-build evidence is historical if Docker reused a layer; never relabel it
+# as an execution in this container's current CI run.
+if [[ -d build/build-companions/docker ]]; then
+  mkdir -p e2e/test-results
+  cp -R build/build-companions/docker e2e/test-results/docker-build-companions
+fi
+
 exit "$playwright_exit"

@@ -19,7 +19,9 @@ def test_pages_build_passes_the_gated_commit_as_source_ref():
     build = [step for step in steps if step.get("name") == "Build Flutter web"]
     assert len(build) == 1
     assert build[0]["env"]["GATED_SHA"] == "${{ steps.gated.outputs.sha }}"
-    assert '--dart-define=SOURCE_REF="$GATED_SHA"' in build[0]["run"].split()
+    assert build[0]['uses'] == './.github/actions/build-companions'
+    argv = json.loads(build[0]['with']['command'])
+    assert '--dart-define=SOURCE_REF=${{ steps.gated.outputs.sha }}' in argv
 
 
 @pytest.mark.parametrize('head,status,conclusion,accepted', [

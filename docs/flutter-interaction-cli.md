@@ -195,9 +195,10 @@ Smoke-only runs remain `--explore-steps 0` (CLI default). Exploration can change
 visible state, so use smoke-only captures for a stable geometry baseline, or
 compare captures with the same seed, build and exploration settings. A control
 that navigates away is followed by returning to the original route before the
-normal observation fixture captures its receipt. Browserless scheduler checks
-run with `cd e2e && node --test unit_tests/execution.test.mjs`; these start real
-Playwright worker processes without installing or launching a browser engine.
+normal observation fixture captures its receipt. Generic scheduler and explorer
+checks now run once in browser-test-kit PR #84's existing browserless Node lane,
+using `tests/browserless/browser_execution.spec.ts`. Flutter does not carry or
+start a duplicate generic suite.
 
 Back navigation can leave Flutter's semantics root attached while its controls
 are being rebuilt. Observation capture polls the existing inventory for up to
@@ -205,3 +206,41 @@ five seconds and uses that same nonempty snapshot; persistent empty/truncated
 captures still fail. The workflow first replays the four routes/seed that
 exposed this race, validates their saved receipts, then runs the changing-seed
 full sweep. Regression output is kept separately from all-page coverage.
+
+
+### Shared-tool ownership
+
+The generic worker budget, seed choices and exploration engine come from
+browser-test-kit's `scripts/browser_execution.mjs`. The byte-identical local
+copy is pinned with commit, blob SHA and SHA-256 in `python/vendor.lock.json`;
+edit upstream and refresh the pin. Its MIT license is already in `python/vendor`.
+The Flutter adapter owns only route/button/input policy, readiness assertions,
+JUnit/build identity and attachments. Existing PNG header/IHDR/IEND/dimension
+checks are delegated to the already-pinned browser-test-kit `check_png.py`;
+Flutter retains its own screenshot hash and catalogue/build coverage contract.
+
+For emoji page movement, reuse browser-test-kit's existing `route_trail.py`
+(including variation-selector and full ZWJ/skin-tone/flag/keycap handling).
+No new emoji parser or ordered route walker is added by exploration. The route
+catalogue here remains Flutter-specific input for independent JUnit cases.
+
+xprobe's existing `cases_from_junit` integration is already used through
+`python/failure_identity.py`; it owns failure identities and case corpora, not
+browser process lifetime. BlueProbe's saved-HTML extraction/comparison adapters
+remain its owner; these control/screenshot receipts do not invent a second HTML
+scraper. The owner is browser-test-kit PR #84, merged at `4be0f0d20b4cb6418ae97f64f3ca6aea6a75292c`; the consumer pin uses that default-branch merge commit.
+
+### Flutter resource headroom
+
+The normal video-enabled browser lane caps the upstream automatic budget at two
+workers; light published observations retain the upstream maximum of four.
+Explicit FLUTTER_WEB_WORKERS and Playwright --workers overrides remain available.
+This is Flutter application policy, not a fork of the generic budget algorithm.
+
+Main run 39031572540 and consumer run 39031731568 both exhausted the unchanged
+30-second total budget in the same two WebKit catalogue cases with four workers
+(194 passed, 2 failed, 9 existing skips; about 11 minutes). The affected controls
+were present and the tests had progressed through multiple queries. Reducing
+simultaneous software-rendered/video work provides headroom without removing
+assertions, skipping cases, increasing timeouts or enabling retries. The portable
+suite tests heavy/light policy, low-resource behavior and explicit overrides.

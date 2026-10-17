@@ -14,6 +14,7 @@ on:
       - 'lib/**'
       - 'test/**'
       - 'python/**'
+      - ".github/actions/build-companions/**"
       - 'ci/numbered_routes.toml'
       - 'javascript/**'
       - 'assets/data_processing/**'
@@ -151,7 +152,11 @@ jobs:
       - name: Analyze Flutter source
         run: flutter analyze --no-fatal-infos
       - name: Build Flutter web
-        run: flutter build web
+        uses: ./.github/actions/build-companions
+        with:
+          target: web
+          id: refactor
+          command: '["flutter","build","web"]'
 
   node:
     name: JavaScript async boundary
