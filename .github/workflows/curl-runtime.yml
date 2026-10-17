@@ -19,6 +19,8 @@ on:
       - "test/shared/http/**"
       - "e2e/tests/curl_runtime.spec.ts"
       - "e2e/utils/helpers.ts"
+      - "e2e/utils/browser_execution.mjs"
+      - "e2e/utils/flutter_worker_policy.mjs"
       - "e2e/playwright.config.ts"
       - "e2e/package.json"
       - "pubspec.yaml"
