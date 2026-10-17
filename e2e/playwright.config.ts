@@ -1,4 +1,4 @@
-import { workerBudget } from './utils/worker_budget.mjs';
+import { workerBudget } from './utils/browser_execution.mjs';
 import { defineConfig, devices, type ReporterDescription } from '@playwright/test';
 
 // JUnit is opt-in: without an output file the junit reporter would print XML to
@@ -16,7 +16,7 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: false,
   retries: 0,
-  workers: workerBudget(),
+  workers: workerBudget({ override: process.env.FLUTTER_WEB_WORKERS }),
   reporter,
   use: {
     baseURL: process.env.FLUTTER_WEB_BASE_URL || 'http://localhost:8080',

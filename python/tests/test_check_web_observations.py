@@ -15,7 +15,7 @@ from web_page_catalogue import catalogue
 
 def receipt(directory, route='/core/clipboard-shelf'):
     directory.mkdir(parents=True, exist_ok=True)
-    png = b'\x89PNG\r\n\x1a\nfixture'
+    png = (Path(__file__).resolve().parents[2] / 'test/fixtures/photo_studio/import_compat/png_opaque_64x32.png').read_bytes()
     (directory / 'web-observation.png').write_bytes(png)
     data = {'schema': 'flutter-web-observation/1', 'test': 'test '+route, 'project': 'chromium',
             'status': 'passed', 'expected_status': 'passed', 'build_sha': 'a'*40,
@@ -162,3 +162,11 @@ def test_exploration_seed_is_forwarded_once_without_mutating_parent_environment(
     with pytest.raises(SystemExit) as error:
         playwright.main(['pages', '--base-url', 'https://example.test/', '--explore-steps', '21'])
     assert error.value.code == 2
+
+
+def test_matching_hash_cannot_make_a_header_only_png_valid(tmp_path):
+    data = receipt(tmp_path)
+    raw = b'\x89PNG\r\n\x1a\nnot-a-complete-png'
+    (tmp_path / 'web-observation.png').write_bytes(raw)
+    data['screenshot'].update(bytes=len(raw), sha256=hashlib.sha256(raw).hexdigest())
+    assert check.validate(data, tmp_path)

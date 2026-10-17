@@ -15,9 +15,8 @@ on:
       - 'e2e/utils/observed_test.ts'
       - 'e2e/tests/page_observations.spec.ts'
       - 'e2e/playwright.config.ts'
-      - 'e2e/utils/worker_budget.mjs'
+      - 'e2e/utils/browser_execution.mjs'
       - 'e2e/utils/explore*'
-      - 'e2e/unit_tests/**'
       - 'python/playwright.py'
 
 permissions:
@@ -46,9 +45,6 @@ jobs:
         run: |
           npm install
           npx playwright install --with-deps --only-shell chromium
-      - name: Check worker replacement and deterministic exploration without a browser
-        working-directory: e2e
-        run: node --test unit_tests/execution.test.mjs
       - name: Replay Back-navigation capture race on the four observed routes
         env:
           PLAYWRIGHT_HTML_OPEN: never

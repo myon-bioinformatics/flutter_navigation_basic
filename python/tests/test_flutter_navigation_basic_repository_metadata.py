@@ -146,6 +146,7 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
         ("myon-bioinformatics/gh_identity", "gh_identity.py", "python/vendor/gh_identity.py"),
         ("myon-bioinformatics/gh_identity", "LICENSE", "python/vendor/gh_identity-LICENSE"),
         ("myon-bioinformatics/browser-test-kit", "scripts/interaction.mjs", "e2e/utils/interaction.mjs"),
+        ("myon-bioinformatics/browser-test-kit", "scripts/browser_execution.mjs", "e2e/utils/browser_execution.mjs"),
     }
     entries = lock["files"]
     assert {(entry["repository"], entry["source"], entry["destination"]) for entry in entries} == expected
