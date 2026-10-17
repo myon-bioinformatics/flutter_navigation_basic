@@ -99,8 +99,10 @@ Prefer pytest-like outcome receipts (`passed` / `failed` / `skipped` / `xfailed`
 `xpassed` / `error`) via `python` when documenting known gaps.
 
 Non-Dart checks live in `.github/workflows/non-dart.yml` (Python stdlib in Docker,
-pytest oracles, optional Playwright). Keep Flutter/`Pages` free of those startups
-unless a shared golden under `python/fixtures` changes.
+pytest oracles, optional Playwright). Full pytest uses Non-Dart as its primary
+owner; a Python-only fallback in Flutter CI covers Dart-only changes that the
+primary classifier does not select. Ordinary mixed changes must not duplicate
+the full suite. Keep `Pages` free of those startups.
 
 ### Pattern catalogue boundary
 

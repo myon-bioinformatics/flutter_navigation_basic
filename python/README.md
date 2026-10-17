@@ -254,3 +254,18 @@ previous run, on top of preparation. Its browser/Web-build time must not be
 attributed to Python contracts or accelerated by silently skipping assertions.
 The published-page observation CLI can reuse an existing Web build; validating
 unbuilt application changes still requires an appropriate build/runtime lane.
+
+
+### Python oracle coverage for Dart-only changes
+
+Non-Dart remains the full-pytest owner for Python, shared fixtures and pattern
+inputs it already selects. `oracle_selection.py` uses the actual PR/push diff
+to select a Python-only fallback in Flutter CI when that primary selection is
+absent, including ordinary `lib/**/*.dart` and `test/**/*.dart` changes. It runs
+the existing full suite without Flutter in that job, preserves outcomes and
+the Python summary receipt, and provides JUnit to the existing shared collector.
+Ordinary mixed Python/Dart changes have one owner; selector/workflow edits
+exercise the fallback itself. First pushes without a usable base keep coverage.
+Tests execute the real Non-Dart classifier for pure Dart and mixed diffs, check
+exclusive ownership, and check the selected JUnit/receipt. The locked Non-Dart
+workflow bytes and parent registration are unchanged.
