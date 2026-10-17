@@ -10,6 +10,7 @@ const fixture = path.resolve(process.cwd(), '../test/fixtures/photo_studio/impor
 
 export const test = base.extend<{ observation: void }>({
   observation: [async ({ page, browser, browserName }, use, info) => {
+    const started = Date.now();
     const errors: { kind: string; message: string }[] = [];
     const record = (kind: string, message: string) => {
       if (errors.length < 100) errors.push({ kind, message: message.slice(0, 1000) });
@@ -29,16 +30,23 @@ export const test = base.extend<{ observation: void }>({
     let revision: string | null = null;
     let screenshot: { file: string; sha256: string; bytes: number } | null = null;
     try {
-      const elements = await inventory(page, {
-        selector: '[flt-semantics-identifier], [role="button"]', limit: 2000,
-      });
-      if (elements.truncated) throw new Error('control inventory truncated');
+      let elements: Awaited<ReturnType<typeof inventory>>;
+      // Hash navigation keeps the root attached while Flutter rebuilds children.
+      // Use the actual nonempty poll snapshot without a second inventory race.
+      await expect.poll(async () => {
+        elements = await inventory(page, {
+          selector: '[flt-semantics-identifier], [role="button"]', limit: 2000,
+        });
+        return elements.elements.filter((node: { aria_label: string | null }) =>
+          !/^(SHA:|Commit )/.test(node.aria_label || '')).length;
+      }, { timeout: 5000, message: 'Flutter control inventory after navigation' }).toBeGreaterThan(0);
+      if (elements!.truncated) throw new Error('control inventory truncated');
       display = {
         ...await page.evaluate(() => ({
           viewport: { width: innerWidth, height: innerHeight },
           device_scale_factor: devicePixelRatio, user_agent: navigator.userAgent,
         })),
-        controls: elements.elements
+        controls: elements!.elements
           .filter((node: { aria_label: string | null }) => !/^(SHA:|Commit )/.test(node.aria_label || ''))
           .map((node: { id: string | null; aria_label: string | null; text: string; tag: string;
               box: { x: number; y: number; width: number; height: number }; in_viewport: boolean }) => ({
@@ -64,6 +72,10 @@ export const test = base.extend<{ observation: void }>({
       status: info.status, expected_status: info.expectedStatus, retry: info.retry,
       url: page.url(), build_sha: revision,
       run: { id: process.env.GITHUB_RUN_ID ?? null, attempt: process.env.GITHUB_RUN_ATTEMPT ?? null },
+      scheduling: { workers: info.config.workers, worker: info.workerIndex,
+        parallel_slot: info.parallelIndex, elapsed_ms: Date.now() - started },
+      exploration: { seed: process.env.FLUTTER_WEB_EXPLORE_SEED ?? null,
+        steps: Number(process.env.FLUTTER_WEB_EXPLORE_STEPS || '0') },
       runtime: { browser: browserName, browser_version: browser.version(), node: process.version,
         platform: process.platform, display },
       fixture: info.file.endsWith('photo_studio_ingress.spec.ts') && !info.title.includes('non-image')

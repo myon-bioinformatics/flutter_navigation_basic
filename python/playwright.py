@@ -7,6 +7,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -30,7 +31,7 @@ def _playwright_prefix() -> list[str]:
     return [_node(), str(PLAYWRIGHT_CLI)]
 
 
-def _run(args: list[str], *, base_url: str | None = None, light: bool = False, routes: dict | None = None) -> int:
+def _run(args: list[str], *, base_url: str | None = None, light: bool = False, routes: dict | None = None, exploration: dict | None = None) -> int:
     env = os.environ.copy()
     if base_url is not None:
         env["FLUTTER_WEB_BASE_URL"] = base_url.rstrip("/") + "/"
@@ -38,6 +39,9 @@ def _run(args: list[str], *, base_url: str | None = None, light: bool = False, r
         env["FLUTTER_WEB_LIGHT"] = "1"
     if routes is not None:
         env["FLUTTER_WEB_ROUTES"] = json.dumps(routes)
+    if exploration is not None:
+        env["FLUTTER_WEB_EXPLORE_SEED"] = exploration["seed"]
+        env["FLUTTER_WEB_EXPLORE_STEPS"] = str(exploration["steps"])
     completed = subprocess.run(args, cwd=E2E_DIR, env=env, check=False)
     return completed.returncode
 
@@ -81,6 +85,9 @@ def build_parser() -> argparse.ArgumentParser:
     pages.add_argument("--project", action="append", dest="projects", default=None)
     pages.add_argument("--route", action="append", help="Select registered routes; default: all")
     pages.add_argument("--light", action="store_true")
+    pages.add_argument("--seed", help="Replay an exploration seed; CI defaults to run ID + attempt")
+    pages.add_argument("--explore-steps", type=int, choices=range(0, 21), default=0,
+                       metavar="0..20", help="Bounded seeded UI operations per route (default: smoke only)")
     pages.add_argument("extra", nargs=argparse.REMAINDER)
 
     check = sub.add_parser("check-observation", help="Check saved evidence without Node/browser/SDK.")
@@ -158,7 +165,12 @@ def main(argv: list[str] | None = None) -> int:
                 print("error: base URL must be HTTP(S), without credentials, query or fragment", file=sys.stderr)
                 return 2
         routes = None
+        exploration = None
         if args.command == "pages":
+            exploration = {"seed": args.seed or (
+                os.environ.get("GITHUB_RUN_ID", str(time.time_ns())) + ":" +
+                os.environ.get("GITHUB_RUN_ATTEMPT", "1")), "steps": args.explore_steps}
+            print(f"Exploration seed: {exploration['seed']}; steps/route: {args.explore_steps}", flush=True)
             from web_page_catalogue import catalogue
             routes = catalogue()
             routes["projects"] = args.projects or ["chromium"]
@@ -180,6 +192,7 @@ def main(argv: list[str] | None = None) -> int:
             base_url=args.base_url,
             light=args.light,
             routes=routes,
+            exploration=exploration,
         )
 
     if args.command == "list":

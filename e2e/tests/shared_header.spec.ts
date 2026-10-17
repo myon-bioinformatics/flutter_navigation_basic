@@ -4,6 +4,9 @@ import { spawnSync } from 'node:child_process';
 import { waitForFlutter } from '../utils/helpers';
 import { press as kitPress } from '../utils/interaction.mjs';
 
+// Independent page/context fixtures; schedule cases across bounded workers.
+test.describe.configure({ mode: 'parallel' });
+
 // Controls are immediately available after Flutter loads; fail with a useful
 // locator error instead of spending the full test timeout on a missing action.
 test.use({ actionTimeout: 5_000 });
@@ -156,7 +159,7 @@ test('Japanese shared menu and Home confirmation preserve cancel and navigation 
   await expect(dialog).toHaveCount(0);
 });
 
-test('Japanese clipboard save and copy use real system clipboard @portable', async ({ page, context }, testInfo) => {
+test('Japanese clipboard save and copy use real system clipboard @portable', { lock: 'system-clipboard' }, async ({ page, context }, testInfo) => {
   test.skip(!testInfo.project.name.includes('chromium'), 'Clipboard permissions are supported by Chromium; all outcomes have Widget coverage.');
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.goto('/#/hub');

@@ -5,6 +5,9 @@ import {
   waitPhotoImportOutcome,
 } from '../utils/photo_studio';
 
+// Independent page/context fixtures; schedule cases across bounded workers.
+test.describe.configure({ mode: 'parallel' });
+
 test.describe('Photo Studio representative flow', () => {
   test.beforeEach(async ({ page }) => {
     await openPhotoStudio(page);

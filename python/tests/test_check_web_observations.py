@@ -146,3 +146,19 @@ def test_flutter_home_url_normalization_is_not_a_missing_page(tmp_path):
     other = copy.deepcopy(data)
     other['url'] += '#/'
     assert check.compare(data, other, 2) == []
+
+
+def test_exploration_seed_is_forwarded_once_without_mutating_parent_environment(monkeypatch):
+    import playwright
+    from types import SimpleNamespace
+    calls = []
+    monkeypatch.setenv('FLUTTER_WEB_EXPLORE_SEED', 'parent')
+    monkeypatch.setattr(playwright, '_playwright_prefix', lambda: ['node', 'cli.js'])
+    monkeypatch.setattr(playwright.subprocess, 'run', lambda argv, **kw: calls.append(kw) or SimpleNamespace(returncode=0))
+    assert playwright.main(['pages', '--base-url', 'https://example.test/', '--seed', 'replay', '--explore-steps', '3', '--route', '/hub']) == 0
+    assert calls[0]['env']['FLUTTER_WEB_EXPLORE_SEED'] == 'replay'
+    assert calls[0]['env']['FLUTTER_WEB_EXPLORE_STEPS'] == '3'
+    assert playwright.os.environ['FLUTTER_WEB_EXPLORE_SEED'] == 'parent'
+    with pytest.raises(SystemExit) as error:
+        playwright.main(['pages', '--base-url', 'https://example.test/', '--explore-steps', '21'])
+    assert error.value.code == 2

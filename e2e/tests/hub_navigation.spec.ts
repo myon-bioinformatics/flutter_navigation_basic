@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { waitForFlutter, navigateToHub } from '../utils/helpers';
 
+// Independent page/context fixtures; schedule cases across bounded workers.
+test.describe.configure({ mode: 'parallel' });
+
 test.describe('Hub Screen Navigation', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');

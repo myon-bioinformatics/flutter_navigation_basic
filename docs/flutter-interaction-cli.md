@@ -154,3 +154,54 @@ site, not the unbuilt app changes in a PR. The existing ingress lane exercises t
 Python oracle lane checks receipt validation and coverage offline. Retain useful
 capture directories as normal CI artifacts or baselines outside the source tree;
 do not commit accumulated videos, screenshots or build caches.
+
+
+### Bounded parallel workers and replayable exploration
+
+The default worker count is min(4, the available CPUs, one per 2 GiB of
+reported/constrained memory), with a minimum of one. This is a conservative
+estimate, not an OOM guarantee. Set `FLUTTER_WEB_WORKERS=1` or pass Playwright's
+`--workers=1` after `--` to diagnose resource pressure. Explicit environment
+values from 1 through 32 override automatic selection. Portable regression
+cases and route observations opt into per-case parallelism; tests that share a
+server retain their existing ordering. Clipboard writers use Playwright's
+`system-clipboard` lock across projects/workers.
+
+Playwright reuses healthy OS workers and browsers, creates/tears down an
+isolated context/page per test, and replaces a worker after failure. Completed
+slots take the next test without waiting for an entire batch. Recreating a
+healthy browser for every route would add startup cost. No new process
+supervisor or dependencies are introduced. Existing JUnit failures remain
+failures; retries stay zero and remaining independent tests still run.
+
+```bash
+python python/playwright.py pages --base-url https://myon-bioinformatics.github.io/flutter_navigation_basic/ --light --explore-steps 3 --seed recorded-seed -- --workers=2
+```
+
+The published-page workflow uses three bounded exploratory actions per route.
+Its seed changes with run ID/attempt; manual dispatch accepts a replay seed.
+Actions choose among visible editable fields, selected local buttons, Tab,
+Escape and scrolling. Generated field values include empty, numeric, Japanese,
+emoji and long text. The runner re-inventories after each operation and reuses
+the existing real-pointer helper. Each test attaches `exploration.json` with
+seed, route, actual action/value/label, errors and worker/slot. JUnit testcase
+properties include the seed, route and step budget, and link the action receipt. This is sampled
+exploration, not exhaustive paths or an assertion that every business result
+is correct. File pickers, exports, clipboard and unrestricted deletion remain
+in dedicated regression tests. DOM changes may change candidate selection;
+replay requires the same deployed build/browser/viewport as well as seed.
+
+Smoke-only runs remain `--explore-steps 0` (CLI default). Exploration can change
+visible state, so use smoke-only captures for a stable geometry baseline, or
+compare captures with the same seed, build and exploration settings. A control
+that navigates away is followed by returning to the original route before the
+normal observation fixture captures its receipt. Browserless scheduler checks
+run with `cd e2e && node --test unit_tests/execution.test.mjs`; these start real
+Playwright worker processes without installing or launching a browser engine.
+
+Back navigation can leave Flutter's semantics root attached while its controls
+are being rebuilt. Observation capture polls the existing inventory for up to
+five seconds and uses that same nonempty snapshot; persistent empty/truncated
+captures still fail. The workflow first replays the four routes/seed that
+exposed this race, validates their saved receipts, then runs the changing-seed
+full sweep. Regression output is kept separately from all-page coverage.
