@@ -222,7 +222,7 @@ for generation. The producer is the vendored `python/vendor/gh_identity.py`
 `python/vendor.lock.json`. Its output is byte-for-byte the former Ironmate
 `73157cb7` schema v1 record apart from `generated_at`. The Ironmate files were
 removed after the switch (#169); the former output bytes and Python version
-labels stay pinned as frozen values in `python/tests/test_repository_metadata.py`.
+labels stay pinned as frozen values in `python/tests/test_flutter_navigation_basic_repository_metadata.py`.
 
 The Python adapter requests Python plus `git` / `gh` / `node` / `npm` / `npx`
 versions through `gh_identity.tool_versions(..., include_python=True)`.
