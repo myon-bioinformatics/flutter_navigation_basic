@@ -36,12 +36,14 @@ export class ExplorationError extends Error {
 // and any xprobe-derived input corpus; no browser is installed or launched here.
 export async function explore(page, { route, seed, steps,
   fieldsSelector = 'input:not([type=file]):not([type=password]):not([type=hidden]), textarea',
-  buttonName = null, values = [''], ready = async () => {} } = {}) {
+  buttonName = null, values = [''], ready = async () => {}, candidateTimeout = 250 } = {}) {
   if (!Number.isInteger(steps) || steps < 0 || steps > 20 ||
       typeof seed !== 'string' || !seed || typeof route !== 'string' || !route ||
-      !Array.isArray(values) || !values.length || values.some(v => typeof v !== 'string'))
-    throw new TypeError('Expected seed, route, steps 0..20 and nonempty string values');
+      !Array.isArray(values) || !values.length || values.some(v => typeof v !== 'string') ||
+      !Number.isInteger(candidateTimeout) || candidateTimeout < 1 || candidateTimeout > 1000)
+    throw new TypeError('Expected seed, route, steps 0..20, nonempty string values and candidateTimeout 1..1000');
   const actions = [];
+  const inventories = [];
   const errors = [];
   const onError = (error) => { if (errors.length < 100) errors.push(error.message.slice(0, 1000)); };
   page.on('pageerror', onError);
@@ -52,12 +54,38 @@ export async function explore(page, { route, seed, steps,
       const candidates = [
         { kind: 'tab' }, { kind: 'escape' }, { kind: 'scroll' },
       ];
-      for (let i = 0; i < Math.min(await fields.count(), 20); i++) {
-        if (await fields.nth(i).isVisible() && await fields.nth(i).isEditable()) candidates.push({ kind: 'fill', index: i });
-      }
-      for (let i = 0; i < Math.min(buttons ? await buttons.count() : 0, 20); i++) {
-        if (await buttons.nth(i).isVisible() && await buttons.nth(i).isEnabled()) candidates.push({ kind: 'press', index: i });
-      }
+      const fieldCount = await fields.count();
+      const buttonCount = buttons ? await buttons.count() : 0;
+      const inventory = { step, fields: fieldCount, buttons: buttonCount,
+        candidate_timeout_ms: candidateTimeout, budget_exhausted: false,
+        truncated: fieldCount > 20 || buttonCount > 20, checks: [] };
+      inventories.push(inventory);
+      // A count/visibility result is historical as soon as the page changes.
+      // Missing candidates must not consume the page's entire test timeout.
+      // Stop collecting after one second; do not imply exhaustive inventory.
+      const deadline = performance.now() + 1000;
+      const collect = async (locator, count, kind, method) => {
+        for (let index = 0; index < Math.min(count, 20); index++) {
+          if (performance.now() >= deadline) { inventory.budget_exhausted = true; break; }
+          const item = locator.nth(index);
+          const check = { kind, index, outcome: 'not_visible' };
+          inventory.checks.push(check);
+          if (!await item.isVisible()) continue;
+          try {
+            const eligible = await item[method]({ timeout: candidateTimeout });
+            check.outcome = eligible ? 'eligible' : 'disabled_or_readonly';
+            if (eligible) candidates.push({ kind, index });
+          } catch (error) {
+            if (error?.name !== 'TimeoutError') {
+              check.outcome = 'error'; check.error = String(error); throw error;
+            }
+            check.outcome = 'unavailable_after_inventory';
+            check.error = String(error);
+          }
+        }
+      };
+      await collect(fields, fieldCount, 'fill', 'isEditable');
+      if (buttons) await collect(buttons, buttonCount, 'press', 'isEnabled');
       const action = candidates[choice(seed, route, step, candidates.length)];
       const record = { step, ...action, url: page.url() };
       actions.push(record);
@@ -65,14 +93,14 @@ export async function explore(page, { route, seed, steps,
         if (action.kind === 'fill') {
           const field = fields.nth(action.index);
           // Native number/date controls reject arbitrary text before app code.
-          record.label = await field.getAttribute('aria-label') || await field.getAttribute('placeholder');
-          const type = await field.getAttribute('type');
+          record.label = await field.getAttribute('aria-label', { timeout: 1000 }) || await field.getAttribute('placeholder', { timeout: 1000 });
+          const type = await field.getAttribute('type', { timeout: 1000 });
           record.value = type === 'number' ? '0' : values[choice(seed, route, `value-${step}`, values.length)];
           if (!type || ['text', 'search', 'email', 'url', 'tel', 'number'].includes(type)) {
             await field.fill(String(record.value), { timeout: 3000 });
           } else record.skipped = `unsupported input type ${type}`;
         } else if (action.kind === 'press') {
-          record.label = await buttons.nth(action.index).getAttribute('aria-label') || await buttons.nth(action.index).innerText();
+          record.label = await buttons.nth(action.index).getAttribute('aria-label', { timeout: 1000 }) || await buttons.nth(action.index).innerText({ timeout: 1000 });
           await press(page, buttons.nth(action.index), { timeout: 3000 });
         } else if (action.kind === 'scroll') {
           await page.mouse.wheel(0, choice(seed, route, `scroll-${step}`, 2) ? 400 : -400);
@@ -87,9 +115,9 @@ export async function explore(page, { route, seed, steps,
     }
   } catch (error) {
     throw new ExplorationError(error, { schema: 'browser-exploration/1', ok: false,
-      seed, route, steps, actions, errors });
+      seed, route, steps, actions, inventories, errors });
   } finally {
     page.off('pageerror', onError);
   }
-  return { schema: 'browser-exploration/1', ok: true, seed, route, steps, actions, errors };
+  return { schema: 'browser-exploration/1', ok: true, seed, route, steps, actions, inventories, errors };
 }
