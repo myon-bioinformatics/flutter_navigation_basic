@@ -1,0 +1,113 @@
+name: iOS native checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "ios/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "lib/features/photo_studio/data/native_image_normalize_adapter*.dart"
+      - "lib/features/photo_studio/data/photo_import_limits.dart"
+      - "test/fixtures/photo_studio/import_compat/**"
+      - ".github/workflows/ios-native.yml"
+  push:
+    branches: [main]
+    paths:
+      - "ios/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "lib/features/photo_studio/data/native_image_normalize_adapter*.dart"
+      - "lib/features/photo_studio/data/photo_import_limits.dart"
+      - "test/fixtures/photo_studio/import_compat/**"
+      - ".github/workflows/ios-native.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-native-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ios-build:
+    name: iOS no-codesign build
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Flutter 3.47.0
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.0"
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build iOS release without codesigning
+        run: flutter build ios --release --no-codesign -t lib/main.dart
+
+  # RunnerTests XCTest (ImageNormalizeTests) on the iOS Simulator.
+  ios-tests:
+    name: iOS Simulator XCTest
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Flutter 3.47.0
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.0"
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Prepare iOS simulator build
+        run: flutter build ios --simulator --debug --no-codesign -t lib/main.dart
+
+      - name: Select iPhone simulator destination
+        id: sim
+        run: |
+          set -euo pipefail
+          # Use UDID to avoid whitespace / ambiguous name matching.
+          UDID=$(xcrun simctl list devices available \
+            | grep -E 'iPhone.+\([A-F0-9-]{36}\)' \
+            | head -1 \
+            | sed -E 's/.*\(([A-F0-9-]{36})\).*/\1/')
+          if [[ -z "${UDID}" ]]; then
+            echo "::error::No available iPhone simulator"
+            xcrun simctl list devices available || true
+            exit 1
+          fi
+          echo "udid=${UDID}" >> "$GITHUB_OUTPUT"
+          echo "Using simulator udid=${UDID}"
+
+      - name: Run RunnerTests with xcodebuild
+        run: |
+          set -euo pipefail
+          mkdir -p build/ios-xctest
+          set -o pipefail
+          xcodebuild test \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -only-testing:RunnerTests \
+            -resultBundlePath build/ios-xctest/results.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee build/ios-xctest/xcodebuild.log
+          grep -E 'ImageNormalizeTests|testNormalize' build/ios-xctest/xcodebuild.log
+
+      - name: Upload XCTest log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-xctest-log
+          path: build/ios-xctest/
+          if-no-files-found: warn
+          retention-days: 14
