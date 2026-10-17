@@ -82,7 +82,10 @@ def test_native_baseline_failure_still_measures_companions(monkeypatch, tmp_path
             return {"returncode": 7, "error_type": None, "stdout": "", "stderr": "baseline unavailable"}
         return original(command, *args, **kwargs)
     monkeypatch.setattr(cli, "invoke", invoke)
-    result = cli.capture(Path(__file__).resolve().parents[2], tmp_path, "dart")
+    result = cli.capture(Path(__file__).resolve().parents[2], tmp_path, "dart",
+                         baseline_receipt=tmp_path / "historical.json")
+    assert result["context"]["healthy_build_executed_current_run"] is True
+    assert "reuse disabled" in result["context"]["baseline_reuse_rejected"]
     assert not result["passed"]
     assert len(result["results"]) == 19
     assert all(row["passed"] for row in result["results"][1:])
@@ -113,27 +116,12 @@ def test_kotlin_capture_uses_native_junit_and_restores_temporary_source(monkeypa
     assert result["context"]["unobserved"][0]["case"] == "invalid_json"
 
 
-def test_baseline_reuse_rejects_dirty_sources_and_sdk_changes(tmp_path):
-    root, out = tmp_path / "repo", tmp_path / "out"
-    root.mkdir(); out.mkdir()
-    (root / "lib").mkdir()
-    source = root / "lib/main.dart"
-    source.write_text("void main() {}", encoding="utf-8")
-    for command in (["git", "init", "-q"], ["git", "add", "."],
-        ["git", "-c", "user.name=test", "-c", "user.email=test@example.invalid", "commit", "-qm", "baseline"]):
-        subprocess.run(command, cwd=root, check=True, capture_output=True)
-    sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
-    version = {"frameworkRevision": "flutter", "engineRevision": "engine", "dartSdkVersion": "dart"}
-    metadata = {"0": {"stdout": sha}, "1": {"stdout": json.dumps(version)}}
-    prior = {"passed": True, "context": {"language": "dart", "metadata": metadata, "run_id": "previous"},
-        "results": [{"name": "healthy-flutter-build", "command": cli.BUILDS["dart"], "passed": True, "returncode": 0}]}
-    path = tmp_path / "prior.json"
-    path.write_text(json.dumps(prior), encoding="utf-8")
-    assert not cli.reuse_baseline(root, out, "dart", path, metadata)["executed_current_run"]
-    source.write_text("void main() { throw 1; }", encoding="utf-8")
-    with pytest.raises(ValueError, match="inputs differ"):
-        cli.reuse_baseline(root, out, "dart", path, metadata)
-    source.write_text("void main() {}", encoding="utf-8")
-    changed = {**metadata, "1": {"stdout": json.dumps({**version, "engineRevision": "changed"})}}
-    with pytest.raises(ValueError, match="toolchain changed"):
-        cli.reuse_baseline(root, out, "dart", path, changed)
+@pytest.mark.parametrize("metadata", [
+    {},
+    {"platform": "different", "architecture": "different"},
+    {"6": {"stdout": "Gradle changed", "stderr": ""}},
+    {"android_sdk": "changed", "android_ndk": "changed"},
+])
+def test_historical_build_reuse_fails_closed_without_complete_identity(tmp_path, metadata):
+    with pytest.raises(ValueError, match="reuse disabled"):
+        cli.reuse_baseline(tmp_path, tmp_path, "kotlin", tmp_path / "prior.json", metadata)

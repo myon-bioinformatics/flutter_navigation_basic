@@ -41,20 +41,16 @@ Dart VMとWebビルド出力、JVMとAndroid実機、macOS Swift CLIとiOSアプ
 - SDKや正常ビルドの失敗を、意図した言語エラーとして合格にしない。
   ネイティブの基準ビルドに失敗してもPython／Nodeは実測して証跡を残す。
 
-## 前回の正常ビルドの再利用
+## 正常ビルドは今回の環境で実行する
 
-前回の成功run `39033656033`の言語別artifactをread-onlyの`actions: read`で取得する。
-正常build成功、同じ言語・ビルドコマンド、Flutter/engine/Dartのrevision、Xcode/Swiftまたは
-JDKの実測版、対象の追跡済みソース・ロック・設定・assetが一致する場合だけ再利用する。
-Git比較にはworking treeの変更も含め、過去結果を今回実行したように扱わない。
-
-一致した場合は`healthy_build_executed_current_run: false`と元run/SHAを残す。
-証跡が欠落・失効している、ツールチェーンや入力が違う、比較できない場合は実ビルドへ戻す。
-前回の小さな配列長プローブの成功を、今回の新しいエラープローブの実行として流用しない。
-90日でartifactが失効した後も、欠落を合格に置き換えず実ビルドを行う。
+過去のreceiptにはplatform/architecture、Gradle、Android SDK/NDK等の完全な
+ビルド環境の識別情報がないため、正常ビルドの再利用は無効です。
+Flutter/JDK等の一部が一致するだけで同じ環境とは判定しません。
+各言語の正常アプリビルドを今回のrunで実行し、その後に新しいプローブを測定します。
+互換用の--baseline-receiptを渡しても再利用は拒否され、実ビルドへ戻ります。
 
 ```sh
-python -S python/capture_native_errors.py --language dart --output build/native-error-corpus/dart --probe-tools .native-probe-tools --baseline-receipt .native-baseline/receipt.json
+python -S python/capture_native_errors.py --language dart --output build/native-error-corpus/dart --probe-tools .native-probe-tools
 ```
 
 `.native-probe-tools`はworkflowの完全SHAに固定したxprobe checkout。

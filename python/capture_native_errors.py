@@ -126,32 +126,11 @@ def kotlin_result(xml_path, cases=None):
 
 
 def reuse_baseline(root, out, language, receipt, metadata):
-    """Reuse a historical build only with unchanged tracked inputs and toolchain."""
-    prior = json.loads(Path(receipt).read_text(encoding="utf-8"))
-    context = prior["context"]
-    sha = context["metadata"]["0"]["stdout"].strip()
-    if not re.fullmatch(r"[0-9a-f]{40}", sha) or not prior["passed"] or context["language"] != language:
-        raise ValueError("invalid prior baseline identity")
-    build = next(row for row in prior["results"] if row["name"] == "healthy-flutter-build")
-    if not build["passed"] or build["command"] != BUILDS[language] or build["returncode"] != 0:
-        raise ValueError("prior normal build did not pass")
-    for key in ("1",):
-        old, new = (json.loads(value["stdout"]) for value in (context["metadata"][key], metadata[key]))
-        if any(old[field] != new[field] for field in ("frameworkRevision", "engineRevision", "dartSdkVersion")):
-            raise ValueError("Flutter toolchain changed")
-    if language in ("swift", "kotlin"):
-        for key in (("5", "6") if language == "swift" else ("5",)):
-            for stream in ("stdout", "stderr"):
-                if context["metadata"][key][stream].strip() != metadata[key][stream].strip():
-                    raise ValueError("native toolchain changed")
-    paths = ["lib", "assets", "web", "android", "ios", "test/fixtures", "build_tools",
-             "pubspec.yaml", "pubspec.lock", ".metadata", "analysis_options.yaml"]
-    check = invoke(["git", "diff", "--exit-code", sha, "--", *paths], root, out, "baseline-input-diff", timeout=60)
-    if check["returncode"] != 0:
-        raise ValueError("normal build inputs differ or baseline commit is unavailable")
-    (out / "baseline-prior-receipt.json").write_bytes(Path(receipt).read_bytes())
-    return {**build, "reused": True, "executed_current_run": False,
-            "baseline_run_id": context["run_id"], "baseline_commit": sha}
+    """Fail closed: historical receipts lack a complete native build fingerprint."""
+    # Platform/architecture, Gradle, Android SDK/NDK and other build inputs were
+    # not fully captured by the original receipt. Do not infer equivalence from
+    # matching Flutter/JDK versions. capture() falls back to a real current build.
+    raise ValueError("historical build reuse disabled: incomplete environment fingerprint")
 
 
 def capture(root, out, language, *, timeout=1500, baseline_receipt=None):
