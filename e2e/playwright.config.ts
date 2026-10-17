@@ -18,10 +18,10 @@ export default defineConfig({
   workers: 1,
   reporter,
   use: {
-    baseURL: 'http://localhost:8080',
-    trace: 'on-first-retry',
+    baseURL: process.env.FLUTTER_WEB_BASE_URL || 'http://localhost:8080',
+    trace: process.env.FLUTTER_WEB_LIGHT === '1' ? 'off' : 'on-first-retry',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    video: process.env.FLUTTER_WEB_LIGHT === '1' ? 'off' : 'retain-on-failure',
   },
   projects: [
     {
