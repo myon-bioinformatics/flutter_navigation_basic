@@ -130,3 +130,39 @@ def test_multiple_project_flags_are_repeatable_equals_joined_tokens() -> None:
         "tests/photo_studio.spec.ts",
     ]
     assert "--project" not in args
+
+
+def test_existing_web_light_mode_preserves_base_path_without_starting_flutter(monkeypatch):
+    from types import SimpleNamespace
+    calls = []
+
+    def run(argv, **kwargs):
+        calls.append((argv, kwargs))
+        return SimpleNamespace(returncode=7)
+
+    monkeypatch.setattr(playwright.subprocess, 'run', run)
+    result = playwright.main([
+        'test', '--base-url', 'https://example.test/nested/app/',
+        '--light', '--project', 'chromium', '--grep', 'Clipboard image bridge',
+        'tests/photo_studio_ingress.spec.ts',
+    ])
+    assert result == 7
+    assert len(calls) == 1
+    argv, kwargs = calls[0]
+    assert argv[:3] == ['node', 'cli.js', 'test']
+    assert '--project=chromium' in argv
+    assert kwargs['env']['FLUTTER_WEB_BASE_URL'] == 'https://example.test/nested/app/'
+    assert kwargs['env']['FLUTTER_WEB_LIGHT'] == '1'
+    assert kwargs['cwd'] == playwright.E2E_DIR
+
+
+@pytest.mark.parametrize('url', [
+    'file:///tmp/build', 'javascript:alert(1)', 'https://user:password@example.test/',
+    'https://example.test/#/screen1', 'http://[broken',
+])
+def test_invalid_base_url_fails_before_launch(monkeypatch, url):
+    def run(*args, **kwargs):
+        pytest.fail('invalid base URL must not launch a subprocess')
+
+    monkeypatch.setattr(playwright.subprocess, 'run', run)
+    assert playwright.main(['test', '--base-url', url]) == 2

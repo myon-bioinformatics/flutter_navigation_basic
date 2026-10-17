@@ -60,7 +60,7 @@ dart run build_tools/dev.dart py --actions-latest --json
 python3 python/test.py --actions-latest --allow-stale
 
 # Download archived CI artifact from that run (also freshness-gated)
-python3 python/test.py --actions-latest --download-artifact python-oracle-summary
+python3 python/test.py --actions-latest --workflow "Non-Dart checks" --download-artifact python-oracle-summary
 
 # Pytest mode switch via conftest
 python3 python/test.py --pytest -- --oracle-mode=local
@@ -90,7 +90,13 @@ Aligned with pytest’s mix:
 CI uploads these counts inside the `python-oracle-summary` artifact (`pytest_outcomes.json` + `receipt.json`).
 
 Primary CI home for this directory is `.github/workflows/non-dart.yml` (stdlib Docker job + pytest).
-The Flutter workflow still runs pytest on Flutter-touching PRs for a receipt beside Dart jobs.
+The full pytest suite and its `python-oracle-summary` artifact run only in Non-Dart checks.
+Flutter retains the stdlib checks of the production Dart contracts. Pages gates on
+the successful Flutter run for its target SHA and regenerates canonical metadata
+for that checkout; it does not download the Python oracle summary. A successful
+Flutter/Pages run therefore does not imply that the separate Non-Dart workflow
+has succeeded. Select `--workflow "Non-Dart checks"` when retrieving Python evidence;
+the default Actions status view remains the Flutter workflow.
 
 Flutter/`package:test` has no native xfail/xpass. The Flutter JSON tally therefore
 keeps the same keys for a shared vocabulary, but **`xpassed` stays 0** in practice:
@@ -207,3 +213,44 @@ Python tooling, including timezone generators and fixtures, lives here.
 Build/diagnostic Dart sources live in `build_tools/`; generated output remains
 in ignored `build/`. JavaScript helpers, CI inputs and Docker scripts live in
 `javascript/`, `ci/` and `docker/`. There is no `tool/` compatibility tree.
+
+## Actual Dart contracts without Flutter
+
+```bash
+python -S python/dart_contracts.py
+```
+
+This stdlib Python entrypoint runs the existing production Dart exporter using
+only a Dart SDK, then applies the existing independent Python oracle: 594 actual
+models/services, 595 JUnit checks including inventory. It does not install
+Flutter, invoke `pub get`, download packages, start a browser or build an app.
+`--dart /path/to/dart` can reuse an installed SDK. The explicit package config
+maps this checkout's real `lib/`; there is no copied model or fake Flutter SDK.
+The source preflight rejects external packages and non-VM SDK imports; the real
+Dart compiler remains authoritative if a new dependency becomes unsupported.
+
+```bash
+python -S python/dart_contracts.py --preflight
+```
+
+Preflight needs only Python and inspects source/dependency coverage. Its JSON
+explicitly says `current_dart_executed: false`; it is not a runtime test pass.
+Normal execution fails if Dart is unavailable. A failed producer cannot reuse
+an old JSON/JUnit result. `build/test-results/dart-pure-run.json` records SDK
+version, source SHA-256 values and the verified output hash for diagnosis.
+
+Flutter CI now runs this producer in **Production Dart contracts (no Flutter)**,
+independently of the Flutter gate. The existing `junit-dart-contracts` artifact,
+595 assertions and shared collector identity are retained, rather than adding
+a second producer. That job uses the standalone stable Dart SDK; Flutter's
+pinned and latest SDK jobs still check Flutter compatibility. This lane covers
+the existing API/navigation/UI-theme model/service contracts, not painting,
+plugins, native OS APIs, widget layout or screenshots. It does not pretend that
+a Dart-SDK-only success proves those Flutter-specific behaviors.
+
+Current timing audit: the Non-Dart workflow's Python pytest step took about
+33 seconds; the slow portable browser invocation took 16.5 minutes in the
+previous run, on top of preparation. Its browser/Web-build time must not be
+attributed to Python contracts or accelerated by silently skipping assertions.
+The published-page observation CLI can reuse an existing Web build; validating
+unbuilt application changes still requires an appropriate build/runtime lane.

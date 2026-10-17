@@ -58,38 +58,37 @@ class Base64ImageBridge {
       throw ArgumentError.value(maxLongEdge, 'maxLongEdge', 'must be >= 1');
     }
 
-    // Probe dimensions without a full-size raster, then decode once at target.
-    ui.ImmutableBuffer? buffer;
-    ui.ImageDescriptor? descriptor;
+    // Encoded ImageDescriptor.width/height are unsupported on Flutter Web.
+    // This API supplies dimensions through each platform's codec implementation
+    // and takes ownership of the buffer, including its disposal.
     ui.Codec? scaledCodec;
     ui.Image? scaledImage;
     try {
-      buffer = await ui.ImmutableBuffer.fromUint8List(source);
-      descriptor = await ui.ImageDescriptor.encoded(buffer);
-      final sourceWidth = descriptor.width;
-      final sourceHeight = descriptor.height;
-      if (sourceWidth <= 0 || sourceHeight <= 0) {
-        throw const FormatException('Image dimensions are invalid.');
-      }
+      final buffer = await ui.ImmutableBuffer.fromUint8List(source);
+      scaledCodec = await ui.instantiateImageCodecWithSize(
+        buffer,
+        getTargetSize: (sourceWidth, sourceHeight) {
+          if (sourceWidth <= 0 || sourceHeight <= 0) {
+            throw const FormatException('Image dimensions are invalid.');
+          }
 
-      var target = targetDimensions(
-        width: sourceWidth,
-        height: sourceHeight,
-        scale: scale,
-      );
-      final longEdge =
-          target.width > target.height ? target.width : target.height;
-      if (longEdge > maxLongEdge) {
-        final fit = maxLongEdge / longEdge;
-        target = (
-          width: (target.width * fit).round().clamp(1, sourceWidth).toInt(),
-          height: (target.height * fit).round().clamp(1, sourceHeight).toInt(),
-        );
-      }
+          var target = targetDimensions(
+            width: sourceWidth,
+            height: sourceHeight,
+            scale: scale,
+          );
+          final longEdge =
+              target.width > target.height ? target.width : target.height;
+          if (longEdge > maxLongEdge) {
+            final fit = maxLongEdge / longEdge;
+            target = (
+              width: (target.width * fit).round().clamp(1, sourceWidth).toInt(),
+              height: (target.height * fit).round().clamp(1, sourceHeight).toInt(),
+            );
+          }
 
-      scaledCodec = await descriptor.instantiateCodec(
-        targetWidth: target.width,
-        targetHeight: target.height,
+          return ui.TargetImageSize(width: target.width, height: target.height);
+        },
       );
       final scaledFrame = await scaledCodec.getNextFrame();
       scaledImage = scaledFrame.image;
@@ -111,8 +110,6 @@ class Base64ImageBridge {
     } finally {
       scaledImage?.dispose();
       scaledCodec?.dispose();
-      descriptor?.dispose();
-      buffer?.dispose();
     }
   }
 

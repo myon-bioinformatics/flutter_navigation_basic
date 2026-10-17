@@ -67,6 +67,6 @@ def test_ci_keeps_smoke_dedicated_tests_and_independent_contracts():
     assert jobs["unit-tests-patterns"]["strategy"]["matrix"]["shard"] == [0, 1, 2, 3]
     assert any("check_pattern_smoke_mutations.py" in step.get("run", "")
                for step in jobs["unit-tests-patterns"]["steps"])
-    assert any("build_tools/export_pattern_contracts.dart" in step.get("run", "")
-               for step in jobs["gate"]["steps"])
+    assert any("python/dart_contracts.py" in step.get("run", "")
+               for step in jobs["dart-contracts"]["steps"])
     assert "unit-tests-patterns" in jobs["junit-identity"]["needs"]

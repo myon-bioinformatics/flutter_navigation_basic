@@ -14,6 +14,7 @@ or evidence; avoid duplicating test implementations.
 | `docker-e2e-verify.yml` — Docker E2E snapshot generation (manual) | Manually build image and generate snapshot baselines with `--update` | Keep manual, renamed to avoid implying read-only verification |
 | `flutter-pages.yml` — Flutter Web Pages | Deploy only after successful main Flutter workflow; deployment permissions | Keep separate |
 | `non-dart.yml` — Non-Dart checks | Python/Playwright/browser adapter and canonical JUnit | Keep; real browser adapter smoke now also triggers when `test.py` or `multi_test_runner.py` changes |
+| `ios-native.yml` — iOS native checks | iOS release compile and image-normalization XCTest | Run on native/bridge/dependency changes or manual dispatch; independent of Web Pages |
 | `structure-refactor-validation.yml` — Refactor smoke | Fast Python/Flutter/Node producer regression on work branches | Keep; action versions aligned with other workflows |
 
 ## Workflow-level changes in PR #167
@@ -36,7 +37,43 @@ full Playwright E2E are different proof surfaces, while Pages and Claude have
 distinct permissions. The change does not assert that all suites test native
 Android/iOS behavior. Browser emulation remains browser evidence only.
 
+## Python oracle evidence ownership
+
+The full Python pytest suite and `python-oracle-summary` artifact belong to
+`non-dart.yml`; `dart.yml` no longer starts a second full Python suite on
+Flutter-touching changes. The Flutter gate still exports production Dart
+contracts and validates them with Python stdlib tools.
+
+Pages uses a successful Flutter run for the exact target SHA and generates
+canonical metadata from that checkout. It does not download the Python oracle
+artifact. The separate Non-Dart workflow remains independently required for
+Python verification; a Flutter/Pages success is not evidence of its success.
+Use `python/test.py --actions-latest --workflow "Non-Dart checks"` for Python
+status and add `--download-artifact python-oracle-summary` to retrieve evidence.
+The workflow executable gate is regression-tested against stale, failed,
+cancelled, pending, and absent runs.
+
 ## Follow-up, not in this PR
+
+### iOS native verification
+
+iOS compile and Simulator XCTest now run in `ios-native.yml`, outside the
+Flutter workflow that gates Pages. Web/view-only and Python-tooling changes do
+not start macOS jobs. Native sources, dependency locks, the Dart image-normalize
+adapter/limits, and image compatibility fixtures select iOS verification.
+Before shipping a native app after other Dart changes, manually run this
+workflow on that exact commit; Web success is not native-build proof.
+
+The XCTest artifact retains its text log and `results.xcresult` bundle, including
+failed runs. Use the existing Python Actions CLI to locate/download it:
+
+```bash
+python python/test.py --actions-latest --workflow "iOS native checks" --download-artifact ios-xctest-log
+```
+
+The iOS SDK pin must move together with the primary Flutter gate pin; a Python
+contract test checks this. Android verification and Pages deployment conditions
+are unchanged.
 
 - Pin the actionlint reusable workflow to an immutable parent commit when its
   compatibility is verified, rather than silently using mutable `@main`.

@@ -18,7 +18,7 @@ def workflow(name):
 ])
 def test_python_only_skips_flutter(path, classify_workflow_asset):
     assert classify_workflow_asset(workflow('dart.yml'), path) == {
-        'flutter': 'false', 'android': 'false', 'ios': 'false',
+        'flutter': 'false', 'android': 'false',
         'python': 'true', 'patterns': 'false',
     }
     result = classify_workflow_asset(workflow('non-dart.yml'), path)
@@ -41,7 +41,7 @@ def test_python_only_skips_flutter(path, classify_workflow_asset):
 def test_shared_python_inputs_run_both_consumers(path, classify_workflow_asset):
     result = classify_workflow_asset(workflow('dart.yml'), path)
     assert result['python'] == result['flutter'] == 'true'
-    assert result['android'] == result['ios'] == 'false'
+    assert result['android'] == 'false'
     assert classify_workflow_asset(workflow('non-dart.yml'), path)['python'] == 'true'
 
 
@@ -79,7 +79,7 @@ def test_non_dart_dispatch_keeps_full_matrix(classify_workflow_asset):
 
 def test_workflow_edits_keep_smoke_and_native_lanes(classify_workflow_asset):
     result = classify_workflow_asset(workflow('dart.yml'), '.github/workflows/dart.yml')
-    assert result['flutter'] == result['android'] == result['ios'] == result['patterns'] == 'true'
+    assert result['flutter'] == result['android'] == result['patterns'] == 'true'
     result = classify_workflow_asset(workflow('non-dart.yml'), '.github/workflows/non-dart.yml')
     assert set(result.values()) == {'true', 'false'}
     assert all(result[key] == 'true' for key in ('python', 'workflow', 'playwright', 'validation_browser', 'pattern_boundary'))

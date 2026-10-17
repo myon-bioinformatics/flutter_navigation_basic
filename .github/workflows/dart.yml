@@ -19,7 +19,6 @@ jobs:
     outputs:
       flutter: ${{ steps.filter.outputs.flutter }}
       android: ${{ steps.filter.outputs.android }}
-      ios: ${{ steps.filter.outputs.ios }}
       python: ${{ steps.filter.outputs.python }}
       patterns: ${{ steps.filter.outputs.patterns }}
     steps:
@@ -36,7 +35,6 @@ jobs:
             {
               echo "flutter=true"
               echo "android=true"
-              echo "ios=true"
               echo "python=true"
               echo "patterns=true"
             } >> "$GITHUB_OUTPUT"
@@ -49,7 +47,6 @@ jobs:
 
           flutter=false
           android=false
-          ios=false
           python=false
           patterns=false
           for f in "${files[@]}"; do
@@ -59,7 +56,7 @@ jobs:
                 python=true
                 flutter=true
                 ;;
-              python/generate_pattern_smoke_test.py|python/check_pattern_smoke_mutations.py|python/tests/test_pattern_smoke_generator.py|python/pattern_contracts.py|python/metadata_contracts.py|python/generate_pattern_contracts.py|python/tests/test_pattern_contracts.py|python/tests/test_metadata_contracts.py|python/generate_repository_metadata.py)
+              python/generate_pattern_smoke_test.py|python/check_pattern_smoke_mutations.py|python/tests/test_pattern_smoke_generator.py|python/pattern_contracts.py|python/metadata_contracts.py|python/generate_pattern_contracts.py|python/dart_contracts.py|python/tests/test_dart_contracts.py|python/tests/test_pattern_contracts.py|python/tests/test_metadata_contracts.py|python/generate_repository_metadata.py)
                 python=true
                 flutter=true
                 ;;
@@ -76,11 +73,6 @@ jobs:
                 ;;
             esac
             case "$f" in
-              ios/*|lib/*|assets/*|pubspec.yaml|pubspec.lock)
-                ios=true
-                ;;
-            esac
-            case "$f" in
               # Pattern catalogue sources, generated smoke, and their CI selection.
               test/features/*_patterns/*|python/generate_pattern_smoke_test.py|python/check_pattern_smoke_mutations.py|python/tests/test_pattern_smoke_generator.py|.github/workflows/dart.yml|lib/features/*_patterns/*|assets/screens.json|ci/flutter_pattern_test_paths.txt|lib/core/services/base_controller.dart|pubspec.yaml|pubspec.lock)
                 patterns=true
@@ -89,12 +81,11 @@ jobs:
           done
 
           # Workflow / CI path-list edits still need a Flutter smoke.
-          # Native test lanes live in dart.yml — keep android/ios on when it changes.
+          # Native test lanes live in dart.yml — keep Android on when it changes.
           for f in "${files[@]}"; do
             if [[ "$f" == ".github/workflows/dart.yml" ]]; then
               flutter=true
               android=true
-              ios=true
             elif [[ "$f" == ".github/workflows/non-dart.yml" || "$f" == ci/* ]]; then
               flutter=true
             fi
@@ -103,14 +94,13 @@ jobs:
           {
             echo "flutter=$flutter"
             echo "android=$android"
-            echo "ios=$ios"
             echo "python=$python"
             echo "patterns=$patterns"
           } >> "$GITHUB_OUTPUT"
           {
             echo "Changed files (${#files[@]}):"
             printf '%s\n' "${files[@]}"
-            echo "outputs: flutter=$flutter android=$android ios=$ios python=$python patterns=$patterns"
+            echo "outputs: flutter=$flutter android=$android python=$python patterns=$patterns"
           }
 
   gate:
@@ -159,14 +149,30 @@ jobs:
       - name: Analyze project source
         run: flutter analyze --no-fatal-infos
 
+      - name: Build Flutter web
+        run: flutter build web --release --base-href "/flutter_navigation_basic/"
+
+
+  # Execute the actual production models/services with Dart SDK only. Keep the
+  # same JSON oracle, JUnit identity and artifact; no duplicate Flutter producer.
+  dart-contracts:
+    name: Production Dart contracts (no Flutter)
+    needs: changes
+    if: needs.changes.outputs.flutter == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
       - name: Export and validate production Dart contracts
         run: |
           set -euo pipefail
-          python3 -S python/generate_pattern_contracts.py --check
-          dart run build_tools/export_pattern_contracts.dart build/test-results/pattern-contracts.json
-          python3 -S python/pattern_contracts.py build/test-results/pattern-contracts.json --junit build/test-results/pattern-contracts.xml
+          python3 -S python/dart_contracts.py
           python3 -S python/validate_runner_junit.py build/test-results/pattern-contracts.xml
-
       - name: Preserve Dart contract JSON and Python JUnit
         if: always()
         uses: actions/upload-artifact@v7
@@ -175,12 +181,10 @@ jobs:
           path: |
             build/test-results/pattern-contracts.json
             build/test-results/pattern-contracts.xml
+            build/test-results/dart-pure-run.json
+            build/test-results/dart-pure-package-config.json
           if-no-files-found: error
           retention-days: 14
-
-      - name: Build Flutter web
-        run: flutter build web --release --base-href "/flutter_navigation_basic/"
-
 
   # Pinned core product suites and the thin production-metadata JSON exporter.
   unit-tests:
@@ -231,7 +235,7 @@ jobs:
           retention-days: 14
 
   # Generated catalogue smoke, dedicated models, and data-processing suites.
-  # Independent Dart -> Python contracts also run in the pinned gate.
+  # Independent Dart -> Python contracts run in the standalone-Dart job.
   # pattern sources/tests or the pattern path list change (always on main).
   unit-tests-patterns:
     name: Pinned patterns shard ${{ matrix.shard }}
@@ -292,71 +296,6 @@ jobs:
           path: |
             build/test-results/flutter-patterns-${{ matrix.shard }}.xml
             build/test-results/flutter-patterns-${{ matrix.shard }}.jsonl
-          if-no-files-found: error
-          retention-days: 14
-
-  python-oracle:
-    name: Python pytest oracles (Flutter path)
-    needs: changes
-    # Keep a pytest receipt on Flutter-touching PRs; dedicated Non-Dart workflow
-    # covers python/time-only changes without booting Flutter.
-    if: needs.changes.outputs.flutter == 'true'
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: python/requirements.txt
-
-      - name: Install Python test dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r python/requirements.txt
-
-      - name: Run pytest
-        run: python python/test.py --pytest -- --oracle-mode=local --outcomes-json build/diagnostics/python-oracle/pytest_outcomes.json
-
-      - name: Write local oracle receipt
-        if: always()
-        run: |
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          out = Path("build/diagnostics/python-oracle")
-          out.mkdir(parents=True, exist_ok=True)
-          outcomes_path = out / "pytest_outcomes.json"
-          outcomes = {}
-          if outcomes_path.is_file():
-              outcomes = json.loads(outcomes_path.read_text(encoding="utf-8"))
-          receipt = {
-              "job": "python-oracle",
-              "mode": "local",
-              "repository": "${{ github.repository }}",
-              "ref": "${{ github.ref_name }}",
-              "sha": "${{ github.sha }}",
-              "run_id": ${{ github.run_id }},
-              "run_attempt": ${{ github.run_attempt }},
-              "server_url": "${{ github.server_url }}",
-              "outcomes": outcomes.get("counts", {}),
-              "outcomes_total": outcomes.get("total"),
-              "outcomes_ok": outcomes.get("ok"),
-          }
-          (out / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
-          print((out / "receipt.json").read_text(encoding="utf-8"))
-          PY
-          python3 -m json.tool build/diagnostics/python-oracle/receipt.json > /dev/null
-
-      - name: Upload python oracle summary artifact
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: python-oracle-summary
-          path: build/diagnostics/python-oracle/
           if-no-files-found: error
           retention-days: 14
 
@@ -456,7 +395,7 @@ jobs:
           PY
 
   junit-identity:
-    needs: [changes, junit-plan, gate, unit-tests, unit-tests-patterns, latest-stable]
+    needs: [changes, junit-plan, gate, dart-contracts, unit-tests, unit-tests-patterns, latest-stable]
     if: always() && needs.junit-plan.outputs.run == 'true'
     permissions:
       contents: read
@@ -540,90 +479,5 @@ jobs:
         with:
           name: android-jvm-unit-tests
           path: build/android-unit-tests.log
-          if-no-files-found: warn
-          retention-days: 14
-
-  # macOS-only compile proof for the restored ios/ tree + image_picker/gal.
-  ios-build:
-    name: iOS no-codesign build
-    needs: changes
-    if: needs.changes.outputs.ios == 'true'
-    runs-on: macos-latest
-
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Set up Flutter 3.47.0
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: "3.47.0"
-          cache: true
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Build iOS release without codesigning
-        run: flutter build ios --release --no-codesign -t lib/main.dart
-
-  # RunnerTests XCTest (ImageNormalizeTests) on the iOS Simulator.
-  ios-tests:
-    name: iOS Simulator XCTest
-    needs: changes
-    if: needs.changes.outputs.ios == 'true'
-    runs-on: macos-latest
-
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Set up Flutter 3.47.0
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: "3.47.0"
-          cache: true
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Prepare iOS simulator build
-        run: flutter build ios --simulator --debug --no-codesign -t lib/main.dart
-
-      - name: Select iPhone simulator destination
-        id: sim
-        run: |
-          set -euo pipefail
-          # Use UDID to avoid whitespace / ambiguous name matching.
-          UDID=$(xcrun simctl list devices available \
-            | grep -E 'iPhone.+\([A-F0-9-]{36}\)' \
-            | head -1 \
-            | sed -E 's/.*\(([A-F0-9-]{36})\).*/\1/')
-          if [[ -z "${UDID}" ]]; then
-            echo "::error::No available iPhone simulator"
-            xcrun simctl list devices available || true
-            exit 1
-          fi
-          echo "udid=${UDID}" >> "$GITHUB_OUTPUT"
-          echo "Using simulator udid=${UDID}"
-
-      - name: Run RunnerTests with xcodebuild
-        run: |
-          set -euo pipefail
-          mkdir -p build/ios-xctest
-          set -o pipefail
-          xcodebuild test \
-            -workspace ios/Runner.xcworkspace \
-            -scheme Runner \
-            -configuration Debug \
-            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
-            -only-testing:RunnerTests \
-            CODE_SIGNING_ALLOWED=NO \
-            | tee build/ios-xctest/xcodebuild.log
-          grep -E 'ImageNormalizeTests|testNormalize' build/ios-xctest/xcodebuild.log
-
-      - name: Upload XCTest log
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: ios-xctest-log
-          path: build/ios-xctest/
           if-no-files-found: warn
           retention-days: 14

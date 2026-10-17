@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import subprocess
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,8 +30,15 @@ def _playwright_prefix() -> list[str]:
     return [_node(), str(PLAYWRIGHT_CLI)]
 
 
-def _run(args: list[str]) -> int:
-    completed = subprocess.run(args, cwd=E2E_DIR, check=False)
+def _run(args: list[str], *, base_url: str | None = None, light: bool = False, routes: dict | None = None) -> int:
+    env = os.environ.copy()
+    if base_url is not None:
+        env["FLUTTER_WEB_BASE_URL"] = base_url.rstrip("/") + "/"
+    if light:
+        env["FLUTTER_WEB_LIGHT"] = "1"
+    if routes is not None:
+        env["FLUTTER_WEB_ROUTES"] = json.dumps(routes)
+    completed = subprocess.run(args, cwd=E2E_DIR, env=env, check=False)
     return completed.returncode
 
 
@@ -63,7 +72,19 @@ def build_parser() -> argparse.ArgumentParser:
     test.add_argument("--project", action="append", dest="projects")
     test.add_argument("--headed", action="store_true")
     test.add_argument("--grep")
+    test.add_argument("--base-url", help="Existing HTTP(S) web build; no Flutter build is started")
+    test.add_argument("--light", action="store_true", help="Disable video and trace recording")
     test.add_argument("extra", nargs=argparse.REMAINDER)
+
+    pages = sub.add_parser("pages", help="Capture every public route in an existing Web build.")
+    pages.add_argument("--base-url", required=True)
+    pages.add_argument("--project", action="append", dest="projects", default=None)
+    pages.add_argument("--route", action="append", help="Select registered routes; default: all")
+    pages.add_argument("--light", action="store_true")
+    pages.add_argument("extra", nargs=argparse.REMAINDER)
+
+    check = sub.add_parser("check-observation", help="Check saved evidence without Node/browser/SDK.")
+    check.add_argument("extra", nargs=argparse.REMAINDER)
 
     list_cmd = sub.add_parser("list", help="List Playwright tests without running them.")
     list_cmd.add_argument("extra", nargs=argparse.REMAINDER)
@@ -113,19 +134,52 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if hasattr(args, "extra") and args.extra[:1] == ["--"]:
+        args.extra = args.extra[1:]
+
+    if args.command == "check-observation":
+        from check_web_observations import main as check_main
+        return check_main(args.extra)
 
     if not E2E_DIR.is_dir():
         print(f"error: missing e2e directory: {E2E_DIR}", file=sys.stderr)
         return 2
 
-    if args.command == "test":
+    if args.command in ("test", "pages"):
+        if args.base_url is not None:
+            try:
+                url = urlsplit(args.base_url)
+                valid = (url.scheme in ("http", "https") and bool(url.hostname)
+                         and url.username is None and url.password is None
+                         and not url.query and not url.fragment)
+            except ValueError:
+                valid = False
+            if not valid:
+                print("error: base URL must be HTTP(S), without credentials, query or fragment", file=sys.stderr)
+                return 2
+        routes = None
+        if args.command == "pages":
+            from web_page_catalogue import catalogue
+            routes = catalogue()
+            routes["projects"] = args.projects or ["chromium"]
+            routes["selection"] = "subset" if args.route else "all-public-routes"
+            if args.route:
+                unknown = set(args.route) - set(routes["routes"])
+                if unknown:
+                    print("error: unregistered routes: " + ", ".join(sorted(unknown)), file=sys.stderr)
+                    return 2
+                routes["routes"] = sorted(set(args.route))
+            print(f"Web observation: {len(routes['routes'])} routes; existing build, no SDK build", flush=True)
         return _run(
             _playwright_test_args(
-                projects=args.projects,
-                headed=args.headed,
-                grep=args.grep,
-                extra=args.extra,
-            )
+                projects=(args.projects or ["chromium"]) if routes else args.projects,
+                headed=False if routes else args.headed,
+                grep=None if routes else args.grep,
+                extra=["tests/page_observations.spec.ts", *args.extra] if routes else args.extra,
+            ),
+            base_url=args.base_url,
+            light=args.light,
+            routes=routes,
         )
 
     if args.command == "list":
