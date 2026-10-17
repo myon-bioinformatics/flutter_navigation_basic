@@ -60,7 +60,7 @@ dart run build_tools/dev.dart py --actions-latest --json
 python3 python/test.py --actions-latest --allow-stale
 
 # Download archived CI artifact from that run (also freshness-gated)
-python3 python/test.py --actions-latest --download-artifact python-oracle-summary
+python3 python/test.py --actions-latest --workflow "Non-Dart checks" --download-artifact python-oracle-summary
 
 # Pytest mode switch via conftest
 python3 python/test.py --pytest -- --oracle-mode=local
@@ -90,7 +90,13 @@ Aligned with pytest’s mix:
 CI uploads these counts inside the `python-oracle-summary` artifact (`pytest_outcomes.json` + `receipt.json`).
 
 Primary CI home for this directory is `.github/workflows/non-dart.yml` (stdlib Docker job + pytest).
-The Flutter workflow still runs pytest on Flutter-touching PRs for a receipt beside Dart jobs.
+The full pytest suite and its `python-oracle-summary` artifact run only in Non-Dart checks.
+Flutter retains the stdlib checks of the production Dart contracts. Pages gates on
+the successful Flutter run for its target SHA and regenerates canonical metadata
+for that checkout; it does not download the Python oracle summary. A successful
+Flutter/Pages run therefore does not imply that the separate Non-Dart workflow
+has succeeded. Select `--workflow "Non-Dart checks"` when retrieving Python evidence;
+the default Actions status view remains the Flutter workflow.
 
 Flutter/`package:test` has no native xfail/xpass. The Flutter JSON tally therefore
 keeps the same keys for a shared vocabulary, but **`xpassed` stays 0** in practice:
