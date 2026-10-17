@@ -419,6 +419,7 @@ def _assert_flutter_workflow_collector(workflow):
     assert next(step for step in plan["steps"] if step.get("id") == "plan")["env"] == {
         "FLUTTER": "${{ " + flutter + " }}",
         "PATTERNS": "${{ " + flutter + " && needs.changes.outputs.patterns == 'true' }}",
+        "PYTHON_FALLBACK": "${{ " + flutter + " && needs.changes.outputs.oracle_fallback == 'true' }}",
     }
     always = ["junit-dart-contracts/pattern-contracts.xml"] + _lane_reports("core") + _lane_reports("latest")
     assert _run_plan(plan, {"FLUTTER": "true", "PATTERNS": "true"}) == ("true", always + _lane_reports("patterns"))
@@ -426,7 +427,7 @@ def _assert_flutter_workflow_collector(workflow):
     assert _run_plan(plan, {"FLUTTER": "false", "PATTERNS": "false"}) == ("false", [])
     collector = jobs["junit-identity"]
     assert collector["needs"][:2] == ["changes", "junit-plan"]
-    assert set(collector["needs"][2:]) == set(FLUTTER_LANES) | {"gate", "dart-contracts"}
+    assert set(collector["needs"][2:]) == set(FLUTTER_LANES) | {"gate", "dart-contracts", "python-oracle-fallback"}
     assert collector["if"] == "always() && needs.junit-plan.outputs.run == 'true'"
     assert collector.get("continue-on-error", False) is False
     assert collector["uses"] == COLLECTOR

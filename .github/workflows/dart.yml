@@ -21,6 +21,7 @@ jobs:
       android: ${{ steps.filter.outputs.android }}
       python: ${{ steps.filter.outputs.python }}
       patterns: ${{ steps.filter.outputs.patterns }}
+      oracle_fallback: ${{ steps.oracle.outputs.run }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -56,7 +57,7 @@ jobs:
                 python=true
                 flutter=true
                 ;;
-              python/generate_pattern_smoke_test.py|python/check_pattern_smoke_mutations.py|python/tests/test_pattern_smoke_generator.py|python/pattern_contracts.py|python/metadata_contracts.py|python/generate_pattern_contracts.py|python/dart_contracts.py|python/tests/test_dart_contracts.py|python/tests/test_pattern_contracts.py|python/tests/test_metadata_contracts.py|python/generate_repository_metadata.py)
+              python/generate_pattern_smoke_test.py|python/check_pattern_smoke_mutations.py|python/tests/test_pattern_smoke_generator.py|python/pattern_contracts.py|python/metadata_contracts.py|python/generate_pattern_contracts.py|python/dart_contracts.py|python/tests/test_dart_contracts.py|python/oracle_selection.py|python/tests/test_oracle_selection.py|python/tests/test_pattern_contracts.py|python/tests/test_metadata_contracts.py|python/generate_repository_metadata.py)
                 python=true
                 flutter=true
                 ;;
@@ -102,6 +103,15 @@ jobs:
             printf '%s\n' "${files[@]}"
             echo "outputs: flutter=$flutter android=$android python=$python patterns=$patterns"
           }
+
+      - id: oracle
+        name: Select Python fallback for changes not covered by Non-Dart
+        if: steps.filter.outputs.flutter == 'true'
+        env:
+          DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          DIFF_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 -S python/oracle_selection.py --base "$DIFF_BASE" --head "$DIFF_HEAD" --output "$GITHUB_OUTPUT"
+
 
   gate:
     name: Pinned gate 3.47.0
@@ -299,6 +309,83 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  python-oracle-fallback:
+    name: Python pytest fallback (Dart-only changes)
+    needs: changes
+    # Preserve full pytest for Dart-only changes. Ordinary Python/mixed changes
+    # have one owner in Non-Dart; selector edits exercise this fallback too.
+    if: needs.changes.outputs.flutter == 'true' && needs.changes.outputs.oracle_fallback == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: python/requirements.txt
+
+      - name: Install Python test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r python/requirements.txt
+
+      - name: Run pytest
+        run: python python/test.py --pytest -- --oracle-mode=local --outcomes-json build/diagnostics/python-oracle/pytest_outcomes.json --junitxml=build/test-results/python-fallback.xml
+
+      - name: Validate fallback JUnit
+        run: python3 -S python/validate_runner_junit.py build/test-results/python-fallback.xml
+
+      - name: Preserve fallback JUnit
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: junit-python-fallback
+          path: build/test-results/python-fallback.xml
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Write local oracle receipt
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          out = Path("build/diagnostics/python-oracle")
+          out.mkdir(parents=True, exist_ok=True)
+          outcomes_path = out / "pytest_outcomes.json"
+          outcomes = {}
+          if outcomes_path.is_file():
+              outcomes = json.loads(outcomes_path.read_text(encoding="utf-8"))
+          receipt = {
+              "job": "python-oracle-fallback",
+              "mode": "local",
+              "repository": "${{ github.repository }}",
+              "ref": "${{ github.ref_name }}",
+              "sha": "${{ github.sha }}",
+              "run_id": ${{ github.run_id }},
+              "run_attempt": ${{ github.run_attempt }},
+              "server_url": "${{ github.server_url }}",
+              "outcomes": outcomes.get("counts", {}),
+              "outcomes_total": outcomes.get("total"),
+              "outcomes_ok": outcomes.get("ok"),
+          }
+          (out / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+          print((out / "receipt.json").read_text(encoding="utf-8"))
+          PY
+          python3 -m json.tool build/diagnostics/python-oracle/receipt.json > /dev/null
+
+      - name: Upload python oracle summary artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: python-oracle-summary
+          path: build/diagnostics/python-oracle/
+          if-no-files-found: error
+          retention-days: 14
+
   # Compatibility smoke on unpinned stable SDK and upgraded packages: core suites only.
   # Pattern catalogues run in unit-tests-patterns when those paths change.
   latest-stable:
@@ -377,6 +464,7 @@ jobs:
         env:
           FLUTTER: ${{ needs.changes.outputs.flutter == 'true' }}
           PATTERNS: ${{ needs.changes.outputs.flutter == 'true' && needs.changes.outputs.patterns == 'true' }}
+          PYTHON_FALLBACK: ${{ needs.changes.outputs.flutter == 'true' && needs.changes.outputs.oracle_fallback == 'true' }}
         run: |
           python3 - <<'PY'
           import json
@@ -389,13 +477,15 @@ jobs:
               reports += [f"junit-flutter-latest-{n}/flutter-latest-{n}.xml" for n in range(2)]
           if os.environ["PATTERNS"] == "true":
               reports += [f"junit-flutter-patterns-{n}/flutter-patterns-{n}.xml" for n in range(4)]
+          if os.environ.get("PYTHON_FALLBACK") == "true":
+              reports += ["junit-python-fallback/python-fallback.xml"]
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
               output.write("run=" + ("true" if reports else "false") + "\n")
               output.write("reports=" + json.dumps(reports) + "\n")
           PY
 
   junit-identity:
-    needs: [changes, junit-plan, gate, dart-contracts, unit-tests, unit-tests-patterns, latest-stable]
+    needs: [changes, junit-plan, gate, dart-contracts, unit-tests, unit-tests-patterns, latest-stable, python-oracle-fallback]
     if: always() && needs.junit-plan.outputs.run == 'true'
     permissions:
       contents: read
