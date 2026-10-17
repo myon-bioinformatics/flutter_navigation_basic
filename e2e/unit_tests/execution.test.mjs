@@ -12,6 +12,7 @@ test('small/container runners stay bounded; explicit diagnostics can serialize',
   const gib = 1024 ** 3;
   assert.equal(workerBudget({ cpus: 1, memory: gib, override: undefined }), 1);
   assert.equal(workerBudget({ cpus: 8, memory: 4 * gib, override: undefined }), 2);
+  assert.equal(workerBudget({ cpus: 2, memory: 7 * gib, override: undefined }), 2);
   assert.equal(workerBudget({ cpus: 64, memory: 128 * gib, override: undefined }), 4);
   assert.equal(workerBudget({ cpus: 8, memory: 16 * gib, override: '1' }), 1);
   for (const override of ['0', '-1', 'Infinity', '2.5', '33', ''])

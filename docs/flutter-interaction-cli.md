@@ -158,7 +158,7 @@ do not commit accumulated videos, screenshots or build caches.
 
 ### Bounded parallel workers and replayable exploration
 
-The default worker count is min(4, half the available CPUs, one per 2 GiB of
+The default worker count is min(4, the available CPUs, one per 2 GiB of
 reported/constrained memory), with a minimum of one. This is a conservative
 estimate, not an OOM guarantee. Set `FLUTTER_WEB_WORKERS=1` or pass Playwright's
 `--workers=1` after `--` to diagnose resource pressure. Explicit environment

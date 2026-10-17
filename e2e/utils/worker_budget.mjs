@@ -1,6 +1,6 @@
 import os from 'node:os';
 
-// Leave roughly half of small runners for the web server and OS. This is an
+// Cap browser processes using available CPU and reported memory. This is an
 // estimate, not a memory reservation; --workers=1 remains available for diagnosis.
 export function workerBudget({ cpus = os.availableParallelism(),
   memory = Math.min(os.totalmem(), process.constrainedMemory?.() || Infinity),
@@ -10,5 +10,5 @@ export function workerBudget({ cpus = os.availableParallelism(),
       throw new Error('FLUTTER_WEB_WORKERS must be an integer from 1 to 32');
     return Number(override);
   }
-  return Math.max(1, Math.min(4, Math.floor(cpus / 2), Math.floor(memory / (2 * 1024 ** 3))));
+  return Math.max(1, Math.min(4, Math.floor(cpus), Math.floor(memory / (2 * 1024 ** 3))));
 }
