@@ -144,6 +144,15 @@
       "destination": "e2e/utils/interaction.mjs",
       "blob_sha": "b737dd6322731bd802a7cd97f8b9a239b0075fc0",
       "sha256": "b23b62113dfb5db0028e71305efbd33f7a3924510cb808e051e3221bd7b5cfbe"
+    },
+    {
+      "repository": "myon-bioinformatics/browser-test-kit",
+      "ref": "8d8512fefea38993e5b3695c0706075cf05071ad",
+      "commit": "8d8512fefea38993e5b3695c0706075cf05071ad",
+      "source": "scripts/browser_execution.mjs",
+      "destination": "e2e/utils/browser_execution.mjs",
+      "blob_sha": "3fcccb735dddd553942d96cc67cbe23a1561fea9",
+      "sha256": "3634f607a254fecf5b25a467571fe5ffce8b65e7054566242c7b6391e1602cc3"
     }
   ]
 }

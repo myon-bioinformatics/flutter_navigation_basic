@@ -15,6 +15,8 @@ import re
 import sys
 from urllib.parse import urlsplit
 
+from vendor.check_png import dimensions as png_dimensions
+
 
 def _route(data):
     # Flutter normalizes Home from #/ to an empty fragment. Both mean '/'.
@@ -73,7 +75,8 @@ def validate(data, directory, expected_sha=None):
                 errors.append('screenshot must not be a symlink')
             else:
                 raw = image.read_bytes()
-                if (not raw.startswith(b'\x89PNG\r\n\x1a\n')
+                width, height = png_dimensions(raw)
+                if (width < 1 or height < 1
                         or len(raw) != screenshot['bytes']
                         or hashlib.sha256(raw).hexdigest() != screenshot['sha256']):
                     errors.append('screenshot bytes/hash mismatch')

@@ -1,3 +1,4 @@
+import { flutterWorkerBudget } from '../utils/flutter_worker_policy.mjs';
 import { test, expect, type Locator } from '@playwright/test';
 import { waitForFlutter, navigateToHub, navigateToScreen } from '../utils/helpers';
 import testData from '../fixtures/test_data.json';
@@ -238,3 +239,22 @@ test.describe('Screen Navigation', () => {
   });
 });
 
+
+test('Flutter worker policy preserves light capacity and explicit overrides @portable', () => {
+  const previousOverride = process.env.FLUTTER_WEB_WORKERS;
+  delete process.env.FLUTTER_WEB_WORKERS;
+  try {
+    const resources = { cpus: 8, memory: 16 * 1024 ** 3 };
+    expect(flutterWorkerBudget({ ...resources, light: false, override: undefined })).toBe(2);
+    expect(flutterWorkerBudget({ ...resources, light: true, override: undefined })).toBe(4);
+    expect(flutterWorkerBudget({ cpus: 1, memory: 1024 ** 3, light: false, override: undefined })).toBe(1);
+    for (const light of [false, true]) {
+      expect(flutterWorkerBudget({ ...resources, light, override: '1' })).toBe(1);
+      expect(flutterWorkerBudget({ ...resources, light, override: '3' })).toBe(3);
+      expect(() => flutterWorkerBudget({ ...resources, light, override: '0' })).toThrow();
+    }
+  } finally {
+    if (previousOverride === undefined) delete process.env.FLUTTER_WEB_WORKERS;
+    else process.env.FLUTTER_WEB_WORKERS = previousOverride;
+  }
+});

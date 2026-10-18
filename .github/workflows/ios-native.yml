@@ -48,7 +48,11 @@ jobs:
         run: flutter pub get
 
       - name: Build iOS release without codesigning
-        run: flutter build ios --release --no-codesign -t lib/main.dart
+        uses: ./.github/actions/build-companions
+        with:
+          target: ios
+          id: release
+          command: '["flutter","build","ios","--release","--no-codesign","-t","lib/main.dart"]'
 
   # RunnerTests XCTest (ImageNormalizeTests) on the iOS Simulator.
   ios-tests:
@@ -68,7 +72,11 @@ jobs:
         run: flutter pub get
 
       - name: Prepare iOS simulator build
-        run: flutter build ios --simulator --debug --no-codesign -t lib/main.dart
+        uses: ./.github/actions/build-companions
+        with:
+          target: ios
+          id: simulator
+          command: '["flutter","build","ios","--simulator","--debug","--no-codesign","-t","lib/main.dart"]'
 
       - name: Select iPhone simulator destination
         id: sim

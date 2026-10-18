@@ -9,6 +9,7 @@ on:
       - 'lib/features/home/**'
       - 'src/repository_metadata.dart'
       - 'python/**'
+      - ".github/actions/build-companions/**"
       - 'e2e/**'
       - '.github/workflows/diagnostics-evidence.yml'
       - '.github/workflows/flutter-pages.yml'
@@ -20,6 +21,7 @@ on:
       - 'lib/features/home/**'
       - 'src/repository_metadata.dart'
       - 'python/**'
+      - ".github/actions/build-companions/**"
       - 'e2e/**'
       - '.github/workflows/diagnostics-evidence.yml'
       - '.github/workflows/flutter-pages.yml'
@@ -62,7 +64,12 @@ jobs:
           flutter pub get
           python3 python/generate_repository_metadata.py --expected-sha "$EXPECTED_SHA"
           dart run build_tools/dev.dart meta --platform web --repository-metadata build/diagnostics/repository/repository-metadata.json
-          flutter build web --release -t lib/main.dart --base-href '/'
+      - name: Build Web and measure Python / Node
+        uses: ./.github/actions/build-companions
+        with:
+          target: web
+          id: diagnostics
+          command: '["flutter","build","web","--release","-t","lib/main.dart","--base-href","/"]'
       - name: Install browsers
         working-directory: e2e
         run: |
