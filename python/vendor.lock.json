@@ -21,17 +21,17 @@
     },
     {
       "repository": "myon-bioinformatics/myon-bioinformatics",
-      "ref": "09831b992dc91d83b15c44861a788e03b1e654c4",
-      "commit": "09831b992dc91d83b15c44861a788e03b1e654c4",
+      "ref": "8faa7a74895a48cf33a46f0c9fcb0210f61f81a8",
+      "commit": "8faa7a74895a48cf33a46f0c9fcb0210f61f81a8",
       "source": "gh_ops.py",
       "destination": "python/vendor/gh_ops.py",
-      "blob_sha": "359d21a4e0d610e904f86ec108c19827163593a5",
-      "sha256": "56063a0bb118427944faa088ff30f0d9ef61b6fb47ccb178f55c13c42e229ecb"
+      "blob_sha": "1741ffedf55cb9624507224ad8a00cf78553c4c2",
+      "sha256": "3f9be2015bdfa86daec100b9595db8b6f78511d83f1e8b3f48b8fed60e594dba"
     },
     {
       "repository": "myon-bioinformatics/myon-bioinformatics",
-      "ref": "09831b992dc91d83b15c44861a788e03b1e654c4",
-      "commit": "09831b992dc91d83b15c44861a788e03b1e654c4",
+      "ref": "8faa7a74895a48cf33a46f0c9fcb0210f61f81a8",
+      "commit": "8faa7a74895a48cf33a46f0c9fcb0210f61f81a8",
       "source": "LICENSE",
       "destination": "python/vendor/myon-bioinformatics-LICENSE",
       "blob_sha": "4ec4989b801bf1a3df6184d21f79e6e7ed5931f6",
