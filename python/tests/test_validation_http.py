@@ -5,7 +5,11 @@ import time
 from contextlib import contextmanager
 from pathlib import Path
 from threading import Thread
-from urllib.request import Request, urlopen
+from functools import partial
+from urllib.request import Request, urlopen as _urlopen
+
+# fetch-guard: a stuck local server fails the test in 10 s instead of hanging the CI job.
+urlopen = partial(_urlopen, timeout=10)
 from urllib.error import HTTPError
 from http.server import ThreadingHTTPServer
 

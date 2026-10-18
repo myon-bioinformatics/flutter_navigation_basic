@@ -86,14 +86,25 @@ def _gh_available() -> bool:
     return shutil.which("gh") is not None
 
 
+GH_TIMEOUT_SECONDS = 120
+
+
 def _run_gh(args: list[str]) -> str:
-    result = subprocess.run(
-        ["gh", *args],
-        cwd=_repo_root(),
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    # fetch-guard: gh never prompts (GH_PROMPT_DISABLED) and every call ends within a deadline.
+    env = {**os.environ, "GH_PROMPT_DISABLED": "1", "GH_PAGER": "cat"}
+    try:
+        result = subprocess.run(
+            ["gh", *args],
+            cwd=_repo_root(),
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=GH_TIMEOUT_SECONDS,
+            env=env,
+            stdin=subprocess.DEVNULL,
+        )
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(f"gh {' '.join(args[:2])} timed out after {GH_TIMEOUT_SECONDS}s") from None
     if result.returncode != 0:
         raise RuntimeError(result.stderr.strip() or result.stdout.strip() or "gh failed")
     return result.stdout
