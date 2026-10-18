@@ -5,6 +5,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 _HERE = Path(__file__).resolve().parents[1]
 if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
@@ -85,3 +87,24 @@ def test_evaluate_summary_success_and_fresh_is_zero() -> None:
     code, reasons = evaluate_summary(summary, expected_sha="abc123")
     assert code == 0
     assert reasons == []
+
+
+def test_run_gh_is_bounded_and_never_prompts(monkeypatch):
+    """fetch-guard: gh runs with prompts disabled and a deadline; a timeout is a clear error."""
+    import subprocess
+
+    import actions_latest
+    seen = {}
+
+    def fake_run(argv, **kwargs):
+        seen.update(kwargs)
+        return subprocess.CompletedProcess(argv, 0, "ok", "")
+    monkeypatch.setattr(actions_latest.subprocess, "run", fake_run)
+    assert actions_latest._run_gh(["api", "x"]) == "ok"
+    assert seen["env"]["GH_PROMPT_DISABLED"] == "1" and seen["timeout"] == actions_latest.GH_TIMEOUT_SECONDS
+
+    def hang(argv, **kwargs):
+        raise subprocess.TimeoutExpired(argv, kwargs["timeout"])
+    monkeypatch.setattr(actions_latest.subprocess, "run", hang)
+    with pytest.raises(RuntimeError, match="timed out"):
+        actions_latest._run_gh(["run", "list"])
