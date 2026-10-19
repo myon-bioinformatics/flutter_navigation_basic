@@ -21,3 +21,18 @@ macos/Pods/
 __pycache__/
 .pytest_cache/
 *.pyc
+
+# --- common ignores (shared) ---
+*.py[cod]
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+.venv/
+venv/
+node_modules/
+.DS_Store
+Thumbs.db
+# --- end common ignores ---
