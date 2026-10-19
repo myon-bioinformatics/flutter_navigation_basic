@@ -40,7 +40,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install pytest
-        run: python -m pip install 'pytest>=8'
+        run: python -m pip install 'pytest>=9.1.1'
       - name: Verify Python boundaries and producer/asset parity
         run: python -m pytest python/tests/test_pattern_catalogue_boundary.py python/tests/test_collection_assets.py python/tests/test_collection_transform.py python/tests/test_state_reducer.py python/tests/test_workflow_patterns.py python/tests/test_validation_patterns.py python/tests/test_conversion_patterns.py python/tests/test_validation_http.py python/tests/test_upload_artifact_version.py python/tests/test_pattern_responsibility_audit.py python/tests/test_render_pattern_status.py python/tests/test_check_route_observations.py python/tests/test_node_test_runner.py python/tests/test_multi_test_runner.py -q --junitxml=python-refactor-junit.xml
       - name: Export responsibility inventory
