@@ -1,11 +1,11 @@
 # Dev/test Python dependencies for repository tooling and light structural checks.
 # Runtime Flutter code must not depend on these packages.
 # Formula assertions live in Dart tests; keep this allowlist minimal.
-pytest>=8
+pytest>=9.1.1
 # Fixture regeneration only (`python/generate_photo_import_fixtures.py`).
 # CI calls the generator only with --check; that path is stdlib-only and does not regenerate encoder-backed fixtures.
 # Full regeneration still needs Pillow plus host ffmpeg/heif-enc.
-Pillow==12.3.0
+Pillow>=13.0.0
 
 # Workflow contract tests only; runtime and timezone generators remain stdlib-only.
-PyYAML>=6
+PyYAML>=6.0.3
