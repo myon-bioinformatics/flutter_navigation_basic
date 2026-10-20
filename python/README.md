@@ -3,6 +3,27 @@
 This directory holds **dev/test-only** helpers for light calculation checks,
 golden/oracle tests, and GitHub Actions status lookup.
 
+## Python support boundaries
+
+The repository's Python tooling runs on **Python 3.12 in CI**. Use that version
+for the full development/test environment; this does not change the Flutter
+application's runtime requirements.
+
+- Image fixture regeneration and image tests require **Python 3.11 or newer**
+  and the allowlisted `Pillow>=13.0.0` dependency. Installing
+  `python/requirements.txt` is therefore not a Python 3.9/3.10 environment.
+- Dependency-free helpers remain separate from that environment. Their own
+  language/library requirements still apply: for example,
+  `check_route_observations.py` and `pattern_responsibility_audit.py` use the
+  Python 3.11 `tomllib` module. Stdlib-only does not imply every helper supports
+  Python 3.9.
+- Fixture generator `--check` remains stdlib-only; encoder-backed regeneration
+  needs Pillow and the documented host tools. No uv project is introduced here.
+
+CI setup actions should be checked against their official latest stable
+releases when changed, rather than copied from an older workflow. Preserve
+existing higher Python floors and the pinned vendor provenance contracts.
+
 ## Tooling language split (stdlib-first)
 
 Prefer each language's **standard library** for scripts/tests that do not need
