@@ -18,7 +18,10 @@ application's runtime requirements.
   Python 3.11 `tomllib` module. Stdlib-only does not imply every helper supports
   Python 3.9.
 - Fixture generator `--check` remains stdlib-only; encoder-backed regeneration
-  needs Pillow and the documented host tools. No uv project is introduced here.
+  needs Pillow and the documented host tools.
+- CI and the full pytest suite install allowlisted deps from `python/pyproject.toml`
+  via `uv sync --locked` / `uv run --locked --project python …` (see `python/uv.lock`).
+  `python/requirements.txt` mirrors the same `>=` floors for optional manual `pip` use.
 
 CI setup actions should be checked against their official latest stable
 releases when changed, rather than copied from an older workflow. Preserve
@@ -54,13 +57,23 @@ Human matrix: `docs/photo-import-compatibility.md`.
 
 ## Setup (only needed for pytest oracles)
 
+Preferred (matches CI):
+
+```bash
+uv sync --locked --project python
+uv run --locked --project python python python/test.py
+uv run --locked --project python python -m pytest -q python/tests/
+```
+
+Optional manual pip (same floors as `pyproject.toml`):
+
 ```bash
 python3 -m venv .venv-python
 source .venv-python/bin/activate
 python -m pip install -r python/requirements.txt
 ```
 
-`--actions-latest` itself is **stdlib + `gh` or `GITHUB_TOKEN`** and does not need the venv.
+`--actions-latest` itself is **stdlib + `gh` or `GITHUB_TOKEN`** and does not need the venv or uv project.
 
 ## One-command entrypoint
 

@@ -62,9 +62,10 @@ Instruction ownership:
 - Reuse existing utilities, patterns, and feature structure when possible.
 - Avoid large refactors that are not required to complete the task.
 - Do not add dependencies unless the task cannot be completed with current packages.
-  Exception: allowlisted pip deps may live only in `python/requirements.txt`
-  for dev/test Python tooling (pytest only; no pydantic). Do not add root-level
-  `requirements.txt` files. Formula oracles for app math live in Dart tests.
+ Exception: allowlisted pip deps live in `python/pyproject.toml` with
+ `python/uv.lock` for CI (`uv sync --locked`); `python/requirements.txt`
+ mirrors the same `>=` floors for optional manual pip. Do not add root-level
+ `requirements.txt` files. Formula oracles for app math live in Dart tests.
 - For scripts/tests that need no compile step, prefer each language's **standard
   library** (Dart toolkit, Python stdlib, optional Deno one-file scripts) over
   new environment-heavy toolchains.
