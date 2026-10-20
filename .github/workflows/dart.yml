@@ -328,17 +328,15 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: python/requirements.txt
 
-      - name: Install Python test dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r python/requirements.txt
+      - uses: astral-sh/setup-uv@v10.3.0
+
+      - name: Install Python test dependencies (locked)
+        run: uv sync --locked --project python
 
       - name: Run pytest
         run: >-
-          python python/test.py --pytest -- --oracle-mode=local
+          uv run --locked --project python python python/test.py --pytest -- --oracle-mode=local
           --outcomes-json "$GITHUB_WORKSPACE/build/diagnostics/python-oracle/pytest_outcomes.json"
           --junitxml="$GITHUB_WORKSPACE/build/test-results/python-fallback.xml"
 

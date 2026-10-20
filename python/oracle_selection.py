@@ -11,11 +11,13 @@ import subprocess
 
 PRIMARY_PATHS = ('python/*', 'assets/time/*', 'assets/data_processing/*',
                  'test/fixtures/photo_studio/import_compat/*', 'lib/features/*_patterns/*',
-                 'requirements.txt', '*/requirements.txt', '.github/workflows/non-dart.yml')
+                 'requirements.txt', '*/requirements.txt', 'python/pyproject.toml',
+                 'python/uv.lock', '.github/workflows/non-dart.yml')
 PRIMARY_TRIGGERS = ('python/*', 'assets/time/*', 'assets/data_processing/*',
                     'test/fixtures/photo_studio/import_compat/*', 'e2e/*',
-                    'requirements.txt', '*/requirements.txt', '.dockerignore',
-                    'lib/*.dart', 'test/*.dart', '.github/workflows/non-dart.yml')
+                    'requirements.txt', '*/requirements.txt', 'python/pyproject.toml',
+                    'python/uv.lock', '.dockerignore', 'lib/*.dart', 'test/*.dart',
+                    '.github/workflows/non-dart.yml')
 SELF_PATHS = {'.github/workflows/dart.yml', 'python/oracle_selection.py',
               'python/tests/test_oracle_selection.py'}
 

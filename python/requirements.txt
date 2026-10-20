@@ -1,4 +1,6 @@
 # Dev/test Python dependencies for repository tooling and light structural checks.
+# CI installs from python/pyproject.toml + python/uv.lock (uv sync --locked).
+# This file mirrors the same >= floors for optional manual pip installs.
 # Runtime Flutter code must not depend on these packages.
 # Formula assertions live in Dart tests; keep this allowlist minimal.
 pytest>=9.1.1

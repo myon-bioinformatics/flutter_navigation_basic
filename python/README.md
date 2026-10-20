@@ -3,6 +3,30 @@
 This directory holds **dev/test-only** helpers for light calculation checks,
 golden/oracle tests, and GitHub Actions status lookup.
 
+## Python support boundaries
+
+The repository's Python tooling runs on **Python 3.12 in CI**. Use that version
+for the full development/test environment; this does not change the Flutter
+application's runtime requirements.
+
+- Image fixture regeneration and image tests require **Python 3.11 or newer**
+  and the allowlisted `Pillow>=13.0.0` dependency. Installing
+  `python/requirements.txt` is therefore not a Python 3.9/3.10 environment.
+- Dependency-free helpers remain separate from that environment. Their own
+  language/library requirements still apply: for example,
+  `check_route_observations.py` and `pattern_responsibility_audit.py` use the
+  Python 3.11 `tomllib` module. Stdlib-only does not imply every helper supports
+  Python 3.9.
+- Fixture generator `--check` remains stdlib-only; encoder-backed regeneration
+  needs Pillow and the documented host tools.
+- CI and the full pytest suite install allowlisted deps from `python/pyproject.toml`
+  via `uv sync --locked` / `uv run --locked --project python …` (see `python/uv.lock`).
+  `python/requirements.txt` mirrors the same `>=` floors for optional manual `pip` use.
+
+CI setup actions should be checked against their official latest stable
+releases when changed, rather than copied from an older workflow. Preserve
+existing higher Python floors and the pinned vendor provenance contracts.
+
 ## Tooling language split (stdlib-first)
 
 Prefer each language's **standard library** for scripts/tests that do not need
@@ -33,13 +57,23 @@ Human matrix: `docs/photo-import-compatibility.md`.
 
 ## Setup (only needed for pytest oracles)
 
+Preferred (matches CI):
+
+```bash
+uv sync --locked --project python
+uv run --locked --project python python python/test.py
+uv run --locked --project python python -m pytest -q python/tests/
+```
+
+Optional manual pip (same floors as `pyproject.toml`):
+
 ```bash
 python3 -m venv .venv-python
 source .venv-python/bin/activate
 python -m pip install -r python/requirements.txt
 ```
 
-`--actions-latest` itself is **stdlib + `gh` or `GITHUB_TOKEN`** and does not need the venv.
+`--actions-latest` itself is **stdlib + `gh` or `GITHUB_TOKEN`** and does not need the venv or uv project.
 
 ## One-command entrypoint
 

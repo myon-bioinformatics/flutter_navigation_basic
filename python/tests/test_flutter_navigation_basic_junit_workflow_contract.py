@@ -18,8 +18,8 @@ COLLECTOR = (
     "reusable-junit-identity.yml@1eda992aa6fa31a902e2c06428e53ab17e8fe3c1"
 )
 COMMAND = (
-    'python python/test.py --pytest -- --oracle-mode=local --outcomes-json '
-    '"$GITHUB_WORKSPACE/build/diagnostics/python-oracle/pytest_outcomes.json" '
+    'uv run --locked --project python python python/test.py --pytest -- --oracle-mode=local '
+    '--outcomes-json "$GITHUB_WORKSPACE/build/diagnostics/python-oracle/pytest_outcomes.json" '
     '--junitxml="$GITHUB_WORKSPACE/build/test-results/python-3.12.xml"'
 )
 
