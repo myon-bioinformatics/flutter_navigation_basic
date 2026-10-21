@@ -1,0 +1,209 @@
+import { test, expect, type Page, type Locator, type TestInfo } from '@playwright/test';
+import { writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
+import { waitForFlutter } from '../utils/helpers';
+import { press } from '../utils/interaction.mjs';
+
+// #183: observe deliberate layout exceptions without requiring a footer where
+// none exists. A new Door is a product change, not deduplication of these bodies.
+test.describe.configure({ mode: 'parallel' });
+test.setTimeout(90_000);
+
+const node = (page: Page, id: string) => page.locator(`[flt-semantics-identifier="${id}"]`);
+async function settle(page: Page) {
+  // Semantics precede Flutter's painted route/AnimatedList transitions.
+  await page.waitForTimeout(650);
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+}
+
+async function open(page: Page, route: string) {
+  await page.goto(`/#${route}`);
+  await waitForFlutter(page, 30_000);
+  await expect(node(page, 'shared-header-title')).toBeVisible();
+  await settle(page);
+}
+
+async function header(page: Page, route: string, info: TestInfo, file: string) {
+  const boxes: Record<string, Awaited<ReturnType<Locator['boundingBox']>>> = {};
+  for (const id of ['shared-header-title', 'shared-header-home', 'shared-header-favorite', 'shared-header-menu']) {
+    await expect(node(page, id)).toHaveCount(1);
+    await expect(node(page, id)).toBeInViewport({ ratio: 1 });
+    boxes[id] = await node(page, id).boundingBox();
+  }
+  const snapshot = { schemaVersion: 1, route, requiresSecondary: false,
+    title: await node(page, 'shared-header-title').innerText(), viewport: page.viewportSize(), boxes };
+  const path = info.outputPath(file);
+  writeFileSync(path, JSON.stringify(snapshot, null, 2));
+  const oracle = spawnSync('python3', ['-S', '../python/header_contracts.py', path], { encoding: 'utf8' });
+  expect(oracle.error).toBeUndefined();
+  expect(oracle.status, oracle.stdout + oracle.stderr).toBe(0);
+  await info.attach(file, { path, contentType: 'application/json' });
+  return snapshot;
+}
+
+async function capture(page: Page, info: TestInfo, file: string) {
+  await settle(page);
+  const path = info.outputPath(file);
+  const png = await page.screenshot({ path });
+  await info.attach(file, { path, contentType: 'image/png' });
+  return { file, bytes: png.length, sha256: createHash('sha256').update(png).digest('hex') };
+}
+
+async function drag(page: Page, from: Locator, to: Locator, hold = 0) {
+  await expect(from).toBeInViewport({ ratio: 1 });
+  await expect(to).toBeInViewport({ ratio: 1 });
+  const a = (await from.boundingBox())!, b = (await to.boundingBox())!;
+  const start = { x: Math.floor(a.x + a.width / 2), y: Math.floor(a.y + a.height / 2) };
+  const end = { x: Math.floor(b.x + b.width / 2), y: Math.floor(b.y + b.height * 0.85) };
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  if (hold) await page.waitForTimeout(hold);
+  await page.mouse.move(end.x, end.y, { steps: 20 });
+  await page.mouse.up();
+  return { input: 'mouse-drag', start, end, hold_ms: hold, from: a, to: b };
+}
+
+for (const id of [136, 137, 171, 173, 174, 183, 91, 109]) {
+  test(`exceptional chrome /screen${id} retains controls in a short viewport @portable`, id === 91 || id === 109 ? { lock: 'system-clipboard' } : {}, async ({ page }, info) => {
+    const route = `/screen${id}`;
+    const receipt: Record<string, any> = { schema: 'flutter-chrome-audit/1', stage: 'failed', route, project: info.project.name,
+      browser_version: page.context().browser()!.version(), ci_sha: process.env.GITHUB_SHA ?? null,
+      expected_sha: process.env.EXPECTED_SHA ?? null,
+      run_id: process.env.GITHUB_RUN_ID ?? null, captures: [], inputs: [] };
+    try {
+      // Compare within the same browser/profile, never across platform pixels.
+      await open(page, '/screen6');
+      const standard = await header(page, '/screen6', info, 'standard-header.json');
+      receipt.standard = { ...standard, door: await node(page, 'tool-door-dropdown').boundingBox() };
+      receipt.captures.push(await capture(page, info, 'standard.png'));
+      await open(page, route);
+      const specialized = await header(page, route, info, 'exception-header.json');
+      expect(specialized.title).toContain(`Pattern ${id < 100 ? '0' : ''}${id}`);
+      for (const key of ['shared-header-home', 'shared-header-favorite', 'shared-header-menu']) {
+        expect(specialized.boxes[key]).toEqual(standard.boxes[key]);
+      }
+      receipt.initial = specialized;
+      // Record absence separately from navigation success; do not freeze it as
+      // a required defect or make the test fail when a future Door is approved.
+      receipt.door_count = await node(page, 'tool-door-dropdown').count();
+      receipt.captures.push(await capture(page, info, 'exception-initial.png'));
+      const viewport = page.viewportSize()!;
+      await page.setViewportSize({ width: viewport.width, height: 320 });
+      await settle(page);
+      receipt.short = await header(page, route, info, 'short-header.json');
+      const touch = !!info.project.use.hasTouch;
+      if (id === 136 || id === 137) {
+        const run = page.getByRole('button', { name: '実行', exact: true });
+        await expect(run).toBeInViewport({ ratio: 1 });
+        receipt.inputs.push(await press(page, run, { touch }));
+        await expect(page.getByText(/55/)).toBeVisible();
+        // Web fallback and compute completion are observable, but a transient
+        // running frame/native Isolate scheduling are covered by Widget tests.
+        await expect(run).toBeEnabled();
+        receipt.result = await page.getByText(/55/).innerText();
+      } else if (id === 171 || id === 173) {
+        // Desktop mouse on every emulated profile; this is NOT touch-drag proof.
+        receipt.inputs.push(await drag(page, node(page, 'interaction-item-A'),
+          node(page, 'interaction-item-B'), id === 173 ? 700 : 0));
+        if (id === 173) await expect(page.getByText('順序: B, A, C')).toBeVisible();
+        else await expect(page.getByText('順序: A, B, C')).toHaveCount(0);
+        receipt.result = await node(page, 'interaction-order').innerText();
+      } else if (id === 174) {
+        receipt.inputs.push(await press(page, page.getByRole('button', { name: '挿入', exact: true }), { touch }));
+        await expect(page.getByText('順序: N1, A, B, C')).toBeVisible();
+        await expect(node(page, 'interaction-item-N1')).toBeInViewport({ ratio: 1 });
+        receipt.result = await node(page, 'interaction-order').innerText();
+      } else if (id === 183) {
+        receipt.inputs.push(await press(page, node(page, 'interaction-select-A'), { touch }));
+        await expect(page.getByText('選択数: 1')).toBeVisible();
+        receipt.inputs.push(await press(page, page.getByRole('button', { name: '選択項目を削除', exact: true }), { touch }));
+        await expect(page.getByText('順序: B, C')).toBeVisible();
+        receipt.result = await node(page, 'interaction-order').innerText();
+      } else {
+        const last = page.getByRole('button', { name: '利用方法・制約 のURLをコピー', exact: true });
+        receipt.last_copy_before = await last.count() ? await last.boundingBox() : null;
+        if (info.project.name === 'mobile-webkit') {
+          // Build offscreen ListView tiles through its accessibility scroll
+          // region before asking a lazy child to scroll itself into view.
+          for (let attempt = 0; attempt < 12 && !(await last.count()); attempt++) {
+            const regions = await page.locator('flt-semantics').evaluateAll(elements => {
+              const regions = elements.filter(el => getComputedStyle(el).overflowY === 'scroll'
+                && el.clientHeight > 0 && el.clientWidth > innerWidth / 2);
+              for (const el of regions) el.scrollTop += 240;
+              return regions.length;
+            });
+            receipt.inputs.push({ input: 'semantics-scroll-region', regions, delta_y: 240,
+              reason: 'mobile-webkit-wheel-unsupported' });
+            expect(regions).toBeGreaterThan(0);
+            await settle(page);
+          }
+          await last.scrollIntoViewIfNeeded();
+          receipt.inputs.push({ input: 'semantics-scroll', reason: 'mobile-webkit-wheel-unsupported' });
+        } else {
+          // Wheel over the ListView padding, outside SelectableText's own
+          // editable/scrollable region. Some last tiles are built lazily.
+          await page.mouse.move(8, 180);
+          for (let attempt = 0; attempt < 12; attempt++) {
+            await page.mouse.wheel(0, 240);
+            await settle(page);
+            const box = await last.count() ? await last.boundingBox() : null;
+            receipt.inputs.push({ input: 'wheel', x: 8, y: 180, delta_y: 240, after: box });
+            if (box && box.y >= 56 && box.y + box.height <= 320) break;
+          }
+        }
+        await settle(page);
+        await expect(last).toBeInViewport({ ratio: 1 });
+        receipt.last_copy_after = await last.boundingBox();
+        receipt.result = 'last source copy control reachable';
+        if (info.project.name.includes('chromium')) {
+          await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+          await page.evaluate(() => navigator.clipboard.writeText('chrome audit sentinel'));
+          receipt.inputs.push(await press(page, last, { touch }));
+          const expectedPath = `docs/data-processing-${id === 91 ? 'validation-091-099' : 'conversion-103-110'}.md`;
+          await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).not.toBe('chrome audit sentinel');
+          const copied = await page.evaluate(() => navigator.clipboard.readText());
+          const url = new URL(copied);
+          expect(url.origin).toBe('https://github.com');
+          expect(url.pathname).toMatch(/^\/myon-bioinformatics\/flutter_navigation_basic\/blob\/[^/]+\//);
+          expect(url.pathname.endsWith('/' + expectedPath)).toBe(true);
+          receipt.clipboard = copied;
+        } else {
+          receipt.clipboard = 'not tested: Chromium permissions required; geometry only';
+        }
+      }
+      receipt.captures.push(await capture(page, info, 'exception-short-after-action.png'));
+      if ([171, 173, 174, 183].includes(id)) {
+        const last = node(page, 'interaction-item-C');
+        // Selection uses CheckboxListTile identifiers instead of item cards.
+        const target = id === 183 ? node(page, 'interaction-select-C') : last;
+        receipt.last_item_before = await target.count() ? await target.boundingBox() : null;
+        if (info.project.name === 'mobile-webkit') {
+          await target.scrollIntoViewIfNeeded();
+          receipt.inputs.push({ input: 'semantics-scroll', target: 'last-item', reason: 'mobile-webkit-wheel-unsupported' });
+        } else {
+          await page.mouse.move(20, 250);
+          await page.mouse.wheel(0, 240);
+          receipt.inputs.push({ input: 'wheel', target: 'last-item', x: 20, y: 250, delta_y: 240 });
+        }
+        await settle(page);
+        await expect(target).toBeInViewport({ ratio: 1 });
+        receipt.last_item_after = await target.boundingBox();
+        receipt.captures.push(await capture(page, info, 'exception-short-after-scroll.png'));
+      }
+      // A footer-less screen can still leave via the shared header. Exercise
+      // actual navigation instead of claiming onward Door success from a URL.
+      receipt.inputs.push(await press(page, node(page, 'shared-header-home').getByRole('button'), { touch }));
+      const dialog = page.getByRole('alertdialog');
+      await expect(dialog).toBeVisible();
+      receipt.inputs.push(await press(page, dialog.getByRole('button', { name: 'Home', exact: true }), { touch }));
+      await expect(node(page, 'shared-header-title')).toContainText('🏠');
+      await expect(dialog).toHaveCount(0);
+      receipt.stage = 'complete';
+    } finally {
+      const output = info.outputPath('chrome-audit.json');
+      writeFileSync(output, JSON.stringify(receipt, null, 2));
+      await info.attach('chrome-audit.json', { path: output, contentType: 'application/json' });
+    }
+  });
+}

@@ -141,3 +141,10 @@ the reusable contract, not the Flutter-specific mechanics.
 Do not merge evidence/artifacts generated from different PR heads or runs
 into a claimed single passing matrix. Missing project or scenario evidence
 must be labeled explicitly rather than counted as passed.
+
+## Focused follow-up audit (2026-10-21)
+
+See [specialized chrome comparison](exceptional-chrome-audit-20261021.md) for
+the existing artifact recheck, representative short-viewport tests, dirty Photo
+Studio Door coverage, and the reasons to retain the specialized body layouts.
+No footer is added merely because a screen does not use the standard wrapper.
