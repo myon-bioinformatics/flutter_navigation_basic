@@ -205,7 +205,7 @@ jobs:
     permissions:
       contents: read
       actions: read
-    uses: myon-bioinformatics/myon-bioinformatics/.github/workflows/reusable-junit-identity.yml@1eda992aa6fa31a902e2c06428e53ab17e8fe3c1
+    uses: myon-bioinformatics/myon-bioinformatics/.github/workflows/reusable-junit-identity.yml@2192ff22acafdd09e80ac722df91ee937aaedd5e
     with:
       expected-reports: '["junit-python-refactor/python-refactor-junit.xml", "junit-node-refactor/node.xml", "junit-flutter-refactor/flutter.xml", "junit-flutter-refactor/flutter-pinned.xml", "junit-flutter-refactor/flutter-curl-runtime.xml"]'
       commit-sha: ${{ github.event.pull_request.head.sha || github.sha }}
