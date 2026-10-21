@@ -196,7 +196,7 @@ the switch (#169), and their output bytes remain pinned as frozen hashes in
 `tests/test_flutter_navigation_basic_repository_metadata.py`.
 
 Ordinary Non-Dart CI uses the shared stdlib-only `vendor_sync.py` pinned at
-`1eda992aa6fa31a902e2c06428e53ab17e8fe3c1`. A locked lane verifies the manifest,
+`2192ff22acafdd09e80ac722df91ee937aaedd5e`. A locked lane verifies the manifest,
 recreates the checked-in files from their pinned commits, and runs the metadata
 regressions. The pytest lane runs the existing Python suite against the
 checked-in baseline only (no upstream `update` lane). CI never writes back to
@@ -208,7 +208,7 @@ Pages and application builds continue to use the checked-in baseline.
 
 Vendor artifact membership is now derived exclusively by the parent
 `vendor_stage.py`, checked out with `vendor_sync.py` at full commit
-`1eda992aa6fa31a902e2c06428e53ab17e8fe3c1`. Workflow uploads point to its generated
+`2192ff22acafdd09e80ac722df91ee937aaedd5e`. Workflow uploads point to its generated
 directory; adding a locked source or LICENSE needs no upload path-list edit.
 Artifact names and repository-relative paths inside each artifact are preserved.
 `vendor-evidence.json` is additional metadata with byte hashes and separate
