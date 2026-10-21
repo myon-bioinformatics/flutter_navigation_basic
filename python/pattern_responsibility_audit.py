@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+from fnmatch import fnmatchcase
 from collections import Counter
 import json
 from pathlib import Path
@@ -261,6 +262,26 @@ def verify_receipt(root: Path, path: Path, head_sha: str | None, run_id: str | N
         raise ValueError(f"route observations {observed} changed after verification")
     return receipt
 
+def select_view(result, patterns=(), statuses=(), owners=()):
+    """Filter displayed records after the full audit; retain all audit errors."""
+    groups = (patterns, statuses, owners)
+    if any(not value.strip() for group in groups for value in group):
+        raise ValueError("filter patterns must not be empty")
+    if not any(groups):
+        return result
+    rows = [row for row in result["patterns"]
+            if all(not choices or any(fnmatchcase(value, choice) for choice in choices)
+                   for value, choices in ((f"{row['id']:03d}", patterns),
+                                          (row["status"], statuses),
+                                          (row["target_owner"], owners)))]
+    if not rows:
+        raise ValueError("no audit records selected")
+    return {**result, "patterns": rows,
+            "selection": {"pattern": list(patterns), "status": list(statuses),
+                          "owner": list(owners), "selected": len(rows),
+                          "total": len(result["patterns"]), "audit_scope": "whole_catalogue"}}
+
+
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root",type=Path,default=ROOT)
@@ -269,6 +290,9 @@ def main(argv=None):
     parser.add_argument("--route-verification",type=Path)
     parser.add_argument("--route-head-sha")
     parser.add_argument("--route-run-id")
+    parser.add_argument("--pattern", action="append", default=[], help="glob for zero-padded ID, e.g. 00? (repeat: OR)")
+    parser.add_argument("--status", action="append", default=[], help="status glob (repeat: OR)")
+    parser.add_argument("--owner", action="append", default=[], help="target_owner glob (repeat: OR)")
     args=parser.parse_args(argv)
     try:
         verification = None
@@ -276,10 +300,13 @@ def main(argv=None):
             verification = verify_receipt(args.root.resolve(), args.route_verification,
                                           args.route_head_sha, args.route_run_id)
         result=audit(args.root.resolve(), verification)
+        result=select_view(result, args.pattern, args.status, args.owner)
     except (ValueError,OSError) as error:
         print("audit: "+str(error),file=sys.stderr)
         return 2
-    print(json.dumps(result if args.json else result["summary"],ensure_ascii=False,sort_keys=True,indent=2))
+    view = result if args.json else ({"summary": result["summary"], "selection": result["selection"]}
+                                    if "selection" in result else result["summary"])
+    print(json.dumps(view,ensure_ascii=False,sort_keys=True,indent=2))
     return 1 if args.check and result["errors"] else 0
 
 if __name__=="__main__":

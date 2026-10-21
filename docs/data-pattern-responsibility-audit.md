@@ -31,3 +31,22 @@ and its browser binaries remain dependencies for real browser control.
 Before merging PR #145, run the E2E-only native interaction routes from
 the Python and Node Playwright CLIs, inspect the resulting evidence, and
 merge with a normal merge commit (never squash the full commit history).
+
+## Select a report view
+
+```sh
+python -S python/pattern_responsibility_audit.py --pattern '00?' --json --check
+python -S python/pattern_responsibility_audit.py --owner 'python_*' --status '*unwired' --json
+```
+
+`--pattern` matches zero-padded IDs (`001` through `198`); `--owner` matches
+`target_owner` and `--status` matches status. Each accepts repeated case-sensitive
+globs (OR within a flag, AND across flags). Duplicated filters do not duplicate
+records. Empty patterns or no matching records exit 2.
+
+The full catalogue is always audited first. `patterns` contains selected records;
+`summary`, `errors`, and route-verification evidence still describe the full audit.
+The extra `selection` object labels this scope and selected/total counts. `--check`
+still exits 1 for an error anywhere in the catalogue, including excluded IDs.
+Without filters the JSON and summary formats remain unchanged. Selecting a view
+does not establish runtime integration or bypass receipt verification.

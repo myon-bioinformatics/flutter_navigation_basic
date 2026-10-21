@@ -315,3 +315,35 @@ def test_routes_proven_shared_have_no_legacy_view_left():
     assert len(shared) == 24
     left = [n for n in shared if rows[n]["legacy_view"] != "absent" and n not in (136, 137)]
     assert left == []
+
+
+def test_selected_view_retains_full_audit_and_receipt():
+    result = audit.audit(ROOT)
+    assert audit.select_view(result) is result
+    view = audit.select_view(result, ['001', '002', '001'])
+    assert [r['id'] for r in view['patterns']] == [1, 2]
+    assert view['summary'] is result['summary']
+    assert view['errors'] is result['errors']
+    assert view['route_verification'] is result['route_verification']
+    assert view['selection']['selected'] == 2
+    assert view['selection']['total'] == 198
+    owner = result['patterns'][0]['target_owner']
+    status = result['patterns'][0]['status']
+    assert [r['id'] for r in audit.select_view(result, ['001'], [status], [owner])['patterns']] == [1]
+    for filters in ((['999'], [], []), ([''], [], []), (['001'], ['absent'], [])):
+        with pytest.raises(ValueError):
+            audit.select_view(result, *filters)
+
+
+def test_filtered_cli_cannot_hide_full_audit_failure(tmp_path, monkeypatch, capsys):
+    full = audit.audit(ROOT)
+    full['errors'] = ['198: missing catalogue pattern']
+    full['summary']['errors'] = 1
+    monkeypatch.setattr(audit, 'audit', lambda *a: full)
+    assert audit.main(['--pattern', '001', '--json', '--check']) == 1
+    view = json.loads(capsys.readouterr().out)
+    assert [r['id'] for r in view['patterns']] == [1]
+    assert view['errors'] == full['errors']
+    assert view['summary']['patterns'] == 198
+    assert audit.main(['--pattern', '999', '--json', '--check']) == 2
+    assert 'no audit records' in capsys.readouterr().err
