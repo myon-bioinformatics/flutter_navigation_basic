@@ -71,6 +71,12 @@ from native mouse/touch input. Its source-link geometry does not claim a real
 clipboard copy. Chromium clipboard cases use the existing `system-clipboard`
 lock so the parallel suite cannot overwrite their sentinels.
 
+Flutter clips accessibility boxes to the scroll viewport. Therefore the tests
+also require at least 40 px of visible copy-button height and 48 px of visible
+last-item height: a 6 px sliver is not accepted just because its clipped box is
+inside the viewport. A grid cell can intrinsically exceed the short body's
+height; its recorded visible portion is not proof that the entire cell fits.
+
 The additional Photo Studio case lives in
 `home_discovery_journeys.spec.ts`, reusing the existing measured Door helpers,
 fixture image and import observation. It captures dirty Door, both leave

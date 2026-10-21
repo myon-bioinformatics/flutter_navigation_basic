@@ -64,6 +64,32 @@ async function drag(page: Page, from: Locator, to: Locator, hold = 0) {
   return { input: 'mouse-drag', start, end, hold_ms: hold, from: a, to: b };
 }
 
+// Mobile WebKit cannot emit Playwright wheel input. Drive the accessibility
+// scroll region until a useful visible segment exists, including lazy children.
+// This remains semantics-scroll evidence, not native touch-swipe evidence.
+async function revealBySemantics(page: Page, target: Locator, minimumHeight: number, inputs: unknown[]) {
+  if (await target.count()) {
+    await target.scrollIntoViewIfNeeded();
+    await settle(page);
+  }
+  for (let attempt = 0; attempt < 12; attempt++) {
+    const box = await target.count() ? await target.boundingBox() : null;
+    if (box && box.height >= minimumHeight - 0.5 && box.y >= 56 && box.y + box.height <= 320) return;
+    const delta = box && box.y < 56 ? -120 : 120;
+    const regions = await page.locator('flt-semantics').evaluateAll((elements, delta) => {
+      const regions = elements.filter(el => getComputedStyle(el).overflowY === 'scroll'
+        && el.clientHeight > 0 && el.clientWidth > innerWidth / 2);
+      for (const el of regions) el.scrollTop += delta;
+      return regions.length;
+    }, delta);
+    inputs.push({ input: 'semantics-scroll-region', regions, delta_y: delta, before: box,
+      minimum_visible_height: minimumHeight, reason: 'mobile-webkit-wheel-unsupported' });
+    expect(regions).toBeGreaterThan(0);
+    await settle(page);
+  }
+  throw new Error(`Semantics scrolling did not expose ${minimumHeight}px of the target`);
+}
+
 for (const id of [136, 137, 171, 173, 174, 183, 91, 109]) {
   test(`exceptional chrome /screen${id} retains controls in a short viewport @portable`, id === 91 || id === 109 ? { lock: 'system-clipboard' } : {}, async ({ page }, info) => {
     const route = `/screen${id}`;
@@ -134,22 +160,7 @@ for (const id of [136, 137, 171, 173, 174, 183, 91, 109]) {
         const last = page.getByRole('button', { name: '利用方法・制約 のURLをコピー', exact: true });
         receipt.last_copy_before = await last.count() ? await last.boundingBox() : null;
         if (info.project.name === 'mobile-webkit') {
-          // Build offscreen ListView tiles through its accessibility scroll
-          // region before asking a lazy child to scroll itself into view.
-          for (let attempt = 0; attempt < 12 && !(await last.count()); attempt++) {
-            const regions = await page.locator('flt-semantics').evaluateAll(elements => {
-              const regions = elements.filter(el => getComputedStyle(el).overflowY === 'scroll'
-                && el.clientHeight > 0 && el.clientWidth > innerWidth / 2);
-              for (const el of regions) el.scrollTop += 240;
-              return regions.length;
-            });
-            receipt.inputs.push({ input: 'semantics-scroll-region', regions, delta_y: 240,
-              reason: 'mobile-webkit-wheel-unsupported' });
-            expect(regions).toBeGreaterThan(0);
-            await settle(page);
-          }
-          await last.scrollIntoViewIfNeeded();
-          receipt.inputs.push({ input: 'semantics-scroll', reason: 'mobile-webkit-wheel-unsupported' });
+          await revealBySemantics(page, last, 40, receipt.inputs);
         } else {
           // Wheel over the ListView padding, outside SelectableText's own
           // editable/scrollable region. Some last tiles are built lazily.
@@ -159,12 +170,13 @@ for (const id of [136, 137, 171, 173, 174, 183, 91, 109]) {
             await settle(page);
             const box = await last.count() ? await last.boundingBox() : null;
             receipt.inputs.push({ input: 'wheel', x: 8, y: 180, delta_y: 240, after: box });
-            if (box && box.y >= 56 && box.y + box.height <= 320) break;
+            if (box && box.height >= 40 && box.y >= 56 && box.y + box.height <= 320) break;
           }
         }
         await settle(page);
         await expect(last).toBeInViewport({ ratio: 1 });
         receipt.last_copy_after = await last.boundingBox();
+        expect(receipt.last_copy_after!.height).toBeGreaterThanOrEqual(39.5);
         receipt.result = 'last source copy control reachable';
         if (info.project.name.includes('chromium')) {
           await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
@@ -188,9 +200,13 @@ for (const id of [136, 137, 171, 173, 174, 183, 91, 109]) {
         // Selection uses CheckboxListTile identifiers instead of item cards.
         const target = id === 183 ? node(page, 'interaction-select-C') : last;
         receipt.last_item_before = await target.count() ? await target.boundingBox() : null;
+        // Flutter clips semantics boxes to their scroll region: a 6px sliver
+        // can satisfy toBeInViewport(1). Require a usable visible segment too.
+        // Grid cells can be taller than the entire short body, so record their
+        // partial extent explicitly rather than claiming the whole cell fits.
+        const minimumHeight = 48;
         if (info.project.name === 'mobile-webkit') {
-          await target.scrollIntoViewIfNeeded();
-          receipt.inputs.push({ input: 'semantics-scroll', target: 'last-item', reason: 'mobile-webkit-wheel-unsupported' });
+          await revealBySemantics(page, target, minimumHeight, receipt.inputs);
         } else {
           await page.mouse.move(20, 250);
           for (let attempt = 0; attempt < 8; attempt++) {
@@ -198,12 +214,13 @@ for (const id of [136, 137, 171, 173, 174, 183, 91, 109]) {
             await settle(page);
             const box = await target.count() ? await target.boundingBox() : null;
             receipt.inputs.push({ input: 'wheel', target: 'last-item', x: 20, y: 250, delta_y: 120, after: box });
-            if (box && box.y >= 56 && box.y + box.height <= 320) break;
+            if (box && box.height >= minimumHeight && box.y >= 56 && box.y + box.height <= 320) break;
           }
         }
         await settle(page);
         await expect(target).toBeInViewport({ ratio: 1 });
         receipt.last_item_after = await target.boundingBox();
+        expect(receipt.last_item_after!.height).toBeGreaterThanOrEqual(minimumHeight - 0.5);
         receipt.captures.push(await capture(page, info, 'exception-short-after-scroll.png'));
       }
       // A footer-less screen can still leave via the shared header. Exercise
