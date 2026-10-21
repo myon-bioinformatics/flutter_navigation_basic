@@ -48,7 +48,8 @@ It captures the initial viewport and a viewport of the same width, height
 **320 CSS px**. This reduced-height observation is not an on-screen-keyboard test.
 
 Every case reuses `python/header_contracts.py`, compares Home/Favorite/Menu
-geometry to the standard page, and leaves through the real shared Home button
+geometry to the standard page at both heights (including a visible fixed
+Door at short height), and leaves through the real shared Home button
 and confirmation. The receipt records the number of Door fields separately
 from navigation success. No test requires a deliberate exception to remain
 footer-less forever.
@@ -90,7 +91,8 @@ npx playwright test tests/home_discovery_journeys.spec.ts --grep 'dirty Door'
 
 Per project/case, the ordinary `playwright-e2e-report` artifact retains:
 
-- `standard-header.json`, `exception-header.json`, `short-header.json` and PNGs;
+- `standard-header.json`, `standard-short-header.json`, `exception-header.json`,
+  `short-header.json` and PNGs;
 - `chrome-audit.json`: project/browser, CI identity, geometry, pointer/scroll
   inputs, source-copy values where tested, PNG sizes and hashes;
 - `photo-door-audit.json` and PNGs for dirty Door Cancel/Discard;
@@ -100,7 +102,7 @@ Per project/case, the ordinary `playwright-e2e-report` artifact retains:
 Local observation serves the unmodified Pages artifact on loopback, fulfills
 CanvasKit CDN requests from that artifact's matching local files, and caches
 original font responses. It uses Playwright 1.64 with Chromium headless shell
-133, locale en-US, 1280×720 desktop and 412×839 mobile Chromium emulation,
+134.0.6998.35, locale en-US, 1280×720 desktop and 412×839 mobile Chromium emulation,
 then short height 320. Asset URL remapping/local origin is a harness difference,
 not a new app build. The local run and the eventual PR CI run must be reported
 separately; local results are not five-engine CI success.

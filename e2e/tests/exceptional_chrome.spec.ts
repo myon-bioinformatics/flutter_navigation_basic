@@ -77,6 +77,14 @@ for (const id of [136, 137, 171, 173, 174, 183, 91, 109]) {
       const standard = await header(page, '/screen6', info, 'standard-header.json');
       receipt.standard = { ...standard, door: await node(page, 'tool-door-dropdown').boundingBox() };
       receipt.captures.push(await capture(page, info, 'standard.png'));
+      const viewport = page.viewportSize()!;
+      await page.setViewportSize({ width: viewport.width, height: 320 });
+      await settle(page);
+      const standardShort = await header(page, '/screen6', info, 'standard-short-header.json');
+      await expect(node(page, 'tool-door-dropdown')).toBeInViewport({ ratio: 1 });
+      receipt.standard_short = { ...standardShort, door: await node(page, 'tool-door-dropdown').boundingBox() };
+      receipt.captures.push(await capture(page, info, 'standard-short.png'));
+      await page.setViewportSize(viewport);
       await open(page, route);
       const specialized = await header(page, route, info, 'exception-header.json');
       expect(specialized.title).toContain(`Pattern ${id < 100 ? '0' : ''}${id}`);
@@ -88,10 +96,12 @@ for (const id of [136, 137, 171, 173, 174, 183, 91, 109]) {
       // a required defect or make the test fail when a future Door is approved.
       receipt.door_count = await node(page, 'tool-door-dropdown').count();
       receipt.captures.push(await capture(page, info, 'exception-initial.png'));
-      const viewport = page.viewportSize()!;
       await page.setViewportSize({ width: viewport.width, height: 320 });
       await settle(page);
       receipt.short = await header(page, route, info, 'short-header.json');
+      for (const key of ['shared-header-home', 'shared-header-favorite', 'shared-header-menu']) {
+        expect(receipt.short.boxes[key]).toEqual(standardShort.boxes[key]);
+      }
       const touch = !!info.project.use.hasTouch;
       if (id === 136 || id === 137) {
         const run = page.getByRole('button', { name: '実行', exact: true });
@@ -183,8 +193,13 @@ for (const id of [136, 137, 171, 173, 174, 183, 91, 109]) {
           receipt.inputs.push({ input: 'semantics-scroll', target: 'last-item', reason: 'mobile-webkit-wheel-unsupported' });
         } else {
           await page.mouse.move(20, 250);
-          await page.mouse.wheel(0, 240);
-          receipt.inputs.push({ input: 'wheel', target: 'last-item', x: 20, y: 250, delta_y: 240 });
+          for (let attempt = 0; attempt < 8; attempt++) {
+            await page.mouse.wheel(0, 120);
+            await settle(page);
+            const box = await target.count() ? await target.boundingBox() : null;
+            receipt.inputs.push({ input: 'wheel', target: 'last-item', x: 20, y: 250, delta_y: 120, after: box });
+            if (box && box.y >= 56 && box.y + box.height <= 320) break;
+          }
         }
         await settle(page);
         await expect(target).toBeInViewport({ ratio: 1 });
