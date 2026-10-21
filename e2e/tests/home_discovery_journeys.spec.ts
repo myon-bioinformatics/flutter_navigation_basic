@@ -3,6 +3,8 @@ import { createHash } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { waitForFlutter } from '../utils/helpers';
 import { press as kitPress } from '../utils/interaction.mjs';
+import path from 'node:path';
+import { photoStudioFixtureDir, waitPhotoImportOutcome } from '../utils/photo_studio';
 
 // Independent page/context fixtures; schedule cases across bounded workers.
 test.describe.configure({ mode: 'parallel' });
@@ -326,4 +328,76 @@ test.describe('Home discovery journeys', () => {
       console.log(`::notice title=route-audit ${testInfo.project.name}::stage=${receipt.stage} last=${receipt.last_capture} failed_step=${receipt.failed_step} ids=${ids.join(',')} route=${new URL(page.url()).hash} menu=${JSON.stringify(receipt.menu_items)?.slice(0, 300)} door=${JSON.stringify(doorAttempts).slice(0, 700)}`);
     }
   });
+});
+
+// #183: clean route receipts do not prove Photo Studio's dirty leave guard.
+// Keep the inline Door and exercise both decisions with measured pointer input.
+test('Photo Studio dirty Door preserves Cancel and Discard @portable', async ({ page }, info) => {
+  test.setTimeout(90_000);
+  const receipt: Record<string, any> = { schema: 'flutter-photo-door-audit/1', stage: 'failed',
+    project: info.project.name, viewport: page.viewportSize(), browser_version: page.context().browser()!.version(),
+    ci_sha: process.env.GITHUB_SHA ?? null, run_id: process.env.GITHUB_RUN_ID ?? null,
+    inputs: [], scrolls: [], captures: [] };
+  async function capture(file: string) {
+    await settleCanvas(page);
+    const output = info.outputPath(file);
+    const png = await page.screenshot({ path: output });
+    receipt.captures.push({ file, bytes: png.length, sha256: createHash('sha256').update(png).digest('hex') });
+    await info.attach(file, { path: output, contentType: 'image/png' });
+  }
+  try {
+    await page.goto('/#/tools/media/photo-studio');
+    await waitForFlutter(page);
+    const importButton = page.getByRole('button', { name: 'Import image', exact: true });
+    // Import is midway through the body: stop once it is painted in view.
+    // The Door helper deliberately scrolls all the way to the body end.
+    if (info.project.name === 'mobile-webkit') {
+      await importButton.scrollIntoViewIfNeeded();
+      receipt.scrolls.push({ input: 'semantics-scroll', target: 'import-image' });
+    } else {
+      const view = page.viewportSize()!;
+      for (let attempt = 0; attempt < 16; attempt++) {
+        const box = await importButton.boundingBox();
+        if (box && box.y >= 104 && box.y + box.height <= view.height) break;
+        const delta = Math.floor(view.height * 0.4);
+        await page.mouse.move(Math.floor(view.width / 2), Math.floor(view.height / 2));
+        await page.mouse.wheel(0, delta);
+        receipt.scrolls.push({ input: 'wheel', target: 'import-image', delta_y: delta, before: box });
+        await settleCanvas(page);
+      }
+    }
+    await settleCanvas(page);
+    await expect(importButton).toBeInViewport({ ratio: 1 });
+    const chooser = page.waitForEvent('filechooser');
+    receipt.inputs.push(await press(page, importButton, info));
+    await (await chooser).setFiles(path.join(photoStudioFixtureDir, 'png_opaque_64x32.png'));
+    expect((await waitPhotoImportOutcome(page)).kind).toBe('rendered');
+    await expect(page.getByRole('button', { name: 'Undo', exact: true })).toBeEnabled();
+    const field = await doorButton(page, 'Photo Studio');
+    await scrollDoorIntoCanvas(page, field, receipt.scrolls, info);
+    receipt.door = await field.boundingBox();
+    await capture('photo-dirty-door.png');
+    for (const choice of ['Cancel', 'Discard']) {
+      await openDoor(page, field, info, receipt.inputs);
+      receipt.inputs.push(await press(page, await doorItem(page, 'Clipboard Shelf'), info));
+      const dialog = page.getByRole('alertdialog');
+      await expect(dialog).toContainText('Discard changes?');
+      await capture(`photo-door-${choice.toLowerCase()}.png`);
+      receipt.inputs.push(await press(page, dialog.getByRole('button', { name: choice, exact: true }), info));
+      await expect(dialog).toHaveCount(0);
+      if (choice === 'Cancel') {
+        await expect(page).toHaveURL(/#\/tools\/media\/photo-studio$/);
+        await expect(page.getByRole('button', { name: 'Undo', exact: true })).toBeEnabled();
+        expect((await waitPhotoImportOutcome(page)).kind).toBe('rendered');
+      }
+    }
+    await expect(page).toHaveURL(/#\/core\/clipboard-shelf$/);
+    await expect(page.locator('[flt-semantics-identifier="shared-header-title"]')).toContainText('Clipboard Shelf');
+    await capture('photo-discard-destination.png');
+    receipt.stage = 'complete';
+  } finally {
+    const output = info.outputPath('photo-door-audit.json');
+    writeFileSync(output, JSON.stringify(receipt, null, 2));
+    await info.attach('photo-door-audit.json', { path: output, contentType: 'application/json' });
+  }
 });
