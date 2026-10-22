@@ -12,8 +12,8 @@ entry point, and runtime. Investigation / regression — **not** HEIC conversion
 | `python/generate_photo_import_fixtures.py` | Regenerates binaries + `cases.json` only |
 
 ```bash
-# Optional regen (needs ffmpeg, heif-enc/x265 plugin, Pillow):
-python3 -m pip install -r python/requirements.txt
+# Optional regen (needs ffmpeg, heif-enc/x265 plugin, uv sync --group fixtures):
+python3 -m pip install -r python/requirements-fixtures.txt
 python3 python/generate_photo_import_fixtures.py
 ```
 

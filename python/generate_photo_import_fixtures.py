@@ -385,7 +385,8 @@ def main(argv: list[str] | None = None) -> int:
     except ImportError as exc:  # pragma: no cover
         raise SystemExit(
             "Pillow is required to regenerate progressive JPEG fixtures. "
-            "Install via: python3 -m pip install -r python/requirements.txt"
+            "Install via: uv sync --group fixtures --project python "
+            "(or: python3 -m pip install -r python/requirements-fixtures.txt)"
         ) from exc
     Image.open(markers).convert("RGB").save(
         prog_jpg, format="JPEG", quality=90, progressive=True

@@ -9,9 +9,12 @@ The repository's Python tooling runs on **Python 3.12 in CI**. Use that version
 for the full development/test environment; this does not change the Flutter
 application's runtime requirements.
 
-- Image fixture regeneration and image tests require **Python 3.11 or newer**
-  and the allowlisted `Pillow>=13.0.0` dependency. Installing
-  `python/requirements.txt` is therefore not a Python 3.9/3.10 environment.
+- Screenshot comparison (`python/image_diff.py`) uses vendored **pillow_min**
+  (stdlib only) on **Python 3.11 or newer**; it does not require Pillow in the
+  default `uv sync` environment.
+- Image fixture regeneration requires **Python 3.11 or newer** and the optional
+  `fixtures` dependency group (`Pillow>=13.0.0`). Installing only the default
+  project dependencies is therefore not a Python 3.9/3.10 environment.
 - Dependency-free helpers remain separate from that environment. Their own
   language/library requirements still apply: for example,
   `check_route_observations.py` and `pattern_responsibility_audit.py` use the
@@ -21,7 +24,8 @@ application's runtime requirements.
   needs Pillow and the documented host tools.
 - CI and the full pytest suite install allowlisted deps from `python/pyproject.toml`
   via `uv sync --locked` / `uv run --locked --project python …` (see `python/uv.lock`).
-  `python/requirements.txt` mirrors the same `>=` floors for optional manual `pip` use.
+  `python/requirements.txt` mirrors the default `>=` floors for optional manual `pip` use;
+  `python/requirements-fixtures.txt` mirrors the optional `fixtures` group only.
 
 CI setup actions should be checked against their official latest stable
 releases when changed, rather than copied from an older workflow. Preserve
@@ -36,7 +40,7 @@ a compile step. Avoid new environment dependencies unless allowlisted.
 | --- | --- | --- |
 | **Dart / Flutter** | Shipped Flutter runtime, widgets/navigation, Flutter-aware tooling | Production app source of truth where Flutter owns the capability |
 | **Python stdlib** | Generic dev/test tooling: Actions, JSON/zip/filesystem/network, fixtures, reports, reference oracles | No pip required; may take ownership from Dart tooling when it materially simplifies maintenance |
-| **Python + allowlisted pip** | Pytest/browser/oracle tooling under `python/requirements.txt` | Not ordinary client runtime; one production source of truth remains mandatory |
+| **Python + allowlisted pip** | Pytest/browser/oracle tooling under `python/requirements.txt`; fixture regen under `python/requirements-fixtures.txt` | Not ordinary client runtime; one production source of truth remains mandatory |
 | **Deno** (optional) | TS one-file fetch/CLI scripts with zero `node_modules` | OK when JS/TS + std fetch fits better than Python |
 
 Root-level / app-tree `requirements.txt` remains prohibited.
@@ -46,7 +50,7 @@ Root-level / app-tree `requirements.txt` remains prohibited.
 Synthetic (no personal photos / GPS) fixtures for format probing:
 
 ```bash
-python3 -m pip install -r python/requirements.txt  # Pillow for progressive JPEG
+uv sync --group fixtures --project python  # or: pip install -r python/requirements-fixtures.txt
 # also needs ffmpeg + heif-enc (libheif-plugin-x265) on the host
 python3 python/generate_photo_import_fixtures.py
 ```
@@ -65,12 +69,14 @@ uv run --locked --project python python python/test.py
 uv run --locked --project python python -m pytest -q python/tests/
 ```
 
-Optional manual pip (same floors as `pyproject.toml`):
+Optional manual pip (same floors as `pyproject.toml` default deps):
 
 ```bash
 python3 -m venv .venv-python
 source .venv-python/bin/activate
 python -m pip install -r python/requirements.txt
+# encoder-backed fixture regen only:
+python -m pip install -r python/requirements-fixtures.txt
 ```
 
 `--actions-latest` itself is **stdlib + `gh` or `GITHUB_TOKEN`** and does not need the venv or uv project.
@@ -232,8 +238,10 @@ real width, so DPR-2 screenshots are clipped correctly. Exit 0 identical, 1 diff
 
 The CLI delegates to `vendor/image_diff.py`, copied byte-for-byte from
 `browser-test-kit` `scripts/image_diff.py` at the commit pinned in
-`vendor.lock.json` (Git blob and SHA-256 recorded there). The existing
-`vendor/browser-test-kit-LICENSE` covers this source. Tests are adapted from
+`vendor.lock.json` (Git blob and SHA-256 recorded there). PNG decode/compare
+uses `vendor/pillow_min/pillow_min.py` from Ironmate at its pinned commit
+(`vendor/pillow_min/Ironmate-LICENSE`). The existing
+`vendor/browser-test-kit-LICENSE` covers the browser-test-kit source. Tests are adapted from
 `tests/python/test_flutter_navigation_basic_image_diff.py` at the same adoption commit (paths/import
 target only), with additional RGBA channel regressions. The maximum RGBA channel
 delta must exceed tolerance (0..255). Files and uncompressed ZIP members have a

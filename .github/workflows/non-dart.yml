@@ -224,10 +224,13 @@ jobs:
           count=0
           # Word-splitting on paths is fine: requirements.txt paths have no spaces.
           for path in $(git ls-files | grep -E '(^|/)requirements\.txt$' || true); do
-            if [ "$path" != "python/requirements.txt" ]; then
-              echo "::error::Only python/requirements.txt is allowed for pip deps. Found: $path"
-              exit 1
-            fi
+            case "$path" in
+              python/requirements.txt|python/requirements-fixtures.txt) ;;
+              *)
+                echo "::error::Only python/requirements.txt and python/requirements-fixtures.txt are allowed for pip deps. Found: $path"
+                exit 1
+                ;;
+            esac
             count=$((count + 1))
           done
           if [ ! -f python/pyproject.toml ] || [ ! -f python/uv.lock ]; then
