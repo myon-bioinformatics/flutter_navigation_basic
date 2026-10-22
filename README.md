@@ -1,85 +1,75 @@
-# FLUTTER_NAVIGATION_BASIC_DEMO(macOS)
+# flutter_navigation_basic
 ![Flutter Navigation Demo](https://raw.githubusercontent.com/myon-bioinformatics/flutter_navigation_basic/main/flutter_navigation_basic_demo.gif)
+
+Dart / Flutter で書いた、画面遷移・ルーティング・共通UIの検証用の基盤アプリです。macOS・Web・iOS・Android の各ターゲットを持ちます。
 
 ## Live Web Demo
 
-After GitHub Pages is enabled for GitHub Actions and this branch is merged to `main`, the Flutter Web build is published at:
+`main` への push 後、`.github/workflows/flutter-pages.yml` が Flutter Web ビルドを GitHub Pages に公開します。
 
 https://myon-bioinformatics.github.io/flutter_navigation_basic/
 
 ## Architecture
 
-汎用的なFlutterアプリ基盤として、非機能要件（テーマ・ルート管理・共通ウィジェット・URLパラメータ標準化）を外出しした構成になっています。
+非機能要件（テーマ・ルート管理・共通ウィジェット・URLパラメータ標準化）を画面ロジックから分けた構成です。
 
 ```
 lib/
-├── main.dart                      # Web・native共通エントリポイント（MaterialApp + bootstrap）
-├── config/
-│   ├── app_config.dart            # アプリ名・テーマカラー等の設定（旧来版）
-│   └── routes.dart                # 198画面 + 意味ベースのexample routes
+├── main.dart                      # Web・native 共通エントリポイント
+├── config.dart / config/
+│   ├── app_config.dart
+│   └── routes.dart                # 画面ルートの定義
 ├── core/
-│   ├── config/
-│   │   └── app_config.dart        # 環境変数読み込み・環境切替（dev/prod）
+│   ├── config/app_config.dart     # 環境変数読み込み・環境切替
+│   ├── data_processing/           # データ処理パターンの例（interactive / validation / conversion など）
 │   ├── exceptions/
 │   ├── logging/
 │   ├── navigation/
-│   │   ├── app_navigation.dart    # 意味ベースの画面遷移メソッド
-│   │   └── route_names.dart       # example route名定数
+│   │   ├── app_navigation.dart    # 画面遷移メソッド
+│   │   ├── app_route_registry.dart # route名 → 画面ビルダーの対応（ルートの単一の出所）
+│   │   ├── app_tools.dart
+│   │   └── route_names.dart       # route名の定数
 │   ├── services/
 │   └── utils/
-│       └── url_params.dart        # URLパラメータ取得ユーティリティ
-├── data/
-│   ├── ironies.dart
-│   └── composer.dart
-├── features/
-│   ├── home/
-│   ├── counter_playground/        # 旧 screen2 · PAD-lite ダメージ/回復 + hold-to-repeat
-│   ├── irony_generator/           # 旧 screen3
-│   ├── composition_generator/     # 旧 screen4 · メトロノーム等
-│   ├── coordinate_tool/           # 緯度経度 · Maps URL → DMS · 手動 Box
-│   ├── photo_studio/              # 写真館 · 枠付きキャンバス
-│   ├── now_timeline/
-│   └── screen5/                   # URL Parameters
-├── screens/
-│   ├── home_screen.dart
-│   ├── hub_screen.dart            # 198画面を検索・一覧表示
-│   ├── generic_screen.dart        # パターンデータとテンプレートを結合
-│   ├── pattern_template_screen.dart # 11 UI templates × 18 variants = 198
-│   ├── counter_playground_screen.dart
-│   ├── irony_generator_screen.dart
-│   └── composition_generator_screen.dart
-├── shared/
-│   ├── themes/
-│   └── widgets/
-│       └── hold_repeating_button.dart  # Material +/- の押し続け連打
+│       ├── url_params.dart        # URLパラメータ取得ユーティリティ
+│       └── ascii_fullwidth.dart
+├── data/                          # ironies.dart・composer.dart・mock_api_client.dart
+├── features/                      # 機能ごとのまとまり（presentation / domain など）
+│   ├── api_patterns/              # APIパターン（001〜198）
+│   ├── data_processing_patterns/  # データ処理パターン（001〜198）
+│   ├── navigation_patterns/       # 画面遷移パターン（001〜198）
+│   ├── ui_theme_patterns/
+│   ├── clipboard_shelf/ coordinate_tool/ counter_playground/ composition_generator/
+│   ├── home/ http_request_draft/ irony_generator/ now_timeline/ photo_studio/ screen5/
+├── screens/                       # 画面本体（hub_screen・generic_screen・pattern_template_screen など）
+├── shared/                        # bootstrap・catalog・clipboard・diagnostics など共通部品
 └── widgets/
-    └── nav_button.dart
 ```
 
-## 画面一覧
+## 主な画面・ルート
 
-| 種別 | 正式名 | URL | 説明 |
-|------|--------|-----|------|
-| Home | Home 🏠 | `/` | アプリのトップ画面。現在日付と主要デモへのナビゲーションを表示。 |
-| Tool | Latitude / Longitude 📍 | `/tools/location/coordinates` | 緯度経度の検証・十進度／DMS・地図リンクに加え、手動の地理Box作成・コピー。Google / Apple Maps の共有 URL から座標抽出も可。 |
-| Tool | 写真館 / Photo Studio | `/tools/media/photo-studio` | 写真の上に枠や印を載せるコーナー（旧 `/tools/location/bounding-box` は互換のため残置）。 |
-| Tool | Now Timeline | `/tools/time/now-timeline` | 複数 IANA タイムゾーンを1本のクライアント側タイムラインにまとめる。 |
-| Example | Counter Playground 👾 | `/examples/counter-playground` | カウンターの増減・履歴・undo。正の値ぶんダメージ／負の絶対値ぶん回復の軽いオーブ演出と、押し続けで連打できる +/-。 |
-| Example | Irony Generator 🥐 | `/examples/irony-generator` | `Ironies.ironicList` からランダムなフレーズを表示。 |
-| Example | Composition Generator 🎸 | `/examples/composition-generator` | キー／BPM 生成とビジュアルメトロノーム等の軽量プレ DAW。 |
-| Catalogue | Screen 1–198 | `/screen1`〜`/screen198` | `assets/screens.json` の198件を11種類の代表UIテンプレートに18件ずつ割り当てて表示。 |
+画面の一覧は `lib/core/navigation/route_names.dart` と `app_route_registry.dart` が正です。主なルートは次のとおりです。
 
-### Counter Playground（PAD-lite）
+| 種別 | ルート | 内容 |
+|------|--------|------|
+| 入口 | `/` | Home。現在日付と主要デモへのナビゲーション |
+| 入口 | `/hub` | Hub。画面を検索・一覧表示 |
+| ツール | `/tools/location/coordinates` | 緯度経度の検証・十進度／DMS・地図リンク、Maps URL からの座標抽出 |
+| ツール | `/tools/media/photo-studio` | 写真の上に枠や印を載せるコーナー（旧 `/tools/location/bounding-box` は互換のため残置） |
+| ツール | `/tools/time/now-timeline` | 複数の IANA タイムゾーンを1本のタイムラインにまとめる |
+| ツール | `/tools/http/request-draft` | HTTP リクエストの下書き |
+| 例 | `/examples/counter-playground` | カウンター（ダメージ／回復の表示、押し続けで連打できる +/-） |
+| 例 | `/examples/irony-generator` | `Ironies` からランダムなフレーズを表示 |
+| 例 | `/examples/composition-generator` | キー／BPM 生成などの軽量な作曲補助 |
+| 例 | `/examples/ui-showcase` | UI の見本 |
+| 例 | `/examples/external-integration/mcp` | MCP 連携の例 |
+| 例 | `/examples/mock-api` | モック API の例 |
+| 例 | `/core/clipboard-shelf` | クリップボード棚 |
+| パターン | `/screen1`〜 | パターンカタログ。`GenericScreen` が `assets/screens.json` のパターン定義から画面を組み立てる |
 
-- **ダメージ / 回復**: カウンターが正ならその値だけダメージ、負なら絶対値ぶん回復としてラベル表示。
-- **オーブ**: 炎・水・木・光・闇（攻撃）／ハート系（回復）の絵文字を軽い float アニメで表示（アセットなし）。
-- **+/-**: `HoldRepeatingButton`（Material ボタン + `Listener` + `Timer`）。短押しは1回、押し続けで連打。VoiceOver / キーボードは Material の `onPressed` 経由。
+### パターンカタログ
 
-元の `screen2/3/4` というファイル名・クラス名・featureディレクトリ名は意味ベースに変更しています。これらの手書きデモは `/examples/...` に分離し、`/screen1`〜`/screen198` はすべてパターンカタログ用として確保します。
-
-### 198画面の代表テンプレート
-
-`PatternScreenTemplate` は List / Detail / Form / Search / Tabs / Bottom Navigation / Drawer / Dialog / Grid / Async State / Settings の11種類です。各テンプレートに18 Screen IDを割り当て、**11 × 18 = 198** 画面を構成します。Navigation / API / Theme / Data のパターンデータは `assets/screens.json` を継続利用します。
+`api_patterns`・`navigation_patterns`・`data_processing_patterns` の3系統があり、それぞれ `pattern_001_to_099` と `pattern_100_to_198` に分かれています。ID は 001〜198 です。パターンの定義データは `assets/` 配下に置き、`assets/screens.json` を画面カタログとして読み込みます。
 
 ## URLパラメータ標準化（非機能）
 
@@ -106,15 +96,14 @@ lib/
 | 17 | `UrlParams.pathEnum('key', values, fallback: ...)` | パスパラメータ → Enum | `/mode/dark` |
 | 18 | `UrlParams.queryEnum('key', values, fallback: ...)` | クエリパラメータ → Enum | `?order=asc` |
 
-> 最大 198 ケースまで拡張可能。新しい取得パターンは `UrlParams` クラスにメソッドを追加し、`UrlParamsCases.cases` にエントリを追記するだけ。
+> 新しい取得パターンは `UrlParams` クラスにメソッドを追加し、`UrlParamsCases.cases` にエントリを追記します。
 
 ### 設計方針
 
-- **テーマ管理**: `AppConfig` でカラースキームを一元管理。
-- **ルート管理**: `/screen1`〜`/screen198` はパターンカタログ専用。手書きデモは `/examples/...` に分離。
-- **共通ウィジェット**: 共通UIを再利用しつつ、代表テンプレートで画面構造の違いを確認可能。
-- **データ分離**: 198件のパターン定義は `assets/screens.json` から読み込む。
-- **Web対応**: Flutter Web / Chrome で同じルートと画面を確認可能。
+- **ルート管理**: route名と画面の対応は `AppRouteRegistry` に集約する。
+- **データ分離**: パターン定義は `assets/` の JSON から読み込み、画面コードと分ける。
+- **共通ウィジェット**: 共通UIを再利用し、パターンごとの違いだけを画面側に持つ。
+- **Web対応**: Flutter Web / Chrome で同じルートと画面を確認できる。
 
 ## How to Run
 
@@ -129,13 +118,13 @@ Chrome でデバッグする場合:
 flutter run -d chrome
 ```
 
-Web release buildをローカル確認する場合:
+Web release build をローカルで確認する場合:
 
 ```bash
 flutter build web --release --base-href "/flutter_navigation_basic/"
 ```
 
-既存のPlaywright E2Eも利用できます。Flutter Webを `http://localhost:8080` で配信した状態で:
+Playwright の E2E は `e2e/` にあります。Flutter Web を `http://localhost:8080` で配信した状態で:
 
 ```bash
 cd e2e
@@ -144,20 +133,16 @@ npx playwright install chromium
 npx playwright test --project=chromium
 ```
 
-Pull Requestでは `.github/workflows/dart.yml` が analyze / test / Flutter Web build を検証します。Pinned は **core** と **patterns**（約792ファイル）に分割され、patterns は該当 path 変更時（および `main`）のみ走ります。Python / Playwright 系は `.github/workflows/non-dart.yml` が担当します。`main` への push 後は `.github/workflows/flutter-pages.yml` が同じ検証を通して GitHub Pages へデプロイします。
+## CI
+
+- Pull Request では `.github/workflows/dart.yml` が analyze・test・Flutter Web build を検証します。パス判定（path filter）で、変更された領域に応じて実行するジョブを選びます。Flutter は `3.47.0` に固定しています。
+- Python / Playwright 系の検証は `.github/workflows/non-dart.yml` が担当します。
+- `main` への push 後は `.github/workflows/flutter-pages.yml` が同じ検証を通して GitHub Pages へデプロイします。
 
 エージェント間の PR コメントは `AGENTS.md` の `from:` / `to:` ヘッダで宛先を明示します。
 
 ### Repository timestamps in Home diagnostics
 
-Home's calendar date is the device's current date. The visible commit timestamp
-in Home and Build diagnostics comes from canonical `head.timestamp`; the
-metadata generation timestamp comes from canonical `generated_at`. The Dart
-adapter preserves both strings (including their timezone offsets) without
-reading Git or using the device clock as a fallback. Older diagnostic assets
-show unknown timestamps rather than inventing them. Pages marks the source
-snapshot as `web` / `release`; release artifact size remains unmeasured until
-an actual artifact is supplied.
+Home の日付は端末の現在日付です。Home と Build diagnostics に表示するコミット時刻は、正規化された `head.timestamp` から取ります。メタデータの生成時刻は正規化された `generated_at` から取ります。Dart 側のアダプタは両方の文字列をタイムゾーンのオフセットごと保持し、Git を読むことも端末の時計で代用することもしません。古い診断アセットでは、時刻を推測せず「不明」と表示します。Pages では、ソースのスナップショットを `web` / `release` として示します。リリース成果物のサイズは、実際の成果物が渡されるまで計測しません。
 
-Now Timelineのタイムゾーン生成asset・対応期間・再生成手順は
-[Generated zone table](docs/GENERATED_ZONE_TABLE.md) を参照してください。
+Now Timeline のタイムゾーン生成アセット・対応期間・再生成手順は [Generated zone table](docs/GENERATED_ZONE_TABLE.md) を参照してください。
