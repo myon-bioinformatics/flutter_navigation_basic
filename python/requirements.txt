@@ -8,8 +8,5 @@ pytest>=9.1.1
 # Workflow contract tests only; runtime and timezone generators remain stdlib-only.
 PyYAML>=6.0.3
 
-# Optional: install with `uv sync --group fixtures --project python` (or pip install below).
-# Fixture regeneration only (`python/generate_photo_import_fixtures.py`).
-# CI calls the generator only with --check; that path is stdlib-only and does not regenerate encoder-backed fixtures.
-# Full regeneration still needs Pillow plus host ffmpeg/heif-enc.
-Pillow>=13.0.0
+# Optional Pillow for encoder-backed fixture regen: python/requirements-fixtures.txt
+# (or `uv sync --group fixtures --project python`).

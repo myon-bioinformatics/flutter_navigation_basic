@@ -1,0 +1,5 @@
+# Optional fixture regeneration (`python/generate_photo_import_fixtures.py`).
+# Install with `uv sync --group fixtures --project python` or:
+#   python3 -m pip install -r python/requirements-fixtures.txt
+# CI `--check` does not need this file; full regen also needs host ffmpeg/heif-enc.
+Pillow>=13.0.0

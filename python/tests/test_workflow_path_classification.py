@@ -13,7 +13,7 @@ def workflow(name):
 
 @pytest.mark.parametrize('path', [
     'python/curl_request.py', 'python/tests/test_curl_request.py',
-    'python/verify_timezone.py', 'python/requirements.txt',
+    'python/verify_timezone.py', 'python/requirements.txt', 'python/requirements-fixtures.txt',
     'python/vendor/markdown.py', 'python/tests/test_workflow_path_classification.py',
 ])
 def test_python_only_skips_flutter(path, classify_workflow_asset):

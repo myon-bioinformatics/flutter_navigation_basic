@@ -24,7 +24,8 @@ application's runtime requirements.
   needs Pillow and the documented host tools.
 - CI and the full pytest suite install allowlisted deps from `python/pyproject.toml`
   via `uv sync --locked` / `uv run --locked --project python …` (see `python/uv.lock`).
-  `python/requirements.txt` mirrors the same `>=` floors for optional manual `pip` use.
+  `python/requirements.txt` mirrors the default `>=` floors for optional manual `pip` use;
+  `python/requirements-fixtures.txt` mirrors the optional `fixtures` group only.
 
 CI setup actions should be checked against their official latest stable
 releases when changed, rather than copied from an older workflow. Preserve
@@ -39,7 +40,7 @@ a compile step. Avoid new environment dependencies unless allowlisted.
 | --- | --- | --- |
 | **Dart / Flutter** | Shipped Flutter runtime, widgets/navigation, Flutter-aware tooling | Production app source of truth where Flutter owns the capability |
 | **Python stdlib** | Generic dev/test tooling: Actions, JSON/zip/filesystem/network, fixtures, reports, reference oracles | No pip required; may take ownership from Dart tooling when it materially simplifies maintenance |
-| **Python + allowlisted pip** | Pytest/browser/oracle tooling under `python/requirements.txt` | Not ordinary client runtime; one production source of truth remains mandatory |
+| **Python + allowlisted pip** | Pytest/browser/oracle tooling under `python/requirements.txt`; fixture regen under `python/requirements-fixtures.txt` | Not ordinary client runtime; one production source of truth remains mandatory |
 | **Deno** (optional) | TS one-file fetch/CLI scripts with zero `node_modules` | OK when JS/TS + std fetch fits better than Python |
 
 Root-level / app-tree `requirements.txt` remains prohibited.
@@ -49,7 +50,7 @@ Root-level / app-tree `requirements.txt` remains prohibited.
 Synthetic (no personal photos / GPS) fixtures for format probing:
 
 ```bash
-uv sync --group fixtures --project python  # Pillow for progressive JPEG
+uv sync --group fixtures --project python  # or: pip install -r python/requirements-fixtures.txt
 # also needs ffmpeg + heif-enc (libheif-plugin-x265) on the host
 python3 python/generate_photo_import_fixtures.py
 ```
@@ -68,12 +69,14 @@ uv run --locked --project python python python/test.py
 uv run --locked --project python python -m pytest -q python/tests/
 ```
 
-Optional manual pip (same floors as `pyproject.toml`):
+Optional manual pip (same floors as `pyproject.toml` default deps):
 
 ```bash
 python3 -m venv .venv-python
 source .venv-python/bin/activate
 python -m pip install -r python/requirements.txt
+# encoder-backed fixture regen only:
+python -m pip install -r python/requirements-fixtures.txt
 ```
 
 `--actions-latest` itself is **stdlib + `gh` or `GITHUB_TOKEN`** and does not need the venv or uv project.
