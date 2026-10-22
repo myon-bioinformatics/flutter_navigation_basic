@@ -3,6 +3,12 @@
 
 Dart / Flutter で書いた、画面遷移・ルーティング・共通UIの検証用の基盤アプリです。macOS・Web・iOS・Android の各ターゲットを持ちます。
 
+## 概念図
+
+![flutter_navigation_basic の概念図: ルート定義とパターンカタログから、共通のルート管理・UI・URLパラメータ処理を通じて各ターゲットへつなぐ](docs/images/concept-overview.png)
+
+提供された概念図の該当パネルです。画面・ルートの対応は `AppRouteRegistry`、パラメータ取得は `UrlParams` が担当します。図の各ターゲットはプロジェクト構成を示しており、全ターゲットの動作検証済みという意味ではありません。現在の構成と検証手順は以下を参照してください。
+
 ## Live Web Demo
 
 `main` への push 後、`.github/workflows/flutter-pages.yml` が Flutter Web ビルドを GitHub Pages に公開します。
