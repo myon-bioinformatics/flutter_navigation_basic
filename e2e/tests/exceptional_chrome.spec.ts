@@ -18,7 +18,8 @@ async function settle(page: Page) {
 }
 
 async function open(page: Page, route: string) {
-  await page.goto(`/#${route}`);
+  await page.goto(process.env.FLUTTER_WEB_BASE_URL
+    ? new URL(`#${route}`, process.env.FLUTTER_WEB_BASE_URL).href : `/#${route}`);
   await waitForFlutter(page, 30_000);
   await expect(node(page, 'shared-header-title')).toBeVisible();
   await settle(page);
@@ -48,6 +49,55 @@ async function capture(page: Page, info: TestInfo, file: string) {
   const png = await page.screenshot({ path });
   await info.attach(file, { path, contentType: 'image/png' });
   return { file, bytes: png.length, sha256: createHash('sha256').update(png).digest('hex') };
+}
+
+async function captureGesturePaint(page: Page, info: TestInfo, receipt: Record<string, any>) {
+  const proof = receipt.gesture_paint;
+  // Keep the ordinary post-release capture, even if it is stale. Moving the
+  // released mouse is an explicit additional input, NOT proof that mouseup alone
+  // painted correctly on WebKit mobile emulation (see #183).
+  receipt.captures.push(await capture(page, info, 'exception-short-after-release.png'));
+  const park = { input: 'mouse-move', x: 0, y: 0, buttons: 0,
+    reason: 'post-release-paint-synchronization', target: 'noninteractive-page-corner' };
+  await page.mouse.move(park.x, park.y);
+  receipt.inputs.push(park);
+  await expect(node(page, 'interaction-order')).toHaveText('順序: B, A, C');
+  await settle(page);
+  const file = 'exception-short-after-action.png';
+  const path = info.outputPath(file);
+  const geometryPath = info.outputPath('gesture-paint-geometry.json');
+  writeFileSync(geometryPath, JSON.stringify(proof.geometry, null, 2));
+  await info.attach('gesture-paint-geometry.json', { path: geometryPath, contentType: 'application/json' });
+  let previousHash: string | undefined;
+  let captured: { file: string; bytes: number; sha256: string } | undefined;
+  proof.status = 'failed';
+  proof.attempts = [];
+  try {
+    await expect.poll(async () => {
+      const png = await page.screenshot({ path });
+      captured = { file, bytes: png.length, sha256: createHash('sha256').update(png).digest('hex') };
+      const oracle = spawnSync('python3', ['-S', '../python/gesture_paint.py',
+        info.outputPath(proof.before.file), path, geometryPath], { encoding: 'utf8' });
+      if (oracle.error || ![0, 1].includes(oracle.status!)) {
+        throw new Error(`Gesture paint oracle failed: ${oracle.error ?? oracle.stdout + oracle.stderr}`);
+      }
+      const pixels = JSON.parse(oracle.stdout);
+      const stable = previousHash === captured.sha256;
+      proof.attempts.push({ ...captured, stable, ...pixels });
+      previousHash = captured.sha256;
+      // Two identical frames alone can both be stale. Check the actual PNG's
+      // swapped card pixels against the distinct pre-drag cards from this run.
+      return stable && pixels.matches;
+    }, { timeout: 10_000, intervals: [100, 250, 500],
+      message: 'stable PNG must contain the same-run B/A card pixel permutation' }).toBe(true);
+    proof.status = 'verified';
+    return captured!;
+  } finally {
+    if (captured) {
+      proof.capture = captured;
+      await info.attach(file, { path, contentType: 'image/png' });
+    }
+  }
 }
 
 async function drag(page: Page, from: Locator, to: Locator, hold = 0) {
@@ -139,6 +189,17 @@ for (const id of [136, 137, 171, 173, 174, 183, 91, 109]) {
         await expect(run).toBeEnabled();
         receipt.result = await page.getByText(/55/).innerText();
       } else if (id === 171 || id === 173) {
+        if (info.project.name === 'mobile-webkit') {
+          // DPR=3 preserves equal pixel phase when these equal-size cards swap.
+          // This is a focused oracle for #183, not a cross-device pixel baseline.
+          receipt.gesture_paint = { method: 'same-run-card-permutation/1',
+            before: await capture(page, info, 'exception-short-before-action.png'),
+            geometry: { viewport: page.viewportSize(),
+              device_scale_factor: await page.evaluate(() => devicePixelRatio),
+              slots: [await node(page, 'interaction-item-A').boundingBox(),
+                await node(page, 'interaction-item-B').boundingBox()] } };
+          receipt.captures.push(receipt.gesture_paint.before);
+        }
         // Desktop mouse on every emulated profile; this is NOT touch-drag proof.
         receipt.inputs.push(await drag(page, node(page, 'interaction-item-A'),
           node(page, 'interaction-item-B'), id === 173 ? 700 : 0));
@@ -194,7 +255,9 @@ for (const id of [136, 137, 171, 173, 174, 183, 91, 109]) {
           receipt.clipboard = 'not tested: Chromium permissions required; geometry only';
         }
       }
-      receipt.captures.push(await capture(page, info, 'exception-short-after-action.png'));
+      receipt.captures.push(receipt.gesture_paint
+        ? await captureGesturePaint(page, info, receipt)
+        : await capture(page, info, 'exception-short-after-action.png'));
       if ([171, 173, 174, 183].includes(id)) {
         const last = node(page, 'interaction-item-C');
         // Selection uses CheckboxListTile identifiers instead of item cards.
