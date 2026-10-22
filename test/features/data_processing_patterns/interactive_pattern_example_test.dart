@@ -26,7 +26,6 @@ void main() {
 
   testWidgets('173 keeps A/B/C semantics identity across consecutive swaps', (tester) async {
     final handle = tester.ensureSemantics();
-    addTearDown(handle.dispose);
     await tester.pumpWidget(
       const MaterialApp(home: InteractivePatternExample(patternId: 173)),
     );
@@ -71,6 +70,8 @@ void main() {
     // A changed index: the second drag must follow the item, not old slot.
     await swap('A', 'C');
     verify(['B', 'C', 'A']);
+    // Flutter verifies semantics handle disposal before addTearDown callbacks.
+    handle.dispose();
   });
   testWidgets('174 inserts animated list item', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: InteractivePatternExample(patternId: 174)));
