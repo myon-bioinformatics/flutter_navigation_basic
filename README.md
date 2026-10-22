@@ -9,6 +9,12 @@ Dart / Flutter で書いた、画面遷移・ルーティング・共通UIの検
 
 提供された概念図の該当パネルです。画面・ルートの対応は `AppRouteRegistry`、パラメータ取得は `UrlParams` が担当します。図の各ターゲットはプロジェクト構成を示しており、全ターゲットの動作検証済みという意味ではありません。現在の構成と検証手順は以下を参照してください。
 
+### 課題・役割分担・得られるもの
+
+![flutter_navigation_basic の補足概念図: 画面遷移と共通UIの課題に対し、ルート設定・共通UI・検証と公開の役割を整理する](docs/images/concept-overview-v2.png)
+
+上の構成図を補足する、提供された「課題 → 役割分担 → 得られるもの」の図です。得られるものは設計上の狙いを示しており、全ターゲットで同等の動作や検証完了を保証するものではありません。
+
 ## Live Web Demo
 
 `main` への push 後、`.github/workflows/flutter-pages.yml` が Flutter Web ビルドを GitHub Pages に公開します。
