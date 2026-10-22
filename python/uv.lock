@@ -16,17 +16,23 @@ name = "flutter-navigation-basic-python-tooling"
 version = "0.0.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "pillow" },
     { name = "pytest" },
     { name = "pyyaml" },
 ]
 
+[package.dev-dependencies]
+fixtures = [
+    { name = "pillow" },
+]
+
 [package.metadata]
 requires-dist = [
-    { name = "pillow", specifier = ">=13.0.0" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pyyaml", specifier = ">=6.0.3" },
 ]
+
+[package.metadata.requires-dev]
+fixtures = [{ name = "pillow", specifier = ">=13.0.0" }]
 
 [[package]]
 name = "iniconfig"

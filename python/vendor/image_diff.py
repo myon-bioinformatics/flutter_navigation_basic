@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
 """Compare two images (files or zip members) and print one line: size, changed pixels, bbox, max delta.
 
-Needs Pillow (only dependency). Optional --clip X,Y,W,H in CSS px, scaled by
-image width / --viewport-width (screenshots taken at devicePixelRatio != 1).
+Needs Python >=3.11 and the vendored pillow_min module (stdlib only). Optional --clip X,Y,W,H in CSS px,
+scaled by image width / --viewport-width (screenshots taken at devicePixelRatio != 1).
 Source forms: PATH or ZIP::member. Exit 0 = identical (within --tolerance), 1 = differs, 2 = input error.
 """
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import io
 import math
 import os
 import sys
 import zipfile
+from pathlib import Path
 
 
 MAX_INPUT_BYTES = 64 * 1024 * 1024
+_PILLOW_MIN = Path(__file__).resolve().parent.parent / "vendor" / "pillow_min" / "pillow_min.py"
+_IMAGE_BACKEND = None
 
 
 def finite_positive(value: str) -> float:
@@ -28,12 +32,27 @@ def finite_positive(value: str) -> float:
     return number
 
 
-def _require_pillow_import():
-    try:
-        from PIL import Image  # noqa: F401
-    except ImportError:
-        print("image_diff: Pillow is required (pip install pillow)", file=sys.stderr)
-        raise SystemExit(2) from None
+def _require_image_backend():
+    global _IMAGE_BACKEND
+    if sys.version_info < (3, 11):
+        print("image_diff: Python >=3.11 is required for image features", file=sys.stderr)
+        raise SystemExit(2)
+    if _IMAGE_BACKEND is not None:
+        return _IMAGE_BACKEND
+    if not _PILLOW_MIN.is_file():
+        print(
+            "image_diff: vendored pillow_min.py is missing (see vendor.lock.json)",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+    spec = importlib.util.spec_from_file_location("pillow_min", _PILLOW_MIN)
+    if spec is None or spec.loader is None:
+        print("image_diff: failed to load vendored pillow_min.py", file=sys.stderr)
+        raise SystemExit(2)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    _IMAGE_BACKEND = module
+    return module
 
 
 def parse_clip(value: str) -> tuple[float, float, float, float]:
@@ -52,8 +71,8 @@ def parse_clip(value: str) -> tuple[float, float, float, float]:
 
 
 def load(spec: str):
-    _require_pillow_import()
-    from PIL import Image
+    backend = _require_image_backend()
+    Image = backend.Image
 
     if "::" in spec:
         archive_path, member = spec.split("::", 1)
@@ -100,8 +119,8 @@ def scaled_clip_box(
 
 
 def compare(image_a, image_b, clip=None, viewport_width=None, tolerance=0):
-    _require_pillow_import()
-    from PIL import ImageChops
+    backend = _require_image_backend()
+    ImageChops = backend.ImageChops
 
     if image_a.size != image_b.size:
         return {

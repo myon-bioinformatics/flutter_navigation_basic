@@ -131,6 +131,8 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
     assert lock["schema"] == "vendor-lock/1"
     expected = {
         ("myon-bioinformatics/browser-test-kit", "scripts/image_diff.py", "python/vendor/image_diff.py"),
+        ("myon-bioinformatics/Ironmate", "pillow_min.py", "python/vendor/pillow_min/pillow_min.py"),
+        ("myon-bioinformatics/Ironmate", "LICENSE", "python/vendor/pillow_min/Ironmate-LICENSE"),
         ("myon-bioinformatics/yourself", "yourself.py", "python/vendor/yourself.py"),
         ("myon-bioinformatics/yourself", "LICENSE", "python/vendor/yourself-LICENSE"),
         ("myon-bioinformatics/xprobe", "xprobe.py", "python/vendor/xprobe.py"),

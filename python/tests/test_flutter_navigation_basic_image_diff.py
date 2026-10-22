@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
-import os
+import json
 import subprocess
 import sys
 import textwrap
@@ -10,17 +11,19 @@ from pathlib import Path
 
 import pytest
 
-pytest.importorskip("PIL")
-
-from PIL import Image, ImageDraw
-
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "python/image_diff.py"
 VENDOR = SCRIPT.parent / "vendor/image_diff.py"
+PILLOW_MIN = SCRIPT.parent / "vendor/pillow_min/pillow_min.py"
 spec = importlib.util.spec_from_file_location("vendored_image_diff", VENDOR)
 image_diff = importlib.util.module_from_spec(spec)
 assert spec.loader
 spec.loader.exec_module(image_diff)
+
+pm_spec = importlib.util.spec_from_file_location("pillow_min", PILLOW_MIN)
+pillow_min = importlib.util.module_from_spec(pm_spec)
+assert pm_spec.loader
+pm_spec.loader.exec_module(pillow_min)
 
 
 def run_image_diff(*argv: str) -> subprocess.CompletedProcess[str]:
@@ -32,9 +35,19 @@ def run_image_diff(*argv: str) -> subprocess.CompletedProcess[str]:
     )
 
 
-def solid_rgba(size: tuple[int, int], color: tuple[int, int, int, int]) -> Image.Image:
-    image = Image.new("RGBA", size, color)
-    return image
+def solid_rgba(size: tuple[int, int], color: tuple[int, int, int, int]) -> pillow_min.Image.Image:
+    return pillow_min.Image.new("RGBA", size, color)
+
+
+def fill_rect(
+    image: pillow_min.Image.Image,
+    box: tuple[int, int, int, int],
+    color: tuple[int, int, int, int],
+) -> None:
+    x0, y0, x1, y1 = box
+    for y in range(y0, y1):
+        for x in range(x0, x1):
+            image.putpixel((x, y), color)
 
 
 @pytest.mark.parametrize("channel", range(4))
@@ -53,7 +66,7 @@ def test_each_rgba_channel_and_tolerance_boundary(tmp_path, channel):
     assert run_image_diff(str(left), str(right), "--tolerance", "5").returncode == 0
 
 
-def write_png(path: Path, image: Image.Image) -> None:
+def write_png(path: Path, image: pillow_min.Image.Image) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     image.save(path, format="PNG")
 
@@ -73,7 +86,7 @@ def test_identical_images_exit_zero(tmp_path: Path) -> None:
 def test_red_rect_diff_metrics(tmp_path: Path) -> None:
     base = solid_rgba((100, 50), (255, 255, 255, 255))
     changed = base.copy()
-    ImageDraw.Draw(changed).rectangle((20, 10, 29, 14), fill=(255, 0, 0, 255))
+    fill_rect(changed, (20, 10, 30, 15), (255, 0, 0, 255))
     left = tmp_path / "a.png"
     right = tmp_path / "b.png"
     write_png(left, base)
@@ -87,7 +100,7 @@ def test_red_rect_diff_metrics(tmp_path: Path) -> None:
 def test_clip_excluding_rect_exit_zero(tmp_path: Path) -> None:
     base = solid_rgba((100, 50), (255, 255, 255, 255))
     changed = base.copy()
-    ImageDraw.Draw(changed).rectangle((20, 10, 29, 14), fill=(255, 0, 0, 255))
+    fill_rect(changed, (20, 10, 30, 15), (255, 0, 0, 255))
     left = tmp_path / "a.png"
     right = tmp_path / "b.png"
     write_png(left, base)
@@ -101,8 +114,7 @@ def test_viewport_width_scales_clip(tmp_path: Path) -> None:
     """DPR=2: 780px-wide image with 390 CSS viewport; clip top bar in CSS coords."""
     base = solid_rgba((780, 200), (255, 255, 255, 255))
     changed = base.copy()
-    draw = ImageDraw.Draw(changed)
-    draw.rectangle((0, 120, 779, 199), fill=(0, 0, 255, 255))
+    fill_rect(changed, (0, 120, 780, 200), (0, 0, 255, 255))
     left = tmp_path / "a.png"
     right = tmp_path / "b.png"
     write_png(left, base)
@@ -121,8 +133,8 @@ def test_viewport_width_scales_clip(tmp_path: Path) -> None:
 
 def test_tolerance_boundary(tmp_path: Path) -> None:
     size = (2, 1)
-    a = Image.new("RGBA", size, (100, 100, 100, 255))
-    b = Image.new("RGBA", size, (100, 100, 100, 255))
+    a = pillow_min.Image.new("RGBA", size, (100, 100, 100, 255))
+    b = pillow_min.Image.new("RGBA", size, (100, 100, 100, 255))
     b.putpixel((0, 0), (105, 100, 100, 255))
     left = tmp_path / "a.png"
     right = tmp_path / "b.png"
@@ -204,30 +216,40 @@ def test_tolerance_out_of_range_exit_two(tmp_path: Path) -> None:
     assert run_image_diff(str(left), str(left), "--tolerance", "-1").returncode == 2
 
 
-def test_missing_pillow_exit_two(tmp_path: Path) -> None:
+def test_missing_pillow_min_exit_two(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    left = tmp_path / "a.png"
+    write_png(left, solid_rgba((4, 4), (0, 0, 0, 255)))
+    missing = tmp_path / "missing_pillow_min.py"
+    monkeypatch.setattr(image_diff, "_PILLOW_MIN", missing)
+    monkeypatch.setattr(image_diff, "_IMAGE_BACKEND", None)
+    with pytest.raises(SystemExit) as error:
+        image_diff.load(str(left))
+    assert error.value.code == 2
+
+
+def test_missing_pillow_min_cli_exit_two(tmp_path: Path) -> None:
     left = tmp_path / "a.png"
     write_png(left, solid_rgba((4, 4), (0, 0, 0, 255)))
     code = textwrap.dedent(
         f"""
-        import builtins
-        import runpy
+        import importlib.util
         import sys
-        _real = builtins.__import__
-        def _block(name, globals=None, locals=None, fromlist=(), level=0):
-            if name == "PIL" or name.startswith("PIL."):
-                raise ImportError("No module named 'PIL'")
-            return _real(name, globals, locals, fromlist, level)
-        builtins.__import__ = _block
-        sys.argv = [{repr(str(SCRIPT))}, {repr(str(left))}, {repr(str(left))}]
-        runpy.run_path({repr(str(SCRIPT))}, run_name="__main__")
+        from pathlib import Path
+        spec = importlib.util.spec_from_file_location("image_diff", {repr(str(VENDOR))})
+        mod = importlib.util.module_from_spec(spec)
+        assert spec.loader
+        spec.loader.exec_module(mod)
+        mod._PILLOW_MIN = Path({repr(str(tmp_path / "missing-pillow-min.py"))})
+        mod._IMAGE_BACKEND = None
+        raise SystemExit(mod.main([{repr(str(left))}, {repr(str(left))}]))
         """
     )
-    proc = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    proc = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, cwd=ROOT)
     assert proc.returncode == 2
-    assert proc.stderr.strip() == "image_diff: Pillow is required (pip install pillow)"
+    assert "pillow_min" in proc.stderr
 
 
-def _png_bytes(image: Image.Image) -> bytes:
+def _png_bytes(image: pillow_min.Image.Image) -> bytes:
     from io import BytesIO
 
     buf = BytesIO()
@@ -295,3 +317,14 @@ def test_negative_clip_coordinate_exit_two(tmp_path):
     proc = run_image_diff(str(path), str(path), "--clip", "-1,0,5,5")
     assert proc.returncode == 2
     assert "Traceback" not in proc.stderr
+
+
+def test_vendored_pillow_min_matches_lock() -> None:
+    lock = json.loads((ROOT / "python/vendor.lock.json").read_text(encoding="utf-8"))
+    entry = next(
+        e for e in lock["files"]
+        if e["destination"] == "python/vendor/pillow_min/pillow_min.py"
+    )
+    data = PILLOW_MIN.read_bytes()
+    assert entry["sha256"] == hashlib.sha256(data).hexdigest()
+    assert entry["commit"] == "b45ccd3e529aefe6519aa14e14bb63fa5873639d"

@@ -129,12 +129,30 @@
     },
     {
       "repository": "myon-bioinformatics/browser-test-kit",
-      "ref": "725f35900021f2fa8beecafe850cd5f7062b1ae5",
-      "commit": "725f35900021f2fa8beecafe850cd5f7062b1ae5",
+      "ref": "2ee9b584340954cb5a2618e6abd8f892544c467b",
+      "commit": "2ee9b584340954cb5a2618e6abd8f892544c467b",
       "source": "scripts/image_diff.py",
       "destination": "python/vendor/image_diff.py",
-      "blob_sha": "7c3a44314eda81a81b80f08fe060dc6581fffa22",
-      "sha256": "7efc94609644eced61f13e9af3c7a47061e4c9ba03bf0664c2266a58d1302191"
+      "blob_sha": "590d5fcdbf39fd6d2a727e0a3667f83a46332e4a",
+      "sha256": "1e7cfe0f3b5ec01274fa955d15bdc5ba3573eece62e0077d8698d14897259b13"
+    },
+    {
+      "repository": "myon-bioinformatics/Ironmate",
+      "ref": "b45ccd3e529aefe6519aa14e14bb63fa5873639d",
+      "commit": "b45ccd3e529aefe6519aa14e14bb63fa5873639d",
+      "source": "pillow_min.py",
+      "destination": "python/vendor/pillow_min/pillow_min.py",
+      "blob_sha": "77516d14bce1bd371d16df98574cf8d5e9ed3207",
+      "sha256": "987a09e19ebd1d3d970779bf46917568ad058490d7ac9a84959ec2218ced836b"
+    },
+    {
+      "repository": "myon-bioinformatics/Ironmate",
+      "ref": "b45ccd3e529aefe6519aa14e14bb63fa5873639d",
+      "commit": "b45ccd3e529aefe6519aa14e14bb63fa5873639d",
+      "source": "LICENSE",
+      "destination": "python/vendor/pillow_min/Ironmate-LICENSE",
+      "blob_sha": "4ec4989b801bf1a3df6184d21f79e6e7ed5931f6",
+      "sha256": "15f66204c4a6a1ce0c94f0ed4319ff9400f872e85fd32c95f21695c2f231af59"
     },
     {
       "repository": "myon-bioinformatics/browser-test-kit",
