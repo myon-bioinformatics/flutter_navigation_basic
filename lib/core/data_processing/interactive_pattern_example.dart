@@ -57,6 +57,9 @@ class _InteractivePatternExampleState extends State<InteractivePatternExample> {
     children: [
       for (final item in _items)
         DragTarget<String>(
+          // Preserve drag state and semantics identity for each logical item
+          // when the grid swaps their positions.
+          key: ValueKey('grid-target-$item'),
           onWillAcceptWithDetails: (details) => details.data != item,
           onAcceptWithDetails: (details) => setState(() {
             final a = _items.indexOf(details.data);
@@ -74,6 +77,8 @@ class _InteractivePatternExampleState extends State<InteractivePatternExample> {
             ),
             childWhenDragging: const SizedBox.shrink(),
             child: Semantics(
+              // Keep each card's identifier on its own semantics node.
+              container: true,
               identifier: 'interaction-item-$item',
               child: Card(
                 child: Center(child: Text(item)),

@@ -75,8 +75,23 @@ def _plan(workflow, *, python, playwright, validation_browser=False, e2e=False):
 def _assert_playwright_producer(workflow):
     producer = workflow["jobs"]["playwright"]
     run = _step(producer, "Serve web build and run Playwright")
+    install = _step(producer, "Install Playwright")
+    # Slow, successful cold installs must leave room for the full five-profile
+    # suite and uploads; a stuck install still fails within its own bound.
+    assert producer["timeout-minutes"] == 90
+    assert install["timeout-minutes"] == 60
+    assert install.get("if") is None
+    assert install.get("continue-on-error", False) is False
     assert producer.get("continue-on-error", False) is False
     assert run.get("continue-on-error", False) is False
+    portable = next(line for line in run["run"].splitlines()
+                    if "python3 ../python/playwright.py test " in line)
+    for project in ("chromium", "firefox", "webkit", "mobile-chromium", "mobile-webkit"):
+        assert f"--project {project}" in portable
+    assert "tests/grid_semantics.spec.ts" in portable
+    assert "--grep @portable" in portable
+    assert "--pass-with-no-tests" not in portable
+    assert "--max-failures" not in portable
     # Each invocation must own one expected file; a shared path would overwrite.
     for report in PLAYWRIGHT_REPORTS:
         assert run["run"].count("PLAYWRIGHT_JUNIT_OUTPUT_FILE=\"$junit_dir/" + report.split("/")[1] + "\"") == 1, report
@@ -289,6 +304,14 @@ def test_failure_evidence_contract_rejects_unsafe_mutations():
             (name + " retains raw for 90 days", path + ("with", "retention-days"), 90),
         ])
     playwright = workflow["jobs"]["playwright"]
+    install_index = playwright["steps"].index(_step(playwright, "Install Playwright"))
+    install_path = ("jobs", "playwright", "steps", install_index)
+    mutations.extend([
+        ("job expires during a slow install", ("jobs", "playwright", "timeout-minutes"), 30),
+        ("install consumes the test budget", install_path + ("timeout-minutes",), 90),
+        ("install masks failure", install_path + ("continue-on-error",), True),
+        ("install can be skipped", install_path + ("if",), "false"),
+    ])
     for name in ("junit-playwright-e2e",):
         index = playwright["steps"].index(_upload(playwright, name))
         path = ("jobs", "playwright", "steps", index)
