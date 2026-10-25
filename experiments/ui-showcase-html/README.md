@@ -36,8 +36,10 @@ Known limits:
 - Native favorite uses aria-pressed; Flutter exposes aria-current. Their accessibility trees are intentionally not byte-identical.
 - Native system-font fallback, original SVG icons, approximate colors and native select rendering differ from Flutter.
 - Below900px the rail is hidden; at1180px it is256px plus divider. The intermediate80px rail is provisional until measured.
-- Fixed chrome consumes338px at compact width and258px at wide width. Evaluation requires larger heights; short-landscape and zoom/reflow support are not claimed.
+- Normal fixed chrome consumes 338px at compact width and 258px at rail width. At heights of 458px or less (compact), or 378px or less (rail), the native experiment instead lets its document scroll and its Overview grow with content, with a 120px minimum body track. This avoids an unreachable zero-height body. Header/footer are not fixed in this fallback, and Flutter-equivalent geometry is not claimed there.
 - No cache, async state framework, general router, persisted favorites or production component extraction is added.
+
+The separate native-only responsive project checks the 899/900px and 1179/1180px boundaries at 757px height, a 320×500px narrow window, and short windows of 390×320px and 900×240px. It checks clipping/overlap, measured pointer hits, keyboard favorite operation, real wheel/PageDown/End scrolling, and reachability of the final text and footer. It does not duplicate the two existing Flutter comparison projects or assert font/pixel equality. These new cases are test coverage, not a claim that they passed before CI runs; arbitrary zoom, touch input, and assistive technology remain outside the evidence.
 
 ## Publication safety
 

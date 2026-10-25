@@ -1,0 +1,269 @@
+'use strict';
+const path = require('node:path');
+const fs = require('node:fs');
+const { createHash } = require('node:crypto');
+const { createRequire } = require('node:module');
+const { pathToFileURL } = require('node:url');
+const fromE2E = createRequire(path.join(__dirname, '../../e2e/package.json'));
+const { test, expect } = fromE2E('@playwright/test');
+const kit = import(pathToFileURL(path.join(__dirname, '../../e2e/utils/interaction.mjs')).href);
+const catalogue = JSON.parse(fs.readFileSync(path.resolve(process.env.AUDIT_CATALOGUE || 'build/flutter-pages-audit/catalogue.json'), 'utf8'));
+const REFERENCE_SHA = '9b38f3e935e9e171cbacc3af63f539ddce9db86b';
+const BASE = 'https://myon-bioinformatics.github.io/flutter_navigation_basic/';
+if (catalogue.schema !== 'flutter-pages-audit-catalogue/1' || !catalogue.routes?.length || catalogue.referenceSha !== REFERENCE_SHA) {
+  throw new Error('Missing, empty, or stale audit catalogue; never allow zero-coverage success');
+}
+const ids = ['shared-header-title', 'shared-header-home', 'shared-header-favorite', 'shared-header-menu'];
+const node = (page, id) => page.locator(`[flt-semantics-identifier="${id}"]`);
+const favorite = page => node(page, 'shared-header-favorite').getByRole('button');
+const boxDelta = (a, b) => !a || !b ? Infinity : Math.max(...['x', 'y', 'width', 'height'].map(k => Math.abs(a[k] - b[k])));
+async function settle(page) {
+  await page.waitForTimeout(300);
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+}
+async function bootstrap(page, record) {
+  await page.locator('flt-glass-pane').waitFor({ state: 'attached', timeout: 20_000 });
+  if (await page.locator('flt-semantics').count() === 0) {
+    const bootstrap = page.locator('flt-semantics-placeholder[aria-label="Enable accessibility"]');
+    await bootstrap.waitFor({ state: 'attached', timeout: 10_000 });
+    await bootstrap.focus();
+    await page.keyboard.press('Enter');
+    record.inputs.push({ input: 'Enter', purpose: 'accessibility bootstrap only; never inject favorite focus' });
+  }
+  await node(page, 'shared-header-title').waitFor({ state: 'visible', timeout: 8_000 });
+  await settle(page);
+}
+async function check(record, name, fn) {
+  try { record.checks[name] = { status: 'passed', ...await fn() }; }
+  catch (error) { record.checks[name] = { status: 'failed', reason: String(error).slice(0, 3000) }; }
+}
+async function capture(page, info, record, name) {
+  const bytes = await page.screenshot({ path: info.outputPath(name), timeout: 5_000 });
+  record.captures.push({ file: name, bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') });
+}
+async function baseline(request) {
+  const response = await request.get(`${BASE}assets/assets/diagnostics/build_metadata.json`, { headers: { 'Cache-Control': 'no-cache' }, timeout: 15_000 });
+  expect(response.ok(), 'published build metadata must be readable').toBe(true);
+  const sha = (await response.json()).repository?.revision?.sha;
+  expect(sha, 'STALE_BASELINE: stop and explicitly review a changed public deployment; never auto-update').toBe(REFERENCE_SHA);
+  return sha;
+}
+async function geometry(page) {
+  return page.evaluate(() => {
+    const box = el => { const b = el.getBoundingClientRect(); return { x: b.x, y: b.y, width: b.width, height: b.height }; };
+    const intersection = (a, b) => ({ x: Math.max(a.x, b.x), y: Math.max(a.y, b.y),
+      width: Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x)),
+      height: Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y)) });
+    const viewport = { x: 0, y: 0, width: innerWidth, height: innerHeight };
+    const clipped = el => {
+      let result = intersection(box(el), viewport);
+      for (let parent = el.parentElement; parent; parent = parent.parentElement) {
+        const style = getComputedStyle(parent);
+        if (/(hidden|clip|scroll|auto)/.test(`${style.overflowX} ${style.overflowY}`)) result = intersection(result, box(parent));
+      }
+      return result;
+    };
+    const title = document.querySelector('[flt-semantics-identifier="shared-header-title"]');
+    let headerBottom = 56;
+    for (let parent = title; parent; parent = parent.parentElement) {
+      const b = box(parent);
+      if (parent.tagName === 'FLT-SEMANTICS' && b.y >= -1 && b.y <= 1 && b.width >= innerWidth * .8 && b.height < innerHeight / 2) headerBottom = Math.max(headerBottom, b.height);
+    }
+    const secondary = document.querySelector('[flt-semantics-identifier="shared-header-secondary"]');
+    if (secondary) { const b = box(secondary); headerBottom = Math.max(headerBottom, b.y + b.height); }
+    const door = document.querySelector('[flt-semantics-identifier="tool-door-dropdown"]');
+    let footer = door ? box(door) : null;
+    for (let parent = door?.parentElement; parent; parent = parent.parentElement) {
+      const b = box(parent);
+      if (parent.tagName === 'FLT-SEMANTICS' && b.y >= headerBottom && b.width >= innerWidth * .6 && b.height < innerHeight * .5) footer = b;
+    }
+    const envelope = { x: 0, y: headerBottom, width: innerWidth, height: (footer?.y ?? innerHeight - 24) - headerBottom };
+    const header = {};
+    for (const id of ['shared-header-title', 'shared-header-home', 'shared-header-favorite', 'shared-header-menu', 'shared-header-secondary']) {
+      const matches = [...document.querySelectorAll(`[flt-semantics-identifier="${id}"]`)];
+      header[id] = { count: matches.length, box: matches.length === 1 ? box(matches[0]) : null, text: matches.length === 1 ? matches[0].textContent : null };
+    }
+    const semantics = [...document.querySelectorAll('flt-semantics')];
+    const regions = semantics.map(el => {
+      const b = box(el), css = getComputedStyle(el);
+      return { id: el.id, box: b, clip: clipped(el), overflowY: css.overflowY, overflowX: css.overflowX,
+        scrollTop: el.scrollTop, scrollHeight: el.scrollHeight, clientHeight: el.clientHeight, scrollWidth: el.scrollWidth, clientWidth: el.clientWidth,
+        descendantBounds: [...el.querySelectorAll('flt-semantics')].filter(child => !child.querySelector('flt-semantics')).map(box) };
+    }).filter(r => ['auto', 'scroll'].includes(r.overflowY) && r.box.y >= headerBottom - 1 && r.box.y < headerBottom + envelope.height && r.clip.width >= 30 && r.clip.height >= 12);
+    const leaves = semantics.filter(el => !el.querySelector('flt-semantics') && !el.closest('[flt-semantics-identifier^="shared-header-"]')).map(el => ({
+      id: el.id, role: el.getAttribute('role'), label: (el.getAttribute('aria-label') || el.textContent || '').slice(0, 160), box: box(el), clip: clipped(el),
+    })).filter(item => item.box.y >= headerBottom - 1 && item.box.y < headerBottom + envelope.height && item.clip.width > 0 && item.clip.height > 0);
+    const surface = document.scrollingElement || document.documentElement;
+    return { viewport: { width: innerWidth, height: innerHeight, deviceScaleFactor: devicePixelRatio }, header, footer, envelope, regions, leaves,
+      rootOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1 || surface.scrollWidth > surface.clientWidth + 1,
+      bodyWidthDiagnostic: { scrollWidth: document.body.scrollWidth, clientWidth: document.body.clientWidth },
+      // Invisible semantics labels are not painted-glyph bounds. Do not gate on their text scrollWidth.
+      semanticsCount: semantics.length };
+  });
+}
+async function regionWitness(page, id) {
+  return page.evaluate(id => {
+    const el = document.getElementById(id);
+    if (!el) return null;
+    const b = el.getBoundingClientRect();
+    return { scrollTop: el.scrollTop, scrollHeight: el.scrollHeight, clientHeight: el.clientHeight,
+      box: { x: b.x, y: b.y, width: b.width, height: b.height },
+      children: [...el.querySelectorAll('flt-semantics')].filter(child => !child.querySelector('flt-semantics')).map(child => {
+        const r = child.getBoundingClientRect(); return [child.id, r.x, r.y, r.width, r.height];
+      }) };
+  }, id);
+}
+function moved(a, b) { return !!a && !!b && (Math.abs(a.scrollTop - b.scrollTop) > 1 || JSON.stringify(a.children) !== JSON.stringify(b.children)); }
+async function scrollProof(page, record, before) {
+  const overflowing = before.regions.filter(r => r.scrollHeight > r.clientHeight + 2);
+  if (!overflowing.length) {
+    const fullyContained = r => r.clip.width >= r.box.width - 1 && r.clip.height >= r.box.height - 1 && r.descendantBounds.length > 0 && r.descendantBounds.every(b => b.width > 0 && b.height > 0 && b.x >= r.box.x - 1 && b.y >= r.box.y - 1 && b.x + b.width <= r.box.x + r.box.width + 1 && b.y + b.height <= r.box.y + r.box.height + 1);
+    if (before.regions.length > 0 && before.regions.every(r => r.scrollHeight <= r.clientHeight + 2 && fullyContained(r))) {
+      return { status: 'not_applicable', reason: 'Every identified vertical semantics region has no overflow and its complete exposed leaf bounds fit its region. Paint and undisclosed content remain separately unverified.', evidence: { fits: true, overflow: false, scope: 'exposed semantics only', regions: before.regions } };
+    }
+    return { status: 'unverified', reason: 'No identifiable overflowing body region or positive fit evidence; no scroll success inferred.' };
+  }
+  const results = [];
+  for (const region of overflowing.slice(0, 4)) {
+    const x = Math.floor(region.clip.x + Math.min(8, region.clip.width / 2));
+    const y = Math.floor(region.clip.y + region.clip.height / 2);
+    const start = await regionWitness(page, region.id);
+    await page.mouse.move(x, y); await page.mouse.wheel(0, 240); await settle(page);
+    record.inputs.push({ input: 'wheel', x, y, deltaY: 240, region: region.id });
+    const after = await regionWitness(page, region.id);
+    let boundary = false, previous = after, current = after;
+    const steps = [];
+    if (moved(start, after)) {
+      for (let attempt = 0; attempt < 4; attempt++) {
+        const deltaY = Math.min(20_000, Math.max(480, (current?.scrollHeight || 0) - (current?.clientHeight || 0) - (current?.scrollTop || 0) + 240));
+        await page.mouse.wheel(0, deltaY); await settle(page);
+        current = await regionWitness(page, region.id);
+        steps.push({ deltaY, after: current }); record.inputs.push({ input: 'wheel', x, y, deltaY, region: region.id });
+        if (current && previous && !moved(previous, current)) {
+          boundary = current.scrollHeight - current.clientHeight - current.scrollTop <= 2;
+          break; // A stuck gesture with remaining extent is unverified, never an end.
+        }
+        previous = current;
+      }
+    }
+    results.push({ id: region.id, start, after, moved: moved(start, after), boundaryObserved: boundary, end: current, steps });
+  }
+  const after = await geometry(page);
+  expect(boxDelta(before.header['shared-header-title'].box, after.header['shared-header-title'].box), 'header remains fixed during body wheel input').toBeLessThanOrEqual(1);
+  if (before.footer) expect(boxDelta(before.footer, after.footer), 'observed footer remains fixed during body wheel input').toBeLessThanOrEqual(1);
+  record.observations.afterScroll = after;
+  const complete = overflowing.length <= 4 && results.every(r => r.moved && r.boundaryObserved) && after.leaves.some(leaf => leaf.clip.height >= 12 && leaf.clip.width >= 30);
+  return { status: complete ? 'passed' : 'unverified', reason: complete ? 'Real wheel moved each observed vertical body region and reached a stable end with visible content; fixed chrome retained.' : 'Bounded wheel probe did not establish movement/end for every observed region; not treated as fit or success.', evidence: { results, observedRegions: overflowing.length, fixedHeader: true, fixedFooter: !!before.footer, scope: 'exposed vertical semantics regions, not every page-specific action' } };
+}
+async function selected(page, value) {
+  await expect(favorite(page)).toHaveText(value ? 'Remove favorite' : 'Favorite this page');
+  await expect(favorite(page)).toHaveAttribute('aria-current', String(value));
+}
+
+for (const entry of catalogue.routes) test(`observe public route ${entry.route}`, async ({ page, browser, request }, info) => {
+  const viewport = catalogue.viewports.find(item => item.id === info.project.name);
+  if (!viewport) throw new Error('Unknown viewport; coverage cannot be inferred');
+  const record = { schema: 'flutter-pages-audit/1', route: entry.route, canonical: entry.canonical, alias: entry.alias,
+    viewport, referenceSha: REFERENCE_SHA, candidateSha: process.env.CANDIDATE_SHA || null,
+    servedShaBefore: null, servedShaAfter: null, browserVersion: browser.version(), playwrightVersion: fromE2E('@playwright/test/package.json').version,
+    runId: process.env.GITHUB_RUN_ID || null, checks: {}, observations: {}, captures: [], inputs: [], errors: [] };
+  const runtimeErrors = [], requests = [], blocked = [];
+  page.on('pageerror', error => runtimeErrors.push(error.message));
+  page.on('dialog', async dialog => { record.errors.push({ kind: 'unexpected-dialog', type: dialog.type() }); await dialog.dismiss(); });
+  page.on('request', r => { const u = new URL(r.url()); requests.push({ method: r.method(), origin: u.origin, path: u.pathname }); });
+  // No generic explorer, form submission, clipboard/file access, persistent settings, or privileged permission grant.
+  await page.route('**/*', route => {
+    if (['GET', 'HEAD', 'OPTIONS'].includes(route.request().method())) return route.continue();
+    blocked.push({ method: route.request().method(), url: new URL(route.request().url()).origin });
+    return route.abort('blockedbyclient');
+  });
+  try {
+    await check(record, 'build_identity', async () => { record.servedShaBefore = await baseline(request); });
+    if (record.checks.build_identity.status !== 'passed') throw new Error('Pinned baseline could not be established; route checks not attempted');
+    await check(record, 'navigation', async () => {
+      const response = await page.goto(`${BASE}#${entry.route}`);
+      expect(response?.ok()).toBe(true); await bootstrap(page, record);
+      const actual = new URL(page.url()).hash.slice(1) || '/';
+      expect([entry.route, entry.canonical]).toContain(actual);
+      const title = await node(page, 'shared-header-title').innerText();
+      expect(title.trim().endsWith(` ${entry.emoji}`), 'route-specific page identity must match catalogue, not a fallback Home').toBe(true);
+      record.observations.navigation = { requested: entry.route, actual, title };
+    });
+    if (record.checks.navigation.status !== 'passed') throw new Error('Route identity could not be established; dependent checks not attempted');
+    await capture(page, info, record, 'initial.png');
+    const first = await geometry(page); record.observations.initial = first;
+    const inventory = await (await kit).inventory(page, { selector: '[flt-semantics-identifier], [role="button"], [role="textbox"], [role="checkbox"]', limit: 2000 });
+    record.observations.controlInventory = inventory;
+    await check(record, 'viewport', async () => { expect(first.viewport).toEqual({ width: viewport.width, height: viewport.height, deviceScaleFactor: viewport.deviceScaleFactor }); });
+    await check(record, 'header_geometry', async () => {
+      expect(first.rootOverflow, 'no actual horizontal root overflow; body-label expansion is diagnostic only').toBe(false);
+      for (const id of ids) {
+        const { count, box } = first.header[id]; expect(count).toBe(1); expect(box).not.toBeNull();
+        expect(box.width).toBeGreaterThan(0); expect(box.height).toBeGreaterThan(0);
+        expect(box.x).toBeGreaterThanOrEqual(-1); expect(box.y).toBeGreaterThanOrEqual(-1);
+        expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 1); expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 1);
+        if (id !== ids[0]) { expect(box.width).toBeGreaterThanOrEqual(39); expect(box.height).toBeGreaterThanOrEqual(39); }
+      }
+      for (let i = 1; i < ids.length; i++) expect(first.header[ids[i - 1]].box.x + first.header[ids[i - 1]].box.width, 'common row regions must not overlap').toBeLessThanOrEqual(first.header[ids[i]].box.x + 1);
+      const secondary = first.header['shared-header-secondary'];
+      if (secondary.count) { expect(secondary.count).toBe(1); expect(secondary.box.y).toBeGreaterThanOrEqual(48); expect(secondary.box.width).toBeLessThanOrEqual(viewport.width + 1); }
+    });
+    await check(record, 'body_geometry', async () => {
+      expect(inventory.truncated, 'control observation must not silently truncate').toBe(false);
+      expect(first.envelope.height, 'positive usable body envelope').toBeGreaterThanOrEqual(32);
+      expect(first.leaves.some(leaf => leaf.clip.width >= 30 && leaf.clip.height >= 12), 'body exposes a usable visible content segment, not just an offscreen box').toBe(true);
+      for (const region of first.regions) {
+        expect(region.clip.width).toBeGreaterThanOrEqual(30); expect(region.clip.height).toBeGreaterThanOrEqual(12);
+        expect(region.box.x).toBeGreaterThanOrEqual(-1); expect(region.box.x + region.box.width).toBeLessThanOrEqual(viewport.width + 1);
+      }
+      return { evidence: { scope: 'measured header/footer envelope and clipped exposed body/scroll regions; not a painted text or complete-control oracle' } };
+    });
+    await check(record, 'favorite_keyboard', async () => {
+      await selected(page, false);
+      const focus = [];
+      for (let tabs = 1; tabs <= 20; tabs++) {
+        await page.keyboard.press('Tab'); await settle(page);
+        const current = await favorite(page).evaluate(target => ({ target: document.activeElement === target || target.contains(document.activeElement), id: document.activeElement?.id || null, role: document.activeElement?.getAttribute('role'), label: document.activeElement?.getAttribute('aria-label') }));
+        focus.push({ tabs, ...current }); if (current.target) break;
+      }
+      record.observations.focus = focus; await expect(favorite(page), 'real Tab traversal reaches favorite without injected focus').toBeFocused();
+      for (const [key, value] of [['Space', true], ['Enter', false]]) {
+        await page.keyboard.press(key); await settle(page); await selected(page, value); await expect(favorite(page)).toBeFocused();
+        record.inputs.push({ input: key, purpose: 'favorite keyboard toggle', selected: value });
+      }
+      await capture(page, info, record, 'keyboard-focus.png');
+      return { evidence: { focus, retained: true, visibleFocusPaint: 'screenshot only; not pixel-asserted' } };
+    });
+    await check(record, 'favorite_pointer', async () => {
+      await selected(page, false);
+      for (const value of [true, false]) {
+        record.inputs.push(await (await kit).press(page, favorite(page), { touch: false }));
+        await page.mouse.move(0, 0); await settle(page); await selected(page, value);
+      }
+    });
+    await check(record, 'favorite_reset', async () => {
+      await selected(page, false); record.inputs.push(await (await kit).press(page, favorite(page), { touch: false }));
+      await selected(page, true); await page.reload(); await bootstrap(page, record); await selected(page, false);
+      return { evidence: { reloadWhileSelected: true } };
+    });
+    const beforeScroll = await geometry(page);
+    await check(record, 'scroll', () => scrollProof(page, record, beforeScroll));
+    record.checks.page_action = { status: 'unverified', reason: 'Page-specific form, navigation, file, clipboard, networking and destructive controls are inventoried but not arbitrarily activated. Only the shared favorite has a universal safe action contract.' };
+    record.checks.painted_text_overflow = { status: 'unverified', reason: 'Flutter semantics boxes do not certify painted text/icon clipping or every overlapping element. Screenshots are evidence for follow-up review, not automatic pixel-parity approval.' };
+  } catch (error) { record.errors.push({ kind: 'audit-harness', message: String(error) }); }
+  finally {
+    await check(record, 'runtime_errors', async () => { expect(runtimeErrors, 'no uncaught browser errors').toEqual([]); expect(blocked, 'unexpected automatic non-read-only request was blocked, not silently tested').toEqual([]); });
+    try { record.servedShaAfter = await baseline(request); }
+    catch (error) { record.checks.build_identity = { status: 'failed', reason: String(error) }; }
+    for (const name of catalogue.requiredChecks) if (!record.checks[name]) record.checks[name] = { status: 'unverified', reason: 'An earlier stage prevented this check; not success or not-applicable.' };
+    for (const name of ['page_action', 'painted_text_overflow']) if (!record.checks[name]) record.checks[name] = { status: 'unverified', reason: 'Not reached; no success inferred.' };
+    try { await capture(page, info, record, 'final.png'); } catch (error) { record.errors.push({ kind: 'capture', message: String(error) }); }
+    record.network = { requests, blocked }; record.runtimeErrors = runtimeErrors;
+    record.status = record.errors.length || catalogue.requiredChecks.some(name => ['failed', 'unverified'].includes(record.checks[name].status)) ? 'incomplete_or_failed' : 'common_contract_passed';
+    const file = info.outputPath('audit-receipt.json'); fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, JSON.stringify(record, null, 2) + '\n');
+    await info.attach('audit-receipt', { path: file, contentType: 'application/json' });
+    console.log('FLUTTER_PAGE_AUDIT ' + JSON.stringify({ route: record.route, canonical: record.canonical, viewport: viewport.id, status: record.status, checks: Object.fromEntries(Object.entries(record.checks).map(([key, value]) => [key, { status: value.status, ...(value.status === 'failed' ? { reason: value.reason } : {}) }])) }));
+  }
+  expect(record.errors, 'capture, dialog, and audit harness errors cannot become a passed browser case').toEqual([]);
+  expect(catalogue.requiredChecks.filter(name => ['failed', 'unverified'].includes(record.checks[name].status)), 'required failed/unverified checks stay visible as failures; optional unverified checks are separately aggregated').toEqual([]);
+});
