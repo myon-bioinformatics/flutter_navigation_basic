@@ -264,6 +264,8 @@ test('Flutter worker policy preserves light capacity and explicit overrides @por
 for (const viewport of [{ width: 390, height: 500 }, { width: 1180, height: 757 }]) {
   for (const input of ['mouse', 'keyboard'] as const) {
     test(`Screen6 search stays inside body ${viewport.width}x${viewport.height} ${input} @portable`, async ({ page }, testInfo) => {
+      test.skip(input === 'mouse' && !!testInfo.project.use.isMobile,
+        'Mouse/wheel contract uses desktop pointer projects; mobile touch is separate.');
       await page.setViewportSize(viewport);
       await navigateToScreen(page, 6);
       const body = page.locator('[flt-semantics-identifier="screen6-body"]');
@@ -285,6 +287,8 @@ for (const viewport of [{ width: 390, height: 500 }, { width: 1180, height: 757 
         for (let attempt = 0; attempt < 40; attempt++) {
           if (await search.evaluate(el => el.matches(':focus'))) break;
           await page.keyboard.press('Tab');
+          // Flutter focus changes settle on a frame, especially in WebKit.
+          await page.waitForTimeout(100);
         }
         await expect(search).toBeFocused();
       }
