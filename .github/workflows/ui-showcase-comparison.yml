@@ -1,0 +1,67 @@
+name: UI Showcase HTML comparison
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/ui-showcase-html/**'
+      - 'e2e/package.json'
+      - 'e2e/utils/interaction.mjs'
+      - '.github/workflows/ui-showcase-comparison.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ui-showcase-comparison-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CANDIDATE_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Read pinned browser-test-kit adapter implementation
+        uses: actions/checkout@v7
+        with:
+          repository: myon-bioinformatics/browser-test-kit
+          ref: f37c438a5285a03b39adda052ad14598a2ca8966
+          path: .reference-kit
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Run dependency-free state and real adapter-reader regressions
+        run: |
+          node --test experiments/ui-showcase-html/state.test.cjs
+          python3 -S experiments/ui-showcase-html/adapter.test.py
+      - name: Install the existing E2E dependency and Chromium
+        # The repository does not currently track an e2e npm lockfile. Keep
+        # that package unchanged and record the resolved version below.
+        run: |
+          npm install --prefix e2e --package-lock=false
+          npm exec --prefix e2e -- playwright install --with-deps chromium
+      - name: Record runtime and dependency versions
+        run: |
+          mkdir -p build/ui-showcase-comparison
+          node -e 'const p = require("./e2e/node_modules/@playwright/test/package.json"); console.log(JSON.stringify({node: process.version, playwright: p.version, candidateSha: process.env.CANDIDATE_SHA, workflowEventSha: process.env.GITHUB_SHA}, null, 2))' > build/ui-showcase-comparison/runtime.json
+      - name: Compare the local HTML fixture with the pinned read-only Flutter page
+        env:
+          PLAYWRIGHT_HTML_OPEN: never
+        run: npm exec --prefix e2e -- playwright test --config experiments/ui-showcase-html/playwright.config.cjs
+      - name: Preserve measurements, screenshots, failures, and HTML report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ui-showcase-comparison
+          path: build/ui-showcase-comparison/
+          if-no-files-found: warn
+          retention-days: 7

@@ -1,0 +1,25 @@
+{
+  "schema": "btk-platform-adapter/1",
+  "id": "native-ui-showcase-prototype",
+  "url": "http://127.0.0.1:8765/index.html",
+  "flutter_semantics": false,
+  "provenance": {
+    "path": "provenance.json",
+    "field": [
+      "reference_revision"
+    ]
+  },
+  "elements": [
+    "[data-testid=\"shared-header-title\"]",
+    "[data-testid=\"shared-header-home\"]",
+    "[data-testid=\"shared-header-favorite\"]",
+    "[data-testid=\"shared-header-menu\"]"
+  ],
+  "click": {
+    "target": "[data-testid=\"shared-header-favorite\"]",
+    "observe": "[data-testid=\"shared-header-favorite\"]",
+    "attribute": "aria-label",
+    "before": "Favorite this page",
+    "after": "Remove favorite"
+  }
+}

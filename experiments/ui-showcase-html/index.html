@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UI Showcase · HTML comparison prototype</title>
+  <link rel="stylesheet" href="vendor/web-ui/tokens.css">
+  <link rel="stylesheet" href="vendor/web-ui/base.css">
+  <link rel="stylesheet" href="vendor/web-ui/components.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="state.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body data-ui-theme="modern">
+  <svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="icon-back" viewBox="0 0 24 24"><path d="M19 12H5m7-7-7 7 7 7"/></symbol>
+    <symbol id="icon-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7M6 9v11h4v-7h4v7h4V9"/></symbol>
+    <symbol id="icon-star" viewBox="0 0 24 24"><path d="m12 3 2.8 6 6.5.8-4.8 4.5 1.3 6.5-5.8-3.3-5.8 3.3 1.3-6.5L2.7 9.8 9.2 9Z"/></symbol>
+    <symbol id="icon-menu" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></symbol>
+    <symbol id="icon-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1.6-3.2 1.8 1.8 0 0 1 1.4-2.9h2A3 3 0 0 0 21 12a9 9 0 0 0-9-9Z"/><circle cx="7" cy="10" r=".8"/><circle cx="10" cy="6.8" r=".8"/><circle cx="15" cy="7.5" r=".8"/><circle cx="17.2" cy="11" r=".8"/></symbol>
+    <symbol id="icon-brightness" viewBox="0 0 24 24"><path d="m12 2 3 3 4 .2.2 4L22 12l-2.8 2.8-.2 4-4 .2-3 3-3-3-4-.2-.2-4L2 12l2.8-2.8.2-4L9 5Z"/><path d="M12 6a6 6 0 0 1 0 12Z"/></symbol>
+    <symbol id="icon-sections" viewBox="0 0 24 24"><path d="M3 4h18v16H3ZM8 4v16M3 9h18M3 15h18"/></symbol>
+    <symbol id="icon-overview" viewBox="0 0 24 24"><path d="M3 3h7v9H3ZM14 3h7v5h-7ZM3 16h7v5H3ZM14 12h7v9h-7Z"/></symbol>
+    <symbol id="icon-components" viewBox="0 0 24 24"><path d="M3 3h6v6H3ZM3 15h6v6H3ZM15 15h6v6h-6ZM17 2l5 5-5 5-5-5Z"/></symbol>
+    <symbol id="icon-data" viewBox="0 0 24 24"><path d="M3 4h18v16H3ZM3 9h18M9 9v11M15 9v11"/></symbol>
+    <symbol id="icon-media" viewBox="0 0 24 24"><path d="M3 4h18v16H3Zm2 13 5-6 4 4 2-2 3 4"/></symbol>
+    <symbol id="icon-responsive" viewBox="0 0 24 24"><path d="M3 5h18v14H3ZM16 5v14M16 12h5"/></symbol>
+    <symbol id="icon-tune" viewBox="0 0 24 24"><path d="M3 6h10m4 0h4M3 12h4m4 0h10M3 18h12m4 0h2M13 3v6M7 9v6M15 15v6"/></symbol>
+    <symbol id="icon-layers" viewBox="0 0 24 24"><path d="m12 3 9 7-9 7-9-7Zm-9 12 9 7 9-7"/></symbol>
+  </svg>
+  <p id="out-of-scope" class="sr-only">Visual comparison fixture only. This control is disabled because its action is outside the header, favorite, and scrolling prototype.</p>
+  <div class="showcase-shell" data-testid="showcase-shell">
+    <header class="showcase-header">
+      <div class="header-primary" data-testid="shared-header-primary">
+        <button class="ui-button icon-button" data-testid="shared-header-back" aria-label="Back" aria-describedby="out-of-scope" disabled><svg aria-hidden="true"><use href="#icon-back"/></svg></button>
+        <h1 class="ui-title header-title" data-testid="shared-header-title">UI Showcase 🎨</h1>
+        <div class="header-actions">
+          <button class="ui-button icon-button" data-testid="shared-header-home" aria-label="Home" aria-describedby="out-of-scope" disabled><svg aria-hidden="true"><use href="#icon-home"/></svg></button>
+          <button class="ui-button icon-button favorite-button" data-testid="shared-header-favorite" aria-label="Favorite this page" aria-pressed="false" title="Favorite this page" disabled><svg aria-hidden="true"><use href="#icon-star"/></svg></button>
+          <button class="ui-button icon-button" data-testid="shared-header-menu" aria-label="Menu" aria-describedby="out-of-scope" disabled><svg aria-hidden="true"><use href="#icon-menu"/></svg></button>
+        </div>
+      </div>
+      <div class="header-secondary" data-testid="shared-header-secondary">
+        <button class="ui-button icon-button" aria-label="Design style" aria-describedby="out-of-scope" disabled><svg aria-hidden="true"><use href="#icon-palette"/></svg></button>
+        <button class="ui-button icon-button" aria-label="Brightness" aria-describedby="out-of-scope" disabled><svg aria-hidden="true"><use href="#icon-brightness"/></svg></button>
+        <button class="ui-button icon-button compact-only" aria-label="Sections" aria-describedby="out-of-scope" disabled><svg aria-hidden="true"><use href="#icon-sections"/></svg></button>
+      </div>
+    </header>
+    <div class="body-layout" data-testid="showcase-body-layout">
+      <nav class="section-rail" aria-label="Section navigation fixture" data-testid="showcase-rail">
+        <button class="ui-button icon-button rail-home" aria-label="Home" aria-describedby="out-of-scope" disabled><svg aria-hidden="true"><use href="#icon-home"/></svg></button>
+        <button class="ui-button rail-item selected" aria-label="Overview" aria-current="page" aria-describedby="out-of-scope" disabled><span class="nav-icon"><svg aria-hidden="true"><use href="#icon-overview"/></svg></span><span class="rail-label">Overview</span></button>
+        <button class="ui-button rail-item" aria-label="Components" aria-describedby="out-of-scope" disabled><span class="nav-icon"><svg aria-hidden="true"><use href="#icon-components"/></svg></span><span class="rail-label">Components</span></button>
+        <button class="ui-button rail-item" aria-label="Data" aria-describedby="out-of-scope" disabled><span class="nav-icon"><svg aria-hidden="true"><use href="#icon-data"/></svg></span><span class="rail-label">Data</span></button>
+        <button class="ui-button rail-item" aria-label="Media" aria-describedby="out-of-scope" disabled><span class="nav-icon"><svg aria-hidden="true"><use href="#icon-media"/></svg></span><span class="rail-label">Media</span></button>
+      </nav>
+      <main class="ui-page overview-scroll" data-testid="showcase-overview-scroll" tabindex="0" aria-label="Overview content, scrollable">
+        <h2 class="overview-heading">Standard Flutter widgets with external overrides and internal defaults.</h2>
+        <div class="chip-row" aria-label="Reference presentation labels">
+          <span class="ui-tag">Internal defaults</span><span class="ui-tag">External JSON overrides</span><span class="ui-tag">Material 3</span><span class="ui-tag">colorSchemeSeed: Colors.indigo</span><span class="ui-tag">Brightness: System</span>
+        </div>
+        <div class="info-cards">
+          <article class="ui-card info-card"><svg aria-hidden="true"><use href="#icon-responsive"/></svg><div><h3>Responsive navigation</h3><p>NavigationRail on wide layouts, Drawer + NavigationBar on compact layouts.</p></div></article>
+          <article class="ui-card info-card"><svg aria-hidden="true"><use href="#icon-tune"/></svg><div><h3>Generalized configuration</h3><p>Dart constants are safe internal defaults. assets/ui_showcase.json can override labels and initial presentation without changing widget logic.</p></div></article>
+          <article class="ui-card info-card"><svg aria-hidden="true"><use href="#icon-layers"/></svg><div><h3>Low coupling</h3><p>This showcase uses Flutter/Dart SDK APIs only; no UI, state-management, media, or config package is required.</p></div></article>
+        </div>
+      </main>
+    </div>
+    <footer class="footer-fixture" data-testid="shared-footer">
+      <div class="ui-panel tool-panel">
+        <div>Door-to-Door tools</div><p>Jump to another tool without going Home first.</p>
+        <div class="tool-field"><label for="tool-selector">Door-to-Door tools</label><select id="tool-selector" disabled aria-describedby="out-of-scope"><option>UI Showcase (current)</option></select></div>
+      </div>
+    </footer>
+    <nav class="bottom-navigation compact-only" aria-label="Compact section navigation fixture" data-testid="showcase-bottom-navigation">
+      <button class="ui-button bottom-item selected" aria-current="page" aria-describedby="out-of-scope" disabled><span class="nav-icon"><svg aria-hidden="true"><use href="#icon-overview"/></svg></span><span>Overview</span></button>
+      <button class="ui-button bottom-item" aria-describedby="out-of-scope" disabled><span class="nav-icon"><svg aria-hidden="true"><use href="#icon-components"/></svg></span><span>Components</span></button>
+      <button class="ui-button bottom-item" aria-describedby="out-of-scope" disabled><span class="nav-icon"><svg aria-hidden="true"><use href="#icon-data"/></svg></span><span>Data</span></button>
+      <button class="ui-button bottom-item" aria-describedby="out-of-scope" disabled><span class="nav-icon"><svg aria-hidden="true"><use href="#icon-media"/></svg></span><span>Media</span></button>
+    </nav>
+    <div class="diagnostics" data-testid="prototype-diagnostics" title="Local HTML fixture. Reference copy describes Flutter, not this implementation. Only favorite and body scroll are interactive.">Local HTML fixture · reference copy · favorite + scroll only</div>
+  </div>
+  <noscript><p class="noscript-note">JavaScript is disabled. Favorite is unavailable; body scrolling still works.</p></noscript>
+</body>
+</html>
