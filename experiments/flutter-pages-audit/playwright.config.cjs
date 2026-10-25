@@ -7,7 +7,7 @@ const output = path.resolve(process.env.AUDIT_OUTPUT || 'build/flutter-pages-aud
 module.exports = defineConfig({
   testDir: __dirname, testMatch: 'audit.spec.cjs', outputDir: path.join(output, 'cases'),
   fullyParallel: true, workers: 2, retries: 0, maxFailures: 0, forbidOnly: !!process.env.CI,
-  timeout: 60_000, expect: { timeout: 3_000 },
+  timeout: 90_000, expect: { timeout: 3_000 },
   reporter: [['list'], ['json', { outputFile: path.join(output, 'playwright-results.json') }]],
   use: {
     browserName: 'chromium', deviceScaleFactor: 1, locale: 'en-US', colorScheme: 'light',

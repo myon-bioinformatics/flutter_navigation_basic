@@ -28,6 +28,11 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Test bounded observer readiness and structural chrome rules
+        run: node --test experiments/flutter-pages-audit/audit_policy.test.cjs
       - name: Test the fail-closed inventory and evidence aggregator
         run: python3 -B -S experiments/flutter-pages-audit/audit_contract.test.py
       - name: Derive the finite public inventory without Flutter SDK
