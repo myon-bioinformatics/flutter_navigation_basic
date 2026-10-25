@@ -39,6 +39,27 @@ function receipt(info, browser) {
 async function save(info, record) {
   record.testStatus = info.status;
   record.errors = info.errors.map(error => error.message);
+  // Keep the essential evidence readable through GitHub job logs even when
+  // the artifact ZIP is unavailable to a reviewer. Full receipts stay attached.
+  console.log('UI_SHOWCASE_EVIDENCE ' + JSON.stringify({
+    project: record.project, test: info.title, status: record.status,
+    candidateSha: record.candidateSha, referenceSha: record.referenceSha,
+    servedSha: record.baseline?.actualSha ?? null,
+    nativeViewport: record.observations.nativeViewport,
+    flutterViewport: record.observations.flutterViewport,
+    nativeHeader: record.observations.nativeHeader,
+    flutterHeader: record.observations.flutterHeader,
+    nativeBody: record.observations.nativeBody,
+    flutterBody: record.observations.flutterBody,
+    nativeFocusSequence: record.observations.nativeFocusSequence,
+    flutterFocusSequence: record.observations.flutterFocusSequence,
+    nativeScroll: record.observations.nativeScroll,
+    flutterScroll: record.observations.flutterScroll,
+    nativeFinalCard: record.observations.nativeFinalCard,
+    flutterFinalCard: record.observations.flutterFinalCard,
+    nativeKeyboardScroll: record.observations.nativeKeyboardScroll,
+    failure: record.failure,
+  }));
   const file = info.outputPath('comparison.json');
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, JSON.stringify(record, null, 2) + '\n');
@@ -121,11 +142,21 @@ async function headerGeometry(page, kind) {
       });
     }
   }
-  const overflow = await page.evaluate(() => ({
-    document: document.documentElement.scrollWidth > innerWidth + 1,
-    body: document.body.scrollWidth > innerWidth + 1,
-  }));
-  return { boxes, counts, hits, hitTesting, overflow };
+  const overflow = await page.evaluate(() => {
+    const root = document.documentElement, body = document.body;
+    const surface = document.scrollingElement || root;
+    const metrics = el => ({
+      tag: el.tagName.toLowerCase(), scrollWidth: el.scrollWidth,
+      clientWidth: el.clientWidth, overflowX: getComputedStyle(el).overflowX,
+    });
+    return {
+      document: root.scrollWidth > root.clientWidth + 1,
+      scrollSurface: surface.scrollWidth > surface.clientWidth + 1,
+      body: body.scrollWidth > innerWidth + 1,
+      metrics: { document: metrics(root), scrollSurface: metrics(surface), body: metrics(body) },
+    };
+  });
+  return { implementation: kind, boxes, counts, hits, hitTesting, overflow };
 }
 
 function checkHeader(geometry, viewport, label) {
@@ -154,7 +185,18 @@ function checkHeader(geometry, viewport, label) {
     const left = geometry.boxes[row[index - 1]], right = geometry.boxes[row[index]];
     if (left && right) expect.soft(left.x + left.width, `${label}: ${row[index - 1]} must not overlap ${row[index]}`).toBeLessThanOrEqual(right.x + 1);
   }
-  expect.soft(geometry.overflow, `${label}: no horizontal page overflow`).toEqual({ document: false, body: false });
+  expect.soft(geometry.overflow.document, `${label}: no horizontal document overflow`).toBe(false);
+  expect.soft(geometry.overflow.scrollSurface, `${label}: no horizontal overflow on the actual root scrolling surface`).toBe(false);
+  // Like pinned BTK platform_adapter.py, do not use Flutter's invisible
+  // accessibility-label dimensions as painted glyph/overflow geometry. The
+  // body's raw measurement stays in evidence; document and scroll-root bounds,
+  // visible control bounds, and non-overlap remain enforced for both engines.
+  // Pinned-reference calibration, 2026-10-25 at 1180x757/DPR1: activating
+  // semantics changed body.scrollWidth 1180 -> 1518 (overflow:hidden), while
+  // documentElement/scrollingElement HTML stayed 1180/1180 throughout.
+  if (geometry.implementation === 'native') {
+    expect.soft(geometry.overflow.body, 'native: no horizontal body overflow').toBe(false);
+  }
   for (const [id, self] of Object.entries(geometry.hitTesting)) {
     expect.soft(self, `${label}: ${id} owns its measured centre hit target`).toBe(true);
   }
@@ -220,11 +262,35 @@ async function pointerCycle(page, kind, info, record) {
 
 async function keyboardCycle(page, kind, info, record) {
   const button = favorite(page, kind);
+  const focusSequence = [];
+  record.observations[`${kind}FocusSequence`] = focusSequence;
+  const observeFocus = async presses => {
+    const focus = await button.evaluate(target => {
+      const active = document.activeElement;
+      const region = active?.closest('[flt-semantics-identifier], [data-testid]');
+      return {
+        targetFocused: active === target || target.contains(active),
+        documentHasFocus: document.hasFocus(),
+        tag: active?.tagName.toLowerCase() ?? null,
+        role: active?.getAttribute('role') ?? null,
+        id: active?.id || null,
+        identifier: region?.getAttribute('flt-semantics-identifier') || region?.getAttribute('data-testid') || null,
+        label: active?.getAttribute('aria-label') ?? null,
+        text: (active?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 180),
+      };
+    });
+    focusSequence.push({ presses, ...focus });
+    return focus.targetFocused;
+  };
+  await observeFocus(0);
   let tabs = 0;
   for (; tabs < 20;) {
     await page.keyboard.press('Tab');
     tabs++;
-    if (await button.evaluate(el => el === document.activeElement || el.contains(document.activeElement))) break;
+    // Flutter updates semantics focus on a rendering frame. Sampling directly
+    // after dispatch can miss the target and send another Tab past it.
+    await settle(page);
+    if (await observeFocus(tabs)) break;
   }
   record.inputs.push({ implementation: kind, input: 'keyboard', key: 'Tab', presses: tabs, purpose: 'reach favorite without focus injection' });
   await expect(button, `${kind}: favorite must be keyboard reachable`).toBeFocused();
