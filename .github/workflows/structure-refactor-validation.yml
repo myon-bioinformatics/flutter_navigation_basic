@@ -39,7 +39,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - uses: astral-sh/setup-uv@v10.3.0
+      - uses: astral-sh/setup-uv@v10.3.2
       - name: Install Python test dependencies (locked)
         run: uv sync --locked --project python
       - name: Verify Python boundaries and producer/asset parity
