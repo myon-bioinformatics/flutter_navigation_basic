@@ -1,0 +1,66 @@
+name: Screen6 responsive regression
+
+on:
+  pull_request:
+    paths:
+      - 'lib/screens/generic_screen.dart'
+      - 'e2e/tests/screen_navigation.spec.ts'
+      - '.github/workflows/screen6-responsive.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  screen6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.0'
+          cache: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Build production entrypoint without E2E defines
+        run: |
+          flutter pub get
+          flutter build web --release -t lib/main.dart --base-href /
+      - name: Install existing browser test tools
+        working-directory: e2e
+        run: |
+          npm install
+          npx playwright install --with-deps --only-shell chromium firefox webkit
+      - name: Verify compact and wide mouse and keyboard reachability
+        working-directory: e2e
+        env:
+          PLAYWRIGHT_HTML_OPEN: never
+          PLAYWRIGHT_JUNIT_OUTPUT_FILE: screen6-junit.xml
+        run: |
+          python3 -m http.server 8080 --directory ../build/web &
+          server_pid=$!
+          trap 'kill "$server_pid" || true' EXIT
+          python3 - <<'PY'
+          import time, urllib.request
+          for attempt in range(30):
+              try:
+                  urllib.request.urlopen('http://127.0.0.1:8080/', timeout=1).close()
+                  break
+              except OSError:
+                  if attempt == 29:
+                      raise
+                  time.sleep(1)
+          PY
+          npx playwright test tests/screen_navigation.spec.ts --grep 'stays inside body' --project=chromium --project=firefox --project=webkit
+      - name: Retain geometry, screenshots and failures separately from audit 223
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: screen6-responsive
+          path: |
+            e2e/screen6-junit.xml
+            e2e/test-results/
+            e2e/playwright-report/
+          if-no-files-found: error
+          retention-days: 14

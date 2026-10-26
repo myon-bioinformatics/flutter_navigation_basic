@@ -258,3 +258,68 @@ test('Flutter worker policy preserves light capacity and explicit overrides @por
     else process.env.FLUTTER_WEB_WORKERS = previousOverride;
   }
 });
+
+// #223's published audit remains the failing baseline. These cases exercise
+// the independently built application, never the audit's pinned deployment.
+for (const viewport of [{ width: 390, height: 500 }, { width: 1180, height: 757 }]) {
+  for (const input of ['mouse', 'keyboard'] as const) {
+    test(`Screen6 search stays inside body ${viewport.width}x${viewport.height} ${input} @portable`, async ({ page }, testInfo) => {
+      test.skip(input === 'mouse' && !!testInfo.project.use.isMobile,
+        'Mouse/wheel contract uses desktop pointer projects; mobile touch is separate.');
+      await page.setViewportSize(viewport);
+      await navigateToScreen(page, 6);
+      const body = page.locator('[flt-semantics-identifier="screen6-body"]');
+      const region = page.locator('[flt-semantics-identifier="screen6-search"]');
+      const count = page.locator('[flt-semantics-identifier="screen6-result-count"]');
+      const search = region.getByRole('textbox');
+      await expect(body).toHaveCount(1);
+      const initialBody = await body.boundingBox();
+      expect(initialBody).not.toBeNull();
+      expect(initialBody!.height).toBeGreaterThan(100);
+
+      if (input === 'mouse') {
+        // Real wheel input over the body, not DOM scrollIntoView or forced tap.
+        await page.mouse.move(initialBody!.x + 20, initialBody!.y + initialBody!.height / 2);
+        if (viewport.width === 390) await page.mouse.wheel(0, 350);
+      } else {
+        // Start cold and reach the editable via real tab traversal. Do not
+        // focus it with evaluate(), locator.focus(), or a preceding mouse click.
+        for (let attempt = 0; attempt < 40; attempt++) {
+          if (await search.evaluate(el => el.matches(':focus'))) break;
+          await page.keyboard.press('Tab');
+          // Flutter focus changes settle on a frame, especially in WebKit.
+          await page.waitForTimeout(100);
+        }
+        await expect(search).toBeFocused();
+      }
+
+      const measure = async () => ({
+        body: await body.boundingBox(),
+        search: await region.boundingBox(),
+        count: await count.boundingBox(),
+      });
+      // Fully contained controls, not just Playwright's nonzero DOM visibility.
+      await expect.poll(async () => {
+        const boxes = await measure();
+        if (!boxes.body || !boxes.search || !boxes.count) return false;
+        return [boxes.search, boxes.count].every(box =>
+          box.y >= boxes.body!.y - 1 &&
+          box.y + box.height <= boxes.body!.y + boxes.body!.height + 1 &&
+          box.height > 0);
+      }).toBe(true);
+      if (input === 'mouse') await search.click();
+      await expect(search).toBeFocused();
+      await expect(search).toHaveAttribute('autocorrect', 'on');
+      await search.pressSequentially('Transformed Result List', { delay: 50 });
+      await expect(search).toHaveValue('Transformed Result List');
+      await expect(count).toHaveText('1 / 198');
+      await testInfo.attach('screen6-body-geometry.json', {
+        body: JSON.stringify({ viewport, input, initialBody, final: await measure() }, null, 2),
+        contentType: 'application/json',
+      });
+      await testInfo.attach('screen6-search.png', {
+        body: await page.screenshot(), contentType: 'image/png',
+      });
+    });
+  }
+}

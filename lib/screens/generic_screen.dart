@@ -297,7 +297,7 @@ class _GenericScreenBody extends StatelessWidget {
           );
     final detail = data.detail;
 
-    return Column(
+    final content = Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -386,6 +386,29 @@ class _GenericScreenBody extends StatelessWidget {
         ),
       ],
     );
+    if (data.screenDataId != 6) return content;
+
+    // The metadata above the catalogue can consume the entire short body.
+    // Keep the existing wide layout, but give short windows a scrollable body
+    // with room for the search, count and a useful slice of the result list.
+    return Semantics(
+      identifier: 'screen6-body',
+      container: true,
+      explicitChildNodes: true,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          const minimumCatalogHeight = 480.0;
+          if (constraints.maxHeight >= minimumCatalogHeight) return content;
+          return SingleChildScrollView(
+            key: const Key('screen6-body-scroll'),
+            child: SizedBox(
+              height: minimumCatalogHeight,
+              child: content,
+            ),
+          );
+        },
+      ),
+    );
   }
 }
 
@@ -434,6 +457,8 @@ class _Screen6CatalogSearchState extends State<_Screen6CatalogSearch> {
             explicitChildNodes: true,
             child: TextField(
               key: const Key('screen6-catalog-search'),
+              // Keyboard reveal must include the count directly below input.
+              scrollPadding: const EdgeInsets.fromLTRB(20, 20, 20, 48),
               controller: _queryController,
               decoration: InputDecoration(
                 border: const OutlineInputBorder(),
