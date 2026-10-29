@@ -362,10 +362,7 @@ for (const initialHeight of [757, 500]) {
     const geometry = [];
     const otherHeight = initialHeight === 757 ? 500 : 757;
 
-    for (const height of [otherHeight, initialHeight,
-      boundaryHeight - 1, boundaryHeight, boundaryHeight + 1]) {
-      await page.setViewportSize({ width: 1180, height });
-      await expectBodyMode(height);
+    const expectRetainedEditor = async () => {
       await expect(search).toHaveValue(query);
       expect(await search.evaluate((el, original) => el === original, originalInput)).toBe(true);
       await expect(search).toBeFocused();
@@ -385,7 +382,54 @@ for (const initialHeight of [757, 500]) {
       await page.keyboard.press('Backspace');
       await expect(search).toHaveValue(query);
       await expect(count).toHaveText('1 / 198');
-      geometry.push({ height, body: await body.boundingBox(), search: await region.boundingBox() });
+    };
+    const resizeViewport = async (width: number, height: number) => {
+      await page.setViewportSize({ width, height });
+      await expect.poll(() => page.evaluate(() => ({ width: innerWidth, height: innerHeight })))
+        .toEqual({ width, height });
+      // Browser dimensions can update before Flutter processes the resize.
+      await page.evaluate(() => new Promise<void>(resolve => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      }));
+    };
+    const recordGeometry = async (phase: string) => {
+      geometry.push({ phase, viewport: page.viewportSize(),
+        body: await body.boundingBox(), search: await region.boundingBox() });
+    };
+
+    if (testInfo.project.use.isMobile) {
+      // Flutter may treat same-width mobile resizing while editing as keyboard
+      // insets, preserving physicalSize rather than applying a linear body delta.
+      // Keep this separate keyboard-like path; never blur or re-focus the editor.
+      for (const height of [otherHeight, initialHeight]) {
+        await test.step(`mobile height-only viewport ${height}`, async () => {
+          await resizeViewport(1180, height);
+          await expectRetainedEditor();
+          await recordGeometry('mobile-height-only');
+        });
+      }
+    }
+
+    for (const height of [otherHeight, initialHeight,
+      boundaryHeight - 1, boundaryHeight, boundaryHeight + 1]) {
+      if (testInfo.project.use.isMobile) {
+        // Flutter 3.47 window.dart detects rotation when both dimensions change
+        // and orientation flips. Rotate out/back to request a real layout resize,
+        // not another keyboard inset. Check state at the extra transition too.
+        await test.step('mobile portrait transition', async () => {
+          await resizeViewport(500, 1180);
+          await expect.poll(async () => (await body.boundingBox())!.width).toBeCloseTo(500, 1);
+          await expect.poll(async () => (await body.boundingBox())!.height).toBeGreaterThan(480);
+          await expectRetainedEditor();
+          await recordGeometry('mobile-portrait');
+        });
+      }
+      await test.step(`body boundary viewport ${height}`, async () => {
+        await resizeViewport(1180, height);
+        await expectBodyMode(height);
+        await expectRetainedEditor();
+        await recordGeometry('body-boundary');
+      });
     }
     await testInfo.attach('screen6-resize-geometry.json', {
       body: JSON.stringify({ initialHeight, geometry }, null, 2), contentType: 'application/json',

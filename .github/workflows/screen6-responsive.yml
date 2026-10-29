@@ -33,7 +33,77 @@ jobs:
         working-directory: e2e
         run: |
           npm install
+          npx playwright --version
           npx playwright install --with-deps --only-shell chromium firefox webkit
+      # One-time diagnostic: remove after preserving its receipt, then require
+      # every final-head workflow again. It is never a mergeable CI exception.
+      - name: Prove revised mobile regression detects the old query loss
+        env:
+          FLUTTER_WEB_BASE_URL: http://127.0.0.1:8081
+          PLAYWRIGHT_HTML_OPEN: never
+          PLAYWRIGHT_HTML_OUTPUT_DIR: ../build/screen6-baseline-report
+          PLAYWRIGHT_JUNIT_OUTPUT_FILE: ../build/screen6-baseline-negative.xml
+        run: |
+          set -euo pipefail
+          baseline=dd32a8cadb37fae1fbec38e349410ed6527635a7
+          source=lib/screens/generic_screen.dart
+          fixed_source=$(mktemp)
+          cp "$source" "$fixed_source"
+          cp -a build/web build/screen6-fixed-web
+          fixed_js_sha=$(sha256sum build/web/main.dart.js | cut -d " " -f 1)
+          server_pid=
+          restore_fixed() {
+            cp "$fixed_source" "$source"
+            if [ -d build/screen6-fixed-web ]; then
+              rm -rf build/web
+              mv build/screen6-fixed-web build/web
+            fi
+          }
+          trap 'restore_fixed; rm -f "$fixed_source"; if [ -n "$server_pid" ]; then kill "$server_pid" || true; fi' EXIT
+          git fetch --no-tags --depth=1 origin "$baseline"
+          git show "$baseline:$source" > "$source"
+          echo "Negative baseline source: $(git hash-object "$source") from $baseline"
+          flutter build web --release -t lib/main.dart --base-href /
+          python3 -m http.server 8081 --directory build/web &
+          server_pid=$!
+          python3 - <<'PY'
+          import time, urllib.request
+          for attempt in range(30):
+              try:
+                  urllib.request.urlopen('http://127.0.0.1:8081/', timeout=1).close()
+                  break
+              except OSError:
+                  if attempt == 29:
+                      raise
+                  time.sleep(1)
+          PY
+          set +e
+          (cd e2e && npx playwright test tests/screen_navigation.spec.ts --grep 'preserves search across resize' --project=mobile-chromium --project=mobile-webkit --output=../build/screen6-baseline-results)
+          baseline_exit=$?
+          set -e
+          python3 - "$baseline_exit" <<'PY'
+          import re, sys, xml.etree.ElementTree as ET
+          assert sys.argv[1] == '1', f'Expected test assertion failures, got exit {sys.argv[1]}'
+          root = ET.parse('build/screen6-baseline-negative.xml').getroot()
+          cases = [(suite.attrib['hostname'], case)
+                   for suite in root.iter('testsuite') for case in suite.findall('testcase')]
+          expected = {(browser, f'Screen6 preserves search across resize from {height} @portable')
+                      for browser in ('mobile-chromium', 'mobile-webkit') for height in (757, 500)}
+          assert len(cases) == 4
+          assert {(browser, case.attrib['name']) for browser, case in cases} == expected
+          for browser, case in cases:
+              failure = case.find('failure')
+              assert failure is not None and case.find('error') is None and case.find('skipped') is None
+              detail = re.sub(r'\x1b\[[0-9;]*m', '', ''.join(failure.itertext()))
+              assert 'at expectRetainedEditor' in detail
+              assert 'toHaveValue' in detail and 'Transformed Result List' in detail
+              assert re.search(r'Received:\s*""', detail), (browser, case.attrib['name'], detail)
+          print('Negative control: all 4 mobile cases failed on the identified empty-query regression; only identified query-loss assertions accepted.')
+          PY
+          restore_fixed
+          echo "$fixed_js_sha  build/web/main.dart.js" | sha256sum --check
+          # Same tests, production build and browser profiles must now succeed.
+          (cd e2e && PLAYWRIGHT_JUNIT_OUTPUT_FILE=../build/screen6-fixed-mobile.xml PLAYWRIGHT_HTML_OUTPUT_DIR=../build/screen6-fixed-mobile-report npx playwright test tests/screen_navigation.spec.ts --grep 'preserves search across resize' --project=mobile-chromium --project=mobile-webkit --output=../build/screen6-fixed-mobile-results)
       - name: Verify mouse, keyboard and stateful resize across compact boundary
         working-directory: e2e
         env:
@@ -61,6 +131,12 @@ jobs:
         with:
           name: screen6-responsive
           path: |
+            build/screen6-baseline-negative.xml
+            build/screen6-baseline-results/
+            build/screen6-baseline-report/
+            build/screen6-fixed-mobile.xml
+            build/screen6-fixed-mobile-results/
+            build/screen6-fixed-mobile-report/
             e2e/screen6-junit.xml
             e2e/test-results/
             e2e/playwright-report/
