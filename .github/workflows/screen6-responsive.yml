@@ -58,12 +58,14 @@ jobs:
               rm -rf build/web
               mv build/screen6-fixed-web build/web
             fi
+            echo "$fixed_js_sha  build/web/main.dart.js" | sha256sum --check
           }
           trap 'restore_fixed; rm -f "$fixed_source"; if [ -n "$server_pid" ]; then kill "$server_pid" || true; fi' EXIT
           git fetch --no-tags --depth=1 origin "$baseline"
           git show "$baseline:$source" > "$source"
           echo "Negative baseline source: $(git hash-object "$source") from $baseline"
-          flutter build web --release -t lib/main.dart --base-href /
+          # Match the existing portable lane's semantics bootstrap on BOTH builds.
+          flutter build web --release -t lib/main.dart --dart-define=E2E=true --base-href /
           python3 -m http.server 8081 --directory build/web &
           server_pid=$!
           python3 - <<'PY'
@@ -100,9 +102,11 @@ jobs:
               assert re.search(r'Received:\s*""', detail), (browser, case.attrib['name'], detail)
           print('Negative control: all 4 mobile cases failed on the identified empty-query regression; only identified query-loss assertions accepted.')
           PY
-          restore_fixed
-          echo "$fixed_js_sha  build/web/main.dart.js" | sha256sum --check
-          # Same tests, production build and browser profiles must now succeed.
+          cp "$fixed_source" "$source"
+          test "$(git hash-object "$source")" = "$(git rev-parse "HEAD:$source")"
+          flutter build web --release -t lib/main.dart --dart-define=E2E=true --base-href /
+          # Same tests, E2E flags and browser profiles must now succeed. The trap
+          # restores/verifies the saved production build for the desktop step.
           (cd e2e && PLAYWRIGHT_JUNIT_OUTPUT_FILE=../build/screen6-fixed-mobile.xml PLAYWRIGHT_HTML_OUTPUT_DIR=../build/screen6-fixed-mobile-report npx playwright test tests/screen_navigation.spec.ts --grep 'preserves search across resize' --project=mobile-chromium --project=mobile-webkit --output=../build/screen6-fixed-mobile-results)
       - name: Verify mouse, keyboard and stateful resize across compact boundary
         working-directory: e2e
