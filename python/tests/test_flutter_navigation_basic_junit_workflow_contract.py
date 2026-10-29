@@ -74,6 +74,7 @@ def _plan(workflow, *, python, playwright, validation_browser=False, e2e=False):
 
 def _assert_playwright_producer(workflow):
     producer = workflow["jobs"]["playwright"]
+    assert producer["runs-on"] == "ubuntu-24.04"
     run = _step(producer, "Serve web build and run Playwright")
     install = _step(producer, "Install Playwright")
     # Slow, successful cold installs must leave room for the full five-profile
@@ -307,6 +308,8 @@ def test_failure_evidence_contract_rejects_unsafe_mutations():
     install_index = playwright["steps"].index(_step(playwright, "Install Playwright"))
     install_path = ("jobs", "playwright", "steps", install_index)
     mutations.extend([
+        ("portable E2E OS baseline floats", ("jobs", "playwright", "runs-on"), "ubuntu-latest"),
+        ("portable E2E OS baseline changes", ("jobs", "playwright", "runs-on"), "ubuntu-26.04"),
         ("job expires during a slow install", ("jobs", "playwright", "timeout-minutes"), 30),
         ("install consumes the test budget", install_path + ("timeout-minutes",), 90),
         ("install masks failure", install_path + ("continue-on-error",), True),

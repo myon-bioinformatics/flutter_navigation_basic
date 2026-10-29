@@ -468,7 +468,10 @@ jobs:
     name: Playwright E2E (auto)
     needs: changes
     if: needs.changes.outputs.playwright == 'true'
-    runs-on: ubuntu-latest
+    # Keep the previously successful E2E OS baseline while comparing the
+    # Ubuntu 26.04 failures from run 40860624083; root cause is not established.
+    # Playwright supports both OS versions. Preserve all five browser profiles.
+    runs-on: ubuntu-24.04
     # Cold browser OS dependencies can take ~45 minutes on a slow apt mirror
     # (119 MB at ~45 KB/s in run 39892906991), before the ~19-minute suite.
     # Bound installation separately and leave time for tests/artifact cleanup;
