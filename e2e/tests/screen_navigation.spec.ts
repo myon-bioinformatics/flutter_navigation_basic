@@ -334,9 +334,12 @@ for (const viewport of [{ width: 390, height: 500 }, { width: 1180, height: 757 
 }
 
 // Desktop viewport resize / mobile browser emulation, not a physical keyboard
-// or soft-keyboard claim. Each case crosses the 480px body boundary both ways.
-for (const initialHeight of [757, 500]) {
-  test(`Screen6 preserves search across resize from ${initialHeight} @portable`, async ({ page }, testInfo) => {
+// or soft-keyboard claim. Keep each continuous roundtrip and the exact boundary
+// sequence intact, but give these independent contracts separate 30s test budgets.
+const resizeCases = [757, 500].flatMap(initialHeight =>
+  ['roundtrip', 'boundary-edges'].map(contract => ({ initialHeight, contract })));
+for (const { initialHeight, contract } of resizeCases) {
+  test(`Screen6 preserves search across resize from ${initialHeight} ${contract} @portable`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 1180, height: initialHeight });
     await navigateToScreen(page, 6);
     const body = page.locator('[flt-semantics-identifier="screen6-body"]');
@@ -397,7 +400,7 @@ for (const initialHeight of [757, 500]) {
         body: await body.boundingBox(), search: await region.boundingBox() });
     };
 
-    if (testInfo.project.use.isMobile) {
+    if (testInfo.project.use.isMobile && contract === 'roundtrip') {
       // Flutter may treat same-width mobile resizing while editing as keyboard
       // insets, preserving physicalSize rather than applying a linear body delta.
       // Keep this separate keyboard-like path; never blur or re-focus the editor.
@@ -410,8 +413,9 @@ for (const initialHeight of [757, 500]) {
       }
     }
 
-    for (const height of [otherHeight, initialHeight,
-      boundaryHeight - 1, boundaryHeight, boundaryHeight + 1]) {
+    const heights = contract === 'roundtrip' ? [otherHeight, initialHeight] :
+      [boundaryHeight - 1, boundaryHeight, boundaryHeight + 1];
+    for (const height of heights) {
       if (testInfo.project.use.isMobile) {
         // Flutter 3.47 window.dart detects rotation when both dimensions change
         // and orientation flips. Rotate out/back to request a real layout resize,
@@ -432,7 +436,7 @@ for (const initialHeight of [757, 500]) {
       });
     }
     await testInfo.attach('screen6-resize-geometry.json', {
-      body: JSON.stringify({ initialHeight, geometry }, null, 2), contentType: 'application/json',
+      body: JSON.stringify({ initialHeight, contract, geometry }, null, 2), contentType: 'application/json',
     });
   });
 }

@@ -89,9 +89,10 @@ jobs:
           root = ET.parse('build/screen6-baseline-negative.xml').getroot()
           cases = [(suite.attrib['hostname'], case)
                    for suite in root.iter('testsuite') for case in suite.findall('testcase')]
-          expected = {(browser, f'Screen6 preserves search across resize from {height} @portable')
-                      for browser in ('mobile-chromium', 'mobile-webkit') for height in (757, 500)}
-          assert len(cases) == 4
+          expected = {(browser, f'Screen6 preserves search across resize from {height} {contract} @portable')
+                      for browser in ('mobile-chromium', 'mobile-webkit') for height in (757, 500)
+                      for contract in ('roundtrip', 'boundary-edges')}
+          assert len(cases) == 8
           assert {(browser, case.attrib['name']) for browser, case in cases} == expected
           for browser, case in cases:
               failure = case.find('failure')
@@ -100,7 +101,7 @@ jobs:
               assert 'at expectRetainedEditor' in detail
               assert 'toHaveValue' in detail and 'Transformed Result List' in detail
               assert re.search(r'Received:\s*""', detail), (browser, case.attrib['name'], detail)
-          print('Negative control: all 4 mobile cases failed on the identified empty-query regression; only identified query-loss assertions accepted.')
+          print('Negative control: all 8 mobile cases failed on the identified empty-query regression; only identified query-loss assertions accepted.')
           PY
           cp "$fixed_source" "$source"
           test "$(git hash-object "$source")" = "$(git rev-parse "HEAD:$source")"
