@@ -287,8 +287,14 @@ for (const viewport of [{ width: 390, height: 500 }, { width: 1180, height: 757 
         for (let attempt = 0; attempt < 40; attempt++) {
           if (await search.evaluate(el => el.matches(':focus'))) break;
           await page.keyboard.press('Tab');
-          // Flutter focus changes settle on a frame, especially in WebKit.
-          await page.waitForTimeout(100);
+          // Flutter exports logical focus to the semantics DOM during a frame.
+          // A timer can expire before that frame on a cold WebKit page, so the
+          // next Tab skips the editable before its DOM focus is observable.
+          // Cross two frame boundaries to cover callback ordering, not a fixed
+          // delay; keep the real keyboard traversal and focus assertions.
+          await page.evaluate(() => new Promise<void>(resolve => {
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+          }));
         }
         await expect(search).toBeFocused();
       }
