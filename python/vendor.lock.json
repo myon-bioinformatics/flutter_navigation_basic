@@ -21,17 +21,17 @@
     },
     {
       "repository": "myon-bioinformatics/myon-bioinformatics",
-      "ref": "8faa7a74895a48cf33a46f0c9fcb0210f61f81a8",
-      "commit": "8faa7a74895a48cf33a46f0c9fcb0210f61f81a8",
+      "ref": "9e3da7ae1846e9604ebc24bb5178f7de094a4e77",
+      "commit": "9e3da7ae1846e9604ebc24bb5178f7de094a4e77",
       "source": "gh_ops.py",
       "destination": "python/vendor/gh_ops.py",
-      "blob_sha": "1741ffedf55cb9624507224ad8a00cf78553c4c2",
-      "sha256": "3f9be2015bdfa86daec100b9595db8b6f78511d83f1e8b3f48b8fed60e594dba"
+      "blob_sha": "cde303be5bd94c1b054f917b11b6b8cbab042741",
+      "sha256": "4b1688961b616a852d3dba49adae480ef67678c0d1f9c6a70a6923b05c50622d"
     },
     {
       "repository": "myon-bioinformatics/myon-bioinformatics",
-      "ref": "8faa7a74895a48cf33a46f0c9fcb0210f61f81a8",
-      "commit": "8faa7a74895a48cf33a46f0c9fcb0210f61f81a8",
+      "ref": "9e3da7ae1846e9604ebc24bb5178f7de094a4e77",
+      "commit": "9e3da7ae1846e9604ebc24bb5178f7de094a4e77",
       "source": "LICENSE",
       "destination": "python/vendor/myon-bioinformatics-LICENSE",
       "blob_sha": "4ec4989b801bf1a3df6184d21f79e6e7ed5931f6",
@@ -111,17 +111,17 @@
     },
     {
       "repository": "myon-bioinformatics/gh_identity",
-      "ref": "68ba77ede5456e37ac50964c91003d64573c2983",
-      "commit": "68ba77ede5456e37ac50964c91003d64573c2983",
+      "ref": "a4c314b4176432f7bcdce4cb7d38defbf28c971e",
+      "commit": "a4c314b4176432f7bcdce4cb7d38defbf28c971e",
       "source": "gh_identity.py",
       "destination": "python/vendor/gh_identity.py",
-      "blob_sha": "5a8120219b90b27496d03325a529d5786cfdb673",
-      "sha256": "0ea041ab7fe01d87d969b126416a77b265b73a4027e336a7e8028bc2fd690ffa"
+      "blob_sha": "c8902c962051e248c6f8154dd6c575225c0d7496",
+      "sha256": "3719bda57a81da3854b14ab61bd7ad0618016c00e33096587c5a7df185b22679"
     },
     {
       "repository": "myon-bioinformatics/gh_identity",
-      "ref": "68ba77ede5456e37ac50964c91003d64573c2983",
-      "commit": "68ba77ede5456e37ac50964c91003d64573c2983",
+      "ref": "a4c314b4176432f7bcdce4cb7d38defbf28c971e",
+      "commit": "a4c314b4176432f7bcdce4cb7d38defbf28c971e",
       "source": "LICENSE",
       "destination": "python/vendor/gh_identity-LICENSE",
       "blob_sha": "4ec4989b801bf1a3df6184d21f79e6e7ed5931f6",
