@@ -12,7 +12,9 @@ permissions:
 
 jobs:
   screen6:
-    runs-on: ubuntu-latest
+    # Match the portable E2E OS baseline while comparing production WebKit
+    # delays from run 40899946824; keep browsers, workers and budgets unchanged.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
