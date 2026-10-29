@@ -1,10 +1,27 @@
 import { flutterWorkerBudget } from '../utils/flutter_worker_policy.mjs';
-import { test, expect, type Locator } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
 import { waitForFlutter, navigateToHub, navigateToScreen } from '../utils/helpers';
 import testData from '../fixtures/test_data.json';
 
 // Independent page/context fixtures; schedule cases across bounded workers.
 test.describe.configure({ mode: 'parallel' });
+
+async function focusCatalogViaKeyboard(page: Page, search: Locator) {
+  // Start cold and reach the editable via real tab traversal. Do not focus it
+  // with evaluate(), locator.focus(), or a preceding mouse click.
+  for (let attempt = 0; attempt < 40; attempt++) {
+    if (await search.evaluate(el => el.matches(':focus'))) break;
+    await page.keyboard.press('Tab');
+    // Flutter exports logical focus to the semantics DOM during a frame.
+    // A timer can expire before that frame on a cold WebKit page, so the
+    // next Tab skips the editable before its DOM focus is observable.
+    // Cross two frame boundaries to cover callback ordering, not a fixed delay.
+    await page.evaluate(() => new Promise<void>(resolve => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    }));
+  }
+  await expect(search).toBeFocused();
+}
 
 // Clearing a Flutter TextField can rebuild its suffix semantics and detach the
 // WebKit editing strategy. Re-focus before sending the next real key sequence.
@@ -282,21 +299,7 @@ for (const viewport of [{ width: 390, height: 500 }, { width: 1180, height: 757 
         await page.mouse.move(initialBody!.x + 20, initialBody!.y + initialBody!.height / 2);
         if (viewport.width === 390) await page.mouse.wheel(0, 350);
       } else {
-        // Start cold and reach the editable via real tab traversal. Do not
-        // focus it with evaluate(), locator.focus(), or a preceding mouse click.
-        for (let attempt = 0; attempt < 40; attempt++) {
-          if (await search.evaluate(el => el.matches(':focus'))) break;
-          await page.keyboard.press('Tab');
-          // Flutter exports logical focus to the semantics DOM during a frame.
-          // A timer can expire before that frame on a cold WebKit page, so the
-          // next Tab skips the editable before its DOM focus is observable.
-          // Cross two frame boundaries to cover callback ordering, not a fixed
-          // delay; keep the real keyboard traversal and focus assertions.
-          await page.evaluate(() => new Promise<void>(resolve => {
-            requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-          }));
-        }
-        await expect(search).toBeFocused();
+        await focusCatalogViaKeyboard(page, search);
       }
 
       const measure = async () => ({
@@ -328,4 +331,64 @@ for (const viewport of [{ width: 390, height: 500 }, { width: 1180, height: 757 
       });
     });
   }
+}
+
+// Desktop viewport resize / mobile browser emulation, not a physical keyboard
+// or soft-keyboard claim. Each case crosses the 480px body boundary both ways.
+for (const initialHeight of [757, 500]) {
+  test(`Screen6 preserves search across resize from ${initialHeight} @portable`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 1180, height: initialHeight });
+    await navigateToScreen(page, 6);
+    const body = page.locator('[flt-semantics-identifier="screen6-body"]');
+    const region = page.locator('[flt-semantics-identifier="screen6-search"]');
+    const count = page.locator('[flt-semantics-identifier="screen6-result-count"]');
+    const search = region.getByRole('textbox');
+    await expect(body).toHaveCount(1);
+    const initialBody = (await body.boundingBox())!;
+    expect(initialBody.height < 480).toBe(initialHeight === 500);
+    const boundaryHeight = Math.round(initialHeight + 480 - initialBody.height);
+    const expectBodyMode = async (height: number) => {
+      await expect.poll(async () => (await body.boundingBox())!.height)
+        .toBeCloseTo(initialBody.height + height - initialHeight, 1);
+    };
+    await expectBodyMode(initialHeight);
+    await focusCatalogViaKeyboard(page, search);
+    await expect(search).toHaveAttribute('autocorrect', 'on');
+    const query = 'Transformed Result List';
+    await page.keyboard.type(query, { delay: 50 });
+    await expect(search).toHaveValue(query);
+    await expect(count).toHaveText('1 / 198');
+    const originalInput = await search.elementHandle();
+    const geometry = [];
+    const otherHeight = initialHeight === 757 ? 500 : 757;
+
+    for (const height of [otherHeight, initialHeight,
+      boundaryHeight - 1, boundaryHeight, boundaryHeight + 1]) {
+      await page.setViewportSize({ width: 1180, height });
+      await expectBodyMode(height);
+      await expect(search).toHaveValue(query);
+      expect(await search.evaluate((el, original) => el === original, originalInput)).toBe(true);
+      await expect(search).toBeFocused();
+      await expect(search).toHaveAttribute('autocorrect', 'on');
+      await expect(count).toHaveText('1 / 198');
+      await expect.poll(async () => {
+        const boxes = await Promise.all([body.boundingBox(), region.boundingBox(), count.boundingBox()]);
+        const [container, ...controls] = boxes;
+        return !!container && controls.every(box => !!box && box.height > 0 &&
+          box.y >= container.y - 1 && box.y + box.height <= container.y + container.height + 1);
+      }).toBe(true);
+      // page.keyboard does not re-focus a locator: prove the retained editor is
+      // still live after every crossing, not just displaying stale query text.
+      await page.keyboard.type('x');
+      await expect(search).toHaveValue(`${query}x`);
+      await expect(count).toHaveText('0 / 198');
+      await page.keyboard.press('Backspace');
+      await expect(search).toHaveValue(query);
+      await expect(count).toHaveText('1 / 198');
+      geometry.push({ height, body: await body.boundingBox(), search: await region.boundingBox() });
+    }
+    await testInfo.attach('screen6-resize-geometry.json', {
+      body: JSON.stringify({ initialHeight, geometry }, null, 2), contentType: 'application/json',
+    });
+  });
 }

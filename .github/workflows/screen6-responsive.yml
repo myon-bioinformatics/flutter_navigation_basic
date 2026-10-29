@@ -32,7 +32,7 @@ jobs:
         run: |
           npm install
           npx playwright install --with-deps --only-shell chromium firefox webkit
-      - name: Verify compact and wide mouse and keyboard reachability
+      - name: Verify mouse, keyboard and stateful resize across compact boundary
         working-directory: e2e
         env:
           PLAYWRIGHT_HTML_OPEN: never
@@ -52,7 +52,7 @@ jobs:
                       raise
                   time.sleep(1)
           PY
-          npx playwright test tests/screen_navigation.spec.ts --grep 'stays inside body' --project=chromium --project=firefox --project=webkit
+          npx playwright test tests/screen_navigation.spec.ts --grep 'stays inside body|preserves search across resize' --project=chromium --project=firefox --project=webkit
       - name: Retain geometry, screenshots and failures separately from audit 223
         if: always()
         uses: actions/upload-artifact@v7

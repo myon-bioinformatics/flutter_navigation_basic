@@ -229,6 +229,56 @@ void main() {
     expect(find.text('Screen5 route reached'), findsOneWidget);
   });
 
+  for (final initialHeight in const [757.0, 500.0]) {
+    testWidgets('Screen6 preserves search state across compact resize from $initialHeight',
+        (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = Size(1180, initialHeight);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      await _pumpGeneric(tester, 6);
+
+      final field = find.byKey(const Key('screen6-catalog-search'));
+      final body = find.byWidgetPredicate(
+        (widget) => widget is Semantics &&
+            widget.properties.identifier == 'screen6-body',
+      );
+      const query = 'Transformed Result List';
+      await tester.ensureVisible(field);
+      await tester.enterText(field, query);
+      await tester.pumpAndSettle();
+      final controller = tester.widget<TextField>(field).controller!;
+      final focusNode = tester.widget<EditableText>(find.byType(EditableText)).focusNode;
+      const selection = TextSelection(baseOffset: 4, extentOffset: 10);
+      controller.selection = selection;
+      await tester.pump();
+      expect(focusNode.hasFocus, isTrue);
+      expect(find.text('1 / 198'), findsOneWidget);
+      expect(tester.getSize(body).height < 480, initialHeight == 500);
+
+      final otherHeight = initialHeight == 757 ? 500.0 : 757.0;
+      final boundaryHeight = initialHeight + 480 - tester.getSize(body).height;
+      for (final height in [
+        otherHeight, initialHeight,
+        boundaryHeight - 1, boundaryHeight, boundaryHeight + 1,
+        otherHeight, initialHeight,
+      ]) {
+        tester.view.physicalSize = Size(1180, height);
+        await tester.pumpAndSettle();
+        expect(tester.getSize(body).height, closeTo(480 + height - boundaryHeight, 0.01));
+        expect(tester.widget<TextField>(field).controller!.text, query);
+        expect(tester.widget<TextField>(field).controller, same(controller));
+        expect(controller.selection, selection);
+        expect(tester.widget<EditableText>(find.byType(EditableText)).focusNode,
+            same(focusNode));
+        expect(focusNode.hasFocus, isTrue);
+        expect(find.text('1 / 198'), findsOneWidget);
+        expect(find.byKey(const Key('screen6-result-5')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      }
+    });
+  }
+
   for (final locale in const ['eng', 'jpn']) {
     testWidgets('Screen6 search identifier retains editable semantics in $locale',
         (tester) async {
