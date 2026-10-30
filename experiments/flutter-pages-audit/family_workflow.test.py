@@ -1,5 +1,6 @@
 """Offline workflow event/scope tests; no workflow or browser is dispatched."""
 import json
+import runpy
 from pathlib import Path
 import unittest
 ROOT=Path(__file__).resolve().parents[2]
@@ -9,6 +10,12 @@ def eligible(event):
     return event.get('event')=='workflow_dispatch' and event.get('run_live_audit') is True
 
 class GuardTests(unittest.TestCase):
+    def test_repository_artifact_upload_policy_is_checked_offline(self):
+        # Reuse the repository policy, rather than duplicating or weakening it.
+        # This is pure source validation; no pytest dependency or browser startup.
+        policy = runpy.run_path(str(ROOT / 'python/tests/test_upload_artifact_version.py'))
+        policy['test_all_workflow_upload_artifact_references_use_one_modern_major']()
+        policy['test_dependabot_checks_github_actions_weekly']()
     def test_only_explicit_manual_request(self):
         self.assertTrue(eligible({'event':'workflow_dispatch','run_live_audit':True}))
         for event in ['push','pull_request','pull_request_target','edited','synchronize','ready_for_review']:
