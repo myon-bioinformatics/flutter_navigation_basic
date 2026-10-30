@@ -124,7 +124,7 @@ test('candidate receipts require matching immutable checkout and bundle digest',
 // lives in the Node lane; Python wiring checks do not acquire a Node dependency.
 test('Generic grid predicate rejects the captured clipped cell and malformed geometry', () => {
   const spec = readFileSync(new URL('../../e2e/focused/generic_responsive.spec.ts', import.meta.url), 'utf8');
-  const source = ('function completeGridCell(' + spec.split('function completeGridCell(')[1].split('async function reveal(')[0])
+  const source = ('function completeGridCell(' + spec.split('function completeGridCell(')[1].split('function completeControl(')[0])
     .replace('box: { width: number; height: number }, bodyWidth: number', 'box, bodyWidth');
   const completeGridCell = new Function(source + '; return completeGridCell;')();
   assert.equal(completeGridCell({width:173,height:99},390),false);
@@ -137,4 +137,40 @@ test('Generic grid predicate rejects the captured clipped cell and malformed geo
     [{width:173,height:NaN},390], [{width:Infinity,height:173},390],
     [null,390], [{width:0,height:0},390],
   ]) assert.equal(completeGridCell(box,width),false);
+});
+
+test('intrinsic reference rejects tiny clickable slivers without inventing text heights', () => {
+  const spec = readFileSync(new URL('../../e2e/focused/generic_responsive.spec.ts', import.meta.url), 'utf8');
+  const source = ('function completeGridCell(' + spec.split('function completeGridCell(')[1].split('function controlKind(')[0])
+    .replace('box: { width: number; height: number }, bodyWidth: number', 'box, bodyWidth')
+    .replace('g: any, kind: string, bodyWidth: number, reference: any = null', 'g, kind, bodyWidth, reference = null')
+    .replace(' as Record<string, number>', '');
+  const completeControl = new Function(source + '; return completeControl;')();
+  const g = (width, height) => ({visible:true,box:{x:16,y:200,width,height},clip:{left:0,right:500,top:104,bottom:500}});
+  for (const [width,height,full,kind] of [
+    [141.328,11,32,'button'], [192.531,11,32,'button'],
+    [130,37,48,'tab'], [354.988,5.294,50.824,'interior'],
+    [390,79,88,'interior'], [358,99,104,'interior'],
+  ]) {
+    assert.equal(completeControl(g(width,height),kind,390,{width,height:full}),false);
+    assert.equal(completeControl(g(width,full),kind,390,{width,height:full}),true);
+  }
+  // Editable DOM line and legitimate edge alignment have their OWN reference.
+  const input = g(366,54); input.box.y=446;
+  assert.equal(completeControl(input,'interior',390,{width:366,height:54}),true);
+  assert.equal(completeControl(g(130,80),'navigation',390,{width:130,height:80}),true);
+  assert.equal(completeControl(g(173,99),'grid',390,{width:173,height:173}),false);
+  assert.equal(completeControl(g(100,20),'interior',390,{width:101,height:NaN}),false);
+  assert.equal(completeControl(g(100,20),'interior',390,{width:103,height:20}),false);
+  assert.equal(completeControl({...g(100,20),visible:false},'interior',390,{width:100,height:20}),false);
+  assert.equal(completeControl(g(0,20),'interior',390,{width:0,height:20}),false);
+  for (const clip of [{left:0,right:NaN,top:104,bottom:500}, {left:100,right:0,top:104,bottom:500},
+    {left:0,right:500,top:300,bottom:200}, {left:0,right:80,top:104,bottom:500}]) {
+    assert.equal(completeControl({...g(100,20),clip},'interior',390,{width:100,height:20}),false);
+  }
+  assert.equal(completeControl(g(100,20),'interior',NaN,{width:100,height:20}),false);
+  assert.match(spec, /for \(const height of \[1600, 1720\]\)/);
+  assert.match(spec, /width: original.width, height/);
+  assert.match(spec, /expect\(signature\)\.toEqual\(references\[index\]\.signature\)/);
+  assert.match(spec, /await page.setViewportSize\(original\)/);
 });

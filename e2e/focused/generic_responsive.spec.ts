@@ -36,19 +36,52 @@ function completeGridCell(box: { width: number; height: number }, bodyWidth: num
   const expected = (extent - (columns - 1) * 12) / columns;
   return expected > 0 && Math.abs(box.width - expected) <= 1 && Math.abs(box.height - expected) <= 1;
 }
-async function reveal(page: Page, target: Locator, inputs: unknown[], requireGridCell = false) {
+// Pinned Flutter 3.47 desktop Material: FilledButton min40 + compact density−8;
+// text Tab46 + indicator2; NavigationBar80. These are semantic control bounds,
+// not the padded touch target. Variable controls use a separately observed
+// same-width intrinsic reference, never a guessed per-role height.
+function completeControl(g: any, kind: string, bodyWidth: number, reference: any = null) {
+  if (!g?.visible || !g.box || !g.clip) return false;
+  const { box: b, clip: c } = g;
+  if (![b.x, b.y, b.width, b.height, c.left, c.right, c.top, c.bottom, bodyWidth].every(Number.isFinite) ||
+      b.width <= 0 || b.height <= 0 || bodyWidth <= 0 || c.left >= c.right || c.top >= c.bottom ||
+      b.x < c.left - 1 || b.x + b.width > c.right + 1 || b.y < c.top - 1 || b.y + b.height > c.bottom + 1) return false;
+  if (reference && (!Number.isFinite(reference.width) || !Number.isFinite(reference.height) || reference.width <= 0 || reference.height <= 0 ||
+      Math.abs(b.width - reference.width) > 1 || Math.abs(b.height - reference.height) > 1)) return false;
+  if (kind === 'grid') return completeGridCell(b, bodyWidth);
+  const expected = ({ button: 32, tab: 48, navigation: 80 } as Record<string, number>)[kind];
+  if (expected !== undefined) return Math.abs(b.height - expected) <= 0.5;
+  return true;
+}
+function controlKind(id: number, index = 0) {
+  if (id === 147) return 'grid';
+  if (id === 129 || id === 165 || (id === 39 && index === 1)) return 'button';
+  if (id === 75) return 'tab';
+  if (id === 100) return 'navigation';
+  return 'interior';
+}
+async function reveal(page: Page, target: Locator, inputs: unknown[], kind = 'interior', reference: any = null) {
   for (let attempt = 0; attempt < 9; attempt++) {
     const count = await target.count();
     expect(count, 'source control must not be ambiguous').toBeLessThanOrEqual(1);
     const observed = count === 1 ? await geometry(page, target) : null;
-    if (observed?.visible && (!requireGridCell || completeGridCell(observed.box, (await body(page).boundingBox())!.width))) {
-      if (requireGridCell) {
+    if (completeControl(observed, kind, (await body(page).boundingBox())!.width, reference?.box)) {
+      if (reference) expect(await controlSignature(target)).toEqual(reference.signature);
+      if (kind === 'grid') {
         const identity = await target.getAttribute('id'); expect(identity).toBeTruthy();
         await delay(page);
         const stable = await geometry(page, target);
         expect(await target.getAttribute('id')).toBe(identity);
         expect(stable.visible).toBe(true);
         expect(completeGridCell(stable.box, (await body(page).boundingBox())!.width)).toBe(true);
+        for (const key of ['x', 'y', 'width', 'height'] as const) expect(Math.abs(stable.box[key] - observed.box[key])).toBeLessThanOrEqual(1);
+        return stable;
+      }
+      if (reference) {
+        expect(await controlSignature(target)).toEqual(reference.signature);
+        await delay(page);
+        const stable = await geometry(page, target);
+        expect(completeControl(stable, kind, (await body(page).boundingBox())!.width, reference.box)).toBe(true);
         for (const key of ['x', 'y', 'width', 'height'] as const) expect(Math.abs(stable.box[key] - observed.box[key])).toBeLessThanOrEqual(1);
         return stable;
       }
@@ -64,9 +97,9 @@ async function reveal(page: Page, target: Locator, inputs: unknown[], requireGri
   }
   throw Error('Control not fully reachable after bounded real wheel input');
 }
-async function clickMeasured(page: Page, target: Locator, inputs: unknown[]) {
-  const g = await reveal(page, target, inputs); await delay(page);
-  const again = await geometry(page, target); expect(again.visible).toBe(true);
+async function clickMeasured(page: Page, target: Locator, inputs: unknown[], kind = 'interior', reference: any = null) {
+  const g = await reveal(page, target, inputs, kind, reference); await delay(page);
+  const again = await geometry(page, target); expect(completeControl(again, kind, (await body(page).boundingBox())!.width, reference?.box)).toBe(true);
   expect(Math.abs(again.box.y - g.box.y)).toBeLessThanOrEqual(1);
   const x = Math.floor(again.box.x + again.box.width / 2), y = Math.floor(again.box.y + again.box.height / 2);
   await page.mouse.click(x, y); inputs.push({ kind: 'mouse', x, y });
@@ -105,6 +138,45 @@ function targets(page: Page, id: number): Locator[] {
     default: throw Error('Unreviewed template');
   }
 }
+async function controlSignature(target: Locator) {
+  return target.evaluate(el => ({ tag: el.tagName, role: el.getAttribute('role'),
+    label: el.getAttribute('aria-label'), text: el.textContent,
+    value: 'value' in el ? (el as HTMLInputElement).value : null }));
+}
+// Same width/default state only: these selected source controls are intrinsic
+// in height. Center/Expanded change their position, not their dimensions.
+// A second bounded height rejects stretched/ambiguous references explicitly.
+async function intrinsicReferences(page: Page, id: number, info: TestInfo) {
+  const original = page.viewportSize()!, route = page.url(), references: any[] = [], observations: any[] = [];
+  let complete = false;
+  try {
+    for (const height of [1600, 1720]) {
+      await page.setViewportSize({ width: original.width, height }); await delay(page);
+      expect(page.url()).toBe(route);
+      const envelope = (await body(page).boundingBox())!;
+      expect(envelope.height).toBeGreaterThan(1000);
+      for (const [index, target] of targets(page, id).entries()) {
+        await expect(target).toHaveCount(1);
+        const measured = await geometry(page, target), signature = await controlSignature(target);
+        observations.push({ height, index, measured, signature });
+        expect(completeControl(measured, controlKind(id, index), envelope.width)).toBe(true);
+        if (height === 1600) references.push({ box: measured.box, clip: measured.clip, signature });
+        else {
+          expect(signature).toEqual(references[index].signature);
+          expect(completeControl(measured, controlKind(id, index), envelope.width, references[index].box)).toBe(true);
+        }
+      }
+      if (height === 1600) await info.attach('generic-intrinsic-reference.png', { body: await page.screenshot(), contentType: 'image/png' });
+    }
+    complete = true;
+    return references;
+  } finally {
+    await info.attach('generic-intrinsic-reference.json', { body: JSON.stringify({ complete, route, width: original.width, heights: [1600, 1720], references, observations }), contentType: 'application/json' });
+    await info.attach('generic-reference-final.png', { body: await page.screenshot(), contentType: 'image/png' });
+    await page.setViewportSize(original); await delay(page);
+    expect(page.url()).toBe(route);
+  }
+}
 async function attach(page: Page, info: TestInfo, measurements: unknown) {
   await info.attach('generic-geometry.json', { body: JSON.stringify(measurements, null, 2), contentType: 'application/json' });
   await info.attach('generic-template.png', { body: await page.screenshot(), contentType: 'image/png' });
@@ -114,12 +186,17 @@ for (const id of layouts) test(`Generic ${id} selected source controls are fully
   page.on('pageerror', error => errors.push(String(error)));
   try {
   await navigateToScreen(page, id); await expect(template(page)).toHaveCount(1); await delay(page);
-  for (const target of targets(page, id)) measurements.push(await reveal(page, target, inputs, id === 147));
+  const references = await intrinsicReferences(page, id, info);
+  expect(references).toHaveLength(targets(page, id).length);
+  for (const [index, target] of targets(page, id).entries()) {
+    expect(references[index]).toBeDefined();
+    measurements.push(await reveal(page, target, inputs, controlKind(id, index), references[index]));
+  }
   if (id === 39 || id === 57) {
     const input = template(page).getByRole('textbox'); await focusByTab(page, input);
     await expect(input).toBeFocused(); await page.keyboard.type('reachable'); await expect(input).toHaveValue('reachable');
   } else if (id === 129) {
-    await clickMeasured(page, targets(page, id)[0], inputs);
+    await clickMeasured(page, targets(page, id)[0], inputs, 'button', references[0]);
     // Flutter AlertDialog exposes alertdialog, not the generic dialog role.
     const modal = page.getByRole('alertdialog');
     await expect(modal).toHaveCount(1); await expect(modal).toBeVisible();
@@ -135,7 +212,7 @@ for (const id of layouts) test(`Generic ${id} selected source controls are fully
     await info.attach('generic-dialog-open.png', { body: await page.screenshot(), contentType: 'image/png' });
     await page.keyboard.press('Escape'); inputs.push({ kind: 'keyboard', key: 'Escape' });
     await expect(modal).toHaveCount(0); await expect(page).toHaveURL(/#\/screen129(?:[?]|$)/);
-    measurements.push(await reveal(page, targets(page, id)[0], inputs));
+    measurements.push(await reveal(page, targets(page, id)[0], inputs, 'button', references[0]));
     await info.attach('generic-dialog-closed.png', { body: await page.screenshot(), contentType: 'image/png' });
   }
   expect(errors).toEqual([]);
