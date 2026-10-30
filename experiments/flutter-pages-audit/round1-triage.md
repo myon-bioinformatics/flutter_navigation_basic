@@ -81,3 +81,19 @@ Receipt paths are relative to the retained artifact. No historical status is rew
 | `/screen75` | wide-1180x757 | unverified | no complete region/fit proof | `cases/audit-observe-public-route-screen75-wide-1180x757/audit-receipt.json` |
 | `/screen91` | compact-390x500 | unverified | moved; endpoint unproven | `cases/audit-observe-public-route-screen91-compact-390x500/audit-receipt.json` |
 | `/screen91` | wide-1180x757 | unverified | no complete region/fit proof | `cases/audit-observe-public-route-screen91-wide-1180x757/audit-receipt.json` |
+
+## Round 2 measured result (final authorized diagnostic)
+
+Run: https://github.com/myon-bioinformatics/flutter_navigation_basic/actions/runs/41029065070
+
+Candidate: `9acdf8cf6830133f543c170b19ce05d6acee1805`; reviewed tree `710aea7d1e0d99c246e59933ad981e9396f88e56`. Artifact `12965690393`, ZIP SHA256 `999d07ecc91c73592dbe1544e5b94a4b8446495e293dd0b12f7083597be8c0f5`.
+
+48 receipts/screenshots validated on offline replay. The unchanged baseline and all source hashes passed before/after measurement. Browser results remain 8 passed / 40 failed due to required scroll unknowns. RequiredFailed=0, requiredUnverified=40, optionalUnverified=96, familyBindingUnverifiedPairs=48, collectionEvidenceValid=true, acceptancePromoted=false. Full430 is incomplete with 382 missing pairs, not a completed audit. Aggregate exit1 is expected.
+
+At the stable after-reset snapshot, exact unique source-item matches increased from 33 to 254 of 3,083 expected item occurrences across 48 pairs. This denominator includes virtualized full-list expectations; it is not a pass rate. Ten pairs now have all expected items matched and a computed common ancestor: Screen136, Screen171, Screen173, Screen174 and Screen183 at both viewports. All ten common ancestors still contain shared-header chrome (bodyRootContainsChrome=true), so even isolated body binding is not established. This is improved discovery, not verified complete-body containment, fit, scrolling, page actions or painted layout. Family acceptance remains unverified even for these ten.
+
+The remaining missing bindings include merged chip semantics, virtualized list items and source expectations that do not match the exposed DOM. They need reviewed per-family contracts. Do not convert these into successful or not_applicable checks. The Screen100 compact finding and other compact-template candidates remain separate application work.
+
+The two authorized 48-pair rounds are exhausted. No third diagnostic, full430 run, production change, or #223 integration was performed. Integration remains blocked by unverified required representative contracts. Keep Draft and retain the original receipts unmodified. This section records results only and must not trigger browser measurements.
+
+Final independent artifact review verified all 328 round-2 capture files and SHA256 values with no missing or mismatched files; all 48 scroll statuses are unchanged from round 1.
