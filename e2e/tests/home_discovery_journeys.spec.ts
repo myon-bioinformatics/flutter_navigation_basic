@@ -1,13 +1,26 @@
 import { test, expect, type Locator, type Page, type TestInfo } from '@playwright/test';
 import { createHash } from 'node:crypto';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { waitForFlutter } from '../utils/helpers';
 import { press as kitPress } from '../utils/interaction.mjs';
+import { revealByKeyboard, tapKeyboardRevealed, verifiedCandidate } from '../utils/flutter_keyboard_reveal.mjs';
 import path from 'node:path';
 import { photoStudioFixtureDir, waitPhotoImportOutcome } from '../utils/photo_studio';
 
 // Independent page/context fixtures; schedule cases across bounded workers.
 test.describe.configure({ mode: 'parallel' });
+
+function candidateIdentity() {
+  // Other local/published-site lanes do not claim candidate-build provenance.
+  if (process.env.CANDIDATE_PROVENANCE_REQUIRED !== '1') return { candidate_sha: null, built_bundle_sha256: null };
+  const file = process.env.CANDIDATE_PROVENANCE_FILE;
+  if (!file) throw Error('Missing candidate provenance file');
+  return verifiedCandidate(process.env.CANDIDATE_SHA, JSON.parse(readFileSync(file, 'utf8')));
+}
+test.beforeEach(async ({}, info) => {
+  const identity = candidateIdentity(); // Fail before interaction, never skip.
+  await info.attach('candidate-provenance.json', { body: JSON.stringify(identity), contentType: 'application/json' });
+});
 
 // Flutter's route/menu transitions (300–450ms in the pinned SDK) are painted
 // into the canvas, not CSS animations. Semantics/URL can update before painting.
@@ -79,17 +92,10 @@ async function doorButton(page: Page, current: string) {
 // scrollable body with wheel input before the kit measures/taps the field.
 async function scrollDoorIntoCanvas(page: Page, field: Locator, scrolls: unknown[], testInfo: TestInfo) {
   if (testInfo.project.name === 'mobile-webkit') {
-    // Playwright explicitly rejects wheel input in mobile WebKit. Its semantics
-    // scrolling already completed the route in prior runs; keep the real touch
-    // press, with viewport/frame checks, rather than skipping or DOM-clicking.
-    const before = await field.boundingBox();
-    await field.scrollIntoViewIfNeeded();
-    await page.evaluate(() => new Promise<void>((resolve) => {
-      requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-    }));
-    const after = await field.boundingBox();
-    scrolls.push({ input: 'semantics-scroll', reason: 'mobile-webkit-wheel-unsupported', before, after });
-    await expect(field).toBeInViewport({ ratio: 0.9 });
+    // Keyboard-assisted reveal, then a real touch below. This is not native
+    // touch-scroll coverage. DOM scrolling previously moved only the overlay.
+    scrolls.push(await revealByKeyboard(page, field));
+    await expect(field).toBeInViewport({ ratio: 1 });
     return;
   }
   const view = page.viewportSize()!;
@@ -121,8 +127,22 @@ async function scrollDoorIntoCanvas(page: Page, field: Locator, scrolls: unknown
 // looking for a destination. Do not retry the same non-interactive card centre.
 async function openDoor(page: Page, field: Locator, testInfo: TestInfo, attempts: unknown[]) {
   const items = page.locator('[role="menuitem"]');
-  const record = await press(page, field, testInfo);
-  const attempt = { via: 'button-press', opened: false, record };
+  const reveal = testInfo.project.name === 'mobile-webkit'
+    ? await revealByKeyboard(page, field) : null;
+  let capture = null;
+  if (reveal) {
+    await settleCanvas(page);
+    // Preserve the painted target immediately before EVERY Door tap, including
+    // the second opening after Cancel. Geometry is rechecked after capture.
+    const file = `door-before-press-${attempts.length + 1}.png`;
+    const output = testInfo.outputPath(file);
+    const png = await page.screenshot({ path: output });
+    capture = { file, bytes: png.length, sha256: createHash('sha256').update(png).digest('hex') };
+    await testInfo.attach(file, { path: output, contentType: 'image/png' });
+  }
+  const record = reveal ? await tapKeyboardRevealed(page, field, reveal)
+    : await press(page, field, testInfo);
+  const attempt = { via: 'button-press', opened: false, reveal, capture, record };
   attempts.push(attempt);
   await expect(items.first()).toBeVisible({ timeout: 3_000 });
   attempt.opened = true;
@@ -316,6 +336,7 @@ test.describe('Home discovery journeys', () => {
         viewport: page.viewportSize(),
         expected_sha: process.env.EXPECTED_SHA ?? null,
         ci_sha: process.env.GITHUB_SHA ?? null,
+        ...candidateIdentity(),
         run_id: process.env.GITHUB_RUN_ID ?? null,
         run_attempt: process.env.GITHUB_RUN_ATTEMPT ?? null,
         captures,
@@ -336,7 +357,8 @@ test('Photo Studio dirty Door preserves Cancel and Discard @portable', async ({ 
   test.setTimeout(90_000);
   const receipt: Record<string, any> = { schema: 'flutter-photo-door-audit/1', stage: 'failed',
     project: info.project.name, viewport: page.viewportSize(), browser_version: page.context().browser()!.version(),
-    ci_sha: process.env.GITHUB_SHA ?? null, run_id: process.env.GITHUB_RUN_ID ?? null,
+    ci_sha: process.env.GITHUB_SHA ?? null,
+        ...candidateIdentity(), run_id: process.env.GITHUB_RUN_ID ?? null,
     inputs: [], scrolls: [], captures: [] };
   async function capture(file: string) {
     await settleCanvas(page);
@@ -351,9 +373,10 @@ test('Photo Studio dirty Door preserves Cancel and Discard @portable', async ({ 
     const importButton = page.getByRole('button', { name: 'Import image', exact: true });
     // Import is midway through the body: stop once it is painted in view.
     // The Door helper deliberately scrolls all the way to the body end.
+    let keyboardImport;
     if (info.project.name === 'mobile-webkit') {
-      await importButton.scrollIntoViewIfNeeded();
-      receipt.scrolls.push({ input: 'semantics-scroll', target: 'import-image' });
+      keyboardImport = await revealByKeyboard(page, importButton, { minimumHeight: 32 });
+      receipt.scrolls.push({ target: 'import-image', ...keyboardImport });
     } else {
       const view = page.viewportSize()!;
       for (let attempt = 0; attempt < 16; attempt++) {
@@ -369,7 +392,9 @@ test('Photo Studio dirty Door preserves Cancel and Discard @portable', async ({ 
     await settleCanvas(page);
     await expect(importButton).toBeInViewport({ ratio: 1 });
     const chooser = page.waitForEvent('filechooser');
-    receipt.inputs.push(await press(page, importButton, info));
+    receipt.inputs.push(keyboardImport
+      ? await tapKeyboardRevealed(page, importButton, keyboardImport)
+      : await press(page, importButton, info));
     await (await chooser).setFiles(path.join(photoStudioFixtureDir, 'png_opaque_64x32.png'));
     expect((await waitPhotoImportOutcome(page)).kind).toBe('rendered');
     await expect(page.getByRole('button', { name: 'Undo', exact: true })).toBeEnabled();

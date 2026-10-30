@@ -297,58 +297,54 @@ class _GenericScreenBody extends StatelessWidget {
           );
     final detail = data.detail;
 
-    final content = Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    final metadata = Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Text(data.emoji, style: const TextStyle(fontSize: 30)),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          headline,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        Text(
-                          subline,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                  TextButton.icon(
-                    onPressed: onBackToHub,
-                    icon: const Icon(Icons.grid_view),
-                    label: Text(display.text('generic.backToHub')),
-                  ),
-                ],
-              ),
-              if (detail == null) ...[
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+              Text(data.emoji, style: const TextStyle(fontSize: 30)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _PatternChip(label: display.text('generic.patternNavigation'), value: data.navigationPattern),
-                    _PatternChip(label: display.text('generic.patternApi'), value: data.apiPattern),
-                    _PatternChip(label: display.text('generic.patternTheme'), value: data.themePattern),
-                    _PatternChip(label: display.text('generic.patternData'), value: data.dataPattern),
+                    Text(
+                      headline,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      subline,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ),
-              ],
+              ),
+              TextButton.icon(
+                onPressed: onBackToHub,
+                icon: const Icon(Icons.grid_view),
+                label: Text(display.text('generic.backToHub')),
+              ),
             ],
           ),
-        ),
-        const Divider(height: 1),
-        Expanded(
-          child: data.screenDataId == 6
+          if (detail == null) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _PatternChip(label: display.text('generic.patternNavigation'), value: data.navigationPattern),
+                _PatternChip(label: display.text('generic.patternApi'), value: data.apiPattern),
+                _PatternChip(label: display.text('generic.patternTheme'), value: data.themePattern),
+                _PatternChip(label: display.text('generic.patternData'), value: data.dataPattern),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+    final template = data.screenDataId == 6
               ? _Screen6CatalogSearch(screens: allScreens)
               : detail == null
                   ? PatternTemplateBody(
@@ -382,28 +378,58 @@ class _GenericScreenBody extends StatelessWidget {
                       ),
                     ],
                   ),
+                );
+    if (data.screenDataId != 6) {
+      return Semantics(
+        identifier: 'generic-body',
+        container: true,
+        explicitChildNodes: true,
+        child: CustomScrollView(
+          key: const Key('generic-body-scroll'),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Column(
+                key: const Key('generic-metadata'),
+                children: [metadata, const Divider(height: 1)],
+              ),
+            ),
+            SliverLayoutBuilder(builder: (context, constraints) {
+              // Reserve TEMPLATE space after measuring the real metadata, not
+              // a guessed total canvas. Long/wrapped metadata scrolls outside
+              // this finite inner viewport; wide layouts use remaining room.
+              const minimumTemplateHeight = 240.0;
+              final remaining = constraints.viewportMainAxisExtent -
+                  constraints.precedingScrollExtent;
+              return SliverToBoxAdapter(
+                child: SizedBox(
+                  key: const Key('generic-template-viewport'),
+                  height: remaining < minimumTemplateHeight
+                      ? minimumTemplateHeight
+                      : remaining,
+                  child: template,
                 ),
+              );
+            }),
+          ],
         ),
-      ],
+      );
+    }
+    // Preserve Screen6's stable search/editor wrapper and 480px canvas.
+    final content = Column(
+      children: [metadata, const Divider(height: 1), Expanded(child: template)],
     );
-    if (data.screenDataId != 6) return content;
-
-    // The metadata above the catalogue can consume the entire short body.
-    // Give short windows room for the search, count and a useful result list.
-    // Keep the wrapper and default scroll physics stable across the boundary:
-    // replacing either can reset search state or the web editing DOM on resize.
     return Semantics(
       identifier: 'screen6-body',
       container: true,
       explicitChildNodes: true,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          const minimumCatalogHeight = 480.0;
+          const minimumContentHeight = 480.0;
           return SingleChildScrollView(
             key: const Key('screen6-body-scroll'),
             child: SizedBox(
-              height: constraints.maxHeight < minimumCatalogHeight
-                  ? minimumCatalogHeight
+              height: constraints.maxHeight < minimumContentHeight
+                  ? minimumContentHeight
                   : constraints.maxHeight,
               child: content,
             ),
