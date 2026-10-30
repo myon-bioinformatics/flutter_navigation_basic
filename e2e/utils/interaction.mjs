@@ -2,7 +2,8 @@
 // No runtime dependency on import: the caller owns Page, Locator and Playwright.
 // Python twin: scripts/interaction.py (same records, same rules).
 
-const round = (v) => Math.round(v * 1000) / 1000;
+// Same float operations as interaction.py _round (Math.round and Python round() differ on ties).
+const round = (v) => Math.floor(v * 1000 + 0.5) / 1000;
 
 // Integer pixels: engines round fractional hit/click coordinates differently
 // (docs/antipatterns.md FRACTIONAL_HIT_COORDINATES).
