@@ -478,8 +478,21 @@ jobs:
     # do not turn missing browser execution or missing JUnit into success.
     timeout-minutes: 90
 
+    env:
+      CANDIDATE_PROVENANCE_REQUIRED: "1"
+      CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      CANDIDATE_PROVENANCE_FILE: ${{ github.workspace }}/build/product-verification-provenance.json
+
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Verify candidate checkout
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -496,20 +509,89 @@ jobs:
         run: |
           flutter pub get
       - name: Build Web and measure Python / Node
+        id: candidate_build
         uses: ./.github/actions/build-companions
         with:
           target: web
           id: portable-e2e
           command: '["flutter","build","web","--release","-t","lib/main.dart","--dart-define=E2E=true","--base-href","/"]'
 
+      - name: Record candidate-built web provenance
+        id: candidate_provenance
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python3 - <<'PYCODE'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+          actual = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          if actual != os.environ["EXPECTED_SHA"]:
+              raise SystemExit("candidate checkout changed")
+          bundle = Path("build/web/main.dart.js")
+          Path("build/product-verification-provenance.json").write_text(json.dumps({
+              "candidateSha": actual,
+              "builtBundle": str(bundle),
+              "builtBundleSha256": hashlib.sha256(bundle.read_bytes()).hexdigest(),
+              "servedFrom": "same-job build/web on loopback; not published Pages",
+          }, indent=2) + "\n")
+          PYCODE
+
       - name: Install Playwright
+        id: browser_install
         timeout-minutes: 60
         working-directory: e2e
         run: |
           npm install
           npx playwright install --with-deps --only-shell chromium firefox webkit
 
+      - name: Verify Generic responsive controls on the candidate build
+        if: always() && steps.candidate_build.outcome == 'success' && steps.candidate_provenance.outcome == 'success' && steps.browser_install.outcome == 'success'
+        timeout-minutes: 22
+        working-directory: e2e
+        env:
+          PLAYWRIGHT_JUNIT_OUTPUT_FILE: ${{ github.workspace }}/build/test-results/playwright-generic-responsive.xml
+          FLUTTER_WEB_BASE_URL: http://127.0.0.1:8080
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8080 --directory ../build/web &
+          server_pid=$!
+          trap 'kill "$server_pid" || true' EXIT
+          for _ in $(seq 1 30); do
+            if curl -fsS "$FLUTTER_WEB_BASE_URL" >/dev/null; then break; fi
+            sleep 1
+          done
+          node node_modules/@playwright/test/cli.js test --config playwright.generic-responsive.config.ts
+
+      - name: Verify two-profile Door journeys on the candidate build
+        if: always() && steps.candidate_build.outcome == 'success' && steps.candidate_provenance.outcome == 'success' && steps.browser_install.outcome == 'success'
+        timeout-minutes: 14
+        working-directory: e2e
+        env:
+          PLAYWRIGHT_JUNIT_OUTPUT_FILE: ${{ github.workspace }}/build/test-results/playwright-mobile-door.xml
+          FLUTTER_WEB_BASE_URL: http://127.0.0.1:8080
+        run: |
+          set -euo pipefail
+          node --test ../javascript/tests/flutter_keyboard_reveal.test.mjs
+          python3 -m http.server 8080 --directory ../build/web &
+          server_pid=$!
+          trap 'kill "$server_pid" || true' EXIT
+          for _ in $(seq 1 30); do
+            if curl -fsS "$FLUTTER_WEB_BASE_URL" >/dev/null; then break; fi
+            sleep 1
+          done
+          status=0
+          node node_modules/@playwright/test/cli.js test tests/home_discovery_journeys.spec.ts --project mobile-webkit --project mobile-chromium --workers 1 --retries 0 --timeout 90000 --trace on || status=$?
+          mkdir -p ../build/playwright-mobile-door
+          for evidence in test-results playwright-report; do
+            if [ -d "$evidence" ]; then cp -R "$evidence" ../build/playwright-mobile-door/; fi
+          done
+          exit "$status"
+
       - name: Serve web build and run Playwright
+        if: always() && steps.candidate_build.outcome == 'success' && steps.candidate_provenance.outcome == 'success' && steps.browser_install.outcome == 'success'
         working-directory: e2e
         run: |
           set -euo pipefail
@@ -550,7 +632,11 @@ jobs:
         with:
           name: playwright-e2e-report
           path: |
+            build/product-verification-provenance.json
             build/playwright-portable/
+            build/playwright-mobile-door/
+            e2e/generic-responsive-results/
+            e2e/generic-responsive-report/
             e2e/playwright-report/
             e2e/test-results/
           retention-days: 14
@@ -636,7 +722,9 @@ jobs:
           if os.environ["PLAYWRIGHT"] == "true":
               reports += ["junit-playwright-e2e/playwright-portable.xml",
                           "junit-playwright-e2e/playwright-interaction-portable.xml",
-                          "junit-playwright-e2e/playwright-interaction-gesture.xml"]
+                          "junit-playwright-e2e/playwright-interaction-gesture.xml",
+                          "junit-playwright-e2e/playwright-generic-responsive.xml",
+                          "junit-playwright-e2e/playwright-mobile-door.xml"]
           if os.environ["VALIDATION_BROWSER"] == "true":
               reports += ["junit-validation-browser/validation-browser.xml"]
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:

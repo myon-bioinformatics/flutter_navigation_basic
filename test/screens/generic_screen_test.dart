@@ -1,8 +1,10 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/config/routes.dart';
 import 'package:flutter_application_1/screens/generic_screen.dart';
+import 'package:flutter_application_1/screens/pattern_template_screen.dart';
 import 'package:flutter_application_1/shared/widgets/standard_page_footer.dart';
 import 'package:flutter_application_1/shared/widgets/standard_page_shell.dart';
 import 'package:flutter_application_1/shared/widgets/tool_door_selector.dart';
@@ -15,6 +17,7 @@ Future<void> _pumpGeneric(
   int screenId, {
   DisplayController? controller,
   bool preloadCatalogue = true,
+  TextScaler? textScaler,
   Map<String, WidgetBuilder> routes = const {},
 }) async {
   final resolvedController = controller ?? await loadTestDisplayController();
@@ -24,6 +27,10 @@ Future<void> _pumpGeneric(
   await tester.pumpWidget(
     MaterialApp(
       routes: routes,
+      builder: textScaler == null ? null : (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+        child: child!,
+      ),
       home: DisplayScope(controller: resolvedController, child: GenericScreen(screenId: screenId)),
     ),
   );
@@ -36,6 +43,70 @@ Future<void> _pumpGeneric(
     });
   }
   await tester.pump();
+}
+
+// SliverLayoutBuilder intentionally does not build a template outside the
+// viewport/cache region. Materialize it through bounded real outer gestures
+// before asking finders to inspect its controls; do not change production cache.
+Future<void> _materializeGenericTemplate(WidgetTester tester) async {
+  final viewport = find.byKey(const Key('generic-template-viewport'));
+  final outer = find.descendant(
+    of: find.byKey(const Key('generic-body-scroll')),
+    matching: find.byType(Scrollable),
+  ).first;
+  expect(outer, findsOneWidget);
+  final positions = <Map<String, double>>[];
+  Map<String, double> position() {
+    final value = tester.state<ScrollableState>(outer).position;
+    return {'pixels': value.pixels, 'min': value.minScrollExtent,
+      'max': value.maxScrollExtent, 'viewport': value.viewportDimension};
+  }
+  for (var attempt = 0; attempt < 12 && viewport.evaluate().isEmpty; attempt++) {
+    final bounds = tester.getRect(outer);
+    expect(bounds.width, greaterThan(6));
+    expect(bounds.height, greaterThan(24));
+    positions.add(position());
+    // The left edge avoids dispatching the drag to nested template scrollables.
+    await tester.dragFrom(bounds.topLeft + const Offset(3, 24),
+        const Offset(0, -120));
+    await tester.pumpAndSettle();
+    positions.add(position());
+  }
+  if (positions.isNotEmpty) {
+    expect(positions.last['pixels']!, greaterThan(positions.first['pixels']!),
+        reason: 'Outer gestures must actually move the viewport: $positions');
+    final last = positions.last;
+    expect(last.values.every((value) => value.isFinite), isTrue,
+        reason: 'Outer extent must remain finite: $positions');
+    expect(last['pixels']!, inInclusiveRange(last['min']!, last['max']!),
+        reason: 'Settled outer offset must be within its extent: $positions');
+  }
+  expect(viewport, findsOneWidget,
+      reason: 'Template not materialized after bounded outer drags: $positions');
+}
+
+// Keep nested-scroll failures diagnostic: a visible outer body alone does not
+// establish that a whole control fits its inner list/grid viewport.
+List<Map<String, Object>> _scrollGeometry(WidgetTester tester, Finder target) {
+  final geometry = <Map<String, Object>>[];
+  tester.element(target).visitAncestorElements((element) {
+    if (element is StatefulElement && element.state is ScrollableState) {
+      final state = element.state as ScrollableState;
+      final render = element.findRenderObject();
+      if (render is RenderBox && render.hasSize) {
+        geometry.add({
+          'viewport': render.localToGlobal(Offset.zero) & render.size,
+          'axis': state.position.axis,
+          'pixels': state.position.pixels,
+          'min': state.position.minScrollExtent,
+          'max': state.position.maxScrollExtent,
+          'viewportDimension': state.position.viewportDimension,
+        });
+      }
+    }
+    return true;
+  });
+  return geometry;
 }
 
 void main() {
@@ -349,6 +420,247 @@ void main() {
     await tester.tap(find.byKey(const Key('screen6-catalog-clear')));
     await tester.pump();
     expect(find.text('198 / 198'), findsOneWidget);
+  });
+
+  // Regression: at 390x500 the fixed metadata/chips previously left zero
+  // template height (or only 21/37px for 80/48px navigation/tab controls).
+  // Presence in the widget tree is insufficient: reveal and hit-test content.
+  final compactTargets = <int, Finder Function()>{
+    3: () => find.ancestor(
+        of: find.text('BasicReplace item 1'), matching: find.byType(ListTile)),
+    21: () => find.text('Screen ID: 21'),
+    39: () => find.byType(TextField),
+    57: () => find.byType(TextField),
+    75: () => find.byType(TabBar),
+    100: () => find.byType(NavigationBar),
+    111: () => find.text('Drawer-style navigation sample'),
+    129: () => find.text('Open dialog'),
+    147: () => find.ancestor(
+        of: find.text('AnimatedCrossFade\n#1'), matching: find.byType(Card)),
+    165: () => find.text('Simulate async task'),
+    185: () => find.byType(SwitchListTile),
+  };
+  for (final entry in compactTargets.entries) {
+    testWidgets('Screen${entry.key} compact template is reachable above Door',
+        (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 500);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      await _pumpGeneric(tester, entry.key);
+      await _materializeGenericTemplate(tester);
+      final target = find.descendant(
+        of: find.byType(PatternTemplateBody), matching: entry.value());
+      expect(target, findsOneWidget);
+      await tester.ensureVisible(target);
+      await tester.pumpAndSettle();
+      final body = find.byWidgetPredicate((widget) => widget is Semantics &&
+          widget.properties.identifier == 'generic-body');
+      final visible = tester.getRect(body);
+      final bounds = tester.getRect(target);
+      final scrolls = _scrollGeometry(tester, target);
+      final geometry = 'Screen${entry.key}: target=$bounds, body=$visible, '
+          'Door=${tester.getRect(find.byType(ToolDoorSelector))}, '
+          'scrolls=$scrolls';
+      expect(bounds.width, greaterThan(0), reason: geometry);
+      expect(bounds.height, greaterThan(0), reason: geometry);
+      expect(bounds.top, greaterThanOrEqualTo(visible.top - 0.01),
+          reason: geometry);
+      expect(bounds.bottom, lessThanOrEqualTo(visible.bottom + 0.01),
+          reason: geometry);
+      for (final scroll in scrolls) {
+        if (scroll['axis'] != Axis.vertical) continue;
+        final viewport = scroll['viewport']! as Rect;
+        expect(bounds.height, lessThanOrEqualTo(viewport.height + 0.01),
+            reason: 'Whole control must fit inner viewport. $geometry');
+        expect(bounds.top, greaterThanOrEqualTo(viewport.top - 0.01),
+            reason: geometry);
+        expect(bounds.bottom, lessThanOrEqualTo(viewport.bottom + 0.01),
+            reason: geometry);
+      }
+      expect(target.hitTestable(), findsOneWidget);
+      expect(bounds.bottom,
+          lessThanOrEqualTo(tester.getRect(find.byType(ToolDoorSelector)).top));
+      expect(tester.takeException(), isNull);
+      if (entry.key == 39) {
+        await tester.enterText(target, 'state stays reachable');
+        final submit = find.text('Submit');
+        await tester.ensureVisible(submit);
+        await tester.pumpAndSettle();
+        expect(submit.hitTestable(), findsOneWidget);
+        expect(tester.getRect(submit).bottom,
+            lessThanOrEqualTo(tester.getRect(body).bottom + 0.01));
+      }
+    });
+  }
+
+  testWidgets('Generic measured metadata cannot consume the finite template viewport',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 500);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    await _pumpGeneric(tester, 147, textScaler: const TextScaler.linear(1.25));
+    await _materializeGenericTemplate(tester);
+    final metadata = find.byKey(const Key('generic-metadata'));
+    final viewport = find.byKey(const Key('generic-template-viewport'));
+    final body = find.byWidgetPredicate((widget) => widget is Semantics &&
+        widget.properties.identifier == 'generic-body');
+    final outer = tester.state<ScrollableState>(find.descendant(
+      of: find.byKey(const Key('generic-body-scroll')),
+      matching: find.byType(Scrollable),
+    ).first);
+    final metadataHeight = tester.getSize(metadata).height;
+    expect(metadataHeight, greaterThan(0));
+    expect(tester.getSize(viewport).height, 240);
+    expect(outer.position.maxScrollExtent,
+        closeTo(metadataHeight + 240 - tester.getSize(body).height, 0.01));
+    final card = find.ancestor(
+        of: find.text('AnimatedCrossFade\n#1'), matching: find.byType(Card));
+    await tester.ensureVisible(card);
+    await tester.pumpAndSettle();
+    // Nested ensureVisible can align the inner grid while leaving its padded
+    // first card behind the outer header. Correct only measured clipping with
+    // bounded real wheel events, never an offset jump or relaxed geometry check.
+    final reveals = <Map<String, Object>>[];
+    for (var attempt = 0; attempt < 4; attempt++) {
+      final bounds = tester.getRect(card);
+      final bodyRect = tester.getRect(body);
+      final templateRect = tester.getRect(viewport);
+      final visible = bodyRect.intersect(templateRect);
+      if (bounds.top >= visible.top - 0.01 &&
+          bounds.bottom <= visible.bottom + 0.01) break;
+      final clippedTop = bounds.top < visible.top;
+      final deficit = clippedTop
+          ? visible.top - bounds.top : bounds.bottom - visible.bottom;
+      // Wheel signals use Flutter's public pointer routing: an inner viewport
+      // at its edge declines the signal so the outer viewport can consume it.
+      final distance = (deficit + 1).clamp(1.0, 64.0).toDouble();
+      expect(visible.width, greaterThan(0));
+      expect(visible.height, greaterThan(0));
+      final start = visible.center;
+      final delta = Offset(0, clippedTop ? -distance : distance);
+      final observation = <String, Object>{
+        'card': bounds, 'body': bodyRect, 'template': templateRect,
+        'input': 'mouse-wheel', 'start': start, 'delta': delta,
+        'before': _scrollGeometry(tester, card),
+      };
+      reveals.add(observation);
+      await tester.sendEventToBinding(PointerScrollEvent(
+          position: start, scrollDelta: delta, kind: PointerDeviceKind.mouse));
+      await tester.pumpAndSettle();
+      observation['after'] = _scrollGeometry(tester, card);
+      final before = (observation['before']! as List<Map<String, Object>>)
+          .where((item) => item['axis'] == Axis.vertical).toList();
+      final after = (observation['after']! as List<Map<String, Object>>)
+          .where((item) => item['axis'] == Axis.vertical).toList();
+      expect(before.length, greaterThanOrEqualTo(2), reason: '$reveals');
+      expect(after.length, before.length, reason: '$reveals');
+      expect(List.generate(before.length, (index) {
+        final change = (after[index]['pixels']! as double) -
+            (before[index]['pixels']! as double);
+        return clippedTop ? change < 0 : change > 0;
+      }).any((moved) => moved), isTrue,
+          reason: 'Wheel must cause useful scroll movement: $reveals');
+      final innerAtStart = ((before.first['pixels']! as double) -
+          (before.first['min']! as double)).abs() <= 0.01;
+      if (clippedTop && innerAtStart) {
+        expect(after.last['pixels']! as double,
+            lessThan(before.last['pixels']! as double),
+            reason: 'At inner start, upward wheel must move the outer viewport: $reveals');
+      }
+    }
+    final bounds = tester.getRect(card);
+    final visible = tester.getRect(body).intersect(tester.getRect(viewport));
+    final geometry = 'card=$bounds visible=$visible, gestures=$reveals, '
+        'finalScrolls=${_scrollGeometry(tester, card)}';
+    expect(bounds.top, greaterThanOrEqualTo(visible.top - 0.01), reason: geometry);
+    expect(bounds.bottom, lessThanOrEqualTo(visible.bottom + 0.01), reason: geometry);
+    expect(card.hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Generic form preserves edit controller focus and selection on resize',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 500);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    await _pumpGeneric(tester, 39);
+    await _materializeGenericTemplate(tester);
+    final field = find.byType(TextField);
+    await tester.ensureVisible(field);
+    await tester.enterText(field, 'resize-safe input');
+    await tester.pumpAndSettle();
+    final controller = tester.widget<TextField>(field).controller!;
+    final focus = tester.widget<EditableText>(find.byType(EditableText)).focusNode;
+    const selection = TextSelection(baseOffset: 2, extentOffset: 7);
+    controller.selection = selection;
+    final body = find.byWidgetPredicate((widget) => widget is Semantics &&
+        widget.properties.identifier == 'generic-body');
+    final metadataHeight = tester.getSize(find.byKey(const Key('generic-metadata'))).height;
+    final templateViewport = find.byKey(const Key('generic-template-viewport'));
+    final originalTemplate = tester.element(templateViewport);
+    final threshold = 500 + metadataHeight + 240 - tester.getSize(body).height;
+    for (final size in [
+      const Size(1180, 757), const Size(390, 500),
+      Size(390, threshold - 1), Size(390, threshold),
+      Size(390, threshold + 1), const Size(1180, 757),
+      const Size(390, 500),
+    ]) {
+      tester.view.physicalSize = size;
+      await tester.pumpAndSettle();
+      await _materializeGenericTemplate(tester);
+      await tester.ensureVisible(field);
+      await tester.pumpAndSettle();
+      expect(tester.element(templateViewport), same(originalTemplate));
+      final remaining = tester.getSize(body).height -
+          tester.getSize(find.byKey(const Key('generic-metadata'))).height;
+      expect(tester.getSize(templateViewport).height,
+          closeTo(remaining < 240 ? 240 : remaining, 0.01));
+      expect(tester.widget<TextField>(field).controller, same(controller));
+      expect(controller.text, 'resize-safe input');
+      expect(controller.selection, selection);
+      expect(tester.widget<EditableText>(find.byType(EditableText)).focusNode,
+          same(focus));
+      expect(focus.hasFocus, isTrue);
+      expect(field.hitTestable(), findsOneWidget);
+      expect(tester.getRect(field).top,
+          greaterThanOrEqualTo(tester.getRect(body).top - 0.01));
+      expect(tester.getRect(field).bottom,
+          lessThanOrEqualTo(tester.getRect(body).bottom + 0.01));
+      expect(tester.takeException(), isNull);
+    }
+  });
+
+  testWidgets('fresh Generic route has independent editor and pop restores prior state',
+      (tester) async {
+    final display = await loadTestDisplayController();
+    await _pumpGeneric(tester, 39, controller: display, routes: {
+      '/fresh-generic': (_) => DisplayScope(
+          controller: display, child: const GenericScreen(screenId: 57)),
+    });
+    await _materializeGenericTemplate(tester);
+    final field = find.descendant(
+        of: find.byType(PatternTemplateBody), matching: find.byType(TextField));
+    await tester.ensureVisible(field);
+    await tester.enterText(field, 'first route');
+    final firstController = tester.widget<TextField>(field).controller;
+    Navigator.of(tester.element(find.byType(GenericScreen)))
+        .pushNamed('/fresh-generic');
+    await tester.pumpAndSettle();
+    await _materializeGenericTemplate(tester);
+    await tester.ensureVisible(field);
+    final secondController = tester.widget<TextField>(field).controller;
+    expect(secondController, isNot(same(firstController)));
+    expect(secondController!.text, isEmpty);
+    await tester.enterText(field, 'second route');
+    Navigator.of(tester.element(find.byType(GenericScreen))).pop();
+    await tester.pumpAndSettle();
+    await _materializeGenericTemplate(tester);
+    expect(tester.widget<TextField>(field).controller, same(firstController));
+    expect(firstController!.text, 'first route');
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('renders translated chrome for a non-English display locale', (tester) async {
