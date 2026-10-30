@@ -9,9 +9,14 @@ Aliases and the other426 pairs are not measured. The reviewed deployed reference
 is `d65322c15a55a7395bb5271bc65696402bc98d29`; the seven catalogue source hashes
 are pinned in `focused-baseline.json`. There is no automatically-follow-latest baseline.
 
-The new workflow runs only on opening the specifically named diagnostic PR,
-`diagnostic/flutter-223-focused-d65322c1`. Synchronizing it does not authorize or
-trigger another browser run. It is read-only, has a10-minute job bound and retains
+The initial opened-event diagnostic ran once with two Coordinates passes and two
+HTTP classification failures; those receipts remain unchanged. The proposed next
+workflow runs only on the exact title transition from
+`Diagnostic: four focused Flutter audit observations for #223` to
+`Diagnostic: four Flutter Door-motion observations for #223`, on branch
+`diagnostic/flutter-223-focused-d65322c1`. Publication/synchronization alone,
+body edits and later pushes do not trigger another browser run. A new owner grant
+is required before publishing this revision and making that one title change. It is read-only, has a10-minute job bound and retains
 artifacts for7 days. It does not deploy and must not be merged by default.
 The original full430 PR workflow is absent from this branch.
 
@@ -26,6 +31,19 @@ Optional page-action/painted-layout checks remain unknown.
 The local browser attempt could not launch due to a sandbox socket restriction;
 no page receipts were collected. Source/policy tests and exact4-case discovery
 passed; browser proof must come from the separately authorized diagnostic run.
+
+## Proposed observable Door-motion witness
+
+When an initially unexposed Door first appears inside a body scroller, ancestry
+alone is not a pass. The proposed observer sends two bounded real wheel gestures
+(back80px, forward160px), retaining the same Door/scroller IDs and measuring
+inverse Door displacement versus scroll offset on both legs. It requires at
+least12px observed movement, stable chrome, restored endpoint, and complete
+final clipped visibility. Each leg has bounded3-second settling; the existing
+90-second case timeout is unchanged. Missing/insufficient evidence stays unknown,
+and measured chrome drift fails. There is no source/route whitelist substitute.
+No retained receipt contains this new witness; fresh authorized browser evidence
+is required. No general430-case or page-action pass is implied.
 
 ## Original audit design and retained limitations
 

@@ -152,3 +152,55 @@ test('Hub search exemption requires measured containment AND actual header ances
   assert.equal(measuredHeaderMember({ ...hubSearch, box: { ...hubSearch.box, y: 367 } }, frame), false);
   assert.equal(measuredHeaderMember({ ...hubSearch, box: { ...hubSearch.box, height: 0 } }, frame), false);
 });
+
+const { emergingFlowProven } = require('./audit_policy.cjs');
+function motionFixture() {
+  const body = { x: 0, y: 104, width: 390, height: 372 };
+  const region = top => ({ id: 'body', box: { ...body }, overflowY: 'auto', scrollTop: top, scrollHeight: 1406, clientHeight: 372 });
+  const snapshot = (top, y) => ({ ...chrome('scroll-content'),
+    footerId: 'door', footerCount: 1, footer: { x: 36, y, width: 318, height: 40 },
+    footerClip: { x: 36, y, width: 318, height: Math.min(40, 476-y) },
+    envelope: { ...body }, regions: [region(top)], footerScrollParents: [{ id: 'body', box: { ...body } }] });
+  const before = { ...chrome('absent'), regions: [region(0)] };
+  const start = snapshot(1034, 388), back = snapshot(954, 468), end = snapshot(1034, 388);
+  return { before, after: structuredClone(end), motion: { regionId: 'body', start, back, end,
+    inputs: [{ input: 'wheel', region: 'body', deltaY: -80 }, { input: 'wheel', region: 'body', deltaY: 160 }] } };
+}
+test('emergent Door requires observed inverse flow on both real wheel legs and complete restored end', () => {
+  const x = motionFixture(); assert.equal(emergingFlowProven(x.before, x.after, x.motion), true);
+  assert.deepEqual(chromeProblems(x.before, x.after, x.motion), []);
+  assert.equal(emergingFlowProven(x.before, x.after, null), false);
+});
+test('fixed/overlay Door within SAME ancestor is rejected by displacement, not source or ancestry whitelist', () => {
+  for (const change of [x => x.motion.back.footer.y = 388, x => x.motion.back.footer.y = 400,
+    x => x.motion.back.footerMode = 'fixed', x => x.motion.back.footer.x += 2, x => x.motion.end.footer.y = 400]) {
+    const x = motionFixture(); change(x);
+    assert.equal(emergingFlowProven(x.before, x.after, x.motion), false);
+  }
+});
+test('no movement, wrong direction, missing leg/input and unproven restored end remain insufficient', () => {
+  const changes = [x => x.motion.back = null, x => x.motion.end = null, x => x.motion.inputs = [],
+    x => x.motion.inputs[0].input = 'synthetic-scroll', x => x.motion.inputs[0].deltaY = 80,
+    x => x.motion.inputs[1].deltaY = -80, x => x.motion.inputs[0].region = 'other',
+    x => x.motion.back.regions[0].scrollTop = 1034, x => x.motion.back.regions[0].scrollTop = 1023,
+    x => x.motion.end.regions[0].scrollTop = 1000, x => x.after.regions[0].scrollHeight += 20,
+    x => x.motion.end.regions[0].scrollTop = Infinity];
+  for (const change of changes) { const x = motionFixture(); change(x); assert.equal(emergingFlowProven(x.before, x.after, x.motion), false); }
+});
+test('replaced/duplicate identities, wrong ancestors, clipped terminal Door and transient chrome drift reject', () => {
+  const changes = [x => x.motion.back.footerId = 'replacement', x => x.motion.back.footerCount = 2,
+    x => x.motion.back.regions[0].id = 'other', x => x.motion.back.regions.push(x.motion.back.regions[0]),
+    x => x.motion.back.footerScrollParents[0].id = 'overlay',
+    x => x.motion.end.footerClip.height = 12, x => x.motion.start.footerClip.height = 12,
+    x => x.after.envelope.height = 100, x => x.motion.back.headerFrame.y += 2,
+    x => x.motion.back.header['shared-header-home'].box.y += 2,
+    x => x.motion.back.regions[0].overflowY = 'hidden', x => x.motion.end.footer.height = NaN];
+  for (const change of changes) { const x = motionFixture(); change(x); assert.equal(emergingFlowProven(x.before, x.after, x.motion), false); }
+});
+
+test('duplicate Door cannot impersonate legitimate absent chrome on the ordinary path', () => {
+  const before = { ...chrome('absent'), footerCount: 2 }, after = { ...chrome('absent'), footerCount: 2 };
+  assert.ok(chromeProblems(before, after).some(p => p.includes('duplicate')));
+  assert.ok(chromeProblems(chrome(), { ...chrome(), footerMode: 'ambiguous', footerCount: 2 }).length > 0);
+  assert.deepEqual(chromeProblems({ ...chrome('absent'), footerCount: 0 }, { ...chrome('absent'), footerCount: 0 }), []);
+});

@@ -2,7 +2,7 @@ name: Four-case Flutter audit diagnostic
 
 on:
   pull_request:
-    types: [opened]
+    types: [edited]
     branches: [main]
     paths:
       - 'experiments/flutter-pages-audit/**'
@@ -13,7 +13,10 @@ permissions:
 
 jobs:
   focused:
-    if: github.head_ref == 'diagnostic/flutter-223-focused-d65322c1'
+    if: >-
+      github.head_ref == 'diagnostic/flutter-223-focused-d65322c1' &&
+      github.event.changes.title.from == 'Diagnostic: four focused Flutter audit observations for #223' &&
+      github.event.pull_request.title == 'Diagnostic: four Flutter Door-motion observations for #223'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:

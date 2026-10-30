@@ -25,8 +25,40 @@ function measuredHeaderMember(item, frame) {
   return item?.headerDescendant === true && fullyVisible(item.box, frame);
 }
 
-function chromeProblems(before, after) {
+// Require measured back-and-forward Door motion, not ancestry/source alone.
+function emergingFlowProven(before, after, motion) {
+  if (before?.footerMode !== 'absent' || before.footer !== null || after?.footerMode !== 'scroll-content' || !motion) return false;
+  const { regionId, start, back, end, inputs } = motion;
+  if (typeof regionId !== 'string' || !regionId || ![start, back, end].every(Boolean) || !Array.isArray(inputs) || inputs.length !== 2) return false;
+  if (!inputs.every(i => i.input === 'wheel' && i.region === regionId && Number.isFinite(i.deltaY)) || inputs[0].deltaY >= 0 || inputs[1].deltaY <= 0) return false;
+  const sameBox = (a, b) => validBox(a) && validBox(b) && ['x', 'y', 'width', 'height'].every(k => Math.abs(a[k] - b[k]) <= 1);
+  const unique = (list, id) => { const xs = Array.isArray(list) ? list.filter(x => x.id === id) : []; return xs.length === 1 ? xs[0] : null; };
+  const original = unique(before.regions, regionId);
+  if (!original || !validBox(original.box)) return false;
+  const snapshots = [start, back, end, after];
+  const regions = snapshots.map(g => unique(g.regions, regionId));
+  if (regions.some(r => !r || !sameBox(original.box, r.box) || !['auto', 'scroll'].includes(r.overflowY) ||
+      ![r.scrollTop, r.scrollHeight, r.clientHeight].every(Number.isFinite) || r.scrollTop < 0 || r.clientHeight <= 0 || r.scrollHeight < r.clientHeight)) return false;
+  if (typeof start.footerId !== 'string' || !start.footerId || snapshots.some(g =>
+      g.footerCount !== 1 || g.footerId !== start.footerId || g.footerMode !== 'scroll-content' || !validBox(g.footer) ||
+      !sameBox(unique(g.footerScrollParents, regionId)?.box, original.box))) return false;
+  if ([start, end, after].some(g => !fullyVisible(g.footer, g.footerClip) || !fullyVisible(g.footer, g.envelope))) return false;
+  const [a, b, c, final] = regions;
+  const atEnd = r => Math.abs(r.scrollHeight - r.clientHeight - r.scrollTop) <= 2;
+  if (!atEnd(a) || !atEnd(c) || !atEnd(final) || a.scrollTop - b.scrollTop < 12 ||
+      Math.abs(c.scrollTop - a.scrollTop) > 1 || Math.abs(final.scrollTop - c.scrollTop) > 1) return false;
+  for (const g of [back, end, after]) {
+    if (['x', 'width', 'height'].some(k => Math.abs(g.footer[k] - start.footer[k]) > 1)) return false;
+  }
+  if (Math.abs((back.footer.y - start.footer.y) + (b.scrollTop - a.scrollTop)) > 1 ||
+      Math.abs((end.footer.y - back.footer.y) + (c.scrollTop - b.scrollTop)) > 1 || !sameBox(end.footer, after.footer)) return false;
+  // Header/button checks remain mandatory during both legs, not just at end.
+  return [back, end, after].every(g => chromeProblems(start, g).length === 0);
+}
+
+function chromeProblems(before, after, motion) {
   const problems = [];
+  if ([before, after].some(g => g?.footerCount > 1)) problems.push('footer: duplicate Door witnesses');
   function compare(label, a, b, fixed = true) {
     if (!validBox(a) || !validBox(b)) {
       problems.push(`${label}: missing or invalid measured box`);
@@ -46,7 +78,7 @@ function chromeProblems(before, after) {
   if (!FOOTER_MODES.has(mode) || !FOOTER_MODES.has(nextMode)) {
     problems.push('footerMode: missing or unknown structural classification');
   } else if (mode !== nextMode) {
-    problems.push('footerMode: structural classification changed');
+    if (!emergingFlowProven(before, after, motion)) problems.push('footerMode: structural classification changed');
   } else if (mode === 'absent') {
     if (before.footer !== null || after.footer !== null) problems.push('footer: absent mode requires explicit null witnesses');
   } else {
@@ -78,4 +110,4 @@ function scrollSettled(previous, current, regionIds) {
   return a !== null && b !== null && a === b;
 }
 
-module.exports = { readinessDecision, chromeProblems, fullyVisible, scrollSettled, measuredHeaderMember };
+module.exports = { readinessDecision, chromeProblems, fullyVisible, scrollSettled, measuredHeaderMember, emergingFlowProven };
