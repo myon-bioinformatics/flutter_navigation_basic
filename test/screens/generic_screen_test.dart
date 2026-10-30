@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -518,10 +519,63 @@ void main() {
         of: find.text('AnimatedCrossFade\n#1'), matching: find.byType(Card));
     await tester.ensureVisible(card);
     await tester.pumpAndSettle();
+    // Nested ensureVisible can align the inner grid while leaving its padded
+    // first card behind the outer header. Correct only measured clipping with
+    // bounded real wheel events, never an offset jump or relaxed geometry check.
+    final reveals = <Map<String, Object>>[];
+    for (var attempt = 0; attempt < 4; attempt++) {
+      final bounds = tester.getRect(card);
+      final bodyRect = tester.getRect(body);
+      final templateRect = tester.getRect(viewport);
+      final visible = bodyRect.intersect(templateRect);
+      if (bounds.top >= visible.top - 0.01 &&
+          bounds.bottom <= visible.bottom + 0.01) break;
+      final clippedTop = bounds.top < visible.top;
+      final deficit = clippedTop
+          ? visible.top - bounds.top : bounds.bottom - visible.bottom;
+      // Wheel signals use Flutter's public pointer routing: an inner viewport
+      // at its edge declines the signal so the outer viewport can consume it.
+      final distance = (deficit + 1).clamp(1.0, 64.0).toDouble();
+      expect(visible.width, greaterThan(0));
+      expect(visible.height, greaterThan(0));
+      final start = visible.center;
+      final delta = Offset(0, clippedTop ? -distance : distance);
+      final observation = <String, Object>{
+        'card': bounds, 'body': bodyRect, 'template': templateRect,
+        'input': 'mouse-wheel', 'start': start, 'delta': delta,
+        'before': _scrollGeometry(tester, card),
+      };
+      reveals.add(observation);
+      await tester.sendEventToBinding(PointerScrollEvent(
+          position: start, scrollDelta: delta, kind: PointerDeviceKind.mouse));
+      await tester.pumpAndSettle();
+      observation['after'] = _scrollGeometry(tester, card);
+      final before = (observation['before']! as List<Map<String, Object>>)
+          .where((item) => item['axis'] == Axis.vertical).toList();
+      final after = (observation['after']! as List<Map<String, Object>>)
+          .where((item) => item['axis'] == Axis.vertical).toList();
+      expect(before.length, greaterThanOrEqualTo(2), reason: '$reveals');
+      expect(after.length, before.length, reason: '$reveals');
+      expect(List.generate(before.length, (index) {
+        final change = (after[index]['pixels']! as double) -
+            (before[index]['pixels']! as double);
+        return clippedTop ? change < 0 : change > 0;
+      }).any((moved) => moved), isTrue,
+          reason: 'Wheel must cause useful scroll movement: $reveals');
+      final innerAtStart = ((before.first['pixels']! as double) -
+          (before.first['min']! as double)).abs() <= 0.01;
+      if (clippedTop && innerAtStart) {
+        expect(after.last['pixels']! as double,
+            lessThan(before.last['pixels']! as double),
+            reason: 'At inner start, upward wheel must move the outer viewport: $reveals');
+      }
+    }
     final bounds = tester.getRect(card);
     final visible = tester.getRect(body).intersect(tester.getRect(viewport));
-    expect(bounds.top, greaterThanOrEqualTo(visible.top - 0.01));
-    expect(bounds.bottom, lessThanOrEqualTo(visible.bottom + 0.01));
+    final geometry = 'card=$bounds visible=$visible, gestures=$reveals, '
+        'finalScrolls=${_scrollGeometry(tester, card)}';
+    expect(bounds.top, greaterThanOrEqualTo(visible.top - 0.01), reason: geometry);
+    expect(bounds.bottom, lessThanOrEqualTo(visible.bottom + 0.01), reason: geometry);
     expect(card.hitTestable(), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
