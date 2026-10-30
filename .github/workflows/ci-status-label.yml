@@ -1,0 +1,55 @@
+name: CI status label
+
+# Keeps status:ci-failing accurate on open pull requests.
+# A PR gets the label when its head commit has a failed check run, and loses it
+# when every check run on the head commit has passed. Pending runs leave it as is.
+# Runs on a schedule (no event trigger) so it cannot loop on its own check runs.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  checks: read
+
+concurrency:
+  group: ci-status-label
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Sync status:ci-failing on open pull requests
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh label create "status:ci-failing" \
+            --color d93f0b \
+            --description "Latest CI run failed; needs a fix" \
+            --force
+          gh pr list --state open --limit 100 --json number,headRefOid \
+            --jq '.[] | "\(.number) \(.headRefOid)"' | while read -r num sha; do
+            verdict=$(gh api "repos/$REPO/commits/$sha/check-runs?per_page=100" \
+              --jq '[.check_runs[] | (.conclusion // "")] as $c
+                    | [.check_runs[] | .status] as $s
+                    | if ($c | any(. == "failure" or . == "timed_out" or . == "action_required")) then "fail"
+                      elif ($s | any(. != "completed")) then "pending"
+                      else "pass" end')
+            has=$(gh pr view "$num" --json labels --jq '[.labels[].name] | index("status:ci-failing") != null')
+            echo "PR #$num head=${sha:0:7} verdict=$verdict labeled=$has"
+            case "$verdict" in
+              fail)
+                if [ "$has" != "true" ]; then gh pr edit "$num" --add-label "status:ci-failing"; fi ;;
+              pass)
+                if [ "$has" = "true" ]; then gh pr edit "$num" --remove-label "status:ci-failing"; fi ;;
+              *) ;;
+            esac
+          done
