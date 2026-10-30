@@ -1,0 +1,75 @@
+/* Consumer-owned layout and presentation, layered above the stable web-ui v1 classes. */
+:root { --ui-bg: #faf8ff; --ui-panel: #f5f1fa; --ui-fg: #211f26; --ui-muted: #49454f; --ui-border: #cac4d0; --ui-accent: #555992; --ui-max: none; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { font: 14px/20px Roboto, Arial, sans-serif; }
+button, select { font: inherit; }
+.icon-definitions { position: absolute; width: 0; height: 0; overflow: hidden; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+svg { display: block; width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: square; stroke-linejoin: miter; flex: none; }
+.showcase-shell { display: grid; grid-template-rows: 104px minmax(0, 1fr) 130px 24px; height: 100%; height: 100dvh; min-width: 0; }
+.showcase-header { background: #bec4ff; min-width: 0; }
+.header-primary { display: flex; align-items: center; height: 56px; }
+.header-title { flex: 1; min-width: 0; font-size: 22px; line-height: 28px; font-weight: 400; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; margin: 0 8px; }
+.header-actions { display: flex; flex: none; }
+.ui-button { border: 0; color: inherit; background: transparent; padding: 0; }
+.ui-button:disabled { opacity: 1; color: inherit; cursor: default; -webkit-text-fill-color: currentColor; }
+.icon-button { width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 50%; }
+.favorite-button:not(:disabled) { cursor: pointer; }
+.favorite-button:not(:disabled):hover { background: #211f2610; }
+.favorite-button[aria-pressed="true"] svg { fill: currentColor; }
+:focus-visible { outline: 3px solid #3730a3; outline-offset: -3px; }
+.header-secondary { height: 48px; display: flex; align-items: center; justify-content: flex-end; }
+.body-layout { display: flex; min-height: 0; overflow: hidden; }
+.section-rail { display: flex; flex-direction: column; align-items: center; flex: 0 0 257px; width: 257px; min-height: 0; overflow: hidden; border-right: 1px solid #e0dce5; }
+.rail-home { margin: 8px 0 8px; }
+.rail-item { display: flex; align-items: center; width: 100%; height: 44px; flex: none; gap: 12px; padding: 0 12px; text-align: left; }
+.nav-icon { display: flex; width: 56px; height: 32px; flex: none; align-items: center; justify-content: center; border-radius: 18px; }
+.selected .nav-icon { background: #e2dff5; }
+.rail-label { font-size: 12px; letter-spacing: .3px; }
+.overview-scroll { flex: 1; width: 0; max-width: none; min-height: 0; margin: 0; padding: 24px; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.overview-heading { font-size: 24px; line-height: 28px; font-weight: 400; margin: 0 0 20px; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 20px; }
+.ui-tag { display: inline-flex; align-items: center; min-height: 34px; padding: 0 16px; border: 1px solid var(--ui-border); border-radius: 8px; white-space: nowrap; font-size: 14px; line-height: 20px; }
+.info-cards { display: flex; flex-direction: column; }
+.info-card { display: flex; gap: 12px; margin: 4px; padding: 16px; border: 0; background: var(--ui-panel); border-radius: 12px; box-shadow: 0 1px 1px #211f2640; }
+.info-card:first-child { margin-top: 4px; }
+.info-card > div { min-width: 0; }
+.info-card h3 { font-size: 16px; line-height: 24px; font-weight: 400; margin: 0 0 4px; }
+.info-card p { font-size: 14px; line-height: 20px; margin: 0; overflow-wrap: anywhere; }
+.footer-fixture { padding: 4px 16px 12px; }
+.tool-panel { margin: 0; padding: 12px 16px; height: 114px; background: var(--ui-panel); border: 0; border-radius: 12px; box-shadow: 0 1px 1px #211f2630; }
+.tool-panel p { margin: 2px 0 8px; font-size: 12px; line-height: 16px; }
+.tool-field { position: relative; height: 40px; }
+.tool-field label { position: absolute; z-index: 1; left: 12px; top: -7px; padding: 0 4px; font-size: 12px; line-height: 14px; background: var(--ui-panel); }
+.tool-field select { display: block; width: 100%; height: 40px; border: 1px solid #79747e; border-radius: 4px; padding: 0 14px; color: inherit; background: transparent; opacity: 1; -webkit-text-fill-color: currentColor; }
+.diagnostics { height: 24px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: right; padding: 0 8px; font-size: 11px; line-height: 24px; background: #f7f2fa; color: #49454f; }
+.compact-only { display: none; }
+.noscript-note { position: fixed; bottom: 24px; margin: 0; padding: 8px; background: #fff3c4; }
+@media (min-width: 900px) and (max-width: 1179px) {
+  /* 80px is a Material 3 rail estimate pending the parent's live measurement. */
+  .section-rail { width: 81px; flex-basis: 81px; }
+  .rail-item { justify-content: center; padding: 0; }
+  .rail-label { display: none; }
+}
+@media (max-width: 899px) {
+  .showcase-shell { grid-template-rows: 104px minmax(0, 1fr) 130px 80px 24px; }
+  .section-rail { display: none; }
+  .compact-only { display: inline-flex; }
+  .bottom-navigation { display: flex; width: 100%; height: 80px; align-items: stretch; background: #f0ecf7; }
+  .bottom-item { display: flex; flex: 1; min-width: 0; align-items: center; justify-content: center; flex-direction: column; gap: 4px; font-size: 12px; }
+  .bottom-item .nav-icon { width: 64px; }
+}
+/* Short windows must not spend the whole viewport on fixed chrome. In this
+   fallback the document is the sole scroll owner; normal comparison layouts
+   above these heights retain their existing fixed chrome and body scroller. */
+@media (max-width: 899px) and (max-height: 458px), (min-width: 900px) and (max-height: 378px) {
+  html { overflow-y: auto; }
+  body { height: auto; min-height: 100%; overflow: visible; }
+  .showcase-shell { height: auto; min-height: 100dvh; grid-template-rows: 104px minmax(120px, auto) 130px 24px; }
+  .body-layout { overflow: visible; }
+  .overview-scroll { overflow: visible; }
+}
+@media (max-width: 899px) and (max-height: 458px) {
+  .showcase-shell { grid-template-rows: 104px minmax(120px, auto) 130px 80px 24px; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }

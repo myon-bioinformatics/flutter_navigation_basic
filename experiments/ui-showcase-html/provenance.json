@@ -1,0 +1,41 @@
+{
+  "fixture": "Experimental standard HTML/CSS/JS UI Showcase comparison; not deployed to Pages",
+  "reference_url": "https://myon-bioinformatics.github.io/flutter_navigation_basic/#/examples/ui-showcase",
+  "reference_revision": "9b38f3e935e9e171cbacc3af63f539ddce9db86b",
+  "web_ui_revision": "6c51fd53a11b24b2f8d0205a2a9c597fb5f2b558",
+  "browser_test_kit_revision": "f37c438a5285a03b39adda052ad14598a2ca8966",
+  "source_files": [
+    "https://github.com/myon-bioinformatics/flutter_navigation_basic/blob/9b38f3e935e9e171cbacc3af63f539ddce9db86b/lib/screens/ui_showcase_screen.dart",
+    "https://github.com/myon-bioinformatics/flutter_navigation_basic/blob/9b38f3e935e9e171cbacc3af63f539ddce9db86b/lib/shared/widgets/standard_page_header.dart",
+    "https://github.com/myon-bioinformatics/web-ui/blob/6c51fd53a11b24b2f8d0205a2a9c597fb5f2b558/contract/v1/contract.json",
+    "https://github.com/myon-bioinformatics/browser-test-kit/blob/f37c438a5285a03b39adda052ad14598a2ca8966/adapters/flutter-ui-showcase.json"
+  ],
+  "reference_copy_notice": "Overview and footer text describe the Flutter reference, not this HTML implementation. Only favorite and body scrolling are implemented.",
+  "notes": "Geometry is a comparison target, not a pixel-parity claim. Live reference URLs can change independently of the recorded source revision. Original inline SVG geometry; no downloaded icon or font assets.",
+  "vendored_web_ui": [
+    {
+      "path": "vendor/web-ui/tokens.css",
+      "upstream_path": "css/tokens.css",
+      "sha256": "f83b01da9602a4aa3863ab6f903f8a87211669d2c96170994c7816332fd3bda3",
+      "git_blob_sha": "cc1414c0e1b2b895201fbe560903489e590aa020"
+    },
+    {
+      "path": "vendor/web-ui/base.css",
+      "upstream_path": "css/base.css",
+      "sha256": "fa0b4e22ad23dcdc22544ac8545523d492650331d6d551440657508e61189c3c",
+      "git_blob_sha": "80ad35ff256653f8d56dc65690673b14d4d43312"
+    },
+    {
+      "path": "vendor/web-ui/components.css",
+      "upstream_path": "css/components.css",
+      "sha256": "13e326986246e6cccf075e1dc44fd5de9fa6b2b6deace7914fb8a2f0febdfb4e",
+      "git_blob_sha": "eb9c2074679cfa1e704024118b006ebb4f3d189b"
+    },
+    {
+      "path": "vendor/web-ui/LICENSE",
+      "upstream_path": "LICENSE",
+      "sha256": "15f66204c4a6a1ce0c94f0ed4319ff9400f872e85fd32c95f21695c2f231af59",
+      "git_blob_sha": "4ec4989b801bf1a3df6184d21f79e6e7ed5931f6"
+    }
+  ]
+}

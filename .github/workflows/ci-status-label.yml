@@ -1,0 +1,22 @@
+name: CI failure label (inactive)
+
+# Source and offline tests are retained; automatic label writes are not enabled.
+# Activating the writer or granting issues: write needs separate authorization.
+on:
+  workflow_dispatch:
+    inputs:
+      request_activation:
+        description: 'Reserved; this workflow remains inactive regardless of this value'
+        type: boolean
+        required: true
+        default: false
+permissions:
+  contents: read
+jobs:
+  inactive-status:
+    if: github.event_name == 'workflow_dispatch' && inputs.request_activation == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Inactive retained implementation
+        run: echo 'Label writes are disabled. Review and authorize activation separately.'

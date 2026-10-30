@@ -1,0 +1,139 @@
+name: Published Flutter all-page audit
+
+# Manual-only measurement. Offline contract CI is separate and cannot launch it.
+on:
+  workflow_dispatch:
+    inputs:
+      run_live_audit:
+        description: 'Explicitly request new live measurements; current task requests none'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flutter-pages-audit-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CANDIDATE_SHA: ${{ github.sha }}
+
+jobs:
+  inventory:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_live_audit == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Test bounded observer readiness and structural chrome rules
+        run: node --test experiments/flutter-pages-audit/audit_policy.test.cjs
+      - name: Test the fail-closed inventory and evidence aggregator
+        run: python3 -B -S experiments/flutter-pages-audit/audit_contract.test.py
+      - name: Derive the finite public inventory without Flutter SDK
+        run: python3 -B -S experiments/flutter-pages-audit/audit_contract.py catalogue --output build/flutter-pages-audit/catalogue.json
+      - name: Fail before browser startup if the public baseline moved
+        run: |
+          python3 -B -S - <<'PYCODE'
+          import json
+          from pathlib import Path
+          from urllib.request import Request, urlopen
+          root = Path('build/flutter-pages-audit')
+          expected = json.loads((root / 'catalogue.json').read_text())['referenceSha']
+          url = 'https://myon-bioinformatics.github.io/flutter_navigation_basic/assets/assets/diagnostics/build_metadata.json'
+          with urlopen(Request(url, headers={'Cache-Control': 'no-cache'}), timeout=20) as response:
+              metadata = json.load(response)
+          actual = metadata.get('repository', {}).get('revision', {}).get('sha')
+          (root / 'baseline-preflight.json').write_text(json.dumps({'url': url, 'expected': expected, 'actual': actual}, indent=2) + '\n')
+          if actual != expected:
+              raise SystemExit(f'STALE_BASELINE: expected {expected}, served {actual}; explicit review required')
+          print(f'Pinned public baseline verified: {actual}')
+          PYCODE
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: flutter-pages-audit-inventory
+          path: |
+            build/flutter-pages-audit/catalogue.json
+            build/flutter-pages-audit/baseline-preflight.json
+          retention-days: 7
+
+  observe:
+    needs: inventory
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        shard: [1, 2, 3, 4]
+    env:
+      AUDIT_OUTPUT: build/flutter-pages-audit/shard-${{ matrix.shard }}
+      AUDIT_CATALOGUE: build/flutter-pages-audit/catalogue.json
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Re-derive the same pinned source inventory
+        run: python3 -B -S experiments/flutter-pages-audit/audit_contract.py catalogue --output "$AUDIT_CATALOGUE"
+      - name: Install the existing browser test dependency
+        run: |
+          npm install --prefix e2e --package-lock=false
+          npm exec --prefix e2e -- playwright install --with-deps chromium
+      - name: Observe this shard of all 430 route and viewport pairs
+        run: npm exec --prefix e2e -- playwright test --config experiments/flutter-pages-audit/full.playwright.config.cjs --shard=${{ matrix.shard }}/4
+      - name: Preserve every completed receipt and screenshot, including failures
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: flutter-pages-audit-shard-${{ matrix.shard }}
+          path: ${{ env.AUDIT_OUTPUT }}/
+          if-no-files-found: warn
+          retention-days: 7
+
+  coverage:
+    if: always() && inputs.run_live_audit == true
+    needs: [inventory, observe]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Retrieve completed shard evidence
+        uses: actions/download-artifact@v8
+        with:
+          pattern: flutter-pages-audit-shard-*
+          path: build/flutter-pages-audit/receipts
+      - name: Require exactly 430 observations and distinguish failed or unverified checks
+        if: always()
+        run: python3 -B -S experiments/flutter-pages-audit/audit_contract.py aggregate build/flutter-pages-audit/receipts --output build/flutter-pages-audit/summary.json
+      - name: Preserve the complete coverage and limitations report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: flutter-pages-audit-summary
+          path: build/flutter-pages-audit/summary.json
+          if-no-files-found: error
+          retention-days: 7

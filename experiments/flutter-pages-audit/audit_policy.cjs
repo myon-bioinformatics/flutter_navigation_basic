@@ -1,0 +1,131 @@
+'use strict';
+
+// Observer decisions only. These helpers do not activate controls, infer painted
+// content, or turn missing browser evidence into a successful observation.
+function readinessDecision(snapshot = {}, { attempts = 0, elapsedMs = 0 } = {}) {
+  if (!Number.isInteger(attempts) || attempts < 0 || !Number.isFinite(elapsedMs) || elapsedMs < 0) {
+    throw new TypeError('Readiness requires nonnegative attempts and finite elapsedMs');
+  }
+  if (snapshot.titleCount === 1 && snapshot.favoriteCount === 1 && snapshot.titleVisible === true) return 'ready';
+  if (elapsedMs >= 25_000) return 'timeout';
+  if (snapshot.placeholderCount === 1 && attempts < 3) return 'activate';
+  return 'wait';
+}
+
+const BUTTON_IDS = ['shared-header-home', 'shared-header-favorite', 'shared-header-menu'];
+const FOOTER_MODES = new Set(['fixed', 'scroll-content', 'absent']);
+const validBox = box => box && ['x', 'y', 'width', 'height'].every(key => Number.isFinite(box[key])) && box.width > 0 && box.height > 0;
+
+function fullyVisible(box, clip) {
+  return !!(validBox(box) && validBox(clip) && clip.x <= box.x + 1 && clip.y <= box.y + 1 &&
+    clip.x + clip.width >= box.x + box.width - 1 && clip.y + clip.height >= box.y + box.height - 1);
+}
+
+function measuredHeaderMember(item, frame) {
+  return item?.headerDescendant === true && fullyVisible(item.box, frame);
+}
+
+// Keep the backward witness fully visible; do not relax the size/flow oracle.
+function emergingMotionDistance(snapshot, regionId) {
+  if (!snapshot || !Array.isArray(snapshot.regions) || !Array.isArray(snapshot.footerScrollParents)) return null;
+  const regions = snapshot.regions.filter(r => r.id === regionId);
+  const parents = snapshot.footerScrollParents.filter(p => p.id === regionId);
+  if (regions.length !== 1 || parents.length !== 1 || snapshot.footerCount !== 1 || snapshot.footerMode !== 'scroll-content') return null;
+  const region = regions[0];
+  const viewport = { x: 0, y: 0, width: snapshot.viewport?.width, height: snapshot.viewport?.height };
+  // Parent clips already include every clipping ancestor; intersect all measured
+  // scroll-parent clips as well, so nested clipping cannot manufacture space.
+  const bounds = [viewport, snapshot.envelope, region.clip, ...snapshot.footerScrollParents.map(p => p.clip)];
+  if (!validBox(snapshot.footer) || !bounds.every(b => validBox(b) && fullyVisible(snapshot.footer, b)) ||
+      !fullyVisible(snapshot.footer, snapshot.footerClip) || !Number.isFinite(region.scrollTop)) return null;
+  const spare = Math.min(...bounds.map(b => b.y + b.height)) - snapshot.footer.y - snapshot.footer.height;
+  const distance = Math.floor(Math.min(32, spare - 4, region.scrollTop));
+  return distance >= 12 ? distance : null;
+}
+
+// Require measured back-and-forward Door motion, not ancestry/source alone.
+function emergingFlowProven(before, after, motion) {
+  if (before?.footerMode !== 'absent' || before.footer !== null || after?.footerMode !== 'scroll-content' || !motion) return false;
+  const { regionId, start, back, end, inputs } = motion;
+  if (typeof regionId !== 'string' || !regionId || ![start, back, end].every(Boolean) || !Array.isArray(inputs) || inputs.length !== 2) return false;
+  if (!inputs.every(i => i.input === 'wheel' && i.region === regionId && Number.isFinite(i.deltaY)) || inputs[0].deltaY >= 0 || inputs[1].deltaY <= 0) return false;
+  const sameBox = (a, b) => validBox(a) && validBox(b) && ['x', 'y', 'width', 'height'].every(k => Math.abs(a[k] - b[k]) <= 1);
+  const unique = (list, id) => { const xs = Array.isArray(list) ? list.filter(x => x.id === id) : []; return xs.length === 1 ? xs[0] : null; };
+  const original = unique(before.regions, regionId);
+  if (!original || !validBox(original.box)) return false;
+  const snapshots = [start, back, end, after];
+  const regions = snapshots.map(g => unique(g.regions, regionId));
+  if (regions.some(r => !r || !sameBox(original.box, r.box) || !['auto', 'scroll'].includes(r.overflowY) ||
+      ![r.scrollTop, r.scrollHeight, r.clientHeight].every(Number.isFinite) || r.scrollTop < 0 || r.clientHeight <= 0 || r.scrollHeight < r.clientHeight)) return false;
+  if (typeof start.footerId !== 'string' || !start.footerId || snapshots.some(g =>
+      g.footerCount !== 1 || g.footerId !== start.footerId || g.footerMode !== 'scroll-content' || !validBox(g.footer) ||
+      !sameBox(unique(g.footerScrollParents, regionId)?.box, original.box))) return false;
+  if (snapshots.some(g => !fullyVisible(g.footer, g.footerClip) || !fullyVisible(g.footer, g.envelope))) return false;
+  const [a, b, c, final] = regions;
+  const atEnd = r => Math.abs(r.scrollHeight - r.clientHeight - r.scrollTop) <= 2;
+  if (!atEnd(a) || !atEnd(c) || !atEnd(final) || a.scrollTop - b.scrollTop < 12 ||
+      Math.abs(c.scrollTop - a.scrollTop) > 1 || Math.abs(final.scrollTop - c.scrollTop) > 1) return false;
+  for (const g of [back, end, after]) {
+    if (['x', 'width', 'height'].some(k => Math.abs(g.footer[k] - start.footer[k]) > 1)) return false;
+  }
+  if (Math.abs((back.footer.y - start.footer.y) + (b.scrollTop - a.scrollTop)) > 1 ||
+      Math.abs((end.footer.y - back.footer.y) + (c.scrollTop - b.scrollTop)) > 1 || !sameBox(end.footer, after.footer)) return false;
+  // Header/button checks remain mandatory during both legs, not just at end.
+  return [back, end, after].every(g => chromeProblems(start, g).length === 0);
+}
+
+function chromeProblems(before, after, motion) {
+  const problems = [];
+  if ([before, after].some(g => g?.footerCount > 1)) problems.push('footer: duplicate Door witnesses');
+  function compare(label, a, b, fixed = true) {
+    if (!validBox(a) || !validBox(b)) {
+      problems.push(`${label}: missing or invalid measured box`);
+      return;
+    }
+    if (fixed) for (const key of ['x', 'y', 'width', 'height']) {
+      if (Math.abs(a[key] - b[key]) > 1) problems.push(`${label}.${key}: changed by more than 1px`);
+    }
+  }
+  compare('headerFrame', before?.headerFrame, after?.headerFrame);
+  for (const id of BUTTON_IDS) {
+    const a = before?.header?.[id], b = after?.header?.[id];
+    if (a?.count !== 1 || b?.count !== 1) problems.push(`${id}: requires exactly one witness before and after`);
+    compare(id, a?.box, b?.box);
+  }
+  const mode = before?.footerMode, nextMode = after?.footerMode;
+  if (!FOOTER_MODES.has(mode) || !FOOTER_MODES.has(nextMode)) {
+    problems.push('footerMode: missing or unknown structural classification');
+  } else if (mode !== nextMode) {
+    if (!emergingFlowProven(before, after, motion)) problems.push('footerMode: structural classification changed');
+  } else if (mode === 'absent') {
+    if (before.footer !== null || after.footer !== null) problems.push('footer: absent mode requires explicit null witnesses');
+  } else {
+    // A Door nested in a body scroller is content, not fixed chrome. Allowing its
+    // movement is not evidence that the end or the Door itself was reached.
+    compare('footer', before.footer, after.footer, mode === 'fixed');
+  }
+  // The title identifier encloses intrinsic Text/Row glyph metrics, not the
+  // AppBar frame. Font-metric changes remain diagnostic, not a scroll oracle.
+  return problems;
+}
+
+// A gesture can temporarily hide semantic overflow. Wait without further input
+// for the original regions to reappear and two consecutive structural samples.
+function scrollSettled(previous, current, regionIds) {
+  if (!Array.isArray(regionIds) || !regionIds.length || new Set(regionIds).size !== regionIds.length) return false;
+  const signature = snapshot => {
+    if (!snapshot || !Array.isArray(snapshot.regions)) return null;
+    const regions = regionIds.map(id => snapshot.regions.filter(r => r.id === id));
+    if (regions.some(matches => matches.length !== 1)) return null;
+    const witnesses = regions.map(([r]) => r);
+    if (witnesses.some(r => !validBox(r.box) || !['auto', 'scroll'].includes(r.overflowY) ||
+        ![r.scrollTop, r.scrollHeight, r.clientHeight].every(Number.isFinite))) return null;
+    return JSON.stringify({ regions: witnesses.map(r => ({ id: r.id, box: r.box, overflowY: r.overflowY,
+      scrollTop: r.scrollTop, scrollHeight: r.scrollHeight, clientHeight: r.clientHeight })),
+      footerMode: snapshot.footerMode, footer: snapshot.footer, footerClip: snapshot.footerClip });
+  };
+  const a = signature(previous), b = signature(current);
+  return a !== null && b !== null && a === b;
+}
+
+module.exports = { readinessDecision, chromeProblems, fullyVisible, scrollSettled, measuredHeaderMember, emergingFlowProven, emergingMotionDistance };
