@@ -162,9 +162,9 @@ function motionFixture() {
     footerClip: { x: 36, y, width: 318, height: Math.min(40, 476-y) },
     envelope: { ...body }, regions: [region(top)], footerScrollParents: [{ id: 'body', box: { ...body } }] });
   const before = { ...chrome('absent'), regions: [region(0)] };
-  const start = snapshot(1034, 388), back = snapshot(954, 468), end = snapshot(1034, 388);
+  const start = snapshot(1034, 388), back = snapshot(1002, 420), end = snapshot(1034, 388);
   return { before, after: structuredClone(end), motion: { regionId: 'body', start, back, end,
-    inputs: [{ input: 'wheel', region: 'body', deltaY: -80 }, { input: 'wheel', region: 'body', deltaY: 160 }] } };
+    inputs: [{ input: 'wheel', region: 'body', deltaY: -32 }, { input: 'wheel', region: 'body', deltaY: 32 }] } };
 }
 test('emergent Door requires observed inverse flow on both real wheel legs and complete restored end', () => {
   const x = motionFixture(); assert.equal(emergingFlowProven(x.before, x.after, x.motion), true);
@@ -192,6 +192,7 @@ test('replaced/duplicate identities, wrong ancestors, clipped terminal Door and 
     x => x.motion.back.regions[0].id = 'other', x => x.motion.back.regions.push(x.motion.back.regions[0]),
     x => x.motion.back.footerScrollParents[0].id = 'overlay',
     x => x.motion.end.footerClip.height = 12, x => x.motion.start.footerClip.height = 12,
+    x => x.motion.back.footerClip.height = 8, x => x.motion.back.envelope.height = 100,
     x => x.after.envelope.height = 100, x => x.motion.back.headerFrame.y += 2,
     x => x.motion.back.header['shared-header-home'].box.y += 2,
     x => x.motion.back.regions[0].overflowY = 'hidden', x => x.motion.end.footer.height = NaN];
@@ -203,4 +204,39 @@ test('duplicate Door cannot impersonate legitimate absent chrome on the ordinary
   assert.ok(chromeProblems(before, after).some(p => p.includes('duplicate')));
   assert.ok(chromeProblems(chrome(), { ...chrome(), footerMode: 'ambiguous', footerCount: 2 }).length > 0);
   assert.deepEqual(chromeProblems({ ...chrome('absent'), footerCount: 0 }, { ...chrome('absent'), footerCount: 0 }), []);
+});
+
+const { emergingMotionDistance } = require('./audit_policy.cjs');
+function travelFixture() {
+  const s = motionFixture().motion.start;
+  s.viewport = { width: 390, height: 500 };
+  s.regions[0].clip = { x: 0, y: 104, width: 390, height: 372 };
+  s.footerScrollParents[0].clip = { ...s.regions[0].clip };
+  return s;
+}
+test('bounded backward distance intersects viewport, body, region and ancestor clips with four-pixel margin', () => {
+  const s = travelFixture(); assert.equal(emergingMotionDistance(s, 'body'), 32);
+  for (const key of ['viewport', 'envelope', 'region', 'parent']) {
+    const x = travelFixture();
+    if (key === 'viewport') x.viewport.height = 452;
+    if (key === 'envelope') x.envelope.height = 348;
+    if (key === 'region') x.regions[0].clip.height = 348;
+    if (key === 'parent') x.footerScrollParents[0].clip.height = 348;
+    assert.equal(emergingMotionDistance(x, 'body'), 20);
+  }
+});
+test('insufficient space or scroll range produces null plan and no wheel distance', () => {
+  for (const spare of [0, 4, 15]) {
+    const s = travelFixture(); s.envelope.height = 324 + spare;
+    assert.equal(emergingMotionDistance(s, 'body'), null);
+  }
+  const edge = travelFixture(); edge.envelope.height = 340;
+  assert.equal(emergingMotionDistance(edge, 'body'), 12);
+  for (const top of [0, 11, NaN]) { const s = travelFixture(); s.regions[0].scrollTop = top; assert.equal(emergingMotionDistance(s, 'body'), null); }
+});
+test('missing, duplicate, malformed or already-clipped travel witnesses do not invent room', () => {
+  const changes = [s => s.footerCount = 2, s => s.footerMode = 'fixed', s => s.viewport = null,
+    s => s.footerClip.height = 8, s => s.regions[0].clip = null, s => s.footerScrollParents[0].clip.height = NaN,
+    s => s.footerScrollParents.push(s.footerScrollParents[0]), s => s.regions.push(s.regions[0])];
+  for (const change of changes) { const s = travelFixture(); change(s); assert.equal(emergingMotionDistance(s, 'body'), null); }
 });

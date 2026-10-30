@@ -6,7 +6,7 @@ const { createRequire } = require('node:module');
 const { pathToFileURL } = require('node:url');
 const fromE2E = createRequire(path.join(__dirname, '../../e2e/package.json'));
 const { test, expect } = fromE2E('@playwright/test');
-const { readinessDecision, chromeProblems, fullyVisible, scrollSettled, measuredHeaderMember, emergingFlowProven } = require('./audit_policy.cjs');
+const { readinessDecision, chromeProblems, fullyVisible, scrollSettled, measuredHeaderMember, emergingFlowProven, emergingMotionDistance } = require('./audit_policy.cjs');
 const kit = import(pathToFileURL(path.join(__dirname, '../../e2e/utils/interaction.mjs')).href);
 const catalogue = JSON.parse(fs.readFileSync(path.resolve(process.env.AUDIT_CATALOGUE || 'build/flutter-pages-audit/catalogue.json'), 'utf8'));
 const REFERENCE_SHA = 'd65322c15a55a7395bb5271bc65696402bc98d29';
@@ -216,14 +216,17 @@ async function emergingDoorMotion(page, record, before, start) {
     start.footerScrollParents.some(p => p.id === r.id));
   const motion = { start, back: null, end: null, inputs: [], regionId: null };
   record.observations.emergingDoorMotion = motion;
-  if (candidates.length !== 1 || candidates[0].scrollTop < 12) return motion;
+  if (candidates.length !== 1) return motion;
   const region = candidates[0]; motion.regionId = region.id;
+  const distance = emergingMotionDistance(start, region.id);
+  motion.plannedDistance = distance;
+  if (distance === null) { motion.reason = 'Insufficient measured unclipped travel (minimum 12px plus 4px margin); no input sent.'; return motion; }
   const x = Math.floor(region.clip.x + Math.min(8, region.clip.width / 2));
   const y = Math.floor(region.clip.y + region.clip.height / 2);
   await page.mouse.move(x, y);
   // Two bounded real gestures, no synthetic scroll and no action activation.
   // Always attempt restoration even if the backward witness is insufficient.
-  for (const [phase, deltaY] of [['back', -80], ['end', 160]]) {
+  for (const [phase, deltaY] of [['back', -distance], ['end', distance]]) {
     await page.mouse.wheel(0, deltaY);
     const input = { input: 'wheel', region: region.id, x, y, deltaY, purpose: 'emerging Door motion ' + phase };
     motion.inputs.push(input); record.inputs.push(input);

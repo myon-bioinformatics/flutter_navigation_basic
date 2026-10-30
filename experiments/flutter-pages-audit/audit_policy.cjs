@@ -25,6 +25,24 @@ function measuredHeaderMember(item, frame) {
   return item?.headerDescendant === true && fullyVisible(item.box, frame);
 }
 
+// Keep the backward witness fully visible; do not relax the size/flow oracle.
+function emergingMotionDistance(snapshot, regionId) {
+  if (!snapshot || !Array.isArray(snapshot.regions) || !Array.isArray(snapshot.footerScrollParents)) return null;
+  const regions = snapshot.regions.filter(r => r.id === regionId);
+  const parents = snapshot.footerScrollParents.filter(p => p.id === regionId);
+  if (regions.length !== 1 || parents.length !== 1 || snapshot.footerCount !== 1 || snapshot.footerMode !== 'scroll-content') return null;
+  const region = regions[0];
+  const viewport = { x: 0, y: 0, width: snapshot.viewport?.width, height: snapshot.viewport?.height };
+  // Parent clips already include every clipping ancestor; intersect all measured
+  // scroll-parent clips as well, so nested clipping cannot manufacture space.
+  const bounds = [viewport, snapshot.envelope, region.clip, ...snapshot.footerScrollParents.map(p => p.clip)];
+  if (!validBox(snapshot.footer) || !bounds.every(b => validBox(b) && fullyVisible(snapshot.footer, b)) ||
+      !fullyVisible(snapshot.footer, snapshot.footerClip) || !Number.isFinite(region.scrollTop)) return null;
+  const spare = Math.min(...bounds.map(b => b.y + b.height)) - snapshot.footer.y - snapshot.footer.height;
+  const distance = Math.floor(Math.min(32, spare - 4, region.scrollTop));
+  return distance >= 12 ? distance : null;
+}
+
 // Require measured back-and-forward Door motion, not ancestry/source alone.
 function emergingFlowProven(before, after, motion) {
   if (before?.footerMode !== 'absent' || before.footer !== null || after?.footerMode !== 'scroll-content' || !motion) return false;
@@ -42,7 +60,7 @@ function emergingFlowProven(before, after, motion) {
   if (typeof start.footerId !== 'string' || !start.footerId || snapshots.some(g =>
       g.footerCount !== 1 || g.footerId !== start.footerId || g.footerMode !== 'scroll-content' || !validBox(g.footer) ||
       !sameBox(unique(g.footerScrollParents, regionId)?.box, original.box))) return false;
-  if ([start, end, after].some(g => !fullyVisible(g.footer, g.footerClip) || !fullyVisible(g.footer, g.envelope))) return false;
+  if (snapshots.some(g => !fullyVisible(g.footer, g.footerClip) || !fullyVisible(g.footer, g.envelope))) return false;
   const [a, b, c, final] = regions;
   const atEnd = r => Math.abs(r.scrollHeight - r.clientHeight - r.scrollTop) <= 2;
   if (!atEnd(a) || !atEnd(c) || !atEnd(final) || a.scrollTop - b.scrollTop < 12 ||
@@ -110,4 +128,4 @@ function scrollSettled(previous, current, regionIds) {
   return a !== null && b !== null && a === b;
 }
 
-module.exports = { readinessDecision, chromeProblems, fullyVisible, scrollSettled, measuredHeaderMember, emergingFlowProven };
+module.exports = { readinessDecision, chromeProblems, fullyVisible, scrollSettled, measuredHeaderMember, emergingFlowProven, emergingMotionDistance };

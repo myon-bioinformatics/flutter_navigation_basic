@@ -10,10 +10,12 @@ is `d65322c15a55a7395bb5271bc65696402bc98d29`; the seven catalogue source hashes
 are pinned in `focused-baseline.json`. There is no automatically-follow-latest baseline.
 
 The initial opened-event diagnostic ran once with two Coordinates passes and two
-HTTP classification failures; those receipts remain unchanged. The proposed next
+HTTP classification failures. The second run retained two HTTP unknowns because
+its80px backward gesture clipped the Door40px→8px; all prior receipts remain
+unchanged. The proposed next
 workflow runs only on the exact title transition from
-`Diagnostic: four focused Flutter audit observations for #223` to
-`Diagnostic: four Flutter Door-motion observations for #223`, on branch
+`Diagnostic: four Flutter Door-motion observations for #223` to
+`Diagnostic: four bounded Door-motion observations for #223`, on branch
 `diagnostic/flutter-223-focused-d65322c1`. Publication/synchronization alone,
 body edits and later pushes do not trigger another browser run. A new owner grant
 is required before publishing this revision and making that one title change. It is read-only, has a10-minute job bound and retains
@@ -36,14 +38,17 @@ passed; browser proof must come from the separately authorized diagnostic run.
 
 When an initially unexposed Door first appears inside a body scroller, ancestry
 alone is not a pass. The proposed observer sends two bounded real wheel gestures
-(back80px, forward160px), retaining the same Door/scroller IDs and measuring
+(back and forward by the same measured distance, capped at32px), retaining the same Door/scroller IDs and measuring
 inverse Door displacement versus scroll offset on both legs. It requires at
 least12px observed movement, stable chrome, restored endpoint, and complete
 final clipped visibility. Each leg has bounded3-second settling; the existing
-90-second case timeout is unchanged. Missing/insufficient evidence stays unknown,
+90-second case timeout is unchanged. The planned distance intersects the viewport,
+body envelope, region clip and all measured scroll-ancestor clips, preserving a4px
+margin; less than12px available travel sends no wheel input and stays unknown.
+Missing/insufficient evidence stays unknown,
 and measured chrome drift fails. There is no source/route whitelist substitute.
-No retained receipt contains this new witness; fresh authorized browser evidence
-is required. No general430-case or page-action pass is implied.
+No retained receipt contains a fully visible bounded-distance witness; fresh
+authorized browser evidence is required. No general430-case or page-action pass is implied.
 
 ## Original audit design and retained limitations
 
