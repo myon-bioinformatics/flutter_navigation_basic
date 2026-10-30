@@ -3,6 +3,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_application_1/config/routes.dart';
 import 'package:flutter_application_1/screens/generic_screen.dart';
+import 'package:flutter_application_1/screens/pattern_template_screen.dart';
 import 'package:flutter_application_1/shared/widgets/standard_page_footer.dart';
 import 'package:flutter_application_1/shared/widgets/standard_page_shell.dart';
 import 'package:flutter_application_1/shared/widgets/tool_door_selector.dart';
@@ -349,6 +350,131 @@ void main() {
     await tester.tap(find.byKey(const Key('screen6-catalog-clear')));
     await tester.pump();
     expect(find.text('198 / 198'), findsOneWidget);
+  });
+
+  // Regression: at 390x500 the fixed metadata/chips previously left zero
+  // template height (or only 21/37px for 80/48px navigation/tab controls).
+  // Presence in the widget tree is insufficient: reveal and hit-test content.
+  final compactTargets = <int, Finder Function()>{
+    3: () => find.ancestor(
+        of: find.text('BasicReplace item 1'), matching: find.byType(ListTile)),
+    21: () => find.text('Screen ID: 21'),
+    39: () => find.byType(TextField),
+    57: () => find.byType(TextField),
+    75: () => find.byType(TabBar),
+    100: () => find.byType(NavigationBar),
+    111: () => find.text('Drawer-style navigation sample'),
+    129: () => find.text('Open dialog'),
+    147: () => find.ancestor(
+        of: find.text('AnimatedCrossFade\n#1'), matching: find.byType(Card)),
+    165: () => find.text('Simulate async task'),
+    185: () => find.byType(SwitchListTile),
+  };
+  for (final entry in compactTargets.entries) {
+    testWidgets('Screen${entry.key} compact template is reachable above Door',
+        (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 500);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      await _pumpGeneric(tester, entry.key);
+      final target = find.descendant(
+        of: find.byType(PatternTemplateBody), matching: entry.value());
+      expect(target, findsOneWidget);
+      await tester.ensureVisible(target);
+      await tester.pumpAndSettle();
+      final body = find.byWidgetPredicate((widget) => widget is Semantics &&
+          widget.properties.identifier == 'generic-body');
+      final visible = tester.getRect(body);
+      final bounds = tester.getRect(target);
+      expect(bounds.width, greaterThan(0));
+      expect(bounds.height, greaterThan(0));
+      expect(bounds.top, greaterThanOrEqualTo(visible.top - 0.01));
+      expect(bounds.bottom, lessThanOrEqualTo(visible.bottom + 0.01));
+      expect(target.hitTestable(), findsOneWidget);
+      expect(bounds.bottom,
+          lessThanOrEqualTo(tester.getRect(find.byType(ToolDoorSelector)).top));
+      expect(tester.takeException(), isNull);
+      if (entry.key == 39) {
+        await tester.enterText(target, 'state stays reachable');
+        final submit = find.text('Submit');
+        await tester.ensureVisible(submit);
+        await tester.pumpAndSettle();
+        expect(submit.hitTestable(), findsOneWidget);
+        expect(tester.getRect(submit).bottom,
+            lessThanOrEqualTo(tester.getRect(body).bottom + 0.01));
+      }
+    });
+  }
+
+  testWidgets('Generic form preserves edit controller focus and selection on resize',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 500);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    await _pumpGeneric(tester, 39);
+    final field = find.byType(TextField);
+    await tester.ensureVisible(field);
+    await tester.enterText(field, 'resize-safe input');
+    await tester.pumpAndSettle();
+    final controller = tester.widget<TextField>(field).controller!;
+    final focus = tester.widget<EditableText>(find.byType(EditableText)).focusNode;
+    const selection = TextSelection(baseOffset: 2, extentOffset: 7);
+    controller.selection = selection;
+    final body = find.byWidgetPredicate((widget) => widget is Semantics &&
+        widget.properties.identifier == 'generic-body');
+    final threshold = 500 + 480 - tester.getSize(body).height;
+    for (final size in [
+      const Size(1180, 757), const Size(390, 500),
+      Size(390, threshold - 1), Size(390, threshold),
+      Size(390, threshold + 1), const Size(1180, 757),
+      const Size(390, 500),
+    ]) {
+      tester.view.physicalSize = size;
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(field);
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(field).controller, same(controller));
+      expect(controller.text, 'resize-safe input');
+      expect(controller.selection, selection);
+      expect(tester.widget<EditableText>(find.byType(EditableText)).focusNode,
+          same(focus));
+      expect(focus.hasFocus, isTrue);
+      expect(field.hitTestable(), findsOneWidget);
+      expect(tester.getRect(field).top,
+          greaterThanOrEqualTo(tester.getRect(body).top - 0.01));
+      expect(tester.getRect(field).bottom,
+          lessThanOrEqualTo(tester.getRect(body).bottom + 0.01));
+      expect(tester.takeException(), isNull);
+    }
+  });
+
+  testWidgets('fresh Generic route has independent editor and pop restores prior state',
+      (tester) async {
+    final display = await loadTestDisplayController();
+    await _pumpGeneric(tester, 39, controller: display, routes: {
+      '/fresh-generic': (_) => DisplayScope(
+          controller: display, child: const GenericScreen(screenId: 57)),
+    });
+    final field = find.descendant(
+        of: find.byType(PatternTemplateBody), matching: find.byType(TextField));
+    await tester.ensureVisible(field);
+    await tester.enterText(field, 'first route');
+    final firstController = tester.widget<TextField>(field).controller;
+    Navigator.of(tester.element(find.byType(GenericScreen)))
+        .pushNamed('/fresh-generic');
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(field);
+    final secondController = tester.widget<TextField>(field).controller;
+    expect(secondController, isNot(same(firstController)));
+    expect(secondController!.text, isEmpty);
+    await tester.enterText(field, 'second route');
+    Navigator.of(tester.element(find.byType(GenericScreen))).pop();
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(field).controller, same(firstController));
+    expect(firstController!.text, 'first route');
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('renders translated chrome for a non-English display locale', (tester) async {

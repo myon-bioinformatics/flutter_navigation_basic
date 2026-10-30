@@ -386,24 +386,27 @@ class _GenericScreenBody extends StatelessWidget {
         ),
       ],
     );
-    if (data.screenDataId != 6) return content;
-
-    // The metadata above the catalogue can consume the entire short body.
-    // Give short windows room for the search, count and a useful result list.
+    // Metadata/chips can consume the entire short body, not only on Screen6.
+    // At the supported 390px viewport, four wrapped chip rows leave no room
+    // for forms/grids and clip tabs/navigation behind the independent Door.
+    // Reserve a finite 480px content canvas (metadata plus template viewport)
+    // and let the body scroll to expose it; inner Expanded views stay bounded.
     // Keep the wrapper and default scroll physics stable across the boundary:
     // replacing either can reset search state or the web editing DOM on resize.
     return Semantics(
-      identifier: 'screen6-body',
+      identifier: data.screenDataId == 6 ? 'screen6-body' : 'generic-body',
       container: true,
       explicitChildNodes: true,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          const minimumCatalogHeight = 480.0;
+          const minimumContentHeight = 480.0;
           return SingleChildScrollView(
-            key: const Key('screen6-body-scroll'),
+            key: data.screenDataId == 6
+                ? const Key('screen6-body-scroll')
+                : const Key('generic-body-scroll'),
             child: SizedBox(
-              height: constraints.maxHeight < minimumCatalogHeight
-                  ? minimumCatalogHeight
+              height: constraints.maxHeight < minimumContentHeight
+                  ? minimumContentHeight
                   : constraints.maxHeight,
               child: content,
             ),
