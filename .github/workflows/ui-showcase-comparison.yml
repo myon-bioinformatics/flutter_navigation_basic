@@ -1,12 +1,14 @@
 name: UI Showcase HTML comparison
 
+# Manual-only measurement. Offline contract CI is separate and cannot launch it.
 on:
-  pull_request:
-    paths:
-      - 'experiments/ui-showcase-html/**'
-      - 'e2e/package.json'
-      - 'e2e/utils/interaction.mjs'
-      - '.github/workflows/ui-showcase-comparison.yml'
+  workflow_dispatch:
+    inputs:
+      run_live_audit:
+        description: 'Explicitly request new live measurements; current task requests none'
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -17,14 +19,15 @@ concurrency:
 
 jobs:
   compare:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_live_audit == true
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      CANDIDATE_SHA: ${{ github.event.pull_request.head.sha }}
+      CANDIDATE_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - name: Read pinned browser-test-kit adapter implementation
         uses: actions/checkout@v7

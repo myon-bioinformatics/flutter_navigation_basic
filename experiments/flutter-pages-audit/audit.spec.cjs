@@ -6,13 +6,45 @@ const { createRequire } = require('node:module');
 const { pathToFileURL } = require('node:url');
 const fromE2E = createRequire(path.join(__dirname, '../../e2e/package.json'));
 const { test, expect } = fromE2E('@playwright/test');
-const { readinessDecision, chromeProblems, fullyVisible } = require('./audit_policy.cjs');
+const { readinessDecision, chromeProblems, fullyVisible, scrollSettled, measuredHeaderMember, emergingFlowProven, emergingMotionDistance } = require('./audit_policy.cjs');
 const kit = import(pathToFileURL(path.join(__dirname, '../../e2e/utils/interaction.mjs')).href);
 const catalogue = JSON.parse(fs.readFileSync(path.resolve(process.env.AUDIT_CATALOGUE || 'build/flutter-pages-audit/catalogue.json'), 'utf8'));
-const REFERENCE_SHA = '9b38f3e935e9e171cbacc3af63f539ddce9db86b';
+const REFERENCE_SHA = 'c4a7b939e1ad22363321de8b50efe8fcbfb12134';
 const BASE = 'https://myon-bioinformatics.github.io/flutter_navigation_basic/';
 if (catalogue.schema !== 'flutter-pages-audit-catalogue/1' || !catalogue.routes?.length || catalogue.referenceSha !== REFERENCE_SHA) {
   throw new Error('Missing, empty, or stale audit catalogue; never allow zero-coverage success');
+}
+const { collectSemanticInventory } = require('./semantic_collector.cjs');
+const {projectSource, evaluateFamilyProof} = require('./family_proof.cjs');
+const {runSpatialProbe} = require('./spatial_probe.cjs');
+const proofMode = process.env.AUDIT_PROOF_DISCOVERY === '1';
+const proofManifest = proofMode ? require('./source-adapter.json') : null;
+const proofSelection = proofMode ? require('./proof-selection.json') : null;
+if (proofMode && proofSelection.liveExecutionEnabled !== true) throw new Error('New proof measurements are disabled by the user; no alternate config bypass');
+const familyManifestBytes = fs.readFileSync(path.join(__dirname, 'family-inventory.json'));
+const familyManifest = JSON.parse(familyManifestBytes);
+const familyManifestSha256 = createHash('sha256').update(familyManifestBytes).digest('hex');
+if (familyManifest.referenceSha !== REFERENCE_SHA || familyManifest.caseCount !== 48 || familyManifest.contracts.length !== 24 || new Set(familyManifest.contracts.map(c => c.route)).size !== 24) throw new Error('Invalid reviewed family discovery manifest');
+function familySpec(route, viewport) {
+  const source = familyManifest.contracts.find(c => c.route === route);
+  if (!source) throw new Error('Route outside explicit 48-case discovery manifest');
+  return projectSource(source, viewport);
+}
+const familyTestInfo = new WeakMap();
+async function familySnapshot(page, record, phase) {
+  // The full 430-case lane retains all routes. Extra family discovery is only
+  // defined for its explicit 24 representatives; absence is never a pass.
+  if (!familyManifest.contracts.some(source => source.route === record.route)) return;
+  const observation = record.observations.familyObservation ||= {
+    manifestSha256: familyManifestSha256,
+    scope: 'read-only source-family discovery; no acceptance promotion', snapshots: [],
+  };
+  const collector = await page.evaluate(collectSemanticInventory, familySpec(record.route, record.viewport));
+  const sampleMs = collector.sampleMs;
+  if (!['after-reset-initial', 'after-reset-stable'].includes(phase)) phase += '-' + observation.snapshots.length;
+  const name = `family-${String(observation.snapshots.length).padStart(2, '0')}-${phase}.png`;
+  await capture(page, familyTestInfo.get(record), record, name);
+  observation.snapshots.push({ phase, sampleMs, collector, capture: { ...record.captures.at(-1) } });
 }
 const ids = ['shared-header-title', 'shared-header-home', 'shared-header-favorite', 'shared-header-menu'];
 const node = (page, id) => page.locator(`[flt-semantics-identifier="${id}"]`);
@@ -93,7 +125,7 @@ async function baseline(request) {
   return sha;
 }
 async function geometry(page) {
-  return page.evaluate(() => {
+  const result = await page.evaluate(() => {
     const box = el => { const b = el.getBoundingClientRect(); return { x: b.x, y: b.y, width: b.width, height: b.height }; };
     const intersection = (a, b) => ({ x: Math.max(a.x, b.x), y: Math.max(a.y, b.y),
       width: Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x)),
@@ -108,14 +140,15 @@ async function geometry(page) {
       return result;
     };
     const title = document.querySelector('[flt-semantics-identifier="shared-header-title"]');
-    let headerBottom = 56, headerFrame = null;
+    let headerBottom = 56, headerFrame = null, headerNode = null;
     for (let parent = title; parent; parent = parent.parentElement) {
       const b = box(parent);
-      if (parent.tagName === 'FLT-SEMANTICS' && b.y >= -1 && b.y <= 1 && b.width >= innerWidth * .8 && b.height < innerHeight / 2 && parent.querySelector('[flt-semantics-identifier="shared-header-home"]')) { headerBottom = Math.max(headerBottom, b.height); headerFrame = b; }
+      if (parent.tagName === 'FLT-SEMANTICS' && b.y >= -1 && b.y <= 1 && b.width >= innerWidth * .8 && b.height < innerHeight / 2 && parent.querySelector('[flt-semantics-identifier="shared-header-home"]')) { headerBottom = Math.max(headerBottom, b.height); headerFrame = b; headerNode = parent; }
     }
     const secondary = document.querySelector('[flt-semantics-identifier="shared-header-secondary"]');
     if (secondary) { const b = box(secondary); headerBottom = Math.max(headerBottom, b.y + b.height); }
-    const door = document.querySelector('[flt-semantics-identifier="tool-door-dropdown"]');
+    const doors = [...document.querySelectorAll('[flt-semantics-identifier="tool-door-dropdown"]')];
+    const door = doors.length === 1 ? doors[0] : null;
     let footer = door ? box(door) : null, footerNode = door;
     const scrollParents = el => {
       const parents = [];
@@ -126,7 +159,7 @@ async function geometry(page) {
       return parents;
     };
     const footerScrollParents = scrollParents(door);
-    const footerMode = !door ? 'absent' : footerScrollParents.length ? 'scroll-content' : 'fixed';
+    const footerMode = doors.length > 1 ? 'ambiguous' : !door ? 'absent' : footerScrollParents.length ? 'scroll-content' : 'fixed';
     for (let parent = footerMode === 'fixed' ? door?.parentElement : null; parent; parent = parent.parentElement) {
       const b = box(parent);
       if (parent.tagName === 'FLT-SEMANTICS' && b.y >= headerBottom && b.width >= innerWidth * .6 && b.height < innerHeight * .5) { footer = b; footerNode = parent; }
@@ -151,7 +184,7 @@ async function geometry(page) {
     const inaccessibleIdentifiers = [...document.querySelectorAll('[flt-semantics-identifier]')].filter(el => {
       const id = el.getAttribute('flt-semantics-identifier');
       return !el.closest('[flt-semantics-identifier^="shared-header-"]') && !['back-to-hub', 'tool-door-dropdown'].includes(id) && !footerNode?.contains(el);
-    }).map(el => ({ id: el.getAttribute('flt-semantics-identifier'), box: box(el),
+    }).map(el => ({ id: el.getAttribute('flt-semantics-identifier'), box: box(el), headerDescendant: !!headerNode?.contains(el),
       // Semantics can retain positive boxes behind Scaffold's fixed footer.
       // The observed body envelope, not raw viewport inclusion, bounds access.
       clip: intersection(clipped(el), envelope), scrollParents: scrollParents(el) }))
@@ -160,12 +193,18 @@ async function geometry(page) {
         return parent.scrollHeight > parent.clientHeight + 2 && access.width >= 30 && access.height >= 12;
       }));
     const surface = document.scrollingElement || document.documentElement;
-    return { viewport: { width: innerWidth, height: innerHeight, deviceScaleFactor: devicePixelRatio }, header, headerFrame, footer, footerClip, footerMode, footerScrollParents, envelope, regions, leaves, inaccessibleIdentifiers,
+    return { viewport: { width: innerWidth, height: innerHeight, deviceScaleFactor: devicePixelRatio }, header, headerFrame, footer, footerClip, footerMode, footerScrollParents, footerId: door?.id || null, footerCount: doors.length, envelope, regions, leaves, inaccessibleIdentifiers,
       rootOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1 || surface.scrollWidth > surface.clientWidth + 1,
       bodyWidthDiagnostic: { scrollWidth: document.body.scrollWidth, clientWidth: document.body.clientWidth },
       // Invisible semantics labels are not painted-glyph bounds. Do not gate on their text scrollWidth.
       semanticsCount: semantics.length };
   });
+  // Hub's search is a source-defined subHeader, not body content. Exclude only
+  // actual measured header descendants fully contained by that header frame;
+  // an off-screen/misplaced header control must not disappear from diagnostics.
+  result.inaccessibleIdentifiers = result.inaccessibleIdentifiers.filter(item =>
+    !measuredHeaderMember(item, result.headerFrame));
+  return result;
 }
 async function regionWitness(page, id) {
   return page.evaluate(id => {
@@ -180,6 +219,54 @@ async function regionWitness(page, id) {
   }, id);
 }
 function moved(a, b) { return !!a && !!b && (Math.abs(a.scrollTop - b.scrollTop) > 1 || JSON.stringify(a.children) !== JSON.stringify(b.children)); }
+async function settledScrollGeometry(page, record, regionIds, phase = 'terminal') {
+  const started = Date.now(), samples = [];
+  // The pinned Flutter engine has a 500ms pointer-mode interval. This floor is
+  // not proof of readiness: original-region CSS and stable bounds are required.
+  await page.waitForTimeout(600);
+  let previous = null;
+  while (Date.now() - started < 3_000) {
+    const current = await geometry(page);
+    samples.push({ elapsedMs: Date.now() - started, geometry: current });
+    if (scrollSettled(previous, current, regionIds)) {
+      const result = { phase, status: 'stable', samples };
+      (record.observations.scrollSettlingPhases ||= []).push(result);
+      if (phase === 'terminal') record.observations.scrollSettling = result;
+      return current;
+    }
+    previous = current;
+    await page.waitForTimeout(100);
+  }
+  const result = { phase, status: 'unverified', samples };
+  (record.observations.scrollSettlingPhases ||= []).push(result);
+  if (phase === 'terminal') record.observations.scrollSettling = result;
+  return null;
+}
+
+async function emergingDoorMotion(page, record, before, start) {
+  const candidates = start.regions.filter(r => before.regions.some(a => a.id === r.id) &&
+    start.footerScrollParents.some(p => p.id === r.id));
+  const motion = { start, back: null, end: null, inputs: [], regionId: null };
+  record.observations.emergingDoorMotion = motion;
+  if (candidates.length !== 1) return motion;
+  const region = candidates[0]; motion.regionId = region.id;
+  const distance = emergingMotionDistance(start, region.id);
+  motion.plannedDistance = distance;
+  if (distance === null) { motion.reason = 'Insufficient measured unclipped travel (minimum 12px plus 4px margin); no input sent.'; return motion; }
+  const x = Math.floor(region.clip.x + Math.min(8, region.clip.width / 2));
+  const y = Math.floor(region.clip.y + region.clip.height / 2);
+  await page.mouse.move(x, y);
+  // Two bounded real gestures, no synthetic scroll and no action activation.
+  // Always attempt restoration even if the backward witness is insufficient.
+  for (const [phase, deltaY] of [['back', -distance], ['end', distance]]) {
+    await page.mouse.wheel(0, deltaY);
+    const input = { input: 'wheel', region: region.id, x, y, deltaY, purpose: 'emerging Door motion ' + phase };
+    motion.inputs.push(input); record.inputs.push(input);
+    motion[phase] = await settledScrollGeometry(page, record, [region.id], 'emerging-' + phase);
+  }
+  return motion;
+}
+
 async function scrollProof(page, record, before) {
   const overflowing = before.regions.filter(r => r.scrollHeight > r.clientHeight + 2);
   if (!overflowing.length) {
@@ -202,6 +289,7 @@ async function scrollProof(page, record, before) {
     await page.mouse.move(x, y); await page.mouse.wheel(0, 240); await settle(page);
     record.inputs.push({ input: 'wheel', x, y, deltaY: 240, region: region.id });
     const after = await regionWitness(page, region.id);
+    await familySnapshot(page, record, 'wheel-first-raw');
     let boundary = false, previous = after, current = after;
     const steps = [];
     if (moved(start, after)) {
@@ -209,6 +297,7 @@ async function scrollProof(page, record, before) {
         const deltaY = Math.min(20_000, Math.max(480, (current?.scrollHeight || 0) - (current?.clientHeight || 0) - (current?.scrollTop || 0) + 240));
         await page.mouse.wheel(0, deltaY); await settle(page);
         current = await regionWitness(page, region.id);
+        await familySnapshot(page, record, 'wheel-step-raw');
         steps.push({ deltaY, after: current }); record.inputs.push({ input: 'wheel', x, y, deltaY, region: region.id });
         if (current && previous && !moved(previous, current)) {
           boundary = current.scrollHeight - current.clientHeight - current.scrollTop <= 2;
@@ -219,13 +308,31 @@ async function scrollProof(page, record, before) {
     }
     results.push({ id: region.id, start, after, moved: moved(start, after), boundaryObserved: boundary, end: current, steps });
   }
-  const after = await geometry(page);
+  let after = await settledScrollGeometry(page, record, results.map(r => r.id));
+  if (!after) return { status: 'unverified', reason: 'Original scroll-region styling/bounds did not settle without further input before the deadline.', evidence: { results } };
+  let motion = null;
+  if (before.footerMode === 'absent' && after.footerMode === 'scroll-content') {
+    motion = await emergingDoorMotion(page, record, before, after);
+    if (motion.end) after = motion.end;
+  }
   record.observations.beforeScroll = before;
   record.observations.afterScroll = after;
   record.observations.scrollProbe = { results, observedRegions: overflowing.length, titleGlyphDelta: boxDelta(before.header['shared-header-title'].box, after.header['shared-header-title'].box) };
-  expect(chromeProblems(before, after), 'measured header frame/buttons and independent footer remain fixed; flowing Door is not fixed chrome').toEqual([]);
+  const problems = chromeProblems(before, after, motion);
+  if (motion && !emergingFlowProven(before, after, motion)) {
+    // Insufficient flow evidence is unknown, but real header/control drift is
+    // still a failure, including drift during the backward leg.
+    const otherProblems = problems.filter(p => p !== 'footerMode: structural classification changed');
+    for (const g of [motion.back, motion.end].filter(Boolean)) {
+      otherProblems.push(...chromeProblems(motion.start, g).filter(p => p !== 'footerMode: structural classification changed'));
+    }
+    expect(otherProblems, 'measured chrome must remain fixed during motion probe').toEqual([]);
+    return { status: 'unverified', reason: 'Bounded real backward/forward input did not prove same-Door flow motion and restored visible end.', evidence: { results, motion } };
+  }
+  expect(problems, 'measured header frame/buttons and independent footer remain fixed; flowing Door is not fixed chrome').toEqual([]);
   const flowFooterReached = before.footerMode !== 'scroll-content' || fullyVisible(after.footer, after.footerClip);
-  const complete = overflowing.length <= 4 && results.every(r => r.moved && r.boundaryObserved) && after.leaves.some(leaf => leaf.clip.height >= 12 && leaf.clip.width >= 30) && flowFooterReached;
+  const complete = overflowing.length <= 4 && results.every(r => r.moved && r.boundaryObserved && after.regions.some(final =>
+    final.id === r.id && final.scrollHeight - final.clientHeight - final.scrollTop <= 2)) && after.leaves.some(leaf => leaf.clip.height >= 12 && leaf.clip.width >= 30) && flowFooterReached;
   return { status: complete ? 'passed' : 'unverified', reason: complete ? 'Real wheel moved each observed vertical body region and reached a stable end with visible content; fixed chrome retained.' : 'Bounded wheel probe did not establish movement/end for every observed region; not treated as fit or success.', evidence: { results, observedRegions: overflowing.length, fixedHeader: true, footerMode: before.footerMode, fixedFooter: before.footerMode === 'fixed', flowFooterReached, scope: 'exposed vertical semantics regions, not every page-specific action' } };
 }
 async function selected(page, value) {
@@ -240,6 +347,7 @@ for (const entry of catalogue.routes) test(`observe public route ${entry.route}`
     viewport, referenceSha: REFERENCE_SHA, candidateSha: process.env.CANDIDATE_SHA || null,
     servedShaBefore: null, servedShaAfter: null, browserVersion: browser.version(), playwrightVersion: fromE2E('@playwright/test/package.json').version,
     runId: process.env.GITHUB_RUN_ID || null, checks: {}, observations: {}, captures: [], inputs: [], errors: [] };
+  familyTestInfo.set(record, info);
   const runtimeErrors = [], requests = [], blocked = [];
   page.on('pageerror', error => runtimeErrors.push(error.message));
   page.on('dialog', async dialog => { record.errors.push({ kind: 'unexpected-dialog', type: dialog.type() }); await dialog.dismiss(); });
@@ -282,6 +390,7 @@ for (const entry of catalogue.routes) test(`observe public route ${entry.route}`
       if (secondary.count) { expect(secondary.count).toBe(1); expect(secondary.box.y).toBeGreaterThanOrEqual(48); expect(secondary.box.width).toBeLessThanOrEqual(viewport.width + 1); }
     });
     await check(record, 'body_geometry', async () => {
+      expect(first.footerCount, 'Door identity must not be duplicated even without a scroll probe').toBeLessThanOrEqual(1);
       expect(inventory.truncated, 'control observation must not silently truncate').toBe(false);
       expect(first.inaccessibleIdentifiers, 'exposed identified body regions must not be fully clipped without a usable scroll path').toEqual([]);
       expect(first.envelope.height, 'positive usable body envelope').toBeGreaterThanOrEqual(32);
@@ -320,8 +429,38 @@ for (const entry of catalogue.routes) test(`observe public route ${entry.route}`
       await selected(page, true); await page.reload(); await bootstrap(page, record); await selected(page, false);
       return { evidence: { reloadWhileSelected: true } };
     });
+    await familySnapshot(page, record, 'after-reset-initial');
+    await page.waitForTimeout(600);
+    await familySnapshot(page, record, 'after-reset-stable');
+    if (proofMode) {
+      if (!proofSelection.routes.includes(record.route)) throw new Error('Route outside explicit proof-discovery budget');
+      const selectedCase = proofManifest.cases.find(item => item.route === record.route && item.viewportId === record.viewport.id);
+      if (!selectedCase || proofManifest.referenceSha !== REFERENCE_SHA) throw new Error('Missing or stale source case');
+      const metadataResponse = await request.get(`${BASE}assets/assets/diagnostics/build_metadata.json`, {headers:{'Cache-Control':'no-cache'},timeout:15000});
+      if (!metadataResponse.ok()) throw new Error('Source metadata unavailable for diagnostic label');
+      const metadataRaw = await metadataResponse.text();
+      if (JSON.parse(metadataRaw).repository?.revision?.sha !== REFERENCE_SHA) throw new Error('Stale proof metadata');
+      const buildMetadata = {raw:metadataRaw,sha256:createHash('sha256').update(metadataRaw).digest('hex')};
+      const source = {...selectedCase, route: record.route, referenceSha: REFERENCE_SHA,
+        sourceHashes: {...proofManifest.sourceHashes, ...proofManifest.additionalChromeSourceHashes},
+        locale: 'eng', stateKey: selectedCase.spatial?.stateKey || createHash('sha256').update(JSON.stringify(selectedCase.initialState)).digest('hex'),
+        referenceHeights: [1600, 1720], buildMetadata, unresolved: selectedCase.spatial?.unresolved || ['Complete source representation not yet bound']};
+      const spatial = await runSpatialProbe({page, source, viewport: record.viewport, geometry, settle,
+        capture: async phase => {
+          const file = `${phase}.png`;
+          const bytes = await page.screenshot({path: info.outputPath(file), timeout: 5000});
+          return {file, bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex')};
+        }});
+      record.observations.familyProof = {schema: 'family-proof-observations/1', spatial, buildMetadata,
+        sourceManifestSha256: createHash('sha256').update(fs.readFileSync(path.join(__dirname,'source-adapter.json'))).digest('hex'),
+        selectionSha256: createHash('sha256').update(fs.readFileSync(path.join(__dirname,'proof-selection.json'))).digest('hex')};
+      record.observations.familyProof.evaluation = evaluateFamilyProof(source, record.observations.familyProof);
+      record.observations.familyProof.acceptancePromoted = false;
+      if (!spatial.complete) record.errors.push({kind:'proof-discovery',message:'Incomplete or unstable explicitly bounded capture sequence'});
+    }
     const beforeScroll = await geometry(page);
     await check(record, 'scroll', () => scrollProof(page, record, beforeScroll));
+    await familySnapshot(page, record, 'after-scroll');
     record.checks.page_action = { status: 'unverified', reason: 'Page-specific form, navigation, file, clipboard, networking and destructive controls are inventoried but not arbitrarily activated. Only the shared favorite has a universal safe action contract.' };
     record.checks.painted_text_overflow = { status: 'unverified', reason: 'Flutter semantics boxes do not certify painted text/icon clipping or every overlapping element. Screenshots are evidence for follow-up review, not automatic pixel-parity approval.' };
   } catch (error) { record.errors.push({ kind: 'audit-harness', message: String(error) }); }

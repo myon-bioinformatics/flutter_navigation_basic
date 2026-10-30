@@ -39,7 +39,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - uses: astral-sh/setup-uv@v10.3.0
+      - uses: astral-sh/setup-uv@v10.3.2
       - name: Install Python test dependencies (locked)
         run: uv sync --locked --project python
       - name: Verify Python boundaries and producer/asset parity
@@ -205,7 +205,7 @@ jobs:
     permissions:
       contents: read
       actions: read
-    uses: myon-bioinformatics/myon-bioinformatics/.github/workflows/reusable-junit-identity.yml@2192ff22acafdd09e80ac722df91ee937aaedd5e
+    uses: myon-bioinformatics/myon-bioinformatics/.github/workflows/reusable-junit-identity.yml@9e3da7ae1846e9604ebc24bb5178f7de094a4e77
     with:
       expected-reports: '["junit-python-refactor/python-refactor-junit.xml", "junit-node-refactor/node.xml", "junit-flutter-refactor/flutter.xml", "junit-flutter-refactor/flutter-pinned.xml", "junit-flutter-refactor/flutter-curl-runtime.xml"]'
       commit-sha: ${{ github.event.pull_request.head.sha || github.sha }}

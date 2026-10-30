@@ -1,0 +1,55 @@
+name: Flutter audit contracts (offline)
+
+# Green means observation/receipt code passed offline tests. It does NOT mean
+# any UI route was measured, accepted, or found free of outstanding defects.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/scripts/add_ci_label.py'
+      - '.github/scripts/ci_label_api.py'
+      - '.github/scripts/test_ci_status_label.py'
+      - 'experiments/flutter-pages-audit/**'
+      - 'experiments/ui-showcase-html/**'
+      - '.github/workflows/ci-status-label.yml'
+      - '.github/workflows/flutter-audit-contracts.yml'
+      - '.github/workflows/flutter-audit-focused-diagnostic.yml'
+      - '.github/workflows/flutter-pages-audit.yml'
+      - '.github/workflows/ui-showcase-comparison.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/add_ci_label.py'
+      - '.github/scripts/ci_label_api.py'
+      - '.github/scripts/test_ci_status_label.py'
+      - 'experiments/flutter-pages-audit/**'
+      - 'experiments/ui-showcase-html/**'
+      - '.github/workflows/ci-status-label.yml'
+      - '.github/workflows/flutter-audit-contracts.yml'
+      - '.github/workflows/flutter-audit-focused-diagnostic.yml'
+      - '.github/workflows/flutter-pages-audit.yml'
+      - '.github/workflows/ui-showcase-comparison.yml'
+permissions:
+  contents: read
+jobs:
+  offline-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Test collector, proof and receipt contracts without a browser
+        run: |
+          node --test experiments/flutter-pages-audit/*.test.cjs experiments/ui-showcase-html/state.test.cjs
+          for test_file in experiments/flutter-pages-audit/*.test.py; do
+            python3 -B -S "$test_file"
+          done
+          python3 -B -S experiments/flutter-pages-audit/proof_contract.py check-source
+          python3 -B -S .github/scripts/test_ci_status_label.py

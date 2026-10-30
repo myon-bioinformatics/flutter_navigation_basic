@@ -11,7 +11,7 @@ const interaction = import(pathToFileURL(path.join(__dirname, '../../e2e/utils/i
 
 // Deliberately immutable: a changed deployment is a stale baseline, not an
 // invitation to update the reference or silently compare different revisions.
-const REFERENCE_SHA = '9b38f3e935e9e171cbacc3af63f539ddce9db86b';
+const REFERENCE_SHA = 'c4a7b939e1ad22363321de8b50efe8fcbfb12134';
 const REFERENCE_BASE = 'https://myon-bioinformatics.github.io/flutter_navigation_basic/';
 const REFERENCE_URL = `${REFERENCE_BASE}#/examples/ui-showcase`;
 const METADATA_URL = `${REFERENCE_BASE}assets/assets/diagnostics/build_metadata.json`;

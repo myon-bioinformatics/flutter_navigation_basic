@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / ".github" / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import copy
 import unittest
 from unittest.mock import patch

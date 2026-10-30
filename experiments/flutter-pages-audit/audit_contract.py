@@ -21,7 +21,7 @@ from generate_page_identities import ALIASES, identities  # noqa: E402
 from web_page_catalogue import catalogue as public_catalogue  # noqa: E402
 from vendor.check_png import dimensions as png_dimensions  # noqa: E402
 
-REFERENCE_SHA = '9b38f3e935e9e171cbacc3af63f539ddce9db86b'
+REFERENCE_SHA = 'c4a7b939e1ad22363321de8b50efe8fcbfb12134'
 CATALOGUE_SCHEMA = 'flutter-pages-audit-catalogue/1'
 RECEIPT_SCHEMA = 'flutter-pages-audit/1'
 RECEIPT_NAME = 'audit-receipt.json'

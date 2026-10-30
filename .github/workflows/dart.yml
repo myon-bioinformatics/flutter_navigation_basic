@@ -329,7 +329,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - uses: astral-sh/setup-uv@v10.3.0
+      - uses: astral-sh/setup-uv@v10.3.2
 
       - name: Install Python test dependencies (locked)
         run: uv sync --locked --project python
@@ -499,7 +499,7 @@ jobs:
     permissions:
       contents: read
       actions: read
-    uses: myon-bioinformatics/myon-bioinformatics/.github/workflows/reusable-junit-identity.yml@2192ff22acafdd09e80ac722df91ee937aaedd5e
+    uses: myon-bioinformatics/myon-bioinformatics/.github/workflows/reusable-junit-identity.yml@9e3da7ae1846e9604ebc24bb5178f7de094a4e77
     with:
       expected-reports: ${{ needs.junit-plan.outputs.reports }}
       commit-sha: ${{ github.event.pull_request.head.sha || github.sha }}

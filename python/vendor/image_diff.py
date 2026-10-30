@@ -22,6 +22,28 @@ _PILLOW_MIN = Path(__file__).resolve().parent.parent / "vendor" / "pillow_min" /
 _IMAGE_BACKEND = None
 
 
+def _installed_backend_path():
+    """Locate wheel data via RECORD, including virtualenv and --prefix installs."""
+    from importlib.metadata import PackageNotFoundError, distribution
+
+    try:
+        installed = distribution("browser-test-kit-tools")
+    except PackageNotFoundError:
+        return _PILLOW_MIN
+    for entry in installed.files or ():
+        if entry.as_posix().endswith("share/browser-test-kit/pillow_min/pillow_min.py"):
+            candidate = Path(installed.locate_file(entry))
+            if candidate.is_file():
+                return candidate
+    # pip --target relocates the data directory alongside the top-level modules.
+    target = Path(__file__).resolve().parent / "share/browser-test-kit/pillow_min/pillow_min.py"
+    return target if target.is_file() else _PILLOW_MIN
+
+
+if not _PILLOW_MIN.is_file():
+    _PILLOW_MIN = _installed_backend_path()
+
+
 def finite_positive(value: str) -> float:
     try:
         number = float(value)

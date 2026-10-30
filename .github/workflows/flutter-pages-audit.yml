@@ -1,10 +1,14 @@
 name: Published Flutter all-page audit
 
+# Manual-only measurement. Offline contract CI is separate and cannot launch it.
 on:
-  pull_request:
-    paths:
-      - 'experiments/flutter-pages-audit/**'
-      - '.github/workflows/flutter-pages-audit.yml'
+  workflow_dispatch:
+    inputs:
+      run_live_audit:
+        description: 'Explicitly request new live measurements; current task requests none'
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -14,16 +18,17 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CANDIDATE_SHA: ${{ github.event.pull_request.head.sha }}
+  CANDIDATE_SHA: ${{ github.sha }}
 
 jobs:
   inventory:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_live_audit == true
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: actions/setup-python@v7
         with:
@@ -78,7 +83,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: actions/setup-python@v7
         with:
@@ -93,7 +98,7 @@ jobs:
           npm install --prefix e2e --package-lock=false
           npm exec --prefix e2e -- playwright install --with-deps chromium
       - name: Observe this shard of all 430 route and viewport pairs
-        run: npm exec --prefix e2e -- playwright test --config experiments/flutter-pages-audit/playwright.config.cjs --shard=${{ matrix.shard }}/4
+        run: npm exec --prefix e2e -- playwright test --config experiments/flutter-pages-audit/full.playwright.config.cjs --shard=${{ matrix.shard }}/4
       - name: Preserve every completed receipt and screenshot, including failures
         if: always()
         uses: actions/upload-artifact@v7
@@ -104,14 +109,14 @@ jobs:
           retention-days: 7
 
   coverage:
-    if: always()
+    if: always() && inputs.run_live_audit == true
     needs: [inventory, observe]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: actions/setup-python@v7
         with:

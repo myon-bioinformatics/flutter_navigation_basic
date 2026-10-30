@@ -15,7 +15,7 @@ REFACTOR = ROOT / ".github/workflows/structure-refactor-validation.yml"
 DART = ROOT / ".github/workflows/dart.yml"
 COLLECTOR = (
     "myon-bioinformatics/myon-bioinformatics/.github/workflows/"
-    "reusable-junit-identity.yml@2192ff22acafdd09e80ac722df91ee937aaedd5e"
+    "reusable-junit-identity.yml@9e3da7ae1846e9604ebc24bb5178f7de094a4e77"
 )
 COMMAND = (
     'uv run --locked --project python python python/test.py --pytest -- --oracle-mode=local '
@@ -46,6 +46,8 @@ PLAYWRIGHT_REPORTS = [
     "junit-playwright-e2e/playwright-portable.xml",
     "junit-playwright-e2e/playwright-interaction-portable.xml",
     "junit-playwright-e2e/playwright-interaction-gesture.xml",
+    "junit-playwright-e2e/playwright-generic-responsive.xml",
+    "junit-playwright-e2e/playwright-mobile-door.xml",
 ]
 VALIDATION_BROWSER_REPORTS = [
     "junit-validation-browser/validation-browser.xml",
@@ -74,6 +76,7 @@ def _plan(workflow, *, python, playwright, validation_browser=False, e2e=False):
 
 def _assert_playwright_producer(workflow):
     producer = workflow["jobs"]["playwright"]
+    assert producer["runs-on"] == "ubuntu-24.04"
     run = _step(producer, "Serve web build and run Playwright")
     install = _step(producer, "Install Playwright")
     # Slow, successful cold installs must leave room for the full five-profile
@@ -93,8 +96,24 @@ def _assert_playwright_producer(workflow):
     assert "--pass-with-no-tests" not in portable
     assert "--max-failures" not in portable
     # Each invocation must own one expected file; a shared path would overwrite.
-    for report in PLAYWRIGHT_REPORTS:
+    for report in PLAYWRIGHT_REPORTS[:3]:
         assert run["run"].count("PLAYWRIGHT_JUNIT_OUTPUT_FILE=\"$junit_dir/" + report.split("/")[1] + "\"") == 1, report
+    # Focused lanes have distinct env-owned reports and still run independently
+    # of another focused result; ordinary full-suite failure is never masked.
+    ready = ("always() && steps.candidate_build.outcome == 'success' && "
+             "steps.candidate_provenance.outcome == 'success' && "
+             "steps.browser_install.outcome == 'success'")
+    assert run["if"] == ready
+    for name, report in (
+        ("Verify Generic responsive controls on the candidate build", PLAYWRIGHT_REPORTS[3]),
+        ("Verify two-profile Door journeys on the candidate build", PLAYWRIGHT_REPORTS[4]),
+    ):
+        focused = _step(producer, name)
+        assert focused["if"] == ready
+        assert focused.get("continue-on-error", False) is False
+        assert focused["env"]["PLAYWRIGHT_JUNIT_OUTPUT_FILE"] == (
+            "${{ github.workspace }}/build/test-results/" + report.split("/")[1])
+        assert producer["steps"].index(focused) < producer["steps"].index(run)
     upload = _upload(producer, "junit-playwright-e2e")
     assert producer["steps"].index(run) < producer["steps"].index(upload)
     assert upload.get("if") == "always()"
@@ -304,9 +323,21 @@ def test_failure_evidence_contract_rejects_unsafe_mutations():
             (name + " retains raw for 90 days", path + ("with", "retention-days"), 90),
         ])
     playwright = workflow["jobs"]["playwright"]
+    for name in ("Verify Generic responsive controls on the candidate build",
+                 "Verify two-profile Door journeys on the candidate build"):
+        focused_index = playwright["steps"].index(_step(playwright, name))
+        focused_path = ("jobs", "playwright", "steps", focused_index)
+        mutations.extend([
+            (name + " masks failure", focused_path + ("continue-on-error",), True),
+            (name + " skipped after another failure", focused_path + ("if",), "success()"),
+            (name + " overwrites ordinary report", focused_path + ("env", "PLAYWRIGHT_JUNIT_OUTPUT_FILE"),
+             "${{ github.workspace }}/build/test-results/playwright-portable.xml"),
+        ])
     install_index = playwright["steps"].index(_step(playwright, "Install Playwright"))
     install_path = ("jobs", "playwright", "steps", install_index)
     mutations.extend([
+        ("portable E2E OS baseline floats", ("jobs", "playwright", "runs-on"), "ubuntu-latest"),
+        ("portable E2E OS baseline changes", ("jobs", "playwright", "runs-on"), "ubuntu-26.04"),
         ("job expires during a slow install", ("jobs", "playwright", "timeout-minutes"), 30),
         ("install consumes the test budget", install_path + ("timeout-minutes",), 90),
         ("install masks failure", install_path + ("continue-on-error",), True),

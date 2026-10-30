@@ -1,0 +1,12 @@
+{
+  "referenceSha": "c4a7b939e1ad22363321de8b50efe8fcbfb12134",
+  "sourceHashes": {
+    "assets/screens.json": "34c610598aacceebdc17cf2cff993d0614083f910981f2fabec0923266f9fd0e",
+    "ci/numbered_routes.toml": "fd9369e5881986500443799fd9291f47b15a20f3ff0a8f03554da595dc67bc80",
+    "lib/config/routes.dart": "907a58216a5888ba84070902ed45bccd0407b3bdbe35e016b92b1ce4fdd2b34d",
+    "lib/core/navigation/app_route_registry.dart": "4198b602f22c54b6f3d773de321a0247b185fb31709ebed10f388bc7e23ceebd",
+    "lib/core/navigation/route_names.dart": "86f5fdc9df533e7d62553299c1cebe06b51dcb5d21d5d2d94559c7794344ed47",
+    "lib/shared/navigation/page_identities.g.dart": "f580a22ed6772ae27baef9de9af8fab48b9f0c59f2cac8f77053733e982cb01c",
+    "python/generate_page_identities.py": "2748d600987e36689dd9aff015692bea28803d9c0a7a370aa6f5d95ab95616aa"
+  }
+}

@@ -53,10 +53,25 @@ wheel input and waits for stable in-viewport geometry across browser frames.
 DOM `scrollIntoView` alone can move the accessibility overlay while the canvas
 remains at the top; the Chromium failure PNG demonstrated that mismatch.
 The receipt records those wheel inputs as `door_scrolls`.
-Mobile WebKit rejects Playwright wheel input. That profile retains semantics
-scrolling with viewport/frame checks followed by an actual touchscreen tap;
-its receipt records `mobile-webkit-wheel-unsupported`. It is not skipped and
-does not substitute a synthetic DOM click.
+Mobile WebKit rejects Playwright wheel input, and its public touchscreen API
+provides taps rather than native swipes. The Door helper uses real keyboard Tab
+traversal to reach the field, requires observed target focus and stable full
+geometry below the header, then sends a measured touchscreen tap without another
+DOM scroll. Dirty Photo Studio uses the same keyboard-assisted path for Import.
+Receipts distinguish keyboard reveal from touch activation; this is not native
+touch-scroll coverage. A visible semantics box alone cannot authorize the tap.
+Keyboard focus and geometry still do not prove canvas alignment: inspect the
+pre-tap PNG and actual menu/navigation outcome. Unit mocks do not certify pixels.
+Other Home/menu-item helpers retain their existing reveal behavior; this change
+does not claim to solve every semantics-scroll path in the suite.
+Candidate-build CI validates `CANDIDATE_SHA` against the same-job build manifest
+before each journey and records `candidate_sha` plus `built_bundle_sha256` in
+new receipts. Missing or mismatched candidate provenance fails the test; it is
+not a skip. `ci_sha` remains GitHub's workflow SHA (which can be a synthetic PR
+merge commit), not the checked-out candidate. Other local/published-site runs
+leave candidate fields null rather than inventing build provenance. Existing
+receipts are not rewritten. Review the manifest, exact-head checks and pixels
+together; a bundle hash alone does not establish UI correctness.
 URL and semantics update before Flutter's canvas route/menu transitions finish.
 Captures therefore wait past the pinned SDK's 300–450ms transitions and browser
 frames. `pixel_guards` stores title-region PNGs and hashes: the destination must

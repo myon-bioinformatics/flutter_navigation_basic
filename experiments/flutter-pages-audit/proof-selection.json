@@ -1,0 +1,29 @@
+{
+  "schema": "flutter-proof-selection/1",
+  "purpose": "Offline-tested observation infrastructure; live measurement is disabled by user instruction",
+  "routes": [
+    "/screen136",
+    "/screen39",
+    "/screen5",
+    "/examples/external-integration/mcp"
+  ],
+  "viewports": [
+    "wide-1180x757",
+    "compact-390x500"
+  ],
+  "caseCount": 8,
+  "referenceHeights": [
+    1600,
+    1720
+  ],
+  "capturesPerCase": 4,
+  "viewportChangesPerCase": 3,
+  "maximumProofCaptures": 32,
+  "maximumViewportChanges": 24,
+  "retries": 0,
+  "workers": 2,
+  "caseTimeoutSeconds": 90,
+  "workflowTimeoutMinutes": 45,
+  "sourceProofAcceptanceEnabled": false,
+  "liveExecutionEnabled": false
+}
