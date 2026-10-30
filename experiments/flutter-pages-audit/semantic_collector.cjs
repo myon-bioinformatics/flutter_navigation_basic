@@ -17,7 +17,13 @@ function collectSemanticInventory(spec) {
   const chrome=e=>!!e.closest('[flt-semantics-identifier^="shared-header-"], [flt-semantics-identifier="tool-door-dropdown"]');
   const content=all.filter(e=>!chrome(e));
   const leaves=content.filter(e=>!e.querySelector('flt-semantics'));
-  const matches=spec.items.map(s=>({key:s.key,nodes:content.filter(e=>s.identifier?ident(e)===s.identifier:s.labelAny?s.labelAny.includes(e.getAttribute('aria-label')):e.getAttribute('aria-label')===s.label).filter(e=>s.role===undefined||e.getAttribute('role')===s.role)}));
+  // Flutter exposes many labels as DOM text (including non-semantic wrappers).
+  // Do not let descendant semantic labels turn their ancestors into duplicates.
+  const ownText=e=>Array.from(e.childNodes||[]).map(n=>n.nodeType===3?n.textContent:
+    n.nodeType===1&&n.tagName!=='FLT-SEMANTICS'&&!['SCRIPT','STYLE'].includes(n.tagName)?ownText(n):'').join('');
+  const text=e=>ownText(e).trim();
+  const label=e=>e.getAttribute('aria-label')??text(e);
+  const matches=spec.items.map(s=>({key:s.key,nodes:content.filter(e=>s.identifier?ident(e)===s.identifier:s.labelAny?s.labelAny.includes(label(e)):label(e)===s.label).filter(e=>s.role===undefined||e.getAttribute('role')===s.role)}));
   const selected=matches.flatMap(m=>m.nodes.length===1?m.nodes:[]);
   const common=nodes=>{if(!nodes.length)return null;for(let e=nodes[0];e;e=e.parentElement)if(nodes.every(n=>e.contains(n)))return e;return null;};
   const root=selected.length===spec.items.length?common(selected):null;
@@ -30,13 +36,13 @@ function collectSemanticInventory(spec) {
       if(/(auto|scroll)/.test(`${css.overflowX} ${css.overflowY}`))ancestorScrollContainers.push({id:p.id||null,tag:p.tagName,box:box(p),scrollWidth:p.scrollWidth,clientWidth:p.clientWidth,scrollHeight:p.scrollHeight,clientHeight:p.clientHeight});
       if(/(auto|scroll|hidden|clip)/.test(`${css.overflowX} ${css.overflowY}`)){const b=box(p);ancestorClips.push(b);clip=overlap(clip,b);}
     }
-    return{id:e.id||null,identifier:ident(e),role:e.getAttribute('role'),label:e.getAttribute('aria-label'),
+    return{id:e.id||null,identifier:ident(e),role:e.getAttribute('role'),label:e.getAttribute('aria-label'),text:text(e),matchedLabel:label(e),
       box:box(e),clip,visible,completeSemanticAncestry:true,ancestorIds,ancestorClips,ancestorScrollContainers,unsupportedClip,enabled:e.getAttribute('aria-disabled')!=='true',checked:e.getAttribute('aria-checked'),selected:e.getAttribute('aria-selected'),expanded:e.getAttribute('aria-expanded')};
   };
   const regions=content.filter(e=>{const c=getComputedStyle(e);return['auto','scroll'].includes(c.overflowY)||['auto','scroll'].includes(c.overflowX);}).map(e=>({...describe(e),scrollTop:e.scrollTop,scrollHeight:e.scrollHeight,clientHeight:e.clientHeight,scrollLeft:e.scrollLeft,scrollWidth:e.scrollWidth,clientWidth:e.clientWidth}));
   return {schema:'local-semantic-inventory-prototype/1',sampleMs:performance.now(),rawTruncated:allObserved.length>2000,observedSemanticCount:allObserved.length,viewport,items:matches.map(m=>({key:m.key,count:m.nodes.length,nodes:m.nodes.map(describe)})),
     rawSemanticNodes:content.map(describe),bodyRoot:root?describe(root):null,bodyRootContainsChrome:root?!!root.querySelector('[flt-semantics-identifier^="shared-header-"]'):null,
-    annotatedOutsideChromeInventory:content.filter(e=>e.getAttribute('aria-label')||e.getAttribute('role')).map(e=>({id:e.id||null,label:e.getAttribute('aria-label'),role:e.getAttribute('role'),covered:selected.includes(e)})),
+    annotatedOutsideChromeInventory:content.filter(e=>label(e)||e.getAttribute('role')).map(e=>({id:e.id||null,label:e.getAttribute('aria-label'),text:text(e),matchedLabel:label(e),role:e.getAttribute('role'),covered:selected.includes(e)})),
     completeOutsideChromeLeafInventory:leaves.map(e=>({id:e.id||null,covered:selected.some(n=>n===e)})),
     scrollRegions:regions,documentOverflow:document.documentElement.scrollWidth>innerWidth||document.documentElement.scrollHeight>innerHeight,
     groups:(spec.groups||[]).map(g=>{const ms=matches.filter(m=>g.keys.includes(m.key));const ok=ms.length===g.keys.length&&ms.every(m=>m.nodes.length===1);const e=ok?common(ms.map(m=>m.nodes[0])):null;return{key:g.key,partKeys:g.keys,container:e?describe(e):null};}),

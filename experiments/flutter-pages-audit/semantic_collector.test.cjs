@@ -45,3 +45,27 @@ test('actual runner binding projection supplies all 48 source inventories withou
  }
  assert.throws(()=>project('/unreviewed',{width:390}),/outside explicit/);
 });
+
+const textNode=value=>({nodeType:3,textContent:value});
+test('DOM text labels are recorded and exactly matched without granting acceptance',()=>fixture(({spec,status,button})=>{
+ delete status.attrs['aria-label'];status.childNodes=[textNode('未実行')];
+ delete button.attrs['aria-label'];button.childNodes=[{nodeType:1,tagName:'SPAN',childNodes:[textNode('実行')]}];
+ const r=collect(spec);assert.deepEqual(r.items.map(i=>i.count),[1,1]);
+ assert.equal(r.items[0].nodes[0].label,null);assert.equal(r.items[0].nodes[0].text,'未実行');
+ assert.equal(r.items[0].nodes[0].matchedLabel,'未実行');assert(!('status' in r));
+}));
+test('explicit aria label takes precedence over different DOM text',()=>fixture(({spec,status})=>{
+ status.childNodes=[textNode('実行')];assert.equal(collect(spec).items[0].count,1);
+ status.attrs['aria-label']='different';assert.equal(collect(spec).items[0].count,0);
+}));
+test('semantic descendant text is not inherited; repeated own text remains ambiguous',()=>fixture(({spec,body,status})=>{
+ delete status.attrs['aria-label'];status.childNodes=[textNode('未実行')];
+ body.childNodes=[Object.assign(status,{nodeType:1})];assert.equal(collect(spec).items[0].count,1);
+ const dup=body.append(new Element('duplicate'));dup.childNodes=[textNode('未実行')];
+ assert.equal(collect(spec).items[0].count,2);assert.equal(collect(spec).bodyRoot,null);
+}));
+test('DOM text fallback preserves interior whitespace and role checks',()=>fixture(({spec,status,button})=>{
+ delete status.attrs['aria-label'];status.childNodes=[textNode('未 実行')];
+ delete button.attrs['aria-label'];button.childNodes=[textNode('実行')];button.attrs.role='text';
+ assert.deepEqual(collect(spec).items.map(i=>i.count),[0,0]);
+}));
