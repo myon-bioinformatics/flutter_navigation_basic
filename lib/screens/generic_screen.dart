@@ -389,8 +389,9 @@ class _GenericScreenBody extends StatelessWidget {
     if (data.screenDataId != 6) return content;
 
     // The metadata above the catalogue can consume the entire short body.
-    // Keep the existing wide layout, but give short windows a scrollable body
-    // with room for the search, count and a useful slice of the result list.
+    // Give short windows room for the search, count and a useful result list.
+    // Keep the wrapper and default scroll physics stable across the boundary:
+    // replacing either can reset search state or the web editing DOM on resize.
     return Semantics(
       identifier: 'screen6-body',
       container: true,
@@ -398,11 +399,12 @@ class _GenericScreenBody extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           const minimumCatalogHeight = 480.0;
-          if (constraints.maxHeight >= minimumCatalogHeight) return content;
           return SingleChildScrollView(
             key: const Key('screen6-body-scroll'),
             child: SizedBox(
-              height: minimumCatalogHeight,
+              height: constraints.maxHeight < minimumCatalogHeight
+                  ? minimumCatalogHeight
+                  : constraints.maxHeight,
               child: content,
             ),
           );
