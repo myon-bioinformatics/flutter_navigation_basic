@@ -1,54 +1,66 @@
-# Focused diagnostic for the pinned Flutter audit
+# Source-family discovery for the pinned Flutter audit
 
-## This diagnostic branch: four cases, not430
+## Current scope: 24 structures × two viewports, exactly 48 cases
 
-The default Playwright config in this branch deliberately selects only Coordinates
-(`/tools/location/coordinates`) and canonical HTTP (`/tools/http/request-draft`),
-at the two reference viewports: **exactly four cases**, two workers, zero retries.
-Aliases and the other426 pairs are not measured. The reviewed deployed reference
-is `d65322c15a55a7395bb5271bc65696402bc98d29`; the seven catalogue source hashes
-are pinned in `focused-baseline.json`. There is no automatically-follow-latest baseline.
+`family-inventory.json` lists every selected canonical route, its source-defined
+initial inventory and 24 pinned source-file hashes. Generic template variants,
+four interactive layouts, NativeParallel, validation/conversion source links,
+Hub, Screen5/6 and Irony/MCP/UI Showcase are included. No alias or full430 pass
+is implied. The reference remains `d65322c15a55a7395bb5271bc65696402bc98d29`;
+the seven catalogue source hashes also remain checked. Source and live deployment
+are checked before and after the run, with separate retained preflight/postflight
+records; each case also requires matching live metadata before and after observation. Source selects expected
+content; it does not establish observed visibility, fit or terminal reach.
 
-The initial opened-event diagnostic ran once with two Coordinates passes and two
-HTTP classification failures. The second run retained two HTTP unknowns because
-its80px backward gesture clipped the Door40px→8px; all prior receipts remain
-unchanged. The proposed next
-workflow runs only on the exact title transition from
-`Diagnostic: four Flutter Door-motion observations for #223` to
-`Diagnostic: four bounded Door-motion observations for #223`, on branch
-`diagnostic/flutter-223-focused-d65322c1`. Publication/synchronization alone,
-body edits and later pushes do not trigger another browser run. A new owner grant
-is required before publishing this revision and making that one title change. It is read-only, has a10-minute job bound and retains
-artifacts for7 days. It does not deploy and must not be merged by default.
-The original full430 PR workflow is absent from this branch.
+The new read-only collector records semantic match counts, raw nodes, ancestry,
+clipping, unsupported clip-paths, visibility, scroll containers and multipart
+candidates. Every sample has its own actual screenshot and byte hash. Two
+post-reload initial samples are separated by at least600ms; subsequent wheel
+samples are labelled raw, not assumed stable. No new page-specific action is
+activated, and no new fit/end acceptance rule is applied in this discovery.
+Repeated or merged semantic labels and invisible/unidentified containers remain
+unresolved rather than being inferred successful. Flutter semantic boxes do not
+certify painted glyphs or complete visual overlap.
 
-`focused_contract.py aggregate OUTPUT` validates the same full receipt/check/PNG
-contracts as the original aggregator, then checks that precisely the intended4
-pairs exist. Its focused outcome remains failed/unverified when any required
-check fails/is unknown. It also saves the original full430 aggregate unchanged:
-**failed/incomplete with426 missing**, even if the four-case diagnostic passes.
-No result reclassifies historical9b38f3e evidence or removes #223's failing label.
-Optional page-action/painted-layout checks remain unknown.
+`family_contract.py` validates exactly48 receipts/PNGs, exact source/manifest and
+candidate identity, expected item keys, snapshots and capture provenance. Missing,
+duplicate, stale or truncated evidence invalidates collection. Collection validity
+is separate from application success: required failures/unknowns still make CI
+fail. Even an otherwise clean discovery is reported `discovery_only`, with
+`familyBindingsVerified=false`,48 unverified family bindings and the original
+full430 aggregate **failed/incomplete with382 missing pairs**. Optional actions
+and painted layout remain unverified. No prior receipt is reclassified.
 
-The local browser attempt could not launch due to a sandbox socket restriction;
-no page receipts were collected. Source/policy tests and exact4-case discovery
-passed; browser proof must come from the separately authorized diagnostic run.
+## Bounded execution and trigger
 
-## Proposed observable Door-motion witness
+Two workers, zero retries, unchanged90-second case timeout,45-minute job cap,
+seven-day artifacts. At most24 family snapshots per receipt are accepted, in
+addition to the original screenshots. The workflow is edited-event-only, branch
+`diagnostic/flutter-223-focused-d65322c1`, with the exact old title
+`Diagnostic: four bounded Door-motion observations for #223` and new title
+`Diagnostic: 48 source-family observations for #223 @ <full current head SHA>`.
+The title SHA must equal the event PR head, which is also the checkout/candidate
+SHA. Pushes, body edits, ordinary title changes and Ready transitions cannot run
+the diagnostic. Publication alone is not permission to make this title change.
+There is no full430 workflow on this branch and no deployment or label writer.
 
-When an initially unexposed Door first appears inside a body scroller, ancestry
-alone is not a pass. The proposed observer sends two bounded real wheel gestures
-(back and forward by the same measured distance, capped at32px), retaining the same Door/scroller IDs and measuring
-inverse Door displacement versus scroll offset on both legs. It requires at
-least12px observed movement, stable chrome, restored endpoint, and complete
-final clipped visibility. Each leg has bounded3-second settling; the existing
-90-second case timeout is unchanged. The planned distance intersects the viewport,
-body envelope, region clip and all measured scroll-ancestor clips, preserving a4px
-margin; less than12px available travel sends no wheel input and stays unknown.
-Missing/insufficient evidence stays unknown,
-and measured chrome drift fails. There is no source/route whitelist substitute.
-No retained receipt contains a fully visible bounded-distance witness; fresh
-authorized browser evidence is required. No general430-case or page-action pass is implied.
+The bounded investigation plan is one48-case discovery and at most one further
+correction round of up to48 cases after independent evidence/code review. A
+full430 run is conditional on all required representative contracts genuinely
+being established; it is not automatic. If semantics or time bounds cannot
+prove a required contract, report the gap and keep it unknown. In particular,
+last-tile reach cannot certify every unobserved middle item of a virtual list.
+
+## Preserved four-case history
+
+The earlier Coordinates/HTTP diagnostic is separate evidence. Run41005597396
+had two HTTP classification failures; run41007188109 retained two HTTP unknowns
+because80px backward travel clipped the Door40px→8px. Run41008189029 at
+`1d19d9827b6759e7122d8b3b1aed39014addb1d5` passed4/4 with observed32px inverse
+Door/scroller motion, full40px visibility throughout, restored endpoint and
+stable headers. Those receipts and their original full430-incomplete summaries
+are not rewritten. The bounded Door observer remains unchanged here; this new
+48-case collector does not turn its four-case evidence into general coverage.
 
 ## Original audit design and retained limitations
 
@@ -82,11 +94,13 @@ From the repository root:
 
     node --test experiments/flutter-pages-audit/audit_policy.test.cjs
     python3 -B -S experiments/flutter-pages-audit/audit_contract.test.py
+    export AUDIT_OUTPUT=build/flutter-pages-audit/family-discovery-d65322c1
+    python3 -B -S experiments/flutter-pages-audit/family_contract.py preflight "$AUDIT_OUTPUT"
     python3 -B -S experiments/flutter-pages-audit/audit_contract.py catalogue --output build/flutter-pages-audit/catalogue.json
     npm exec --prefix e2e -- playwright test --config experiments/flutter-pages-audit/playwright.config.cjs
-    python3 -B -S experiments/flutter-pages-audit/focused_contract.py aggregate build/flutter-pages-audit
+    python3 -B -S experiments/flutter-pages-audit/family_contract.py aggregate "$AUDIT_OUTPUT"
 
-The Playwright command above is four-case only in this branch. Use `AUDIT_OUTPUT`
-consistently with the focused aggregate argument; CI sets it explicitly.
+The Playwright command above is 48-case only in this branch. Set `AUDIT_OUTPUT`
+to a fresh evidence directory before running; CI sets it explicitly.
 
 Set `CANDIDATE_SHA` to the exact full candidate commit for evidence validation. The aggregate replays saved evidence only; it does not execute current Flutter code. CI execution outcomes and the per-route receipts, not this README, establish what actually ran. No all-page pass is claimed before those results exist.

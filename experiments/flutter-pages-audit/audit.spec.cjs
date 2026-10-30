@@ -14,6 +14,39 @@ const BASE = 'https://myon-bioinformatics.github.io/flutter_navigation_basic/';
 if (catalogue.schema !== 'flutter-pages-audit-catalogue/1' || !catalogue.routes?.length || catalogue.referenceSha !== REFERENCE_SHA) {
   throw new Error('Missing, empty, or stale audit catalogue; never allow zero-coverage success');
 }
+const { collectSemanticInventory } = require('./semantic_collector.cjs');
+const familyManifestBytes = fs.readFileSync(path.join(__dirname, 'family-inventory.json'));
+const familyManifest = JSON.parse(familyManifestBytes);
+const familyManifestSha256 = createHash('sha256').update(familyManifestBytes).digest('hex');
+if (familyManifest.referenceSha !== REFERENCE_SHA || familyManifest.caseCount !== 48 || familyManifest.contracts.length !== 24 || new Set(familyManifest.contracts.map(c => c.route)).size !== 24) throw new Error('Invalid reviewed family discovery manifest');
+function familySpec(route, viewport) {
+  const source = familyManifest.contracts.find(c => c.route === route);
+  if (!source) throw new Error('Route outside explicit 48-case discovery manifest');
+  if (source.items) return { items: [...source.items, ...(source.separateNavigation?.[viewport.width < 900 ? 'compact' : 'wide']?.items || [])], groups: source.groups || [] };
+  const items = [], groups = [];
+  for (const group of source.groups) {
+    const keys = [];
+    for (const part of group.parts) {
+      const key = group.key + ':' + part.key;
+      items.push({ key, label: part.label }); keys.push(key);
+    }
+    groups.push({ key: group.key, keys });
+  }
+  return { items, groups };
+}
+const familyTestInfo = new WeakMap();
+async function familySnapshot(page, record, phase) {
+  const observation = record.observations.familyObservation ||= {
+    manifestSha256: familyManifestSha256,
+    scope: 'read-only source-family discovery; no acceptance promotion', snapshots: [],
+  };
+  const collector = await page.evaluate(collectSemanticInventory, familySpec(record.route, record.viewport));
+  const sampleMs = collector.sampleMs;
+  if (!['after-reset-initial', 'after-reset-stable'].includes(phase)) phase += '-' + observation.snapshots.length;
+  const name = `family-${String(observation.snapshots.length).padStart(2, '0')}-${phase}.png`;
+  await capture(page, familyTestInfo.get(record), record, name);
+  observation.snapshots.push({ phase, sampleMs, collector, capture: { ...record.captures.at(-1) } });
+}
 const ids = ['shared-header-title', 'shared-header-home', 'shared-header-favorite', 'shared-header-menu'];
 const node = (page, id) => page.locator(`[flt-semantics-identifier="${id}"]`);
 const favorite = page => node(page, 'shared-header-favorite').getByRole('button');
@@ -257,6 +290,7 @@ async function scrollProof(page, record, before) {
     await page.mouse.move(x, y); await page.mouse.wheel(0, 240); await settle(page);
     record.inputs.push({ input: 'wheel', x, y, deltaY: 240, region: region.id });
     const after = await regionWitness(page, region.id);
+    await familySnapshot(page, record, 'wheel-first-raw');
     let boundary = false, previous = after, current = after;
     const steps = [];
     if (moved(start, after)) {
@@ -264,6 +298,7 @@ async function scrollProof(page, record, before) {
         const deltaY = Math.min(20_000, Math.max(480, (current?.scrollHeight || 0) - (current?.clientHeight || 0) - (current?.scrollTop || 0) + 240));
         await page.mouse.wheel(0, deltaY); await settle(page);
         current = await regionWitness(page, region.id);
+        await familySnapshot(page, record, 'wheel-step-raw');
         steps.push({ deltaY, after: current }); record.inputs.push({ input: 'wheel', x, y, deltaY, region: region.id });
         if (current && previous && !moved(previous, current)) {
           boundary = current.scrollHeight - current.clientHeight - current.scrollTop <= 2;
@@ -313,6 +348,7 @@ for (const entry of catalogue.routes) test(`observe public route ${entry.route}`
     viewport, referenceSha: REFERENCE_SHA, candidateSha: process.env.CANDIDATE_SHA || null,
     servedShaBefore: null, servedShaAfter: null, browserVersion: browser.version(), playwrightVersion: fromE2E('@playwright/test/package.json').version,
     runId: process.env.GITHUB_RUN_ID || null, checks: {}, observations: {}, captures: [], inputs: [], errors: [] };
+  familyTestInfo.set(record, info);
   const runtimeErrors = [], requests = [], blocked = [];
   page.on('pageerror', error => runtimeErrors.push(error.message));
   page.on('dialog', async dialog => { record.errors.push({ kind: 'unexpected-dialog', type: dialog.type() }); await dialog.dismiss(); });
@@ -394,8 +430,12 @@ for (const entry of catalogue.routes) test(`observe public route ${entry.route}`
       await selected(page, true); await page.reload(); await bootstrap(page, record); await selected(page, false);
       return { evidence: { reloadWhileSelected: true } };
     });
+    await familySnapshot(page, record, 'after-reset-initial');
+    await page.waitForTimeout(600);
+    await familySnapshot(page, record, 'after-reset-stable');
     const beforeScroll = await geometry(page);
     await check(record, 'scroll', () => scrollProof(page, record, beforeScroll));
+    await familySnapshot(page, record, 'after-scroll');
     record.checks.page_action = { status: 'unverified', reason: 'Page-specific form, navigation, file, clipboard, networking and destructive controls are inventoried but not arbitrarily activated. Only the shared favorite has a universal safe action contract.' };
     record.checks.painted_text_overflow = { status: 'unverified', reason: 'Flutter semantics boxes do not certify painted text/icon clipping or every overlapping element. Screenshots are evidence for follow-up review, not automatic pixel-parity approval.' };
   } catch (error) { record.errors.push({ kind: 'audit-harness', message: String(error) }); }
