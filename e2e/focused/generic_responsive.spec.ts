@@ -28,12 +28,32 @@ async function geometry(page: Page, target: Locator) {
       box: { x: b.x, y: b.y, width: b.width, height: b.height }, clip: { left, top, right, bottom } };
   }, outer);
 }
-async function reveal(page: Page, target: Locator, inputs: unknown[]) {
+// Source: PatternTemplateBody.grid uses padding16, maxCrossAxisExtent180,
+// spacing12 and default square aspect. A clipped semantics box is not a cell.
+function completeGridCell(box: { width: number; height: number }, bodyWidth: number) {
+  if (!box || ![box.width, box.height, bodyWidth].every(Number.isFinite) || bodyWidth <= 32) return false;
+  const extent = bodyWidth - 32, columns = Math.ceil(extent / (180 + 12));
+  const expected = (extent - (columns - 1) * 12) / columns;
+  return expected > 0 && Math.abs(box.width - expected) <= 1 && Math.abs(box.height - expected) <= 1;
+}
+async function reveal(page: Page, target: Locator, inputs: unknown[], requireGridCell = false) {
   for (let attempt = 0; attempt < 9; attempt++) {
     const count = await target.count();
     expect(count, 'source control must not be ambiguous').toBeLessThanOrEqual(1);
     const observed = count === 1 ? await geometry(page, target) : null;
-    if (observed?.visible) return observed;
+    if (observed?.visible && (!requireGridCell || completeGridCell(observed.box, (await body(page).boundingBox())!.width))) {
+      if (requireGridCell) {
+        const identity = await target.getAttribute('id'); expect(identity).toBeTruthy();
+        await delay(page);
+        const stable = await geometry(page, target);
+        expect(await target.getAttribute('id')).toBe(identity);
+        expect(stable.visible).toBe(true);
+        expect(completeGridCell(stable.box, (await body(page).boundingBox())!.width)).toBe(true);
+        for (const key of ['x', 'y', 'width', 'height'] as const) expect(Math.abs(stable.box[key] - observed.box[key])).toBeLessThanOrEqual(1);
+        return stable;
+      }
+      return observed;
+    }
     const box = await body(page).boundingBox();
     if (!box || box.height <= 0) throw Error('No usable body viewport');
     // Left edge selects the outer wrapper rather than a nested template list.
@@ -55,7 +75,13 @@ async function focusByTab(page: Page, input: Locator) {
   for (let i = 0; i < 30; i++) {
     if (await input.evaluate(el => el === document.activeElement)) return;
     await page.keyboard.press('Tab');
+    // Flutter publishes logical focus into the editing DOM during a frame.
+    // Observe it before another Tab can skip the newly focused input.
+    await page.evaluate(() => new Promise<void>(resolve => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    }));
   }
+  if (await input.evaluate(el => el === document.activeElement)) return;
   throw Error('Input not reachable with bounded real Tab sequence');
 }
 function mergedLeaf(scope: Locator, label: string) {
@@ -88,13 +114,29 @@ for (const id of layouts) test(`Generic ${id} selected source controls are fully
   page.on('pageerror', error => errors.push(String(error)));
   try {
   await navigateToScreen(page, id); await expect(template(page)).toHaveCount(1); await delay(page);
-  for (const target of targets(page, id)) measurements.push(await reveal(page, target, inputs));
+  for (const target of targets(page, id)) measurements.push(await reveal(page, target, inputs, id === 147));
   if (id === 39 || id === 57) {
     const input = template(page).getByRole('textbox'); await focusByTab(page, input);
     await expect(input).toBeFocused(); await page.keyboard.type('reachable'); await expect(input).toHaveValue('reachable');
   } else if (id === 129) {
-    await clickMeasured(page, targets(page, id)[0], inputs); await expect(page.getByRole('dialog')).toBeVisible();
-    await page.keyboard.press('Escape'); await expect(page.getByRole('dialog')).toHaveCount(0);
+    await clickMeasured(page, targets(page, id)[0], inputs);
+    // Flutter AlertDialog exposes alertdialog, not the generic dialog role.
+    const modal = page.getByRole('alertdialog');
+    await expect(modal).toHaveCount(1); await expect(modal).toBeVisible();
+    await expect(modal).toContainText('ShellRoute');
+    await expect(modal).toContainText('Navigation: ShellRoute, API: ErrorBoundary, Theme: LayoutBuilder, Data: BroadcastStream');
+    const close = modal.getByRole('button', { name: 'Close', exact: true });
+    await expect(close).toHaveCount(1); await expect(close).toBeVisible(); await expect(close).toBeEnabled();
+    const modalBox = await modal.boundingBox(), viewport = page.viewportSize()!;
+    expect(modalBox).not.toBeNull();
+    expect(modalBox!.x).toBeGreaterThanOrEqual(0); expect(modalBox!.y).toBeGreaterThanOrEqual(0);
+    expect(modalBox!.x + modalBox!.width).toBeLessThanOrEqual(viewport.width);
+    expect(modalBox!.y + modalBox!.height).toBeLessThanOrEqual(viewport.height);
+    await info.attach('generic-dialog-open.png', { body: await page.screenshot(), contentType: 'image/png' });
+    await page.keyboard.press('Escape'); inputs.push({ kind: 'keyboard', key: 'Escape' });
+    await expect(modal).toHaveCount(0); await expect(page).toHaveURL(/#\/screen129(?:[?]|$)/);
+    measurements.push(await reveal(page, targets(page, id)[0], inputs));
+    await info.attach('generic-dialog-closed.png', { body: await page.screenshot(), contentType: 'image/png' });
   }
   expect(errors).toEqual([]);
   } finally {
@@ -102,7 +144,7 @@ for (const id of layouts) test(`Generic ${id} selected source controls are fully
   }
 });
 
-test('Generic form retains live editor through width and minimum-height crossings', async ({ page }, info) => {
+test('Generic form retains live editor through width and height resizing', async ({ page }, info) => {
   const input = template(page).getByRole('textbox'), inputs: unknown[] = [], frames = [];
   try {
   await navigateToScreen(page, 39); await expect(template(page)).toHaveCount(1); await delay(page);
@@ -110,10 +152,10 @@ test('Generic form retains live editor through width and minimum-height crossing
   await expect(input).toHaveValue('resize-safe'); const original = await input.elementHandle();
   await page.keyboard.press('Home'); await page.keyboard.press('Shift+ArrowRight'); await page.keyboard.press('Shift+ArrowRight');
   const selection = await input.evaluate(el => [(el as HTMLInputElement).selectionStart, (el as HTMLInputElement).selectionEnd]);
-  const initial = page.viewportSize()!, initialBody = (await body(page).boundingBox())!;
-  const boundary = Math.round(initial.height + 480 - initialBody.height);
-  for (const size of [{ width: 390, height: 500 }, { width: 1180, height: 757 },
-    ...[-1, 0, 1].map(d => ({ width: initial.width, height: boundary + d })), initial]) {
+  const initial = page.viewportSize()!;
+  // Browser coverage is broad compact/wide resizing. Widget tests separately
+  // exercise the exact measured metadata + minimum-template boundary at ±1px.
+  for (const size of [{ width: 390, height: 500 }, { width: 1180, height: 757 }, initial]) {
     await page.setViewportSize(size); await delay(page); await reveal(page, input, inputs);
     expect(await input.evaluate((el, prior) => el === prior, original)).toBe(true); await expect(input).toBeFocused();
     await expect(input).toHaveValue('resize-safe');

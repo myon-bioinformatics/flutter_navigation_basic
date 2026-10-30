@@ -478,6 +478,11 @@ jobs:
     # do not turn missing browser execution or missing JUnit into success.
     timeout-minutes: 90
 
+    env:
+      CANDIDATE_PROVENANCE_REQUIRED: "1"
+      CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      CANDIDATE_PROVENANCE_FILE: ${{ github.workspace }}/build/product-verification-provenance.json
+
     steps:
       - uses: actions/checkout@v7
         with:

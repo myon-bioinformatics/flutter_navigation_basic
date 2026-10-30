@@ -70,3 +70,13 @@ export async function tapKeyboardRevealed(page, target, reveal) {
   return { schema: 'pointer-press/1', input: 'touch', input_source: 'explicit',
     x, y, visible_ratio, box, hit, reveal: 'keyboard', scroll_after_reveal: false };
 }
+
+// Pure provenance validation: workflow merge SHA and built candidate are distinct.
+export function verifiedCandidate(candidateSha, provenance) {
+  if (!/^[0-9a-f]{40}$/.test(candidateSha ?? '') ||
+      !provenance || provenance.candidateSha !== candidateSha ||
+      !/^[0-9a-f]{64}$/.test(provenance.builtBundleSha256 ?? '')) {
+    throw Error('Missing or mismatched candidate build provenance');
+  }
+  return { candidate_sha: candidateSha, built_bundle_sha256: provenance.builtBundleSha256 };
+}

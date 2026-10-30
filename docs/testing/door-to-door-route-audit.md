@@ -64,6 +64,14 @@ Keyboard focus and geometry still do not prove canvas alignment: inspect the
 pre-tap PNG and actual menu/navigation outcome. Unit mocks do not certify pixels.
 Other Home/menu-item helpers retain their existing reveal behavior; this change
 does not claim to solve every semantics-scroll path in the suite.
+Candidate-build CI validates `CANDIDATE_SHA` against the same-job build manifest
+before each journey and records `candidate_sha` plus `built_bundle_sha256` in
+new receipts. Missing or mismatched candidate provenance fails the test; it is
+not a skip. `ci_sha` remains GitHub's workflow SHA (which can be a synthetic PR
+merge commit), not the checked-out candidate. Other local/published-site runs
+leave candidate fields null rather than inventing build provenance. Existing
+receipts are not rewritten. Review the manifest, exact-head checks and pixels
+together; a bundle hash alone does not establish UI correctness.
 URL and semantics update before Flutter's canvas route/menu transitions finish.
 Captures therefore wait past the pinned SDK's 300–450ms transitions and browser
 frames. `pixel_guards` stores title-region PNGs and hashes: the destination must

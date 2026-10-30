@@ -1,6 +1,7 @@
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { revealByKeyboard, tapKeyboardRevealed } from '../../e2e/utils/flutter_keyboard_reveal.mjs';
+import { revealByKeyboard, tapKeyboardRevealed, verifiedCandidate } from '../../e2e/utils/flutter_keyboard_reveal.mjs';
 
 function harness({ focusAfter = 2, box = { x: 44, y: 512, width: 302, height: 40 } } = {}) {
   const state = { tabs: 0, taps: [], box, focused: focusAfter === 0, count: 1, hitSelf: false };
@@ -106,4 +107,34 @@ test('ambiguous targets and fabricated missing receipts are rejected', async () 
   await assert.rejects(revealByKeyboard(page, target), /unique/);
   await assert.rejects(tapKeyboardRevealed(page, target, null), /Missing keyboard reveal/);
   assert.deepEqual(state.taps, []);
+});
+
+test('candidate receipts require matching immutable checkout and bundle digest', () => {
+  const sha = 'a'.repeat(40), digest = 'b'.repeat(64);
+  const provenance = { candidateSha: sha, builtBundleSha256: digest };
+  assert.deepEqual(verifiedCandidate(sha, provenance), { candidate_sha: sha, built_bundle_sha256: digest });
+  for (const [candidate, record] of [[undefined, provenance], [sha, null],
+    ['c'.repeat(40), provenance], [sha, { ...provenance, builtBundleSha256: null }],
+    ['unknown', provenance], [sha, { ...provenance, candidateSha: undefined }]]) {
+    assert.throws(() => verifiedCandidate(candidate, record), /candidate build provenance/);
+  }
+});
+
+// Exercise the actual browser predicate, not a duplicate implementation. This
+// lives in the Node lane; Python wiring checks do not acquire a Node dependency.
+test('Generic grid predicate rejects the captured clipped cell and malformed geometry', () => {
+  const spec = readFileSync(new URL('../../e2e/focused/generic_responsive.spec.ts', import.meta.url), 'utf8');
+  const source = ('function completeGridCell(' + spec.split('function completeGridCell(')[1].split('async function reveal(')[0])
+    .replace('box: { width: number; height: number }, bodyWidth: number', 'box, bodyWidth');
+  const completeGridCell = new Function(source + '; return completeGridCell;')();
+  assert.equal(completeGridCell({width:173,height:99},390),false);
+  assert.equal(completeGridCell({width:173,height:173},390),true);
+  assert.equal(completeGridCell({width:181.328125,height:181.328125},1180),true);
+  for (const [box,width] of [
+    [{width:99,height:173},390], [{width:172,height:99},390],
+    [{width:173,height:173},1180], [{width:173,height:173},32],
+    [{width:173,height:173},NaN], [{width:NaN,height:173},390],
+    [{width:173,height:NaN},390], [{width:Infinity,height:173},390],
+    [null,390], [{width:0,height:0},390],
+  ]) assert.equal(completeGridCell(box,width),false);
 });

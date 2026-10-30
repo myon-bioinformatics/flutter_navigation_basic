@@ -16,6 +16,7 @@ Future<void> _pumpGeneric(
   int screenId, {
   DisplayController? controller,
   bool preloadCatalogue = true,
+  TextScaler? textScaler,
   Map<String, WidgetBuilder> routes = const {},
 }) async {
   final resolvedController = controller ?? await loadTestDisplayController();
@@ -25,6 +26,10 @@ Future<void> _pumpGeneric(
   await tester.pumpWidget(
     MaterialApp(
       routes: routes,
+      builder: textScaler == null ? null : (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+        child: child!,
+      ),
       home: DisplayScope(controller: resolvedController, child: GenericScreen(screenId: screenId)),
     ),
   );
@@ -37,6 +42,30 @@ Future<void> _pumpGeneric(
     });
   }
   await tester.pump();
+}
+
+// Keep nested-scroll failures diagnostic: a visible outer body alone does not
+// establish that a whole control fits its inner list/grid viewport.
+List<Map<String, Object>> _scrollGeometry(WidgetTester tester, Finder target) {
+  final geometry = <Map<String, Object>>[];
+  tester.element(target).visitAncestorElements((element) {
+    if (element is StatefulElement && element.state is ScrollableState) {
+      final state = element.state as ScrollableState;
+      final render = element.findRenderObject();
+      if (render is RenderBox && render.hasSize) {
+        geometry.add({
+          'viewport': render.localToGlobal(Offset.zero) & render.size,
+          'axis': state.position.axis,
+          'pixels': state.position.pixels,
+          'min': state.position.minScrollExtent,
+          'max': state.position.maxScrollExtent,
+          'viewportDimension': state.position.viewportDimension,
+        });
+      }
+    }
+    return true;
+  });
+  return geometry;
 }
 
 void main() {
@@ -387,10 +416,26 @@ void main() {
           widget.properties.identifier == 'generic-body');
       final visible = tester.getRect(body);
       final bounds = tester.getRect(target);
-      expect(bounds.width, greaterThan(0));
-      expect(bounds.height, greaterThan(0));
-      expect(bounds.top, greaterThanOrEqualTo(visible.top - 0.01));
-      expect(bounds.bottom, lessThanOrEqualTo(visible.bottom + 0.01));
+      final scrolls = _scrollGeometry(tester, target);
+      final geometry = 'Screen${entry.key}: target=$bounds, body=$visible, '
+          'Door=${tester.getRect(find.byType(ToolDoorSelector))}, '
+          'scrolls=$scrolls';
+      expect(bounds.width, greaterThan(0), reason: geometry);
+      expect(bounds.height, greaterThan(0), reason: geometry);
+      expect(bounds.top, greaterThanOrEqualTo(visible.top - 0.01),
+          reason: geometry);
+      expect(bounds.bottom, lessThanOrEqualTo(visible.bottom + 0.01),
+          reason: geometry);
+      for (final scroll in scrolls) {
+        if (scroll['axis'] != Axis.vertical) continue;
+        final viewport = scroll['viewport']! as Rect;
+        expect(bounds.height, lessThanOrEqualTo(viewport.height + 0.01),
+            reason: 'Whole control must fit inner viewport. $geometry');
+        expect(bounds.top, greaterThanOrEqualTo(viewport.top - 0.01),
+            reason: geometry);
+        expect(bounds.bottom, lessThanOrEqualTo(viewport.bottom + 0.01),
+            reason: geometry);
+      }
       expect(target.hitTestable(), findsOneWidget);
       expect(bounds.bottom,
           lessThanOrEqualTo(tester.getRect(find.byType(ToolDoorSelector)).top));
@@ -406,6 +451,38 @@ void main() {
       }
     });
   }
+
+  testWidgets('Generic measured metadata cannot consume the finite template viewport',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 500);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    await _pumpGeneric(tester, 147, textScaler: const TextScaler.linear(1.25));
+    final metadata = find.byKey(const Key('generic-metadata'));
+    final viewport = find.byKey(const Key('generic-template-viewport'));
+    final body = find.byWidgetPredicate((widget) => widget is Semantics &&
+        widget.properties.identifier == 'generic-body');
+    final outer = tester.state<ScrollableState>(find.descendant(
+      of: find.byKey(const Key('generic-body-scroll')),
+      matching: find.byType(Scrollable),
+    ).first);
+    final metadataHeight = tester.getSize(metadata).height;
+    expect(metadataHeight, greaterThan(0));
+    expect(tester.getSize(viewport).height, 240);
+    expect(outer.position.maxScrollExtent,
+        closeTo(metadataHeight + 240 - tester.getSize(body).height, 0.01));
+    final card = find.ancestor(
+        of: find.text('AnimatedCrossFade\n#1'), matching: find.byType(Card));
+    await tester.ensureVisible(card);
+    await tester.pumpAndSettle();
+    final bounds = tester.getRect(card);
+    final visible = tester.getRect(body).intersect(tester.getRect(viewport));
+    expect(bounds.top, greaterThanOrEqualTo(visible.top - 0.01));
+    expect(bounds.bottom, lessThanOrEqualTo(visible.bottom + 0.01));
+    expect(card.hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('Generic form preserves edit controller focus and selection on resize',
       (tester) async {
@@ -424,7 +501,10 @@ void main() {
     controller.selection = selection;
     final body = find.byWidgetPredicate((widget) => widget is Semantics &&
         widget.properties.identifier == 'generic-body');
-    final threshold = 500 + 480 - tester.getSize(body).height;
+    final metadataHeight = tester.getSize(find.byKey(const Key('generic-metadata'))).height;
+    final templateViewport = find.byKey(const Key('generic-template-viewport'));
+    final originalTemplate = tester.element(templateViewport);
+    final threshold = 500 + metadataHeight + 240 - tester.getSize(body).height;
     for (final size in [
       const Size(1180, 757), const Size(390, 500),
       Size(390, threshold - 1), Size(390, threshold),
@@ -435,6 +515,11 @@ void main() {
       await tester.pumpAndSettle();
       await tester.ensureVisible(field);
       await tester.pumpAndSettle();
+      expect(tester.element(templateViewport), same(originalTemplate));
+      final remaining = tester.getSize(body).height -
+          tester.getSize(find.byKey(const Key('generic-metadata'))).height;
+      expect(tester.getSize(templateViewport).height,
+          closeTo(remaining < 240 ? 240 : remaining, 0.01));
       expect(tester.widget<TextField>(field).controller, same(controller));
       expect(controller.text, 'resize-safe input');
       expect(controller.selection, selection);
