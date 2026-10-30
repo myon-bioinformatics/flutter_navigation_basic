@@ -1,0 +1,57 @@
+name: Four-case Flutter audit diagnostic
+
+on:
+  pull_request:
+    types: [opened]
+    branches: [main]
+    paths:
+      - 'experiments/flutter-pages-audit/**'
+      - '.github/workflows/flutter-audit-focused-diagnostic.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  focused:
+    if: github.head_ref == 'diagnostic/flutter-223-focused-d65322c1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CANDIDATE_SHA: ${{ github.event.pull_request.head.sha }}
+      AUDIT_OUTPUT: build/flutter-pages-audit/focused-d65322c1
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Test observers and fail-closed evidence contracts
+        run: |
+          node --test experiments/flutter-pages-audit/audit_policy.test.cjs
+          python3 -B -S experiments/flutter-pages-audit/audit_contract.test.py
+          python3 -B -S experiments/flutter-pages-audit/focused_contract.test.py
+      - name: Verify the explicitly reviewed deployment and seven source hashes
+        run: |
+          python3 -B -S experiments/flutter-pages-audit/focused_contract.py preflight "$AUDIT_OUTPUT"
+          python3 -B -S experiments/flutter-pages-audit/audit_contract.py catalogue --output build/flutter-pages-audit/catalogue.json
+      - name: Install existing browser development dependency
+        run: |
+          npm install --prefix e2e --package-lock=false
+          npm exec --prefix e2e -- playwright install --with-deps chromium
+      - name: Observe only Coordinates and HTTP at two viewports
+        run: npm exec --prefix e2e -- playwright test --config experiments/flutter-pages-audit/playwright.config.cjs
+      - name: Validate exactly four pairs without claiming full 430 coverage
+        if: always()
+        run: python3 -B -S experiments/flutter-pages-audit/focused_contract.py aggregate "$AUDIT_OUTPUT"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: flutter-audit-focused-d65322c1
+          path: ${{ env.AUDIT_OUTPUT }}/
+          if-no-files-found: error
+          retention-days: 7
