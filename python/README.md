@@ -5,7 +5,7 @@ golden/oracle tests, and GitHub Actions status lookup.
 
 ## Python support boundaries
 
-The repository's Python tooling runs on **Python 3.12 in CI**. Use that version
+The repository's Python tooling runs on **Python 3.15 in CI**. Use that version
 for the full development/test environment; this does not change the Flutter
 application's runtime requirements.
 

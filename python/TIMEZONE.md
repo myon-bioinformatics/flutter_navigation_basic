@@ -27,4 +27,4 @@ adding a package dependency.
 ## CI
 
 These stdlib checks run in `.github/workflows/non-dart.yml` inside a
-`python:3.12-slim` container (with `tzdata`), not in the Flutter gate.
+`python:3.15-slim` container (with `tzdata`), not in the Flutter gate.
