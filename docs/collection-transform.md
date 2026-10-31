@@ -4,7 +4,7 @@ Run with Python 3.10+ and standard library only:
 
 ```sh
 echo '{"operation":"flatten","values":[[1,2],[3]]}' | python -S python/collection_transform.py
-python -m pytest python/tests/test_collection_transform.py -q
+uv run pytest python/tests/test_collection_transform.py -q
 ```
 
 All requests are JSON objects and contain `operation` and a `values` array.

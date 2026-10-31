@@ -13,7 +13,7 @@ entry point, and runtime. Investigation / regression — **not** HEIC conversion
 
 ```bash
 # Optional regen (needs ffmpeg, heif-enc/x265 plugin, uv sync --group fixtures):
-python3 -m pip install -r python/requirements-fixtures.txt
+uv pip install -r python/requirements-fixtures.txt
 python3 python/generate_photo_import_fixtures.py
 ```
 

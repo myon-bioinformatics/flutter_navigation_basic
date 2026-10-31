@@ -96,7 +96,7 @@ python -S python/capture_native_errors.py --language dart --output build/native-
 混ぜて常時赤くしない。xprobeの既存identity importerは元入力を復元しないので、
 JUnitとJSON／ログを対で残す。
 
-SDKなしの検査は`python -m pytest python/tests/test_capture_native_errors.py`。
+SDKなしの検査は`uv run pytest python/tests/test_capture_native_errors.py`。
 これはPython／Nodeの実測と解析・制御の回帰検査であり、3ネイティブ言語の代用実測ではない。
 
 ## 通常ビルドでもPython／Nodeを測定する

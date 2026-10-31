@@ -8,7 +8,7 @@ packaging is measured; this migration does not remove working offline behavior.
 ## Canonical build/test container
 
 `Dockerfile.e2e` now owns the shared Flutter/Python/Node/npm/npx/Deno environment.
-It uses Ubuntu 24.04's Python 3.12, pinned Flutter 3.47.0, Node 22, and the official
+It uses Ubuntu 24.04's Python 3.12, pinned Flutter 3.47.0, Node 24, and the official
 Deno 2.9.6 binary image. npm/npx ship with Node; TypeScript execution is proved by
 an offline, permission-free Deno smoke. Playwright's three browser engines are
 installed once and reused by the five desktop/mobile-emulation projects.

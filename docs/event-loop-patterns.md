@@ -1,6 +1,6 @@
 # Event loop and reactive reference operations 144–150
 
-No npm dependencies. Node.js 22+ native ES module + built-in test runner.
+No npm dependencies. Node.js 24+ native ES module + built-in test runner.
 
 - 144 Debounce and 145 Throttle reuse `javascript/stream_patterns.mjs` in deterministic event-time replay mode. No extra implementation or dependency.
 - 146 Reactive stream-like transformation uses `javascript/event_loop_patterns.mjs` mode `reactive` (bounded map/filter).

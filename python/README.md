@@ -66,7 +66,7 @@ Preferred (matches CI):
 ```bash
 uv sync --locked --project python
 uv run --locked --project python python python/test.py
-uv run --locked --project python python -m pytest -q python/tests/
+uv run --locked --project python pytest -q python/tests/
 ```
 
 Optional manual pip (same floors as `pyproject.toml` default deps):
@@ -74,9 +74,9 @@ Optional manual pip (same floors as `pyproject.toml` default deps):
 ```bash
 python3 -m venv .venv-python
 source .venv-python/bin/activate
-python -m pip install -r python/requirements.txt
+uv pip install -r python/requirements.txt
 # encoder-backed fixture regen only:
-python -m pip install -r python/requirements-fixtures.txt
+uv pip install -r python/requirements-fixtures.txt
 ```
 
 `--actions-latest` itself is **stdlib + `gh` or `GITHUB_TOKEN`** and does not need the venv or uv project.

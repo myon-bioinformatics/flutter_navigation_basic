@@ -2,7 +2,7 @@
 
 Uses Python stdlib only; call `python -S python/workflow_patterns.py` with a
 JSON request via stdin or `--input`, and verify using
-`python -m pytest python/tests/test_workflow_patterns.py -q`.
+`uv run pytest python/tests/test_workflow_patterns.py -q`.
 
 Operations are intentionally bounded in-memory reference behaviors, **not**
 database transaction, real broker, distributed Saga, durable Outbox,
