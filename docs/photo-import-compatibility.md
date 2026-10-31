@@ -13,6 +13,7 @@ entry point, and runtime. Investigation / regression — **not** HEIC conversion
 
 ```bash
 # Optional regen (needs ffmpeg, heif-enc/x265 plugin, uv sync --group fixtures):
+# uv pip install needs an active virtual environment (e.g. uv venv && source .venv/bin/activate first).
 uv pip install -r python/requirements-fixtures.txt
 python3 python/generate_photo_import_fixtures.py
 ```
