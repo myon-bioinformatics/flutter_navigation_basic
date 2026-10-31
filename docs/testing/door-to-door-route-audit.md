@@ -29,7 +29,7 @@ re-randomization on every `build()`, localization rebuild or route push.
 ## Moving and capturing: repeatable audit
 
 - Dart: `flutter test test/features/home/presentation/home_screen_test.dart test/shared/tool_door_selector_test.dart`
-- Python candidate oracle: `uv run pytest python/tests/test_home_discovery.py`
+- Python candidate oracle: `uv run --locked --project python pytest python/tests/test_home_discovery.py`
 - Playwright from `e2e/`: `npx playwright test tests/home_discovery_journeys.spec.ts --project=chromium`
 - CI: the existing Non-Dart `Playwright E2E (auto)` lane runs the
   `@portable` journey in the configured desktop/mobile browser projects.

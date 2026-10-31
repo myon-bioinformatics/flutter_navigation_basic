@@ -72,7 +72,7 @@ uv run --locked --project python pytest -q python/tests/
 Optional manual pip (same floors as `pyproject.toml` default deps):
 
 ```bash
-python3 -m venv .venv-python
+uv venv .venv-python
 source .venv-python/bin/activate
 uv pip install -r python/requirements.txt
 # encoder-backed fixture regen only:

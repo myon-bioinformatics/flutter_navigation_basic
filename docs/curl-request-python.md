@@ -61,7 +61,7 @@ isolated directory, secret-free error codes and non-execution of commands/files.
 Run them with:
 
 ```sh
-uv run pytest python/tests/test_curl_request.py --junitxml=curl-tests.xml
+uv run --locked --project python pytest python/tests/test_curl_request.py --junitxml=curl-tests.xml
 flutter test test/shared/http/curl_request_contract_test.dart
 ```
 
