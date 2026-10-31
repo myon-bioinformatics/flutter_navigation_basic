@@ -35,7 +35,7 @@ jobs:
           python-version: '3.12'
       - uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: '24'
       - name: Test bounded observer readiness and structural chrome rules
         run: node --test experiments/flutter-pages-audit/audit_policy.test.cjs
       - name: Test the fail-closed inventory and evidence aggregator
@@ -90,7 +90,7 @@ jobs:
           python-version: '3.12'
       - uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: '24'
       - name: Re-derive the same pinned source inventory
         run: python3 -B -S experiments/flutter-pages-audit/audit_contract.py catalogue --output "$AUDIT_CATALOGUE"
       - name: Install the existing browser test dependency

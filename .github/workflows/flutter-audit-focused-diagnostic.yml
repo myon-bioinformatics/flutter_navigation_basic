@@ -32,7 +32,7 @@ jobs:
           python-version: '3.12'
       - uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: '24'
       - name: Test observers and fail-closed evidence contracts
         run: |
           node --test experiments/flutter-pages-audit/audit_policy.test.cjs
