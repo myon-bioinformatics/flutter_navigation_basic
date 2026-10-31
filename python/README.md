@@ -309,7 +309,10 @@ the Python summary receipt, and provides JUnit to the existing shared collector.
 Ordinary mixed Python/Dart changes have one owner; selector/workflow edits
 exercise the fallback itself. First pushes without a usable base keep coverage.
 Tests execute the real Non-Dart classifier for pure Dart and mixed diffs, check
-exclusive ownership, and check the selected JUnit/receipt. The locked Non-Dart
-workflow bytes and parent registration are unchanged.
+exclusive ownership, and check the selected JUnit/receipt. Python provisioning
+changes the locked Non-Dart workflow bytes; its reviewed `locked_ci` digest in
+the parent's `vendor-consumers.json` and the recorded child head must be updated
+through the coordinated adoption process. The digest check must not be relaxed
+to accept an unreviewed workflow.
 
 Flutterの実ビルドに同席するPython／Nodeの測定は、[ビルド観測方針](../docs/portable-build-observations.md)を参照。
