@@ -60,7 +60,7 @@ When a sharded Flutter job fails:
 
 ## Non-Dart lane
 
-- `.github/workflows/non-dart.yml` owns Python stdlib oracles (Docker `python:3.12-slim`), pytest oracles, Playwright install smoke (`e2e/`), and manual Playwright E2E (`workflow_dispatch`).
+- `.github/workflows/non-dart.yml` owns Python stdlib oracles (Docker `python:3.15-slim`), pytest oracles, Playwright install smoke (`e2e/`), and manual Playwright E2E (`workflow_dispatch`).
 - Timezone / requirements allowlist checks run there — not inside the Flutter gate.
 - Shared goldens (`python/fixtures/**`, `python/fixtures/**`) still dual-gate Flutter + Non-Dart.
 - actionlint remains the existing Docker workflow for `.github/workflows/**`.

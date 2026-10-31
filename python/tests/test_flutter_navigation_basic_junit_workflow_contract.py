@@ -20,7 +20,7 @@ COLLECTOR = (
 COMMAND = (
     'uv run --locked --project python python python/test.py --pytest -- --oracle-mode=local '
     '--outcomes-json "$GITHUB_WORKSPACE/build/diagnostics/python-oracle/pytest_outcomes.json" '
-    '--junitxml="$GITHUB_WORKSPACE/build/test-results/python-3.12.xml"'
+    '--junitxml="$GITHUB_WORKSPACE/build/test-results/python-3.15.xml"'
 )
 
 
@@ -39,8 +39,8 @@ def _upload(job, name):
 
 
 PYTHON_REPORTS = [
-    "junit-python-3.12/python-3.12.xml",
-    "junit-controlled-python-3.12/junit.xml",
+    "junit-python-3.15/python-3.15.xml",
+    "junit-controlled-python-3.15/junit.xml",
 ]
 PLAYWRIGHT_REPORTS = [
     "junit-playwright-e2e/playwright-portable.xml",
@@ -174,8 +174,8 @@ def _assert_contract(workflow):
         "${{ github.workspace }}/build/controlled-failure"
     )
     for name, path in (
-        ("junit-python-3.12", "build/test-results/python-3.12.xml"),
-        ("junit-controlled-python-3.12", "build/controlled-failure/"),
+        ("junit-python-3.15", "build/test-results/python-3.15.xml"),
+        ("junit-controlled-python-3.15", "build/controlled-failure/"),
     ):
         upload = _upload(producer, name)
         assert producer["steps"].index(run) < producer["steps"].index(upload)
@@ -314,7 +314,7 @@ def test_failure_evidence_contract_rejects_unsafe_mutations():
         ("collector drops adapter dependency", collector_path + ("needs",),
          ["changes", "junit-plan", "python-pytest", "playwright", "validation-browser"]),
     ]
-    for name in ("junit-python-3.12", "junit-controlled-python-3.12"):
+    for name in ("junit-python-3.15", "junit-controlled-python-3.15"):
         index = producer["steps"].index(_upload(producer, name))
         path = job_path + ("steps", index)
         mutations.extend([
