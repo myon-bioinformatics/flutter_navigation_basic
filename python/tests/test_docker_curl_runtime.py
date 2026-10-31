@@ -99,7 +99,7 @@ def test_shared_container_enrolls_deno_and_explicit_runtime_build():
     dockerfile = (ROOT / "Dockerfile.e2e").read_text()
     assert "FROM denoland/deno:bin-${DENO_VERSION}" in dockerfile
     assert "COPY --from=deno /deno /usr/local/bin/deno" in dockerfile
-    assert "ARG NODE_MAJOR=22" in dockerfile
+    assert "ARG NODE_MAJOR=24" in dockerfile
     assert "ARG CURL_PYTHON_RUNTIME=false" in dockerfile
     assert "--dart-define=CURL_PYTHON_RUNTIME=${CURL_PYTHON_RUNTIME}" in dockerfile
     assert "deno run --no-config --no-lock --no-remote docker/toolchain_smoke.ts" in dockerfile

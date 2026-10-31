@@ -32,7 +32,7 @@ dart run build_tools/export_pattern_contracts.dart build/test-results/pattern-co
 python3 -S python/pattern_contracts.py build/test-results/pattern-contracts.json --junit build/test-results/pattern-contracts.xml
 flutter test test/contracts/metadata_export_test.dart
 python3 -S python/metadata_contracts.py build/test-results/metadata-contracts.json
-python3 -m pytest python/tests/test_pattern_contracts.py python/tests/test_metadata_contracts.py python/tests/test_header_contracts.py
+uv run --locked --project python pytest python/tests/test_pattern_contracts.py python/tests/test_metadata_contracts.py python/tests/test_header_contracts.py
 ```
 
 To inspect a single decision, open `cases["api/001"]` in the pattern JSON, edit a

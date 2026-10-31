@@ -1,6 +1,6 @@
 # Stream reference operations 127–135
 
-External-dependency-free Node.js 22+ ESM: `javascript/stream_patterns.mjs`.
+External-dependency-free Node.js 24+ ESM: `javascript/stream_patterns.mjs`.
 Run `node --test javascript/tests/*.test.mjs` and pipe JSON to the CLI.
 Event input uses nondecreasing `at_ms` (0–60000) and JSON `value`, up to 1000 events.
 
