@@ -338,7 +338,7 @@ jobs:
 
       - name: Run pytest
         env:
-          FLUTTER_FAILURE_EVIDENCE: ${{ github.workspace }}/build/controlled-failure
+          FAILURE_EVIDENCE_DIR: ${{ github.workspace }}/build/controlled-failure
         run: >-
           uv run --locked --project python python python/test.py --pytest -- --oracle-mode=local
           --outcomes-json "$GITHUB_WORKSPACE/build/diagnostics/python-oracle/pytest_outcomes.json"
