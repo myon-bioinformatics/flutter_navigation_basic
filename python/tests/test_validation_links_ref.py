@@ -18,7 +18,6 @@ def test_pages_build_passes_the_gated_commit_as_source_ref():
     steps = [step for job in workflow["jobs"].values() for step in job.get("steps", [])]
     build = [step for step in steps if step.get("name") == "Build Flutter web"]
     assert len(build) == 1
-    assert build[0]["env"]["GATED_SHA"] == "${{ steps.gated.outputs.sha }}"
     assert build[0]['uses'] == './.github/actions/build-companions'
     argv = json.loads(build[0]['with']['command'])
     assert '--dart-define=SOURCE_REF=${{ steps.gated.outputs.sha }}' in argv

@@ -126,16 +126,12 @@ jobs:
       # fixture assumptions. The regenerated file is still embedded in the
       # GitHub Pages web build below.
       - name: Generate canonical repository metadata for gated checkout
-        env:
-          GATED_SHA: ${{ steps.gated.outputs.sha }}
-        run: python3 python/generate_repository_metadata.py --expected-sha "$GATED_SHA"
+        run: python3 python/generate_repository_metadata.py --expected-sha "${{ steps.gated.outputs.sha }}"
 
       - name: Refresh source diagnostics metadata
         run: dart run build_tools/dev.dart meta --platform web --repository-metadata build/diagnostics/repository/repository-metadata.json
 
       - name: Build Flutter web
-        env:
-          GATED_SHA: ${{ steps.gated.outputs.sha }}
         # SOURCE_REF pins in-app GitHub source links to the deployed commit.
         uses: ./.github/actions/build-companions
         with:
