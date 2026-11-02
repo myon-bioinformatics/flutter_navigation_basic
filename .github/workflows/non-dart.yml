@@ -189,7 +189,10 @@ jobs:
           version: "0.13.3"
           python-version: "3.15"
           activate-environment: true
-          enable-cache: false
+          enable-cache: true
+          # Pull requests restore the uv cache and never write it; only main saves it.
+          save-cache: ${{ github.ref == 'refs/heads/main' }}
+          prune-cache: true
 
       - name: Install Python test dependencies (locked)
         run: uv sync --locked --project python
@@ -268,7 +271,10 @@ jobs:
           version: "0.13.3"
           python-version: "3.15"
           activate-environment: true
-          enable-cache: false
+          enable-cache: true
+          # Pull requests restore the uv cache and never write it; only main saves it.
+          save-cache: ${{ github.ref == 'refs/heads/main' }}
+          prune-cache: true
 
       - name: Fetch pinned shared vendor tool
         uses: actions/checkout@v7
@@ -331,14 +337,17 @@ jobs:
           version: "0.13.3"
           python-version: "3.15"
           activate-environment: true
-          enable-cache: false
+          enable-cache: true
+          # Pull requests restore the uv cache and never write it; only main saves it.
+          save-cache: ${{ github.ref == 'refs/heads/main' }}
+          prune-cache: true
 
       - name: Install Python test dependencies (locked)
         run: uv sync --locked --project python
 
       - name: Run pytest
         env:
-          FLUTTER_FAILURE_EVIDENCE: ${{ github.workspace }}/build/controlled-failure
+          FAILURE_EVIDENCE_DIR: ${{ github.workspace }}/build/controlled-failure
         run: >-
           uv run --locked --project python python python/test.py --pytest -- --oracle-mode=local
           --outcomes-json "$GITHUB_WORKSPACE/build/diagnostics/python-oracle/pytest_outcomes.json"
@@ -429,7 +438,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v7
         with:
-          node-version: "24"
+          node-version: "26"
 
       - name: Install and list Playwright browser projects
         working-directory: e2e
@@ -505,7 +514,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v7
         with:
-          node-version: "24"
+          node-version: "26"
 
       - name: Install Flutter deps and build web
         run: |
@@ -660,7 +669,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v7
         with:
-          node-version: "24"
+          node-version: "26"
 
       - name: Install Chromium
         working-directory: e2e

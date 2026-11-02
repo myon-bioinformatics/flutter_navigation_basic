@@ -14,7 +14,7 @@ REPOSITORY = "myon-bioinformatics/flutter_navigation_basic"
 
 
 def test_oracle_wrapper_junit_preserves_failure_and_outcomes(tmp_path):
-    evidence = Path(os.environ.get("FLUTTER_FAILURE_EVIDENCE", tmp_path / "evidence")).resolve()
+    evidence = Path(os.environ.get("FAILURE_EVIDENCE_DIR", tmp_path / "evidence")).resolve()
     evidence.mkdir(parents=True, exist_ok=True)
     fixture = tmp_path / "test_oracle.py"
     fixture.write_text('''

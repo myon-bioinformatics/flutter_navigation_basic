@@ -66,3 +66,43 @@ def test_gh_identity_provides_the_git_inspection_api_that_replaced_git_inspector
         assert callable(getattr(gh_identity, "git_" + name)), name
     observed = gh_identity.git_status(ROOT)
     assert isinstance(observed, dict)
+
+
+def _load_exact_vendor(name):
+    import importlib.util
+    path = VENDOR / (name + '.py')
+    spec = importlib.util.spec_from_file_location('_flutter_vendor_' + name, path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    assert Path(module.__file__).resolve() == path.resolve()
+    return module
+
+
+@pytest.mark.parametrize('explicit', [True, False])
+def test_adopted_xprobe_rejects_node25_with_precise_diagnostic(monkeypatch, explicit):
+    import shutil
+    module = _load_exact_vendor('xprobe')
+    calls = []
+    def version_probe(argv, **kwargs):
+        calls.append(argv)
+        assert argv[-1] == '--version'
+        return subprocess.CompletedProcess(argv, 0, b'v25.0.0\n', b'')
+    monkeypatch.setattr(subprocess, 'run', version_probe)
+    monkeypatch.setattr(shutil, 'which', lambda name: sys.executable if name == 'node' else None)
+    with pytest.raises(RuntimeError, match=r'needs Node 26\+.*found Node 25'):
+        module.load_yaml('key: value', node=sys.executable if explicit else None)
+    assert calls
+
+
+def test_adopted_cli_args_rejects_node25(monkeypatch):
+    module = _load_exact_vendor('cli_args')
+    calls = []
+    def version_probe(argv, **kwargs):
+        calls.append(argv)
+        assert argv[-1] == '--version'
+        return subprocess.CompletedProcess(argv, 0, b'v25.0.0\n', b'')
+    monkeypatch.setattr(subprocess, 'run', version_probe)
+    with pytest.raises(module.NodeNotFoundError, match=r'26.*25'):
+        module.resolve_node(sys.executable)
+    assert calls

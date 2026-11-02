@@ -170,7 +170,7 @@ def _assert_contract(workflow):
     assert run.get("if") is None
     # The exact normalized command rejects || true, set +e and trailing exit 0.
     assert " ".join(run["run"].split()) == COMMAND
-    assert run["env"]["FLUTTER_FAILURE_EVIDENCE"] == (
+    assert run["env"]["FAILURE_EVIDENCE_DIR"] == (
         "${{ github.workspace }}/build/controlled-failure"
     )
     for name, path in (

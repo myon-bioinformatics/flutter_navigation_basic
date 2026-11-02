@@ -107,10 +107,7 @@ jobs:
       - id: oracle
         name: Select Python fallback for changes not covered by Non-Dart
         if: steps.filter.outputs.flutter == 'true'
-        env:
-          DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
-          DIFF_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: python3 -S python/oracle_selection.py --base "$DIFF_BASE" --head "$DIFF_HEAD" --output "$GITHUB_OUTPUT"
+        run: python3 -S python/oracle_selection.py --base "${{ github.event.pull_request.base.sha || github.event.before }}" --head "${{ github.event.pull_request.head.sha || github.sha }}" --output "$GITHUB_OUTPUT"
 
 
   gate:
@@ -330,7 +327,10 @@ jobs:
           version: "0.13.3"
           python-version: "3.15"
           activate-environment: true
-          enable-cache: false
+          enable-cache: true
+          # Pull requests restore the uv cache and never write it; only main saves it.
+          save-cache: ${{ github.ref == 'refs/heads/main' }}
+          prune-cache: true
 
       - name: Install Python test dependencies (locked)
         run: uv sync --locked --project python
