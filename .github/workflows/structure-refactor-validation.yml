@@ -43,7 +43,7 @@ jobs:
           activate-environment: true
           enable-cache: true
           # Pull requests restore the uv cache and never write it; only main saves it.
-          save-cache: true
+          save-cache: ${{ github.ref == 'refs/heads/main' }}
           prune-cache: true
       - name: Install Python test dependencies (locked)
         run: uv sync --locked --project python
