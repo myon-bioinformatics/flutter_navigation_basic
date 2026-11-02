@@ -1,4 +1,4 @@
-// Node.js 22+ Promise reference implementation for catalogue 121-126.
+// Node.js 26+ Promise reference implementation for catalogue 121-126.
 // This models portable Promise semantics, not Dart Future runtime identity.
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';

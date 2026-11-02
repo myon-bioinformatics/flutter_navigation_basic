@@ -1,5 +1,5 @@
 // Portable bounded concurrency examples for patterns 138-143.
-// Node.js 22+ standard APIs only; does not implement Flutter isolate semantics.
+// Node.js 26+ standard APIs only; does not implement Flutter isolate semantics.
 import {readFileSync} from 'node:fs';
 import {pathToFileURL} from 'node:url';
 function check(ok,msg){if(!ok)throw new TypeError(msg);}
