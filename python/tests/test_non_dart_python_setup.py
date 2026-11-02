@@ -21,7 +21,10 @@ def _assert_vendor_python_setup(job):
         "version": "0.13.3",
         "python-version": "3.15",
         "activate-environment": True,
-        "enable-cache": False,
+        # The uv cache is restored on pull requests and saved only on main.
+        "enable-cache": True,
+        "save-cache": "${{ github.ref == 'refs/heads/main' }}",
+        "prune-cache": True,
     }
     assert setup.get("if") is None
     assert setup.get("continue-on-error", False) is False
