@@ -12,12 +12,12 @@
     },
     {
       "repository": "myon-bioinformatics/xprobe",
-      "ref": "0037498eabe7fe135706a9c4875852d34074e742",
-      "commit": "0037498eabe7fe135706a9c4875852d34074e742",
+      "ref": "1ffbb7b984075c683690bbe4e9deb06199cdfe94",
+      "commit": "1ffbb7b984075c683690bbe4e9deb06199cdfe94",
       "source": "xprobe.py",
       "destination": "python/vendor/xprobe.py",
-      "blob_sha": "ccd4bb514df2539b6d0669940e81265b42b59667",
-      "sha256": "e88dbd56eac2afef938e4bc9ee199ce749ae869f5553ecb0087e5b5a711f8f01"
+      "blob_sha": "7595fe5eb7fd2e375b82e7c702079f6496a3276d",
+      "sha256": "43535128a5a018e99a3e681086562298afd3c5240710d14a02e79e6966e0a723"
     },
     {
       "repository": "myon-bioinformatics/myon-bioinformatics",
@@ -57,8 +57,8 @@
     },
     {
       "repository": "myon-bioinformatics/cli_args",
-      "ref": "ea3b76dbb5d3e9470fdb58f34c92e4565ee11a34",
-      "commit": "ea3b76dbb5d3e9470fdb58f34c92e4565ee11a34",
+      "ref": "5059570cdc0ceec33995aeca0eb521066db521e7",
+      "commit": "5059570cdc0ceec33995aeca0eb521066db521e7",
       "source": "cli_args.py",
       "destination": "python/vendor/cli_args.py",
       "blob_sha": "67ce8272d5219b4a69fd1817a50643d0d8e8f1fc",
@@ -75,8 +75,8 @@
     },
     {
       "repository": "myon-bioinformatics/xprobe",
-      "ref": "37d582ee4039d2803335b54e855ed770caedabfc",
-      "commit": "37d582ee4039d2803335b54e855ed770caedabfc",
+      "ref": "1ffbb7b984075c683690bbe4e9deb06199cdfe94",
+      "commit": "1ffbb7b984075c683690bbe4e9deb06199cdfe94",
       "source": "LICENSE",
       "destination": "python/vendor/xprobe-LICENSE",
       "blob_sha": "4ec4989b801bf1a3df6184d21f79e6e7ed5931f6",
@@ -93,8 +93,8 @@
     },
     {
       "repository": "myon-bioinformatics/cli_args",
-      "ref": "d849c17f5e7c18037e2ab2c04bc71eee3e22cd35",
-      "commit": "d849c17f5e7c18037e2ab2c04bc71eee3e22cd35",
+      "ref": "5059570cdc0ceec33995aeca0eb521066db521e7",
+      "commit": "5059570cdc0ceec33995aeca0eb521066db521e7",
       "source": "LICENSE",
       "destination": "python/vendor/cli_args-LICENSE",
       "blob_sha": "4ec4989b801bf1a3df6184d21f79e6e7ed5931f6",
