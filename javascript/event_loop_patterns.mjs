@@ -1,4 +1,4 @@
-// Dependency-free Node 22+ reference for catalogue patterns 146–150.
+// Dependency-free Node 26+ reference for catalogue patterns 146–150.
 // 144/145 reuse stream_patterns.mjs (event-time debounce/throttle).
 import {readFileSync} from 'node:fs';
 import {pathToFileURL} from 'node:url';
