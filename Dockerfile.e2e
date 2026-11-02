@@ -11,7 +11,7 @@
 FROM ubuntu:22.04
 
 ARG FLUTTER_VERSION=3.47.0
-ARG NODE_MAJOR=20
+ARG NODE_MAJOR=26
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PATH=/opt/flutter/bin:/opt/flutter/bin/cache/dart-sdk/bin:$PATH
