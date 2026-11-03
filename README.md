@@ -159,3 +159,8 @@ Home の日付は端末の現在日付です。Home と Build diagnostics に表
 
 Now Timeline のタイムゾーン生成アセット・対応期間・再生成手順は [Generated zone table](docs/GENERATED_ZONE_TABLE.md) を参照してください。
 
+## Focused test discovery
+
+See [standard-library discovery commands](docs/unittest-discovery.md) for
+validated `python -S -m unittest discover` recipes, filename/name filtering,
+and the boundary with the full pytest suite.
