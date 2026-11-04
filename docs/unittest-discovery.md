@@ -24,8 +24,9 @@ python -S -m unittest discover -s python/tests -p test_flutter_focused_ci_contra
 ```
 
 `-s` is the discovery start directory, `-p` matches test filenames, `-k`
-filters test names, `-v` prints each executed test, and `-f` stops at the first
-failure. Quote filename patterns so the shell does not expand them. Check the
+matches the full test ID (module, class and method), `-v` prints each
+executed test, and `-f` stops at the first failure. `-k` uses case-sensitive
+substring matching, or fnmatch-style matching when the argument contains `*`. Quote filename patterns so the shell does not expand them. Check the
 final `Ran N tests` line: zero tests is not a successful verification, even
 though unittest can exit 0. `-k` runs selected tests; it is not a list-only mode.
 
