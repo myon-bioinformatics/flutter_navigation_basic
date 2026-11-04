@@ -12,7 +12,8 @@ EXPECTED_IDS = {f'{family}/{i:03}' for family in FAMILIES for i in range(1, 199)
 
 
 def validate_case(identity, value):
-    assert isinstance(value, dict) and 'error' not in value, f'producer error: {value}'
+    if not (isinstance(value, dict) and 'error' not in value):
+        raise AssertionError(f'producer error: {value}')
     special = identity in ('api/001', 'api/002')
     expected = {'message': 'test'}
     if special:
@@ -22,13 +23,18 @@ def validate_case(identity, value):
             'statusCode': 200,
             field: {'url': 'https://example.com'} if field == 'body' else {'title': 'foo'},
         }
-        assert value['defaults'] == {'message': 'test', 'statusCode': 200, field: {}}, 'constructor defaults'
-        assert value['missingOptional'] == {'message': 'hello', 'statusCode': 200, field: {}}, 'missing optional defaults'
-    assert value['encoded'] == expected, 'toJson differs from independent expected values'
-    assert value['restored'] == expected, 'fromJson round trip differs from expected values'
+        if not (value['defaults'] == {'message': 'test', 'statusCode': 200, field: {}}):
+            raise AssertionError('constructor defaults')
+        if not (value['missingOptional'] == {'message': 'hello', 'statusCode': 200, field: {}}):
+            raise AssertionError('missing optional defaults')
+    if not (value['encoded'] == expected):
+        raise AssertionError('toJson differs from independent expected values')
+    if not (value['restored'] == expected):
+        raise AssertionError('fromJson round trip differs from expected values')
     if not special:
         message = value['service']['message']
-        assert isinstance(message, str) and message, 'stub service result must contain a nonempty message'
+        if not (isinstance(message, str) and message):
+            raise AssertionError('stub service result must contain a nonempty message')
 
 
 def validate(document):
@@ -36,11 +42,15 @@ def validate(document):
     if not isinstance(document, dict):
         document = {}
     try:
-        assert document['schemaVersion'] == 1
-        assert document['producer'] == 'dart-production-patterns'
-        assert isinstance(document['cases'], dict)
+        if not (document['schemaVersion'] == 1):
+            raise AssertionError('pattern_contracts:39: validation failed')
+        if not (document['producer'] == 'dart-production-patterns'):
+            raise AssertionError('pattern_contracts:40: validation failed')
+        if not (isinstance(document['cases'], dict)):
+            raise AssertionError('pattern_contracts:41: validation failed')
         actual = set(document['cases'])
-        assert actual == EXPECTED_IDS, f'missing={sorted(EXPECTED_IDS-actual)}, extra={sorted(actual-EXPECTED_IDS)}'
+        if not (actual == EXPECTED_IDS):
+            raise AssertionError(f'missing={sorted(EXPECTED_IDS-actual)}, extra={sorted(actual-EXPECTED_IDS)}')
     except (AssertionError, KeyError, TypeError) as error:
         failures['inventory'] = str(error) or 'invalid contract envelope'
     cases = document.get('cases', {}) if isinstance(document, dict) else {}

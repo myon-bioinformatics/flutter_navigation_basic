@@ -21,49 +21,73 @@ TEMPLATES = ['一覧', '詳細', 'フォーム', '検索', 'タブ', 'ボトム�
 
 
 def validate_screens(screens):
-    assert len(screens) == 198
-    assert {s.get('screenDataId', s.get('id')) for s in screens} == set(range(1, 199))
+    if not (len(screens) == 198):
+        raise AssertionError('metadata_contracts:24: validation failed')
+    if not ({s.get('screenDataId', s.get('id')) for s in screens} == set(range(1, 199))):
+        raise AssertionError('metadata_contracts:25: validation failed')
     for key in ('useCaseKey', 'emoji'):
-        assert len({s[key] for s in screens}) == 198, f'duplicate {key}'
-    assert len({s['emoji'].replace('\ufe0f', '') for s in screens}) == 198
+        if not (len({s[key] for s in screens}) == 198):
+            raise AssertionError(f'duplicate {key}')
+    if not (len({s['emoji'].replace('\ufe0f', '') for s in screens}) == 198):
+        raise AssertionError('metadata_contracts:28: validation failed')
     for screen in screens:
         identity = screen.get('screenDataId', screen.get('id'))
         domain = DOMAINS[(identity-1) % 18]
-        assert screen['domainKey'] == domain, f'{identity}: domain'
-        assert screen['templateJa'] == TEMPLATES[(identity-1)//18], f'{identity}: template'
-        assert screen['useCaseKey'].startswith(domain + '.')
-        assert screen.get('templateOverride') is None
+        if not (screen['domainKey'] == domain):
+            raise AssertionError(f'{identity}: domain')
+        if not (screen['templateJa'] == TEMPLATES[(identity-1)//18]):
+            raise AssertionError(f'{identity}: template')
+        if not (screen['useCaseKey'].startswith(domain + '.')):
+            raise AssertionError('metadata_contracts:34: validation failed')
+        if not (screen.get('templateOverride') is None):
+            raise AssertionError('metadata_contracts:35: validation failed')
         for key in ('name', 'title', 'description', 'category', 'navigationPattern', 'apiPattern', 'themePattern', 'dataPattern'):
-            assert isinstance(screen[key], str) and screen[key], f'{identity}: {key}'
+            if not (isinstance(screen[key], str) and screen[key]):
+                raise AssertionError(f'{identity}: {key}')
         detail = screen.get('detail')
         if domain in ('integration', 'auth'):
-            assert isinstance(detail, dict), f'{identity}: missing detail'
+            if not (isinstance(detail, dict)):
+                raise AssertionError(f'{identity}: missing detail')
             for key in ('purpose', 'when', 'pitfall', 'snippet'):
-                assert isinstance(detail[key], str) and detail[key], f'{identity}: detail.{key}'
-            assert len(detail['points']) == 3 and all(isinstance(p, str) and p for p in detail['points'])
+                if not (isinstance(detail[key], str) and detail[key]):
+                    raise AssertionError(f'{identity}: detail.{key}')
+            if not (len(detail['points']) == 3 and all(isinstance(p, str) and p for p in detail['points'])):
+                raise AssertionError('metadata_contracts:43: validation failed')
         else:
-            assert detail is None, f'{identity}: unexpected detail'
+            if not (detail is None):
+                raise AssertionError(f'{identity}: unexpected detail')
 
 
 def validate_locales(locales):
-    assert set(locales) == LOCALES
+    if not (set(locales) == LOCALES):
+        raise AssertionError('metadata_contracts:49: validation failed')
     keys = set(locales['eng'])
-    assert keys
-    assert all(any(key.startswith(prefix) for key in keys) for prefix in NAMESPACES)
+    if not (keys):
+        raise AssertionError('metadata_contracts:51: validation failed')
+    if not (all(any(key.startswith(prefix) for key in keys) for prefix in NAMESPACES)):
+        raise AssertionError('metadata_contracts:52: validation failed')
     for code, values in locales.items():
-        assert set(values) == keys, f'{code}: different keys'
-        assert all(isinstance(v, str) and v.strip() for v in values.values()), f'{code}: blank value'
+        if not (set(values) == keys):
+            raise AssertionError(f'{code}: different keys')
+        if not (all(isinstance(v, str) and v.strip() for v in values.values())):
+            raise AssertionError(f'{code}: blank value')
         for key, placeholder in [('urlParameters.case', 'urlParamCaseId'), ('generic.screenFallbackTitle', 'screenDataId'), ('patternTemplate.screenIdLabel', 'screenDataId')]:
-            assert '{' + placeholder + '}' in values[key], f'{code}:{key}'
-        assert '{id}' not in values['urlParameters.case']
+            if not ('{' + placeholder + '}' in values[key]):
+                raise AssertionError(f'{code}:{key}')
+        if not ('{id}' not in values['urlParameters.case']):
+            raise AssertionError('metadata_contracts:58: validation failed')
 
 
 def validate_export(document):
-    assert document['schemaVersion'] == 1
+    if not (document['schemaVersion'] == 1):
+        raise AssertionError('metadata_contracts:62: validation failed')
     validate_page_identities(document['pageIdentities'])
-    assert document['routes'] == ROUTES
-    assert len(document['locales']) == 11 and set(document['locales']) == LOCALES
-    assert set(document['namespaces']) == NAMESPACES
+    if not (document['routes'] == ROUTES):
+        raise AssertionError('metadata_contracts:64: validation failed')
+    if not (len(document['locales']) == 11 and set(document['locales']) == LOCALES):
+        raise AssertionError('metadata_contracts:65: validation failed')
+    if not (set(document['namespaces']) == NAMESPACES):
+        raise AssertionError('metadata_contracts:66: validation failed')
     validate_screens(document['screens'])
     # Verify the actual Dart decoder preserved every exported asset field.
     raw = json.loads((ROOT/'assets/screens.json').read_text())['screens']
@@ -72,7 +96,8 @@ def validate_export(document):
         source = by_id[screen['screenDataId']]
         for key, value in screen.items():
             expected = source.get('screenDataId', source.get('id')) if key == 'screenDataId' else source.get(key)
-            assert value == expected, f"Dart decode changed {screen['screenDataId']}:{key}"
+            if not (value == expected):
+                raise AssertionError(f"Dart decode changed {screen['screenDataId']}:{key}")
     validate_locales(json.loads((ROOT/'assets/display/app_text.json').read_text())['locales'])
 
 
@@ -83,11 +108,14 @@ def validate_page_identities(data):
              '/tools/http/request-draft', '/examples/ui-showcase',
              '/examples/composition-generator', '/examples/irony-generator',
              '/examples/counter-playground', '/examples/external-integration/mcp'}
-    assert set(emojis) == tools | {f'/screen{i}' for i in range(1, 199)}
+    if not (set(emojis) == tools | {f'/screen{i}' for i in range(1, 199)}):
+        raise AssertionError('metadata_contracts:86: validation failed')
     normalized = [emoji.replace('\ufe0f', '') for emoji in emojis.values()]
-    assert all(normalized) and len(set(normalized)) == len(normalized), 'duplicate page emoji'
+    if not (all(normalized) and len(set(normalized)) == len(normalized)):
+        raise AssertionError('duplicate page emoji')
     for alias, target in aliases.items():
-        assert alias not in emojis and target in emojis, 'invalid page alias'
+        if not (alias not in emojis and target in emojis):
+            raise AssertionError('invalid page alias')
     expected_aliases = {
         '/tools/location/bounding-box': '/tools/media/photo-studio',
         '/examples/composition-generator/seed': '/examples/composition-generator',
@@ -97,17 +125,22 @@ def validate_page_identities(data):
         **{f'/examples/data-processing-interactions/{i}': f'/screen{i}'
            for i in (171, 172, 173, 174, 175, 183, 184)},
     }
-    assert aliases == expected_aliases, 'alias destination changed'
+    if not (aliases == expected_aliases):
+        raise AssertionError('alias destination changed')
     screens = json.loads((ROOT/'assets/screens.json').read_text())['screens']
     for screen in screens:
         identity = screen.get('screenDataId', screen.get('id'))
-        assert emojis[f'/screen{identity}'] == screen['emoji'], 'header/Hub emoji drift'
+        if not (emojis[f'/screen{identity}'] == screen['emoji']):
+            raise AssertionError('header/Hub emoji drift')
     routes = data['publicRoutes']
-    assert set(data['titles']) == set(routes)
+    if not (set(data['titles']) == set(routes)):
+        raise AssertionError('metadata_contracts:106: validation failed')
     for route in routes:
-        assert route in emojis or route in aliases, f'unregistered public route: {route}'
+        if not (route in emojis or route in aliases):
+            raise AssertionError(f'unregistered public route: {route}')
         expected = emojis[aliases.get(route, route)]
-        assert data['titles'][route] == 'Page ' + expected, f'wrong title identity: {route}'
+        if not (data['titles'][route] == 'Page ' + expected):
+            raise AssertionError(f'wrong title identity: {route}')
 
 
 if __name__ == '__main__':
