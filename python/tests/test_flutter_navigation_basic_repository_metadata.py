@@ -130,7 +130,7 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
     lock = json.loads((PYTHON_DIR / "vendor.lock.json").read_text(encoding="utf-8"))
     assert lock["schema"] == "vendor-lock/1"
     expected = {
-        ("myon-bioinformatics/browser-test-kit", "scripts/image_diff.py", "python/vendor/image_diff.py"),
+        ("myon-bioinformatics/BrowserTestKit", "scripts/image_diff.py", "python/vendor/image_diff.py"),
         ("myon-bioinformatics/Ironmate", "pillow_min.py", "python/vendor/pillow_min/pillow_min.py"),
         ("myon-bioinformatics/Ironmate", "LICENSE", "python/vendor/pillow_min/Ironmate-LICENSE"),
         ("myon-bioinformatics/yourself", "yourself.py", "python/vendor/yourself.py"),
@@ -139,16 +139,16 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
         ("myon-bioinformatics/xprobe", "LICENSE", "python/vendor/xprobe-LICENSE"),
         ("myon-bioinformatics/myon-bioinformatics", "gh_ops.py", "python/vendor/gh_ops.py"),
         ("myon-bioinformatics/myon-bioinformatics", "LICENSE", "python/vendor/myon-bioinformatics-LICENSE"),
-        ("myon-bioinformatics/browser-test-kit", "scripts/check_evidence.py", "python/vendor/check_evidence.py"),
-        ("myon-bioinformatics/browser-test-kit", "scripts/check_png.py", "python/vendor/check_png.py"),
-        ("myon-bioinformatics/browser-test-kit", "scripts/jsonl_digest.py", "python/vendor/jsonl_digest.py"),
-        ("myon-bioinformatics/browser-test-kit", "LICENSE", "python/vendor/browser-test-kit-LICENSE"),
+        ("myon-bioinformatics/BrowserTestKit", "scripts/check_evidence.py", "python/vendor/check_evidence.py"),
+        ("myon-bioinformatics/BrowserTestKit", "scripts/check_png.py", "python/vendor/check_png.py"),
+        ("myon-bioinformatics/BrowserTestKit", "scripts/jsonl_digest.py", "python/vendor/jsonl_digest.py"),
+        ("myon-bioinformatics/BrowserTestKit", "LICENSE", "python/vendor/browser-test-kit-LICENSE"),
         ("myon-bioinformatics/cli_args", "cli_args.py", "python/vendor/cli_args.py"),
         ("myon-bioinformatics/cli_args", "LICENSE", "python/vendor/cli_args-LICENSE"),
         ("myon-bioinformatics/gh_identity", "gh_identity.py", "python/vendor/gh_identity.py"),
         ("myon-bioinformatics/gh_identity", "LICENSE", "python/vendor/gh_identity-LICENSE"),
-        ("myon-bioinformatics/browser-test-kit", "scripts/interaction.mjs", "e2e/utils/interaction.mjs"),
-        ("myon-bioinformatics/browser-test-kit", "scripts/browser_execution.mjs", "e2e/utils/browser_execution.mjs"),
+        ("myon-bioinformatics/BrowserTestKit", "scripts/interaction.mjs", "e2e/utils/interaction.mjs"),
+        ("myon-bioinformatics/BrowserTestKit", "scripts/browser_execution.mjs", "e2e/utils/browser_execution.mjs"),
     }
     entries = lock["files"]
     assert {(entry["repository"], entry["source"], entry["destination"]) for entry in entries} == expected

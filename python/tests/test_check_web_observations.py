@@ -179,7 +179,7 @@ def test_bounded_shared_browser_execution_is_immutable_and_preserves_failure_bou
     assert len(lock['files']) == 19
     row = next(item for item in lock['files']
                if item['destination'] == 'e2e/utils/browser_execution.mjs')
-    assert row['repository'] == 'myon-bioinformatics/browser-test-kit'
+    assert row['repository'] == 'myon-bioinformatics/BrowserTestKit'
     assert row['source'] == 'scripts/browser_execution.mjs'
     assert row['ref'] == row['commit'] == '8d8512fefea38993e5b3695c0706075cf05071ad'
     source = (root / row['destination']).read_bytes()
