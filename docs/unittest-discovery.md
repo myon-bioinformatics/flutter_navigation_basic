@@ -11,12 +11,6 @@ python -S -m unittest discover -s python/tests -p test_flutter_focused_ci_contra
 
 Validated on Linux / CPython 3.12.14: **4 tests, exit 0** (2026-11-03).
 
-```sh
-python -S -m unittest discover -s .github/scripts -p test_ci_status_label.py -v
-```
-
-Validated on Linux / CPython 3.12.14: **13 tests, exit 0** (2026-11-03).
-
 To narrow the first command to a test name, use the built-in `-k` filter:
 
 ```sh
