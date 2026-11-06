@@ -7,7 +7,7 @@ The native page uses only HTML, CSS and classic JavaScript. It loads no Dart/Flu
 ## Ownership
 
 - Flutter remains the reference implementation. The published reference must report the exact SHA in provenance.json; changed or missing metadata fails the comparison, rather than silently updating the baseline.
-- Three small web-ui CSS files are pinned byte-for-byte, with MIT notice and hashes in provenance.json. Stable ui-* classes and the base/reset are reused. Most visual component declarations are overridden by this consumer's layout; this does **not** demonstrate a reusable common header implementation.
+- Three small PySaiyanWeBoo CSS files are pinned byte-for-byte, with MIT notice and hashes in provenance.json. Stable ui-* classes and the base/reset are reused. Most visual component declarations are overridden by this consumer's layout; this does **not** demonstrate a reusable common header implementation.
 - Existing e2e/utils/interaction.mjs supplies BTK-derived measured real pointer input, retaining its existing provenance. The native adapter uses btk-platform-adapter/1 and native data-testid selectors; its favorite postcondition observes aria-label. A separate pinned BTK checkout tests the actual provenance reader without copying that runner into Flutter.
 - Route-specific content, state and layout stay in this experiment. Common extraction should wait until another consumer validates the same boundary.
 
@@ -48,5 +48,5 @@ The only new workflow is a pull-request comparison job with contents:read. It ha
 Sources:
 - [Flutter header](https://github.com/myon-bioinformatics/flutter_navigation_basic/blob/9b38f3e935e9e171cbacc3af63f539ddce9db86b/lib/shared/widgets/standard_page_header.dart)
 - [Flutter UI Showcase](https://github.com/myon-bioinformatics/flutter_navigation_basic/blob/9b38f3e935e9e171cbacc3af63f539ddce9db86b/lib/screens/ui_showcase_screen.dart)
-- [web-ui contract](https://github.com/myon-bioinformatics/web-ui/blob/6c51fd53a11b24b2f8d0205a2a9c597fb5f2b558/contract/v1/contract.json)
-- [BTK adapters](https://github.com/myon-bioinformatics/browser-test-kit/blob/f37c438a5285a03b39adda052ad14598a2ca8966/docs/platform-adapters.md)
+- [PySaiyanWeBoo contract](https://github.com/myon-bioinformatics/PySaiyanWeBoo/blob/6c51fd53a11b24b2f8d0205a2a9c597fb5f2b558/contract/v1/contract.json)
+- [BTK adapters](https://github.com/myon-bioinformatics/BrowserTestKit/blob/f37c438a5285a03b39adda052ad14598a2ca8966/docs/platform-adapters.md)
