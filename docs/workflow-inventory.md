@@ -11,6 +11,7 @@ or evidence; avoid duplicating test implementations.
 | `curl-runtime.yml` — Python curl runtime browser contract | Containerized Python-enabled Flutter Web runtime E2E | Keep; distinct from static browser tests |
 | `dart.yml` — Flutter | Primary Flutter/Android/iOS/test/JUnit matrix and main push gate | Keep |
 | `diagnostics-evidence.yml` — Diagnostics screenshot evidence | Browser screenshots for diagnostics paths | Keep separate for artifact/evidence scope; consider narrowing broad `python/**` trigger only after measuring coverage |
+| `docker-e2e-verify.yml` — Docker E2E snapshot generation (manual) | Manually build image and generate snapshot baselines with `--update` | Keep manual, renamed to avoid implying read-only verification |
 | `flutter-pages.yml` — Flutter Web Pages | Deploy only after successful main Flutter workflow; deployment permissions | Keep separate |
 | `non-dart.yml` — Non-Dart checks | Python/Playwright/browser adapter and canonical JUnit | Keep; real browser adapter smoke now also triggers when `test.py` or `multi_test_runner.py` changes |
 | `ios-native.yml` — iOS native checks | iOS release compile and image-normalization XCTest | Run on native/bridge/dependency changes or manual dispatch; independent of Web Pages |

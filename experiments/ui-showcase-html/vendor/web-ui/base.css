@@ -1,0 +1,1 @@
+@layer base{*{box-sizing:border-box}body{margin:0;background:var(--ui-bg);color:var(--ui-fg);font:16px/1.6 system-ui,sans-serif}.ui-page{max-width:var(--ui-max);margin:auto;padding:1.25rem}a{color:inherit}}

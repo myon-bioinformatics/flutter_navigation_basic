@@ -1,0 +1,13 @@
+'use strict';
+const test = require('node:test'), assert = require('node:assert/strict');
+const {diagnosticLabel, formatDiagnosticBytes, ROUTE_SOURCES} = require('./diagnostic_label.cjs');
+const sha = 'c4a7b939e1ad22363321de8b50efe8fcbfb12134';
+const fixture = () => ({app: {version: '0.1.0'}, repository: {sourceBytes: 1048576, revision: {sha, shortSha: sha.slice(0, 8), dirty: false}}, routeSources: {generic_screen: {sourceBytes: 1152}, hub_screen: {sourceBytes: 1024}}});
+test('generic route exact source-rendered label', () => assert.equal(diagnosticLabel(fixture(), '/screen136', sha), '⚖ shared template 1.13 KiB · repo 1.00 MiB · Version v0.1.0 · Commit c4a7b939'));
+test('named source exact label', () => assert.equal(diagnosticLabel(fixture(), '/hub', sha), '⚖ page source 1.00 KiB · repo 1.00 MiB · Version v0.1.0 · Commit c4a7b939'));
+test('unknown route follows source fallback, not guessed mapping', () => assert.equal(diagnosticLabel(fixture(), '/other', sha), '⚖ repo 1.00 MiB · repo 1.00 MiB · Version v0.1.0 · Commit c4a7b939'));
+test('missing generic source stays not measured', () => {const m = fixture(); delete m.routeSources.generic_screen; assert.match(diagnosticLabel(m, '/screen6', sha), /^⚖ shared template not measured/);});
+test('byte formatting boundaries', () => {assert.equal(formatDiagnosticBytes(null), 'not measured'); assert.equal(formatDiagnosticBytes(0), '0 B'); assert.equal(formatDiagnosticBytes(1023), '1023 B'); assert.equal(formatDiagnosticBytes(1024), '1.00 KiB'); assert.equal(formatDiagnosticBytes(1152), '1.13 KiB'); assert.equal(formatDiagnosticBytes(1073741824), '1.00 GiB');});
+for (const [name, mutate] of Object.entries({wrongSha: m => m.repository.revision.sha = '0'.repeat(40), badShort: m => m.repository.revision.shortSha = 'ffffffff', dirty: m => m.repository.revision.dirty = true, negative: m => m.repository.sourceBytes = -1, fraction: m => m.repository.sourceBytes = 2.5, unsafe: m => m.repository.sourceBytes = Number.MAX_SAFE_INTEGER + 1, wrongRouteSource: m => m.routeSources.generic_screen = {}, versionInjection: m => m.app.version = '0.1\nextra'})) test(name + ' rejected', () => {const m = fixture(); mutate(m); assert.throws(() => diagnosticLabel(m, '/screen136', sha));});
+test('tracked fallback metadata rejected rather than represented as deployed', () => assert.throws(() => diagnosticLabel({app: {version: '0.1.0'}, repository: {sourceBytes: null, revision: {sha: null}}, routeSources: {}}, '/screen136', sha)));
+test('mapping includes all named24 representative routes', () => {for (const r of ['/hub', '/examples/irony-generator', '/examples/ui-showcase', '/examples/external-integration/mcp']) assert.equal(typeof ROUTE_SOURCES[r], 'string');});
