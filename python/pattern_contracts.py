@@ -73,11 +73,11 @@ def write_junit(path, failures):
     ET.ElementTree(suite).write(path, encoding='utf-8', xml_declaration=True)
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('input', type=Path)
     parser.add_argument('--junit', type=Path)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     try:
         document = json.loads(args.input.read_text())
     except (OSError, ValueError) as error:

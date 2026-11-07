@@ -147,8 +147,14 @@ def aggregate(directory, candidate):
             'observedPairs':sorted(seen),'acceptancePromoted':False,'uiAcceptance':'unverified','liveExecutionEnabled':False,
             'full430Result':full['result'],'full430Complete':full['coverage']['completeExactlyOnce']}
 
-if __name__=='__main__':
-    if sys.argv[1:]==['check-source']:
+
+def main(argv=None):
+    argv = sys.argv[1:] if argv is None else list(argv)
+    if argv==['check-source']:
         inventory();print('Offline source hashes and disabled-live policy verified; no browser measurements.')
     else:
         raise SystemExit('Only offline check-source CLI is enabled. No live measurement is requested.')
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

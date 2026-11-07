@@ -79,11 +79,11 @@ def convert(source: Path, destination: Path) -> int:
     return len(visible)
 
 
-def main() -> int:
+def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source", type=Path)
     parser.add_argument("destination", type=Path)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     try:
         print(f"converted={convert(args.source, args.destination)}")
     except (OSError, ValueError, json.JSONDecodeError) as error:

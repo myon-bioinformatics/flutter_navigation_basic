@@ -143,6 +143,11 @@ def validate_page_identities(data):
             raise AssertionError(f'wrong title identity: {route}')
 
 
-if __name__ == '__main__':
-    validate_export(json.loads(Path(sys.argv[1]).read_text()))
+def main(argv=None):
+    argv = sys.argv[1:] if argv is None else list(argv)
+    validate_export(json.loads(Path(argv[0]).read_text()))
     print('Metadata contracts passed: Dart routes, 198 decoded screens, 11 locales')
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

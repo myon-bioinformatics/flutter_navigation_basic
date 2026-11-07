@@ -42,10 +42,10 @@ def generate():
     return '\n'.join(lines)
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     content = generate()
     if args.check:
         if not TARGET.exists() or TARGET.read_text() != content:

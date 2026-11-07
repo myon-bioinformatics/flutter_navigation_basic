@@ -37,6 +37,11 @@ def validate(snapshot):
             raise AssertionError('page action row too small')
 
 
-if __name__ == '__main__':
-    validate(json.loads(Path(sys.argv[1]).read_text()))
+def main(argv=None):
+    argv = sys.argv[1:] if argv is None else list(argv)
+    validate(json.loads(Path(argv[0]).read_text()))
     print('Browser header JSON contract passed')
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

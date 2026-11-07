@@ -73,13 +73,13 @@ def render(report, head, tree=None):
     return "\n".join(lines)
 
 
-def main():
+def main(argv=None):
     p = argparse.ArgumentParser()
     p.add_argument("inventory", type=Path)
     p.add_argument("output", type=Path)
     p.add_argument("--head", required=True, help="PR head SHA the report is about")
     p.add_argument("--tree", help="checked-out commit, when it differs (pull_request merge ref)")
-    args = p.parse_args()
+    args = p.parse_args(argv)
     report = json.loads(args.inventory.read_text(encoding="utf-8"))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(render(report, args.head, args.tree), encoding="utf-8")
