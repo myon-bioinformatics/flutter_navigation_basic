@@ -9,10 +9,10 @@ or evidence; avoid duplicating test implementations.
 | `actionlint.yml` — Validate GitHub Actions | Validate workflow changes through parent reusable actionlint | Keep; parent `@main` is mutable, consider a pinned SHA when deliberately updating the parent contract |
 | `claude.yml` — Claude | Comment/dispatch agent, OAuth and different permissions | Keep separate from CI |
 | `curl-runtime.yml` — Python curl runtime browser contract | Containerized Python-enabled Flutter Web runtime E2E | Keep; distinct from static browser tests |
-| `dart.yml` — Flutter | Primary Flutter/Android/iOS/test/JUnit matrix and main push gate | Keep |
+| `ci.yml` — CI | Primary Flutter/Android/iOS/test/JUnit matrix and main push gate | Keep |
 | `diagnostics-evidence.yml` — Diagnostics screenshot evidence | Browser screenshots for diagnostics paths | Keep separate for artifact/evidence scope; consider narrowing broad `python/**` trigger only after measuring coverage |
 | `docker-e2e-verify.yml` — Docker E2E snapshot generation (manual) | Manually build image and generate snapshot baselines with `--update` | Keep manual, renamed to avoid implying read-only verification |
-| `flutter-pages.yml` — Flutter Web Pages | Deploy only after successful main Flutter workflow; deployment permissions | Keep separate |
+| `pages.yml` — Pages | Deploy only after successful main CI workflow; deployment permissions | Keep separate |
 | `non-dart.yml` — Non-Dart checks | Python/Playwright/browser adapter and canonical JUnit | Keep; real browser adapter smoke now also triggers when `test.py` or `multi_test_runner.py` changes |
 | `ios-native.yml` — iOS native checks | iOS release compile and image-normalization XCTest | Run on native/bridge/dependency changes or manual dispatch; independent of Web Pages |
 | `structure-refactor-validation.yml` — Refactor smoke | Fast Python/Flutter/Node producer regression on work branches | Keep; action versions aligned with other workflows |
@@ -40,7 +40,7 @@ Android/iOS behavior. Browser emulation remains browser evidence only.
 ## Python oracle evidence ownership
 
 The full Python pytest suite and `python-oracle-summary` artifact belong to
-`non-dart.yml`; `dart.yml` no longer starts a second full Python suite on
+`non-dart.yml`; `ci.yml` no longer starts a second full Python suite on
 Flutter-touching changes. The Flutter gate still exports production Dart
 contracts and validates them with Python stdlib tools.
 

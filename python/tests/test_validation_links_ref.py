@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_pages_build_passes_the_gated_commit_as_source_ref():
-    workflow = yaml.safe_load((ROOT / ".github/workflows/flutter-pages.yml").read_text(encoding="utf-8"))
+    workflow = yaml.safe_load((ROOT / ".github/workflows/pages.yml").read_text(encoding="utf-8"))
     steps = [step for job in workflow["jobs"].values() for step in job.get("steps", [])]
     build = [step for step in steps if step.get("name") == "Build Flutter web"]
     assert len(build) == 1
@@ -35,7 +35,7 @@ def test_pages_build_passes_the_gated_commit_as_source_ref():
 def test_pages_gate_requires_completed_success_for_exact_sha(
     head, status, conclusion, accepted, monkeypatch,
 ):
-    workflow = yaml.safe_load((ROOT / '.github/workflows/flutter-pages.yml').read_text())
+    workflow = yaml.safe_load((ROOT / '.github/workflows/pages.yml').read_text())
     step = next(step for step in workflow['jobs']['build']['steps']
                 if step.get('name') == 'Require Flutter success for target SHA')
     code = step['run'].split("python3 - <<'PY'\n", 1)[1].rsplit('\nPY', 1)[0]
@@ -49,14 +49,14 @@ def test_pages_gate_requires_completed_success_for_exact_sha(
 
     def run_list(argv, *, text):
         assert argv[:3] == ['gh', 'run', 'list']
-        assert argv[argv.index('--workflow') + 1] == 'Flutter'
+        assert argv[argv.index('--workflow') + 1] == 'CI'
         assert argv[argv.index('--commit') + 1] == target
         return json.dumps(runs)
 
     monkeypatch.setattr(subprocess, 'check_output', run_list)
     if accepted:
-        exec(compile(code, 'flutter-pages.yml gate', 'exec'), {})
+        exec(compile(code, 'pages.yml gate', 'exec'), {})
     else:
         with pytest.raises(SystemExit) as error:
-            exec(compile(code, 'flutter-pages.yml gate', 'exec'), {})
+            exec(compile(code, 'pages.yml gate', 'exec'), {})
         assert error.value.code == 1

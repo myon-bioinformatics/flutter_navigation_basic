@@ -71,8 +71,8 @@ def _docker_build_argv(text):
 def test_e2e_semantics_define_is_pinned_to_browser_builds() -> None:
     workflow = (ROOT / ".github" / "workflows" / "non-dart.yml").read_text(encoding="utf-8")
     dockerfile = (ROOT / "Dockerfile.e2e").read_text(encoding="utf-8")
-    dart_workflow = (ROOT / ".github" / "workflows" / "dart.yml").read_text(encoding="utf-8")
-    pages_workflow = (ROOT / ".github" / "workflows" / "flutter-pages.yml").read_text(encoding="utf-8")
+    dart_workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    pages_workflow = (ROOT / ".github" / "workflows" / "pages.yml").read_text(encoding="utf-8")
     main = (ROOT / "lib" / "main.dart").read_text(encoding="utf-8")
 
     expected = ['flutter', 'build', 'web', '--release', '-t', 'lib/main.dart',

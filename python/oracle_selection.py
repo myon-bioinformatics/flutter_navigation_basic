@@ -18,7 +18,7 @@ PRIMARY_TRIGGERS = ('python/*', 'assets/time/*', 'assets/data_processing/*',
                     'requirements.txt', '*/requirements.txt', 'python/pyproject.toml',
                     'python/uv.lock', '.dockerignore', 'lib/*.dart', 'test/*.dart',
                     '.github/workflows/non-dart.yml')
-SELF_PATHS = {'.github/workflows/dart.yml', 'python/oracle_selection.py',
+SELF_PATHS = {'.github/workflows/ci.yml', 'python/oracle_selection.py',
               'python/tests/test_oracle_selection.py'}
 
 
