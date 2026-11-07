@@ -1,8 +1,6 @@
 """Multiple/nested conditions share the FilterBasic CLI and Flutter boundary."""
-import json
+import json, subprocess, sys
 from pathlib import Path
-import subprocess
-import sys
 
 import pytest
 

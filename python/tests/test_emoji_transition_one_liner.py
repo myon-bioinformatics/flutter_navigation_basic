@@ -1,9 +1,5 @@
 """The documented emoji-transition one-liner resolves pages from the generated registry."""
-import os
-import re
-import shlex
-import subprocess
-import sys
+import os, re, shlex, subprocess, sys
 from pathlib import Path
 
 import pytest

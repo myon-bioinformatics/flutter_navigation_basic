@@ -1,8 +1,5 @@
 """Regression contracts for 091-099 validation producers."""
-import importlib.util
-import json
-import subprocess
-import sys
+import importlib.util, json, subprocess, sys
 from pathlib import Path
 import pytest
 

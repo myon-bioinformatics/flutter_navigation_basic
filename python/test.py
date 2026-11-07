@@ -16,10 +16,7 @@ Examples:
 
 from __future__ import annotations
 
-import argparse
-import json
-import subprocess
-import sys
+import argparse, json, subprocess, sys
 from pathlib import Path
 
 

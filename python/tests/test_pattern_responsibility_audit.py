@@ -1,7 +1,7 @@
 import pytest
 import pattern_responsibility_audit as audit
+import json, tempfile
 from pathlib import Path
-import tempfile
 
 ROOT=Path(__file__).resolve().parents[2]
 
@@ -147,8 +147,6 @@ def test_seven_shared_gesture_routes_need_no_legacy_view():
         assert not row["stale_readme"]
         assert not any("E2E-only" in warning for warning in row["warnings"])
 
-
-import json
 
 
 def _manifest(root, overrides=None, **changes):

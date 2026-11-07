@@ -1,8 +1,6 @@
 """SDK-only execution must use production source and never reuse stale results."""
-import json
-from pathlib import Path
-import sys
-from types import SimpleNamespace
+import json, sys
+from pathlib import Path; from types import SimpleNamespace
 
 import pytest
 

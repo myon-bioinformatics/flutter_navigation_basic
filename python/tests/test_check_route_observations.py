@@ -1,8 +1,6 @@
 """Expected (TOML, hand-written) vs observed (JSON, Flutter) numbered routes."""
-import json
+import json, sys, tomllib
 from pathlib import Path
-import sys
-import tomllib
 
 import pytest
 

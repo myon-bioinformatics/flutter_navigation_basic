@@ -1,12 +1,5 @@
-import copy
-import hashlib
-import importlib.util
-import json
+import copy, hashlib, importlib.util, json, struct, tempfile, unittest, zlib
 from pathlib import Path
-import struct
-import tempfile
-import unittest
-import zlib
 import proof_contract as proof
 import audit_contract as audit
 

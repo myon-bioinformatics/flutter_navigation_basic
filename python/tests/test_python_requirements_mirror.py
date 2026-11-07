@@ -1,8 +1,7 @@
 """Keep pip requirement files aligned with python/pyproject.toml floors."""
 from __future__ import annotations
 
-import re
-import tomllib
+import re, tomllib
 from pathlib import Path
 
 PYTHON_DIR = Path(__file__).resolve().parents[1]

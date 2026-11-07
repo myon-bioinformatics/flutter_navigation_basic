@@ -1,8 +1,6 @@
 """Actual Python/Node execution, with an explicit fake build instead of an SDK."""
-import json
+import json, subprocess, sys
 from pathlib import Path
-import subprocess
-import sys
 
 import pytest
 import yaml

@@ -1,7 +1,6 @@
 """Static contract: locked vendor checks use the declared Python, not the runner."""
-from copy import deepcopy
-from pathlib import Path
 import re
+from copy import deepcopy; from pathlib import Path
 
 import pytest
 import yaml

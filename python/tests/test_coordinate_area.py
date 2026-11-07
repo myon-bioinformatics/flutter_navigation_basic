@@ -7,8 +7,7 @@ This module only validates fixture shape with the standard library.
 from __future__ import annotations
 
 import json
-from pathlib import Path
-from typing import Any
+from pathlib import Path; from typing import Any
 
 import pytest
 

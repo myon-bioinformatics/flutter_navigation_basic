@@ -1,9 +1,6 @@
 """Regression tests for read-only JUnit failure history comparison."""
-import importlib.util
-import json
+import importlib.util, json, subprocess, sys
 from pathlib import Path
-import subprocess
-import sys
 
 SCRIPT = Path(__file__).resolve().parents[1] / "junit_history.py"
 spec = importlib.util.spec_from_file_location("junit_history", SCRIPT)

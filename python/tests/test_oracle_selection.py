@@ -1,7 +1,6 @@
 """Pure-Dart diffs must retain full pytest, JUnit and receipt without duplication."""
 import json
-from pathlib import Path
-from types import SimpleNamespace
+from pathlib import Path; from types import SimpleNamespace
 
 import pytest
 import yaml

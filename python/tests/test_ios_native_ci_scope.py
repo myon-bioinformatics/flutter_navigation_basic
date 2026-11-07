@@ -1,6 +1,5 @@
 """Native SDK work must not delay unrelated web-only changes."""
-from fnmatch import fnmatchcase
-from pathlib import Path
+from fnmatch import fnmatchcase; from pathlib import Path
 
 import pytest
 import yaml

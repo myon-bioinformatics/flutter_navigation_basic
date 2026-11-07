@@ -1,9 +1,6 @@
 """Default-branch-only ADD/HOLD runner. Never removes labels or executes PR code."""
-import json
-import os
-import re
-import subprocess
-from urllib.parse import urlsplit, parse_qs
+import json, os, re, subprocess
+from urllib.parse import parse_qs, urlsplit
 from ci_label_api import pages, open_pulls, _repo, SHA, BAD
 
 

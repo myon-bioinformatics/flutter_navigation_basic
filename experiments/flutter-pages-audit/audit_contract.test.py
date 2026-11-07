@@ -1,20 +1,8 @@
 """Synthetic saved-evidence unit tests, not browser or Flutter execution proof."""
 from __future__ import annotations
 
-from contextlib import contextmanager
-import copy
-import hashlib
-import importlib.util
-import json
-import os
-from pathlib import Path
-import shutil
-import struct
-import subprocess
-import sys
-import tempfile
-import unittest
-import zlib
+import copy, hashlib, importlib.util, json, os, shutil, struct, subprocess, sys, tempfile, unittest, zlib
+from contextlib import contextmanager; from pathlib import Path
 
 SPEC = importlib.util.spec_from_file_location('audit_contract', Path(__file__).with_name('audit_contract.py'))
 audit = importlib.util.module_from_spec(SPEC)

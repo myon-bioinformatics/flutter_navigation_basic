@@ -1,7 +1,5 @@
-import json
+import json, subprocess, sys
 from pathlib import Path
-import subprocess
-import sys
 
 PYTHON_DIR = Path(__file__).resolve().parents[1]
 RUNNER = PYTHON_DIR / "expected_child_failure.py"

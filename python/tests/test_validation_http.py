@@ -1,22 +1,13 @@
 """Real local HTTP input and validation integration contract."""
-import json
-import socket
-import time
-from contextlib import contextmanager
-from pathlib import Path
-from threading import Thread
-from functools import partial
-from urllib.request import Request, urlopen as _urlopen
+import json, socket, sys, time
+from contextlib import contextmanager; from functools import partial; from http.server import ThreadingHTTPServer; from pathlib import Path; from threading import Thread; from urllib.error import HTTPError; from urllib.request import Request, urlopen as _urlopen
 
 # fetch-guard: a stuck local server fails the test in 10 s instead of hanging the CI job.
 urlopen = partial(_urlopen, timeout=10)
-from urllib.error import HTTPError
-from http.server import ThreadingHTTPServer
 
 import pytest
 
 BASE = Path(__file__).resolve().parents[1]
-import sys
 sys.path.insert(0, str(BASE))
 from validation_http import Handler, build_server
 

@@ -6,10 +6,8 @@ and blank/identical reference cards cannot pass. No pixel tolerance is applied.
 """
 from __future__ import annotations
 
-import json
-import math
+import json, math, sys
 from pathlib import Path
-import sys
 
 from image_diff import compare, load
 

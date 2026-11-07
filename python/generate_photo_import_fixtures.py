@@ -15,14 +15,7 @@ personal photos, GPS, or network downloads.
 
 from __future__ import annotations
 
-import argparse
-import hashlib
-import json
-import shutil
-import struct
-import subprocess
-import tempfile
-import zlib
+import argparse, hashlib, json, shutil, struct, subprocess, tempfile, zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]

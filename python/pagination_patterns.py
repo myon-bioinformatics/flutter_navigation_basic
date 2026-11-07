@@ -6,10 +6,7 @@ Infinite scrolling consumes successive pages; it does not imply UI scrolling.
 """
 from __future__ import annotations
 
-import base64
-import hashlib
-import json
-import sys
+import base64, hashlib, json, sys
 
 
 def _check_int(value, name, minimum=0):

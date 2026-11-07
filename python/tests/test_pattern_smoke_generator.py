@@ -1,8 +1,7 @@
 """The generated Dart pattern smoke test covers every api/navigation/ui_theme pattern."""
 from __future__ import annotations
 
-import sys
-import subprocess
+import subprocess, sys
 from pathlib import Path
 
 import pytest

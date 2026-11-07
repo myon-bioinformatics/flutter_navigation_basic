@@ -1,10 +1,6 @@
 """Historical evidence must fail closed on missing/corrupt/mixed page captures."""
-import copy
-import hashlib
-import json
+import copy, hashlib, json, subprocess, sys
 from pathlib import Path
-import subprocess
-import sys
 
 import pytest
 

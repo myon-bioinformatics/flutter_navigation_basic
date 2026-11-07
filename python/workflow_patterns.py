@@ -5,9 +5,7 @@ Python stdlib only. These are deterministic, single-process reference semantics:
 not a database, broker, distributed transaction engine, or persistent scheduler.
 """
 from __future__ import annotations
-import argparse
-import json
-import sys
+import argparse, json, sys
 
 _OPERATIONS = {
     "swap", "move_top", "move_bottom", "insert_sorted", "undo_redo",

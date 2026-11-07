@@ -1,6 +1,5 @@
 """Regression for Python owned Home selections and committed Flutter asset."""
-import importlib.util
-import json
+import importlib.util, json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]

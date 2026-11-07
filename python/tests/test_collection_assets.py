@@ -1,9 +1,7 @@
 """Keep the JSON shipped to Flutter in sync with its collection producers."""
 
-import json
+import json, subprocess, sys
 from pathlib import Path
-import subprocess
-import sys
 
 import pytest
 

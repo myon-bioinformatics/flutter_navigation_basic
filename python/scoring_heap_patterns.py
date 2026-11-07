@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
 """Pure TF-IDF and minimum-heap contracts for patterns 025 and 028."""
 from __future__ import annotations
+import heapq, json, math, re, sys
 from collections import Counter
-import heapq
-import json
-import math
-import re
-import sys
 
 
 def tfidf(documents):

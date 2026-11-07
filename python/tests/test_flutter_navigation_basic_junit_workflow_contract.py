@@ -1,10 +1,6 @@
 """Guard the real workflow's failure/evidence contract, using test-only PyYAML."""
-from copy import deepcopy
-import json
-import os
-from pathlib import Path
-import subprocess
-import tempfile
+import json, os, subprocess, tempfile
+from copy import deepcopy; from pathlib import Path
 
 import pytest
 import yaml

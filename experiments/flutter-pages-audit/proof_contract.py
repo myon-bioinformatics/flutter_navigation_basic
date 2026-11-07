@@ -1,9 +1,6 @@
 """Offline proof-receipt integrity. Collection validity is not UI acceptance."""
-import hashlib
-import json
-import math
+import hashlib, json, math, sys
 from pathlib import Path
-import sys
 import audit_contract as audit
 
 HERE = Path(__file__).resolve().parent

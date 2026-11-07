@@ -6,11 +6,8 @@ root-cause fingerprint: upstream compact JSONL omits messages and tracebacks.
 """
 from __future__ import annotations
 
-import argparse
-import hashlib
-import json
+import argparse, hashlib, json, re
 from pathlib import Path
-import re
 
 
 def load(path: Path | None) -> list[dict]:

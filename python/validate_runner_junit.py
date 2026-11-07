@@ -6,10 +6,8 @@ reports fail closed. Standard-library only.
 """
 from __future__ import annotations
 
-import argparse
+import argparse, sys, xml.etree.ElementTree as ET
 from pathlib import Path
-import sys
-import xml.etree.ElementTree as ET
 
 
 def inspect(path: Path) -> dict[str, int]:

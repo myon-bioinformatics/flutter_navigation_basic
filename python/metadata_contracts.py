@@ -1,7 +1,6 @@
 """Independent metadata integrity decisions for assets and actual Dart exports."""
-import json
+import json, sys
 from pathlib import Path
-import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCALES = {'eng', 'jpn', 'fra', 'spa', 'por', 'ara', 'zho', 'rus', 'ind', 'deu', 'swa'}

@@ -6,12 +6,8 @@ Flutter only displays generated results; it never evaluates predicates.
 """
 from __future__ import annotations
 
-import argparse
-import json
-import math
-from pathlib import Path
-import sys
-from typing import Any
+import argparse, json, math, sys
+from pathlib import Path; from typing import Any
 
 _MISSING = object()
 _MAX_JSON_DEPTH = 256

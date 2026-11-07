@@ -3,11 +3,8 @@
 This does not claim a local Docker/Flutter run: the real browser/server chain is
 covered by curl-runtime.yml. These tests preserve routing, cleanup and exit codes.
 """
+import json, os, subprocess, sys
 from pathlib import Path
-import json
-import os
-import subprocess
-import sys
 
 import pytest
 

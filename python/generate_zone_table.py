@@ -15,13 +15,8 @@ Unknown tzdata provenance fails closed. See docs/GENERATED_ZONE_TABLE.md.
 
 from __future__ import annotations
 
-import argparse
-import json
-import sys
-import zoneinfo
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+import argparse, json, sys, zoneinfo
+from datetime import datetime, timedelta, timezone; from pathlib import Path; from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSET_PATH = ROOT / "assets" / "time" / "zone_table.json"

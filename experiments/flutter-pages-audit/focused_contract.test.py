@@ -1,10 +1,6 @@
 """Synthetic focused-summary negative cases; original receipt validator tested separately."""
-import importlib.util
-import json
+import importlib.util, json, shutil, tempfile, unittest
 from pathlib import Path
-import shutil
-import tempfile
-import unittest
 import focused_contract as focused
 
 class FocusedTests(unittest.TestCase):

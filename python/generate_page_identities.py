@@ -1,6 +1,5 @@
 """Generate stable public-page emoji identities from the Hub catalogue."""
-import argparse
-import json
+import argparse, json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]

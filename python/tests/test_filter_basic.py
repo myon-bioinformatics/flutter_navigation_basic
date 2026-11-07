@@ -1,8 +1,6 @@
 """Focused CLI, generated-asset and CI-collection contracts for FilterBasic."""
-import json
+import json, subprocess, sys
 from pathlib import Path
-import subprocess
-import sys
 
 import pytest
 

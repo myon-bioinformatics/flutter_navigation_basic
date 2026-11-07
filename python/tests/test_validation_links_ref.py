@@ -3,9 +3,8 @@
 The Dart side is verified by validation_pattern_links_test.dart against the
 rendered URLs (with and without SOURCE_REF); this checks the deploy wiring.
 """
+import json, subprocess
 from pathlib import Path
-import json
-import subprocess
 
 import pytest
 import yaml

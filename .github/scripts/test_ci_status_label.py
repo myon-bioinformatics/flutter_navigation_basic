@@ -1,10 +1,6 @@
-import sys
-from pathlib import Path
+import copy, sys, unittest
+from pathlib import Path; from types import SimpleNamespace; from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import copy
-import unittest
-from unittest.mock import patch
-from types import SimpleNamespace
 from add_ci_label import request
 from add_ci_label import confirmed_failure, process
 from ci_label_api import pages, open_pulls

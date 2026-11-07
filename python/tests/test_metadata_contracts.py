@@ -1,7 +1,5 @@
-import copy
-import json
+import copy, json, struct
 from pathlib import Path
-import struct
 import pytest
 from metadata_contracts import ROOT, validate_screens, validate_locales
 

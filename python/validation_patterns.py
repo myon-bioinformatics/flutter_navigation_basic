@@ -6,12 +6,8 @@ fixed allowlist of safe named patterns, never user-provided regular expressions.
 """
 from __future__ import annotations
 
-from datetime import date
-import json
-import math
-import re
-import sys
-from urllib.parse import urlsplit
+import json, math, re, sys
+from datetime import date; from urllib.parse import urlsplit
 
 NAMED_PATTERNS = {
     "ascii_identifier": r"[A-Za-z_][A-Za-z_0-9]*",

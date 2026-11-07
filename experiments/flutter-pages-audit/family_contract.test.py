@@ -1,13 +1,6 @@
 """Synthetic 48-receipt discovery tests; never browser execution evidence."""
-import copy
-import hashlib
-import importlib.util
-import json
-from pathlib import Path
-import shutil
-import tempfile
-import unittest
-from unittest.mock import patch
+import copy, hashlib, importlib.util, json, shutil, tempfile, unittest
+from pathlib import Path; from unittest.mock import patch
 import family_contract as family
 
 class FamilyTests(unittest.TestCase):

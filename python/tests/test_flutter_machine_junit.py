@@ -1,8 +1,6 @@
 """Flutter machine reporter conversion regressions."""
-import importlib.util
-import json
+import importlib.util, json, xml.etree.ElementTree as ET
 from pathlib import Path
-import xml.etree.ElementTree as ET
 import pytest
 
 SCRIPT = Path(__file__).resolve().parents[1] / "flutter_machine_junit.py"
