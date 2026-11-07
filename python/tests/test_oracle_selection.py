@@ -34,11 +34,11 @@ def test_fallback_agrees_with_executed_primary_workflow(paths, classify_workflow
 
 def test_selector_changes_exercise_fallback_even_with_primary_tests():
     assert selection.fallback_required(['python/oracle_selection.py'])
-    assert selection.fallback_required(['.github/workflows/dart.yml', 'python/test.py'])
+    assert selection.fallback_required(['.github/workflows/ci.yml', 'python/test.py'])
 
 
 def test_pure_dart_diff_selects_fallback_job_junit_and_receipt(classify_workflow_asset):
-    workflow = yaml.safe_load((ROOT/'.github/workflows/dart.yml').read_text())
+    workflow = yaml.safe_load((ROOT/'.github/workflows/ci.yml').read_text())
     actual = classify_workflow_asset(workflow, ['lib/shared/clipboard/base64_image_bridge.dart'])
     assert actual['flutter'] == 'true'
     assert selection.fallback_required(['lib/shared/clipboard/base64_image_bridge.dart'])

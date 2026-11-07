@@ -65,7 +65,7 @@ def test_missing_companion_is_not_accepted(monkeypatch, tmp_path):
 
 
 def test_existing_workflow_builds_use_companions_and_keep_native_scope():
-    expected = {"dart.yml": 2, "flutter-pages.yml": 1, "ios-native.yml": 2,
+    expected = {"ci.yml": 2, "pages.yml": 1, "ios-native.yml": 2,
                 "diagnostics-evidence.yml": 1, "structure-refactor-validation.yml": 1,
                 "non-dart.yml": 1}
     for name, count in expected.items():

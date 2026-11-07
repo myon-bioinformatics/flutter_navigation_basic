@@ -20,7 +20,7 @@ class PatternSourceLinks extends StatelessWidget {
   /// (label, repository-relative path), in display order.
   final List<(String, String)> links;
 
-  // GitHub Pages builds pass the deployed commit (flutter-pages.yml) so links
+  // GitHub Pages builds pass the deployed commit (pages.yml) so links
   // match the deployed code; builds without SOURCE_REF fall back to main.
   static const _ref = String.fromEnvironment('SOURCE_REF', defaultValue: 'main');
   static const repositoryBase =
