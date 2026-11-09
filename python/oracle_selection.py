@@ -4,10 +4,8 @@ The primary workflow stays byte-identical to its registered vendor hash.
 Selection changes exercise the fallback itself; ordinary mixed changes have
 one full-suite owner. The regression tests execute the real primary filter.
 """
-import argparse
-from fnmatch import fnmatchcase
-from pathlib import Path
-import subprocess
+import argparse, subprocess
+from fnmatch import fnmatchcase; from pathlib import Path
 
 PRIMARY_PATHS = ('python/*', 'assets/time/*', 'assets/data_processing/*',
                  'test/fixtures/photo_studio/import_compat/*', 'lib/features/*_patterns/*',

@@ -1,9 +1,6 @@
 """Contract tests for stdlib producer used by catalogue 114-120."""
-import importlib.util
-import json
+import importlib.util, json, subprocess, sys
 from pathlib import Path
-import subprocess
-import sys
 import pytest
 
 SCRIPT = Path(__file__).resolve().parents[1] / "collection_transform.py"

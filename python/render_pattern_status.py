@@ -6,8 +6,7 @@ completion. In particular a standalone producer is not a Flutter integration.
 """
 from __future__ import annotations
 
-import argparse
-import json
+import argparse, json
 from pathlib import Path
 
 

@@ -2,12 +2,8 @@
 """Generate deterministic text-search examples for the Flutter catalogue."""
 from __future__ import annotations
 
-import argparse
-from collections import defaultdict
-import json
-from pathlib import Path
-import re
-from typing import Any
+import argparse, json, re
+from collections import defaultdict; from pathlib import Path; from typing import Any
 
 DOCUMENTS = [
     {"id": "doc-1", "text": "Flutter renders portable user interfaces"},

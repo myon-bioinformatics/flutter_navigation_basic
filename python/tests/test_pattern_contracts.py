@@ -1,5 +1,4 @@
-import copy
-import xml.etree.ElementTree as ET
+import copy, xml.etree.ElementTree as ET
 import pytest
 from pattern_contracts import EXPECTED_IDS, validate, write_junit
 from generate_pattern_contracts import TARGET, generate

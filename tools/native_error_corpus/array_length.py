@@ -1,6 +1,5 @@
 """Independent Python operations for the explicit first error sweep."""
-import json
-import sys
+import json, sys
 
 request = json.load(sys.stdin)
 operation = request.get("operation", "array_length")

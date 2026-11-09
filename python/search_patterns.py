@@ -6,9 +6,7 @@ limited English suffix heuristic, not a linguistic stemmer.
 """
 from __future__ import annotations
 
-import json
-import sys
-import unicodedata
+import json, sys, unicodedata
 
 
 def normalized(text):

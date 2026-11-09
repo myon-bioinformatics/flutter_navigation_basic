@@ -6,15 +6,8 @@ stdlib-only, read-only, deterministic, CI-friendly.
 """
 from __future__ import annotations
 
-import argparse
-import hashlib
-from fnmatch import fnmatchcase
-from collections import Counter
-import json
-from pathlib import Path
-import re
-import sys
-import tomllib
+import argparse, hashlib, json, re, sys, tomllib
+from collections import Counter; from fnmatch import fnmatchcase; from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from check_route_observations import known_widgets  # noqa: E402  single source of widget kinds

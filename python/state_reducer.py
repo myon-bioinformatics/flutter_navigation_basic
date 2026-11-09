@@ -4,9 +4,7 @@
 No Flutter lifecycle, GetX or Redux middleware is implied.
 """
 from __future__ import annotations
-import argparse
-import json
-import sys
+import argparse, json, sys
 
 OPS = {"set", "increment", "decrement", "reset"}
 

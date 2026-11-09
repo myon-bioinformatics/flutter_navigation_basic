@@ -1,6 +1,5 @@
 """Guard the shipped transitions, provenance, and asset-only CI routing."""
-import importlib.util
-import json
+import importlib.util, json
 from pathlib import Path
 
 import pytest

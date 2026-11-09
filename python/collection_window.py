@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Portable collection-window state transitions for catalogue examples."""
 from __future__ import annotations
-import argparse
-import json
+import argparse, json
 
 INTERACTIVE_MODES = ("selectable", "swipe-delete", "reorderable", "checklist")
 

@@ -4,8 +4,7 @@ The editor shows ``display.text(issue.code)``; a missing key is rendered as the
 raw code (``httpDraft.curl.error.shellMeta``). Codes come from both producers:
 the Python parser and the Dart transport/legacy parser.
 """
-import json
-import re
+import json, re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]

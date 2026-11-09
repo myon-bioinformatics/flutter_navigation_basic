@@ -1,8 +1,6 @@
 """The list-selection CLI is a portable stdlib runtime boundary."""
-import json
+import json, subprocess, sys
 from pathlib import Path
-import subprocess
-import sys
 
 import pytest
 

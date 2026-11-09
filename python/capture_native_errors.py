@@ -3,18 +3,8 @@
 Run in a disposable CI checkout. No SDK installation, deployment or permanent
 source mutation here. The workflow supplies the toolchains and pinned xprobe.
 """
-import argparse
-from concurrent.futures import ThreadPoolExecutor
-import copy
-import hashlib
-import json
-import os
-from pathlib import Path
-import re
-import signal
-import subprocess
-import sys
-import xml.etree.ElementTree as ET
+import argparse, copy, hashlib, json, os, re, signal, subprocess, sys, xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor; from pathlib import Path
 
 CASES = (("empty", 0), ("three", 3), ("negative", -1))
 BUILDS = {

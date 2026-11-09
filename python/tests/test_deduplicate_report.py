@@ -1,8 +1,6 @@
 """Pattern 113 reports deduplication validation without duplicating Dart logic."""
-import json
+import json, subprocess, sys
 from pathlib import Path
-import subprocess
-import sys
 
 import pytest
 

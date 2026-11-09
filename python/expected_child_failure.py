@@ -3,10 +3,8 @@
 
 from __future__ import annotations
 
-import argparse
-import json
+import argparse, json, subprocess
 from pathlib import Path
-import subprocess
 
 DEFAULT_TIMEOUT = 30.0
 MAX_STREAM_BYTES = 1024 * 1024

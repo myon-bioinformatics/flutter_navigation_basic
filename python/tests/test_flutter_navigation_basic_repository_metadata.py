@@ -1,10 +1,6 @@
 """Canonical checkout identity, portable tooling, Pages gating, and exact vendoring."""
-import hashlib
-import json
+import hashlib, json, runpy, subprocess, sys
 from pathlib import Path
-import runpy
-import subprocess
-import sys
 
 import pytest
 

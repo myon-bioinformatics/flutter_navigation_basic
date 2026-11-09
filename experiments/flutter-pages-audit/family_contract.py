@@ -1,10 +1,6 @@
 """Read-only 48-case discovery evidence validation; never promotes acceptance."""
-import hashlib
-import json
-import math
-import os
+import hashlib, json, math, os, sys
 from pathlib import Path
-import sys
 import audit_contract as audit
 import focused_contract as focused
 

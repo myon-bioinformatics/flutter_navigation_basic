@@ -6,14 +6,8 @@ verified, 1: evidence/layout mismatch, 2: invalid CLI/input. Stdlib only.
 """
 from __future__ import annotations
 
-import argparse
-import hashlib
-import json
-import math
-from pathlib import Path
-import re
-import sys
-from urllib.parse import urlsplit
+import argparse, hashlib, json, math, re, sys
+from pathlib import Path; from urllib.parse import urlsplit
 
 from vendor.check_png import dimensions as png_dimensions
 

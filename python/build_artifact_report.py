@@ -10,12 +10,8 @@ Distinct from ``build_tools/build_metadata.dart`` / ``build_tools/inspect.dart``
 
 from __future__ import annotations
 
-import argparse
-import gzip
-import json
-import sys
-from pathlib import Path
-from typing import Any
+import argparse, gzip, json, sys
+from pathlib import Path; from typing import Any
 
 ASSET_EXTENSIONS = {
     ".png",

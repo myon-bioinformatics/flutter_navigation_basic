@@ -5,10 +5,8 @@ that reuse installed Chromium/WebKit binaries and intentionally run only the
 small @portable representative-flow subset.
 """
 
+import json, re, shlex
 from pathlib import Path
-import json
-import re
-import shlex
 
 import yaml
 

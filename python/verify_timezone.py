@@ -3,11 +3,8 @@
 
 from __future__ import annotations
 
-import json
-import sys
-from datetime import datetime
-from pathlib import Path
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+import json, sys
+from datetime import datetime; from pathlib import Path; from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 FIXTURE_PATH = Path(__file__).with_name("fixtures") / "timezone_cases.json"
 REQUIRED_CASE_KEYS = {"zone", "utc", "local", "offset_minutes", "is_dst"}

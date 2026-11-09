@@ -1,9 +1,6 @@
 """Regression tests for pagination patterns 031-033."""
-import importlib.util
+import importlib.util, json, subprocess, sys
 from pathlib import Path
-import json
-import subprocess
-import sys
 import pytest
 
 SCRIPT = Path(__file__).resolve().parents[1] / "pagination_patterns.py"

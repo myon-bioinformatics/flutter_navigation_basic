@@ -15,8 +15,7 @@ still round-tripped here but their service is not run (it may do network I/O).
 
 from __future__ import annotations
 
-import argparse
-import sys
+import argparse, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]

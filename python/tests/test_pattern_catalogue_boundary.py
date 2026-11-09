@@ -6,9 +6,8 @@ boundary test on changes that could add Dart imports or alter Docker context.
 
 from __future__ import annotations
 
-import fnmatch
+import fnmatch, subprocess
 from pathlib import Path
-import subprocess
 
 import pytest
 

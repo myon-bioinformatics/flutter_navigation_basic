@@ -7,13 +7,8 @@ Fails on any difference in count, widget kind or id. Standard library only.
 """
 from __future__ import annotations
 
-import argparse
-import hashlib
-import json
-import os
+import argparse, hashlib, json, os, sys, tomllib
 from pathlib import Path
-import sys
-import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 

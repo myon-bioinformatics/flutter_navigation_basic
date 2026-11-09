@@ -1,8 +1,5 @@
-import importlib.util
-import json
+import importlib.util, json, subprocess, sys
 from pathlib import Path
-import subprocess
-import sys
 
 ROOT=Path(__file__).resolve().parents[2]
 SCRIPT=ROOT/"python/collection_structure.py"

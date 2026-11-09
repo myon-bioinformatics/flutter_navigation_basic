@@ -1,8 +1,6 @@
 """Offline workflow event/scope tests; no workflow or browser is dispatched."""
-import json
-import runpy
+import json, runpy, unittest
 from pathlib import Path
-import unittest
 ROOT=Path(__file__).resolve().parents[2]
 WORKFLOW=ROOT/'.github/workflows/flutter-audit-focused-diagnostic.yml'
 

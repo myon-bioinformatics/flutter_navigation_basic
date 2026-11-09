@@ -7,10 +7,7 @@ This is real, independently callable processing, not a Flutter runtime dependenc
 """
 from __future__ import annotations
 
-import argparse
-import json
-import math
-import sys
+import argparse, json, math, sys
 from collections.abc import Mapping
 
 _MISSING = object()

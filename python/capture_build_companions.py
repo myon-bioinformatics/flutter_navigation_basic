@@ -3,14 +3,8 @@
 No SDK installation, native-build reuse, browser startup or OS impersonation.
 The caller supplies a JSON argv; no command text is evaluated by a shell.
 """
-import argparse
-from datetime import datetime, timezone
-import hashlib
-import json
-import os
-from pathlib import Path
-import platform
-import sys
+import argparse, hashlib, json, os, platform, sys
+from datetime import datetime, timezone; from pathlib import Path
 
 from capture_native_errors import add_probe_tools_to_path, case_manifest, companion_rows, default_seed, invoke
 

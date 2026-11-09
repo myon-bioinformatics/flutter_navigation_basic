@@ -5,10 +5,7 @@ a small local JSON receipt. The original JUnit remains the canonical CI artifact
 """
 from __future__ import annotations
 
-import json
-import subprocess
-import sys
-import xml.etree.ElementTree as ET
+import json, subprocess, sys, xml.etree.ElementTree as ET
 from pathlib import Path
 
 

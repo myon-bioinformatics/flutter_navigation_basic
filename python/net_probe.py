@@ -9,13 +9,7 @@ byte identical (e.g. certificate subject/issuer formatting).
 
 from __future__ import annotations
 
-import hashlib
-import socket
-import ssl
-import sys
-import time
-import urllib.error
-import urllib.request
+import hashlib, socket, ssl, sys, time, urllib.error, urllib.request
 from urllib.parse import urlsplit
 
 _NETWORK_TIMEOUT = 10.0

@@ -6,14 +6,8 @@ current source graph only; it must never be reported as a Dart execution pass.
 """
 from __future__ import annotations
 
-import argparse
-import hashlib
-import json
+import argparse, hashlib, json, re, shutil, subprocess, sys
 from pathlib import Path
-import re
-import shutil
-import subprocess
-import sys
 
 from generate_pattern_contracts import generate, TARGET
 from pattern_contracts import validate, write_junit

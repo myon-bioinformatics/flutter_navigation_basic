@@ -1,13 +1,8 @@
 #!/usr/bin/env python3
 """Pure stdlib data conversion contracts for patterns 103-105, 107, 109-110."""
 from __future__ import annotations
+import base64, json, math, re, sys, unicodedata
 from datetime import date
-import base64
-import json
-import math
-import re
-import sys
-import unicodedata
 
 # ASCII-only decimal/scientific notation. float() alone would also accept
 # underscores ("1_000"), surrounding spaces and non-ASCII digits ("١٢").

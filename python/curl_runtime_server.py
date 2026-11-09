@@ -7,14 +7,8 @@ request is executed. Bind and accepted Host/Origin are deliberately loopback-onl
 """
 from __future__ import annotations
 
-import argparse
-from functools import partial
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-import json
-from pathlib import Path
-import socket
-import sys
-import threading
+import argparse, json, socket, sys, threading
+from functools import partial; from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer; from pathlib import Path
 
 from curl_request import MAX_INPUT_BYTES, parse_curl
 

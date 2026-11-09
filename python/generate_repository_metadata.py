@@ -7,10 +7,8 @@ Git identity, v1 validation and serialization live in vendor/gh_identity.py
 """
 from __future__ import annotations
 
-import argparse
-import os
+import argparse, os, sys
 from pathlib import Path
-import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "vendor"))
 import gh_identity as ghi
