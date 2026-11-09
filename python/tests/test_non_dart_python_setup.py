@@ -58,7 +58,7 @@ def test_vendor_setup_contract_rejects_runner_python_fallback(mutation):
 
 
 CACHE_JOBS = (
-    ('dart.yml', 'python-oracle-fallback'),
+    ('ci.yml', 'python-oracle-fallback'),
     ('non-dart.yml', 'pattern-boundary'),
     ('non-dart.yml', 'python-vendor-locked'),
     ('non-dart.yml', 'python-pytest'),

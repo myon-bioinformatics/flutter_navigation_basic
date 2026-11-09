@@ -43,10 +43,10 @@ def test_no_per_pattern_template_tests_remain():
     "test/features/api_patterns/pattern_001_to_099/pattern_001_test.dart",
     "lib/features/navigation_patterns/pattern_100_to_198/pattern_198/service.dart",
     "ci/flutter_pattern_test_paths.txt",
-    ".github/workflows/dart.yml",
+    ".github/workflows/ci.yml",
 ])
 def test_smoke_changes_select_flutter_and_pattern_shards(path):
-    workflow = yaml.safe_load((gen.ROOT / ".github/workflows/dart.yml").read_text())
+    workflow = yaml.safe_load((gen.ROOT / ".github/workflows/ci.yml").read_text())
     script = workflow["jobs"]["changes"]["steps"][1]["run"]
     # Execute the real classifier, supplying one changed path without GitHub/git.
     classifier = script[script.index("flutter=false"):].split("\n{", 1)[0]
@@ -62,7 +62,7 @@ def test_ci_keeps_smoke_dedicated_tests_and_independent_contracts():
     paths = (gen.ROOT / "ci/flutter_pattern_test_paths.txt").read_text().splitlines()
     assert "test/features/catalogue_smoke_patterns" in paths
     assert "test/features/api_patterns" in paths
-    workflow = yaml.safe_load((gen.ROOT / ".github/workflows/dart.yml").read_text())
+    workflow = yaml.safe_load((gen.ROOT / ".github/workflows/ci.yml").read_text())
     jobs = workflow["jobs"]
     assert jobs["unit-tests-patterns"]["strategy"]["matrix"]["shard"] == [0, 1, 2, 3]
     assert any("check_pattern_smoke_mutations.py" in step.get("run", "")

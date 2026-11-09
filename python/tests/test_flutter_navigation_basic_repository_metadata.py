@@ -178,7 +178,7 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
 
 
 def test_pages_generates_only_after_checkout_gate_and_embeds_asset():
-    workflow = (ROOT / ".github/workflows/flutter-pages.yml").read_text()
+    workflow = (ROOT / ".github/workflows/pages.yml").read_text()
     assert "github.event.workflow_run.head_branch == 'main'" in workflow
     assert workflow.index("Verify checkout matches gated SHA") < workflow.index("generate_repository_metadata.py --expected-sha")
     assert workflow.index("generate_repository_metadata.py --expected-sha") < workflow.index("meta --platform web --repository-metadata") < workflow.index("uses: ./.github/actions/build-companions")

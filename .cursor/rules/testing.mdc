@@ -32,7 +32,7 @@ When relevant and available:
 - Prefer parsing fixtures via `BuildMetadata.fromJson` (or equivalent pure helpers) when testing diagnostics metadata compatibility.
 - Pip Python deps are allowlisted only at `python/requirements.txt` for light calculation/oracle tests. Keep Flutter widget tests in Dart.
 - Shared calculation goldens live under `python/fixtures/` and should be asserted from both Dart and pytest when both exist.
-- GitHub Pages deploys via `workflow_run` only after the Flutter workflow succeeds on `main`.
+- GitHub Pages deploys via `workflow_run` only after the CI workflow (`ci.yml`) succeeds on `main`.
 - Use `python3 python/test.py --actions-latest` (or `dart run build_tools/dev.dart py --actions-latest`) to reuse the latest CI conclusion instead of re-checking jobs by hand.
 - Prefer stdlib one-liners (`python3 -m json.tool`, `python3 -m zipfile`, `python3 -m http.server`) for quick inspection of receipts and artifacts.
 
