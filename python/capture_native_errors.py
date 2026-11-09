@@ -308,6 +308,12 @@ def capture(root, out, language, *, timeout=1500, baseline_receipt=None, seed=No
             "native_equivalence_verified": False}
 
 
+def add_probe_tools_to_path(probe_tools: Path) -> None:
+    """Make xprobe's contract_probe importable from a checkout of either layout (root or scripts/)."""
+    root = probe_tools.resolve()
+    sys.path[:0] = [str(root), str(root / "scripts")]
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--language", choices=tuple(BUILDS), required=True)
@@ -316,7 +322,7 @@ def main(argv=None):
     parser.add_argument("--baseline-receipt", type=Path)
     parser.add_argument("--seed", help="Replay seed; defaults to GITHUB_RUN_ID:GITHUB_RUN_ATTEMPT (local:1 locally)")
     args = parser.parse_args(argv)
-    sys.path.insert(0, str(args.probe_tools.resolve()))
+    add_probe_tools_to_path(args.probe_tools)
     from contract_probe import write_junit
     result = capture(Path(__file__).resolve().parents[1], args.output, args.language, baseline_receipt=args.baseline_receipt, seed=args.seed)
     (args.output / "receipt.json").write_text(json.dumps(result, ensure_ascii=True, indent=2), encoding="utf-8")
