@@ -172,7 +172,7 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
     pin = "26c442bc51b8a2837fe2556782b2937f396932af"
     assert workflow.count(f"ref: {pin}") == 1
     assert "vendor_sync.py update --manifest python/vendor.lock.json" not in workflow
-    assert workflow.count("vendor_sync.py materialize --manifest python/vendor.lock.json") == 1
+    assert workflow.count("vendor_sync.py recreate --manifest python/vendor.lock.json") == 1
     assert not any(token in workflow for token in ("VENDOR_UPDATE_TOKEN", "VENDOR_UPDATES_ENABLED", "GH_TOKEN"))
     assert pin in (PYTHON_DIR / "README.md").read_text(encoding="utf-8")
 
