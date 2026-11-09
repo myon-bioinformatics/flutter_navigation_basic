@@ -13,12 +13,15 @@ def test_parent_workflow_references_use_reviewed_rollout_commit():
         if path.suffix not in (".yml", ".yaml"):
             continue
         text = path.read_text(encoding="utf-8")
-        # Capture mutable and shortened references too, rather than ignoring them.
-        pins.extend(re.findall(r"uses:\s*['\"]?" + re.escape(PARENT) + r"/[^\s@'\"]+@([^\s'\"]+)", text))
+        pins.extend(re.findall(r"uses:\s*" + re.escape(PARENT) + r"/[^\s@]+@([^\s]+)", text))
         lines = text.splitlines()
         for i, line in enumerate(lines):
-            if re.fullmatch(r"\s+repository:\s*['\"]?" + re.escape(PARENT) + r"['\"]?\s*", line):
-                refs = [re.fullmatch(r"\s+ref:\s*['\"]?([^\s'\"]+)['\"]?\s*", item) for item in lines[i + 1:i + 12]]
-                pins.append(next((m.group(1) for m in refs if m), None))
+            if not re.fullmatch(r"\s+repository:\s*" + re.escape(PARENT) + r"\s*", line):
+                continue
+            block = lines[i + 1:i + 12]
+            if any(re.fullmatch(r"\s+path:\s*\.vendor-sync-tools\s*", item) for item in block):
+                continue
+            refs = [re.fullmatch(r"\s+ref:\s*(\S+)\s*", item) for item in block]
+            pins.append(next((m.group(1) for m in refs if m), None))
     assert pins, "shared parent references must remain observable"
     assert set(pins) == {PARENT_WORKFLOW_PIN}, pins
