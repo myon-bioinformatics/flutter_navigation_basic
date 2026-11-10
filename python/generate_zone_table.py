@@ -203,11 +203,11 @@ def render(table: dict[str, object]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def main() -> int:
+def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--check", action="store_true", help="Fail if the committed asset is stale.")
     parser.add_argument("--stdout", action="store_true", help="Print instead of writing.")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     expected = build_table()
     text = render(expected)

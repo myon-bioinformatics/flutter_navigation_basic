@@ -53,7 +53,7 @@ def audit(root: Path) -> dict[str, object]:
     return result
 
 
-def main() -> int:
+def main(argv=None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--root",
@@ -61,7 +61,7 @@ def main() -> int:
         default=Path(__file__).resolve().parents[1],
     )
     parser.add_argument("--json", action="store_true")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     try:
         result = audit(args.root.resolve())
     except (OSError, ValueError) as error:

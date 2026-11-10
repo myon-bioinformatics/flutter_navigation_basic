@@ -77,7 +77,7 @@ def render_fixture() -> str:
     return json.dumps(build_fixture(), ensure_ascii=False, indent=2) + "\n"
 
 
-def main() -> int:
+def main(argv=None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--check",
@@ -89,7 +89,7 @@ def main() -> int:
         action="store_true",
         help="Print generated JSON instead of writing the fixture.",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     expected = build_fixture()
     if args.stdout:

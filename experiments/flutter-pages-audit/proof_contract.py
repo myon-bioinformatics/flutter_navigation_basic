@@ -1,5 +1,5 @@
 """Offline proof-receipt integrity. Collection validity is not UI acceptance."""
-import hashlib, json, math, sys
+import hashlib, json, math, subprocess, sys
 from pathlib import Path
 import audit_contract as audit
 
@@ -9,7 +9,17 @@ PHASES = ('spatial-initial', 'spatial-reference-1600', 'spatial-reference-1720',
 def read_json(path):
     return json.loads(Path(path).read_text(), parse_constant=lambda value: (_ for _ in ()).throw(ValueError('nonfinite JSON')))
 
-def inventory():
+def historical_bytes(reference, name):
+    """Read exact committed bytes, without any working-tree fallback."""
+    result = subprocess.run(['git', '-C', str(audit.ROOT), 'show', reference + ':' + name], capture_output=True)
+    if result.returncode:
+        raise ValueError('historical reference/blob unavailable: ' + reference + ':' + name)
+    return result.stdout
+
+
+def inventory(source_mode='current'):
+    if source_mode not in ('current', 'historical'):
+        raise ValueError('explicit current or historical source mode required')
     source = read_json(HERE/'source-adapter.json')
     selection = read_json(HERE/'proof-selection.json')
     if source.get('referenceSha') != audit.REFERENCE_SHA or source.get('caseCount') != 48 or selection.get('caseCount') != 8:
@@ -18,13 +28,23 @@ def inventory():
         raise ValueError('User requested no new measurement: live execution must remain disabled')
     if selection.get('referenceHeights') != [1600, 1720] or selection.get('retries') != 0 or selection.get('sourceProofAcceptanceEnabled') is not False:
         raise ValueError('unexpected measurement or acceptance policy')
+    problems = []
     for name, digest in {**source['sourceHashes'], **source['additionalChromeSourceHashes']}.items():
         path = Path(name)
         if path.is_absolute() or '..' in path.parts or not audit.SHA256.fullmatch(digest):
             raise ValueError('invalid source path/hash')
-        local = audit.ROOT/path
-        if local.is_symlink() or not local.resolve().is_relative_to(audit.ROOT.resolve()) or hashlib.sha256(local.read_bytes()).hexdigest() != digest:
-            raise ValueError('source drift: '+name)
+        if source_mode == 'historical':
+            actual = hashlib.sha256(historical_bytes(source['referenceSha'], name)).hexdigest()
+            if actual != digest:
+                problems.append('historical source hash mismatch: ' + name)
+        else:
+            local = audit.ROOT/path
+            if local.is_symlink() or not local.resolve().is_relative_to(audit.ROOT.resolve()) or not local.is_file():
+                problems.append('current source missing/unsafe: ' + name)
+            elif hashlib.sha256(local.read_bytes()).hexdigest() != digest:
+                problems.append('current source drift: ' + name)
+    if problems:
+        raise ValueError('\n'.join(problems))
     expected = {(route, viewport) for route in selection['routes'] for viewport in selection['viewports']}
     if len(expected) != 8 or not expected.issubset({(case['route'],case['viewportId']) for case in source['cases']}):
         raise ValueError('unbound route selection')
@@ -144,8 +164,21 @@ def aggregate(directory, candidate):
             'observedPairs':sorted(seen),'acceptancePromoted':False,'uiAcceptance':'unverified','liveExecutionEnabled':False,
             'full430Result':full['result'],'full430Complete':full['coverage']['completeExactlyOnce']}
 
-if __name__=='__main__':
-    if sys.argv[1:]==['check-source']:
-        inventory();print('Offline source hashes and disabled-live policy verified; no browser measurements.')
-    else:
-        raise SystemExit('Only offline check-source CLI is enabled. No live measurement is requested.')
+
+def main(argv=None):
+    argv = sys.argv[1:] if argv is None else list(argv)
+    modes = {'check-source': 'current', 'check-current-source': 'current',
+             'check-historical-source': 'historical'}
+    if len(argv) != 1 or argv[0] not in modes:
+        raise SystemExit('Only offline source checks are enabled. No live measurement is requested.')
+    mode = modes[argv[0]]
+    try:
+        inventory(mode)
+    except (ValueError, OSError) as error:
+        raise SystemExit(str(error))
+    print(mode + ' source integrity and disabled-live policy verified; '
+          'no browser measurements or current UI acceptance.')
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

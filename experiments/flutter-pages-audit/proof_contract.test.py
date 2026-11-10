@@ -32,7 +32,7 @@ class ProofContracts(unittest.TestCase):
     def problems(self):return proof.proof_problems(self.receipt,*self.args)
     def test_valid_capture_packet_is_not_ui_acceptance(self):self.assertEqual(self.problems(),[]);self.assertFalse(self.receipt['observations']['familyProof']['acceptancePromoted'])
     def test_legacy_remains_unmeasured(self):self.receipt['observations'].clear();self.assertIn('legacy',self.problems()[0])
-    def test_disabled_live_source_inventory(self):source,selection,pairs=proof.inventory();self.assertFalse(selection['liveExecutionEnabled']);self.assertEqual(len(pairs),8)
+    def test_disabled_live_source_inventory(self):source,selection,pairs=proof.inventory('historical');self.assertFalse(selection['liveExecutionEnabled']);self.assertEqual(len(pairs),8)
 
 for name, mutate in {
  'wrong_source_digest':lambda p:p.update(sourceManifestSha256='c'*64),

@@ -9,6 +9,39 @@ on:
       - '.github/scripts/add_ci_label.py'
       - '.github/scripts/ci_label_api.py'
       - '.github/scripts/test_ci_status_label.py'
+      - '.github/workflows/flutter-pages.yml'
+      - '.github/workflows/pages.yml'
+      - 'assets/display/app_text.json'
+      - 'assets/screens.json'
+      - 'assets/ui_showcase.json'
+      - 'lib/config.dart'
+      - 'lib/config/app_config.dart'
+      - 'lib/core/data_processing/conversion_pattern_links.dart'
+      - 'lib/core/data_processing/interactive_pattern_example.dart'
+      - 'lib/core/data_processing/native_parallel_pattern_example.dart'
+      - 'lib/core/data_processing/pattern_source_links.dart'
+      - 'lib/core/data_processing/validation_pattern_links.dart'
+      - 'lib/core/utils/url_params.dart'
+      - 'lib/data/ironies.dart'
+      - 'lib/data/mock_api_client.dart'
+      - 'lib/features/irony_generator/domain/irony_generator_controller.dart'
+      - 'lib/features/irony_generator/presentation/irony_generator_page.dart'
+      - 'lib/features/screen5/domain/screen5_controller.dart'
+      - 'lib/features/screen5/presentation/screen5_page.dart'
+      - 'lib/main.dart'
+      - 'lib/screens/generic_screen.dart'
+      - 'lib/screens/hub_screen.dart'
+      - 'lib/screens/mcp_integration_screen.dart'
+      - 'lib/screens/pattern_template_screen.dart'
+      - 'lib/screens/ui_showcase_screen.dart'
+      - 'lib/shared/catalog/catalog_search.dart'
+      - 'lib/shared/diagnostics/build_metadata.dart'
+      - 'lib/shared/diagnostics/route_diagnostics_observer.dart'
+      - 'lib/shared/diagnostics/weight_badge_overlay.dart'
+      - 'lib/shared/mcp/mcp_protocol.dart'
+      - 'lib/shared/navigation/page_identities.g.dart'
+      - 'lib/shared/widgets/standard_page_header.dart'
+      - 'lib/shared/widgets/tool_door_selector.dart'
       - 'experiments/flutter-pages-audit/**'
       - 'experiments/ui-showcase-html/**'
       - '.github/workflows/ci-status-label.yml'
@@ -22,6 +55,39 @@ on:
       - '.github/scripts/add_ci_label.py'
       - '.github/scripts/ci_label_api.py'
       - '.github/scripts/test_ci_status_label.py'
+      - '.github/workflows/flutter-pages.yml'
+      - '.github/workflows/pages.yml'
+      - 'assets/display/app_text.json'
+      - 'assets/screens.json'
+      - 'assets/ui_showcase.json'
+      - 'lib/config.dart'
+      - 'lib/config/app_config.dart'
+      - 'lib/core/data_processing/conversion_pattern_links.dart'
+      - 'lib/core/data_processing/interactive_pattern_example.dart'
+      - 'lib/core/data_processing/native_parallel_pattern_example.dart'
+      - 'lib/core/data_processing/pattern_source_links.dart'
+      - 'lib/core/data_processing/validation_pattern_links.dart'
+      - 'lib/core/utils/url_params.dart'
+      - 'lib/data/ironies.dart'
+      - 'lib/data/mock_api_client.dart'
+      - 'lib/features/irony_generator/domain/irony_generator_controller.dart'
+      - 'lib/features/irony_generator/presentation/irony_generator_page.dart'
+      - 'lib/features/screen5/domain/screen5_controller.dart'
+      - 'lib/features/screen5/presentation/screen5_page.dart'
+      - 'lib/main.dart'
+      - 'lib/screens/generic_screen.dart'
+      - 'lib/screens/hub_screen.dart'
+      - 'lib/screens/mcp_integration_screen.dart'
+      - 'lib/screens/pattern_template_screen.dart'
+      - 'lib/screens/ui_showcase_screen.dart'
+      - 'lib/shared/catalog/catalog_search.dart'
+      - 'lib/shared/diagnostics/build_metadata.dart'
+      - 'lib/shared/diagnostics/route_diagnostics_observer.dart'
+      - 'lib/shared/diagnostics/weight_badge_overlay.dart'
+      - 'lib/shared/mcp/mcp_protocol.dart'
+      - 'lib/shared/navigation/page_identities.g.dart'
+      - 'lib/shared/widgets/standard_page_header.dart'
+      - 'lib/shared/widgets/tool_door_selector.dart'
       - 'experiments/flutter-pages-audit/**'
       - 'experiments/ui-showcase-html/**'
       - '.github/workflows/ci-status-label.yml'
@@ -39,6 +105,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: '26'
@@ -54,5 +121,17 @@ jobs:
           for test_file in experiments/flutter-pages-audit/*.test.py; do
             python3 -B -S "$test_file"
           done
-          python3 -B -S experiments/flutter-pages-audit/proof_contract.py check-source
+          python3 -B -S experiments/flutter-pages-audit/proof_contract.py check-historical-source
           python3 -B -S .github/scripts/test_ci_status_label.py
+
+  current-source-compatibility:
+    name: Proposed current source compatibility (not UI acceptance)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify independently versioned current-source projection
+        run: python3 -B -S experiments/flutter-pages-audit/current_source_projection.py
