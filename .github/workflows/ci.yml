@@ -1,4 +1,4 @@
-name: Flutter
+name: CI
 
 on:
   push:
@@ -64,7 +64,7 @@ jobs:
               python/*)
                 python=true
                 ;;
-              lib/*|test/*|assets/*|web/*|android/*|ios/*|linux/*|macos/*|windows/*|pubspec.yaml|pubspec.lock|analysis_options.yaml|javascript/*|ci/*|docker/*|build_tools/*|.github/workflows/dart.yml|.github/actions/build-companions/*)
+              lib/*|test/*|assets/*|web/*|android/*|ios/*|linux/*|macos/*|windows/*|pubspec.yaml|pubspec.lock|analysis_options.yaml|javascript/*|ci/*|docker/*|build_tools/*|.github/workflows/ci.yml|.github/actions/build-companions/*)
                 flutter=true
                 ;;
             esac
@@ -75,16 +75,16 @@ jobs:
             esac
             case "$f" in
               # Pattern catalogue sources, generated smoke, and their CI selection.
-              test/features/*_patterns/*|python/generate_pattern_smoke_test.py|python/check_pattern_smoke_mutations.py|python/tests/test_pattern_smoke_generator.py|.github/workflows/dart.yml|lib/features/*_patterns/*|assets/screens.json|ci/flutter_pattern_test_paths.txt|lib/core/services/base_controller.dart|pubspec.yaml|pubspec.lock)
+              test/features/*_patterns/*|python/generate_pattern_smoke_test.py|python/check_pattern_smoke_mutations.py|python/tests/test_pattern_smoke_generator.py|.github/workflows/ci.yml|lib/features/*_patterns/*|assets/screens.json|ci/flutter_pattern_test_paths.txt|lib/core/services/base_controller.dart|pubspec.yaml|pubspec.lock)
                 patterns=true
                 ;;
             esac
           done
 
           # Workflow / CI path-list edits still need a Flutter smoke.
-          # Native test lanes live in dart.yml — keep Android on when it changes.
+          # Native test lanes live in ci.yml — keep Android on when it changes.
           for f in "${files[@]}"; do
-            if [[ "$f" == ".github/workflows/dart.yml" ]]; then
+            if [[ "$f" == ".github/workflows/ci.yml" ]]; then
               flutter=true
               android=true
             elif [[ "$f" == ".github/workflows/non-dart.yml" || "$f" == ci/* ]]; then

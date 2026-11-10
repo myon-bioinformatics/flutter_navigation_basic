@@ -1,10 +1,6 @@
 """Canonical checkout identity, portable tooling, Pages gating, and exact vendoring."""
-import hashlib
-import json
+import hashlib, json, runpy, subprocess, sys
 from pathlib import Path
-import runpy
-import subprocess
-import sys
 
 import pytest
 
@@ -169,16 +165,16 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
     assert not (vendor / "repository_metadata_provenance.json").exists()
 
     workflow = (ROOT / ".github/workflows/non-dart.yml").read_text(encoding="utf-8")
-    pin = "9e3da7ae1846e9604ebc24bb5178f7de094a4e77"
+    pin = "26c442bc51b8a2837fe2556782b2937f396932af"
     assert workflow.count(f"ref: {pin}") == 1
     assert "vendor_sync.py update --manifest python/vendor.lock.json" not in workflow
-    assert workflow.count("vendor_sync.py materialize --manifest python/vendor.lock.json") == 1
+    assert workflow.count("vendor_sync.py recreate --manifest python/vendor.lock.json") == 1
     assert not any(token in workflow for token in ("VENDOR_UPDATE_TOKEN", "VENDOR_UPDATES_ENABLED", "GH_TOKEN"))
     assert pin in (PYTHON_DIR / "README.md").read_text(encoding="utf-8")
 
 
 def test_pages_generates_only_after_checkout_gate_and_embeds_asset():
-    workflow = (ROOT / ".github/workflows/flutter-pages.yml").read_text()
+    workflow = (ROOT / ".github/workflows/pages.yml").read_text()
     assert "github.event.workflow_run.head_branch == 'main'" in workflow
     assert workflow.index("Verify checkout matches gated SHA") < workflow.index("generate_repository_metadata.py --expected-sha")
     assert workflow.index("generate_repository_metadata.py --expected-sha") < workflow.index("meta --platform web --repository-metadata") < workflow.index("uses: ./.github/actions/build-companions")

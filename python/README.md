@@ -237,17 +237,17 @@ Playwright evidence zip is compared without extracting it. `--clip` is in CSS px
 real width, so DPR-2 screenshots are clipped correctly. Exit 0 identical, 1 differs, 2 input error.
 
 The CLI delegates to `vendor/image_diff.py`, copied byte-for-byte from
-`browser-test-kit` `scripts/image_diff.py` at the commit pinned in
+`BrowserTestKit` `scripts/image_diff.py` at the commit pinned in
 `vendor.lock.json` (Git blob and SHA-256 recorded there). PNG decode/compare
 uses `vendor/pillow_min/pillow_min.py` from Ironmate at its pinned commit
 (`vendor/pillow_min/Ironmate-LICENSE`). The existing
-`vendor/browser-test-kit-LICENSE` covers the browser-test-kit source. Tests are adapted from
+`vendor/browser-test-kit-LICENSE` covers the BrowserTestKit source. Tests are adapted from
 `tests/python/test_flutter_navigation_basic_image_diff.py` at the same adoption commit (paths/import
 target only), with additional RGBA channel regressions. The maximum RGBA channel
 delta must exceed tolerance (0..255). Files and uncompressed ZIP members have a
 64 MiB pre/post-read limit. Nonfinite numbers and invalid/out-of-bounds clips
 return exit 2. DPR crops use rounded pixels. Implementation changes belong to
-browser-test-kit; Flutter owns only its CLI adapter.
+BrowserTestKit; Flutter owns only its CLI adapter.
 
 ## Repository layout
 

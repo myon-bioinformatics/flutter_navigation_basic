@@ -4,10 +4,8 @@ The primary workflow stays byte-identical to its registered vendor hash.
 Selection changes exercise the fallback itself; ordinary mixed changes have
 one full-suite owner. The regression tests execute the real primary filter.
 """
-import argparse
-from fnmatch import fnmatchcase
-from pathlib import Path
-import subprocess
+import argparse, subprocess
+from fnmatch import fnmatchcase; from pathlib import Path
 
 PRIMARY_PATHS = ('python/*', 'assets/time/*', 'assets/data_processing/*',
                  'test/fixtures/photo_studio/import_compat/*', 'lib/features/*_patterns/*',
@@ -18,7 +16,7 @@ PRIMARY_TRIGGERS = ('python/*', 'assets/time/*', 'assets/data_processing/*',
                     'requirements.txt', '*/requirements.txt', 'python/pyproject.toml',
                     'python/uv.lock', '.dockerignore', 'lib/*.dart', 'test/*.dart',
                     '.github/workflows/non-dart.yml')
-SELF_PATHS = {'.github/workflows/dart.yml', 'python/oracle_selection.py',
+SELF_PATHS = {'.github/workflows/ci.yml', 'python/oracle_selection.py',
               'python/tests/test_oracle_selection.py'}
 
 

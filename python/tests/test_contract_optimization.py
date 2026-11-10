@@ -1,11 +1,6 @@
 """Public contract validation and JUnit reporting must survive python -O."""
-import json
+import json, subprocess, sys, tempfile, unittest, xml.etree.ElementTree as ET
 from pathlib import Path
-import subprocess
-import sys
-import tempfile
-import unittest
-import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[2]
 

@@ -7,12 +7,8 @@ The script intentionally uses only the Python standard library.
 
 from __future__ import annotations
 
-import argparse
-import json
-import sys
-from datetime import datetime
-from pathlib import Path
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+import argparse, json, sys
+from datetime import datetime; from pathlib import Path; from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 ZONES = (
     "Asia/Tokyo",

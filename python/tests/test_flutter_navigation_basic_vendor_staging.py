@@ -1,14 +1,6 @@
 """Execute the workflow's canonical staging commands against real locked bytes."""
-import hashlib
-import json
+import hashlib, json, re, shlex, shutil, subprocess, sys, tempfile, unittest
 from pathlib import Path
-import re
-import shlex
-import shutil
-import subprocess
-import sys
-import tempfile
-import unittest
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / '.github/workflows').is_dir())
 

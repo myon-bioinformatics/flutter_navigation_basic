@@ -10,11 +10,8 @@ Follows the Dart test JSON reporter protocol:
 """
 from __future__ import annotations
 
-import argparse
-import json
+import argparse, json, sys, xml.etree.ElementTree as ET
 from pathlib import Path
-import sys
-import xml.etree.ElementTree as ET
 
 RESULTS = ("success", "failure", "error")
 

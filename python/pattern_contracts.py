@@ -2,10 +2,8 @@
 
 Usage: python python/pattern_contracts.py output.json --junit output.xml
 """
-import argparse
-import json
+import argparse, json, xml.etree.ElementTree as ET
 from pathlib import Path
-import xml.etree.ElementTree as ET
 
 FAMILIES = ('api', 'navigation', 'ui_theme')
 EXPECTED_IDS = {f'{family}/{i:03}' for family in FAMILIES for i in range(1, 199)}

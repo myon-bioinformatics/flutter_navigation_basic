@@ -1,10 +1,6 @@
 """Pure curl import contracts; no curl process or network service is started."""
-import importlib.util
-import json
+import importlib.util, json, shutil, subprocess, sys
 from pathlib import Path
-import shutil
-import subprocess
-import sys
 
 import pytest
 

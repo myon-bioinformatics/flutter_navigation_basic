@@ -1,7 +1,6 @@
 """Validate measured browser header geometry exported by Playwright (stdlib)."""
-import json
+import json, sys
 from pathlib import Path
-import sys
 from generate_page_identities import ALIASES, identities
 
 

@@ -1,6 +1,5 @@
 """Guard the shipped transitions, provenance, and asset-only CI routing."""
-import importlib.util
-import json
+import importlib.util, json
 from pathlib import Path
 
 import pytest
@@ -79,7 +78,7 @@ def test_asset_only_change_selects_python_flutter_and_preserves_auto_playwright(
     inputs = dispatch.get("inputs", {}) if isinstance(dispatch, dict) else {}
     assert "run_playwright" not in inputs
 
-    flutter = _workflow("dart.yml")
+    flutter = _workflow("ci.yml")
     assert "pull_request" in flutter["on"]
     assert "paths" not in flutter["on"]["pull_request"]
     assert "paths-ignore" not in flutter["on"]["pull_request"]

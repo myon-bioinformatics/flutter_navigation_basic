@@ -1,10 +1,10 @@
-name: Flutter Web Pages
+name: Pages
 
 on:
   # Deploy only after the Flutter workflow finishes on main, so Pages cannot
   # race ahead of failed sharded tests / gate checks on the same commit.
   workflow_run:
-    workflows: ["Flutter"]
+    workflows: ["CI"]
     types: [completed]
   workflow_dispatch:
 
@@ -59,7 +59,7 @@ jobs:
                   "-R",
                   os.environ["GITHUB_REPOSITORY"],
                   "--workflow",
-                  "Flutter",
+                  "CI",
                   "--commit",
                   sha,
                   "--json",

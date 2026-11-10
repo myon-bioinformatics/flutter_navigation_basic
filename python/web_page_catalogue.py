@@ -1,8 +1,6 @@
 """Read this app's existing route declarations; no Dart SDK and no second route list."""
-import hashlib
+import hashlib, re, tomllib
 from pathlib import Path
-import re
-import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCES = ('lib/core/navigation/route_names.dart', 'lib/core/navigation/app_route_registry.dart',

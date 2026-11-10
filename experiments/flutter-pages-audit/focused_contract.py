@@ -1,9 +1,6 @@
 """Four-case diagnostic only; full430 validator remains unchanged and red/incomplete."""
-import json
-import os
-from pathlib import Path
-import sys
-from urllib.request import Request, urlopen
+import json, os, sys
+from pathlib import Path; from urllib.request import Request, urlopen
 import audit_contract as audit
 
 ROUTES = {'/tools/location/coordinates', '/tools/http/request-draft'}

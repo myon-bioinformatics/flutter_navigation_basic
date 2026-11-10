@@ -4,12 +4,8 @@ The request is fake: this tests metadata traversal, not live HTTP or browser QA.
 """
 from __future__ import annotations
 
-import importlib.util
-import json
-import os
-from pathlib import Path
-from types import SimpleNamespace
-import unittest
+import importlib.util, json, os, unittest
+from pathlib import Path; from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parent
 SPEC = importlib.util.spec_from_file_location(

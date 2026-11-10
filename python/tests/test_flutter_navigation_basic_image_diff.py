@@ -1,12 +1,6 @@
 from __future__ import annotations
 
-import hashlib
-import importlib.util
-import json
-import subprocess
-import sys
-import textwrap
-import zipfile
+import hashlib, importlib.util, json, subprocess, sys, textwrap, zipfile
 from pathlib import Path
 
 import pytest

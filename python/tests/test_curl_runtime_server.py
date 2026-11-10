@@ -1,12 +1,6 @@
 """Real loopback HTTP tests; no browser, external network or subprocess curl."""
-from contextlib import contextmanager
-from http.client import HTTPConnection
-import json
-from pathlib import Path
-import socket
-import subprocess
-import sys
-import threading
+import json, socket, subprocess, sys, threading
+from contextlib import contextmanager; from http.client import HTTPConnection; from pathlib import Path
 
 import pytest
 

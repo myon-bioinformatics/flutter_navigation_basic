@@ -38,7 +38,7 @@ that exact provenance, point `PYTHONTZPATH` at a compiled 2026c directory with
 its `tzdata.zi` marker before starting Python.
 
 CI's Non-Dart lane installs system tzdata and performs this check. The Flutter
-workflow is `.github/workflows/dart.yml`: it has no event path exclusion and
+workflow is `.github/workflows/ci.yml`: it has no event path exclusion and
 its classifier selects Flutter for `assets/*`, including asset-only updates.
 The core suite includes `test/now_timeline`, so all generated transition
 boundaries run. Python workflow tests parse YAML and execute both real path

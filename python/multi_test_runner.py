@@ -4,12 +4,7 @@ No shell or arbitrary commands. Retry repeats the *selected files*, not a
 guessed testcase ID. A retry success never masks the original failure.
 """
 from __future__ import annotations
-import hashlib
-import json
-import os
-import subprocess
-import sys
-import xml.etree.ElementTree as ET
+import hashlib, json, os, subprocess, sys, xml.etree.ElementTree as ET
 from pathlib import Path
 
 RUNNERS = ("deno", "playwright-node", "playwright-python")

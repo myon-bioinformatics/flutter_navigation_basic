@@ -3,10 +3,8 @@
 
 from __future__ import annotations
 
-import argparse
-import json
+import argparse, json, sys
 from pathlib import Path
-import sys
 
 MARKERS = (
     "TODO: 実装を追加してください",

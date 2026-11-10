@@ -1,9 +1,6 @@
 """No native SDK is needed to test orchestration; real captures are opt-in CI."""
-import json
+import json, shutil, subprocess, sys
 from pathlib import Path
-import shutil
-import subprocess
-import sys
 
 import pytest
 

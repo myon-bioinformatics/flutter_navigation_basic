@@ -1,10 +1,6 @@
 """Real FilterBasic negative path through native pytest, JUnit and vendored xprobe."""
-import json
-import os
+import json, os, subprocess, sys, xml.etree.ElementTree as ET
 from pathlib import Path
-import subprocess
-import sys
-import xml.etree.ElementTree as ET
 
 from failure_identity import collect_failure_identity, xprobe
 

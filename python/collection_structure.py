@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Generate portable collection structures for display shells."""
 from __future__ import annotations
-import argparse
-import json
+import argparse, json
 
 ROWS = [
     {"id":"a1","group":"A","label":"Alpha"},

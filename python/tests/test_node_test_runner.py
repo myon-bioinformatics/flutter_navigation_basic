@@ -1,7 +1,5 @@
 """Regression tests for the stdlib Node runner and its failure evidence."""
-import json
-import shutil
-import sys
+import json, shutil, sys
 from pathlib import Path
 
 import pytest

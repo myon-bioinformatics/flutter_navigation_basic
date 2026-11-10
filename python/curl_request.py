@@ -6,14 +6,8 @@ validator. It deliberately omits editor row IDs and blank placeholder rows.
 """
 from __future__ import annotations
 
-import argparse
-import base64
-import json
-from pathlib import Path
-import re
-import sys
-from typing import Any
-from urllib.parse import parse_qsl
+import argparse, base64, json, re, sys
+from pathlib import Path; from typing import Any; from urllib.parse import parse_qsl
 
 _VENDOR = Path(__file__).resolve().parent / "vendor"
 if str(_VENDOR) not in sys.path:

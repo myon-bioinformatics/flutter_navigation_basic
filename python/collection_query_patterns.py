@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """Pure collection operations for patterns 011, 012, 014-018 (stdlib)."""
 from __future__ import annotations
-import json
-import math
-import sys
+import json, math, sys
 
 
 def run(req):

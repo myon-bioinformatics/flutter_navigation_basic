@@ -3,16 +3,10 @@
 No SDK installation, native-build reuse, browser startup or OS impersonation.
 The caller supplies a JSON argv; no command text is evaluated by a shell.
 """
-import argparse
-from datetime import datetime, timezone
-import hashlib
-import json
-import os
-from pathlib import Path
-import platform
-import sys
+import argparse, hashlib, json, os, platform, sys
+from datetime import datetime, timezone; from pathlib import Path
 
-from capture_native_errors import case_manifest, companion_rows, default_seed, invoke
+from capture_native_errors import add_probe_tools_to_path, case_manifest, companion_rows, default_seed, invoke
 
 ROOT = Path(__file__).resolve().parents[1]
 TARGETS = ("web", "android", "ios", "macos", "windows", "linux")
@@ -102,7 +96,7 @@ def main(argv=None):
     # Docker can retain JSON/logs without fetching an extra tool at image build.
     # CI callers supply the same pinned writer as native error acquisition.
     if args.probe_tools:
-        sys.path.insert(0, str(args.probe_tools.resolve()))
+        add_probe_tools_to_path(args.probe_tools)
         from contract_probe import write_junit
         write_junit(result, args.output / "acceptance.xml")
         write_junit(result, args.output / "observed-failures.xml", observations=True)

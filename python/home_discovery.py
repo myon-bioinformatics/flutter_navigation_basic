@@ -3,8 +3,7 @@
 The Flutter runtime randomly chooses a triple each Home refresh; this file
 provides precomputed eligible IDs, not a frozen one-time Home selection.
 """
-import json
-import random
+import json, random
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]

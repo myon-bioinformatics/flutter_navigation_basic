@@ -1,8 +1,6 @@
 """Offline workflow event/scope tests; no workflow or browser is dispatched."""
-import json
-import runpy
+import json, runpy, unittest
 from pathlib import Path
-import unittest
 ROOT=Path(__file__).resolve().parents[2]
 WORKFLOW=ROOT/'.github/workflows/flutter-audit-focused-diagnostic.yml'
 
@@ -29,7 +27,7 @@ class GuardTests(unittest.TestCase):
         self.assertIn('ref: ${{ github.sha }}',text)
     def test_offline_ci_does_not_claim_or_run_browser_acceptance(self):
         text=(ROOT/'.github/workflows/flutter-audit-contracts.yml').read_text()
-        self.assertIn('offline-contracts:',text);self.assertIn('proof_contract.py check-source',text)
+        self.assertIn('offline-contracts:',text);self.assertIn('proof_contract.py check-historical-source',text);self.assertIn('current_source_projection.py',text)
         self.assertIn('does NOT mean',text)
         for forbidden in ['npm install','npm exec','playwright install','playwright test','workflow_dispatch:','family_contract.py preflight']:
             self.assertNotIn(forbidden,text)

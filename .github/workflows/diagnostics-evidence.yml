@@ -12,7 +12,7 @@ on:
       - ".github/actions/build-companions/**"
       - 'e2e/**'
       - '.github/workflows/diagnostics-evidence.yml'
-      - '.github/workflows/flutter-pages.yml'
+      - '.github/workflows/pages.yml'
   push:
     branches: [main]
     paths:
@@ -24,7 +24,7 @@ on:
       - ".github/actions/build-companions/**"
       - 'e2e/**'
       - '.github/workflows/diagnostics-evidence.yml'
-      - '.github/workflows/flutter-pages.yml'
+      - '.github/workflows/pages.yml'
   workflow_dispatch: {}
 
 permissions:

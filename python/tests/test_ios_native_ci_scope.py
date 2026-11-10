@@ -1,6 +1,5 @@
 """Native SDK work must not delay unrelated web-only changes."""
-from fnmatch import fnmatchcase
-from pathlib import Path
+from fnmatch import fnmatchcase; from pathlib import Path
 
 import pytest
 import yaml
@@ -33,7 +32,7 @@ def test_native_ci_trigger_scope(path, expected):
 
 
 def test_native_sdk_pin_matches_primary_flutter_gate():
-    dart = yaml.safe_load((ROOT / '.github/workflows/dart.yml').read_text())
+    dart = yaml.safe_load((ROOT / '.github/workflows/ci.yml').read_text())
     pin = next(step['with']['flutter-version'] for step in dart['jobs']['gate']['steps']
                if step.get('uses', '').startswith('subosito/flutter-action@'))
     for job in native_workflow()['jobs'].values():
@@ -44,6 +43,6 @@ def test_native_sdk_pin_matches_primary_flutter_gate():
 def test_pages_keeps_exact_flutter_gate_and_native_workflow_stays_manual_runnable():
     events = native_workflow()[True]
     assert 'workflow_dispatch' in events
-    pages = yaml.safe_load((ROOT / '.github/workflows/flutter-pages.yml').read_text())
-    assert pages[True]['workflow_run']['workflows'] == ['Flutter']
+    pages = yaml.safe_load((ROOT / '.github/workflows/pages.yml').read_text())
+    assert pages[True]['workflow_run']['workflows'] == ['CI']
     assert set(native_workflow()['permissions']) == {'contents'}

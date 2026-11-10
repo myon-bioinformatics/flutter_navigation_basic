@@ -1,5 +1,5 @@
 # flutter_navigation_basic
-![Flutter Navigation Demo](https://raw.githubusercontent.com/myon-bioinformatics/flutter_navigation_basic/main/flutter_navigation_basic_demo.gif)
+![Flutter Navigation Demo](https://raw.githubusercontent.com/myon-bioinformatics/flutter_navigation_basic/main/docs/images/flutter_navigation_basic_demo.gif)
 
 Dart / Flutter で書いた、画面遷移・ルーティング・共通UIの検証用の基盤アプリです。リポジトリには Web・iOS・Android のターゲット構成を含みます。
 
@@ -17,7 +17,7 @@ Dart / Flutter で書いた、画面遷移・ルーティング・共通UIの検
 
 ## Live Web Demo
 
-`main` への push に対する Flutter ワークフローの成功後、`.github/workflows/flutter-pages.yml` が同じコミットをビルドして GitHub Pages に公開します。
+`main` への push に対する CI ワークフロー（`.github/workflows/ci.yml`）の成功後、`.github/workflows/pages.yml` が同じコミットをビルドして GitHub Pages に公開します。
 
 https://myon-bioinformatics.github.io/flutter_navigation_basic/
 
@@ -147,9 +147,9 @@ npx playwright test --project=chromium
 
 ## CI
 
-- Pull Request では `.github/workflows/dart.yml` が analyze・test・Flutter Web build を検証します。パス判定（path filter）で、変更された領域に応じて実行するジョブを選びます。固定版のジョブは Flutter `3.47.0` を使い、latest-stable の検証ジョブもあります。
+- Pull Request では `.github/workflows/ci.yml` が analyze・test・Flutter Web build を検証します。パス判定（path filter）で、変更された領域に応じて実行するジョブを選びます。固定版のジョブは Flutter `3.47.0` を使い、latest-stable の検証ジョブもあります。
 - Python / Playwright 系の検証は `.github/workflows/non-dart.yml` が担当します。
-- `.github/workflows/flutter-pages.yml` は `main` の Flutter ワークフロー成功を受けて、そのコミットをチェックアウトします。Pages 側で analyze と Web build を実行し、テストは先行する Flutter ワークフローの結果をゲートとして GitHub Pages へデプロイします。
+- `.github/workflows/pages.yml` は `main` の Flutter ワークフロー成功を受けて、そのコミットをチェックアウトします。Pages 側で analyze と Web build を実行し、テストは先行する Flutter ワークフローの結果をゲートとして GitHub Pages へデプロイします。
 
 エージェント間の PR コメントは `AGENTS.md` の `from:` / `to:` ヘッダで宛先を明示します。
 

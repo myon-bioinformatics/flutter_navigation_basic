@@ -1,7 +1,6 @@
 """Static contract: locked vendor checks use the declared Python, not the runner."""
-from copy import deepcopy
-from pathlib import Path
 import re
+from copy import deepcopy; from pathlib import Path
 
 import pytest
 import yaml
@@ -58,7 +57,7 @@ def test_vendor_setup_contract_rejects_runner_python_fallback(mutation):
 
 
 CACHE_JOBS = (
-    ('dart.yml', 'python-oracle-fallback'),
+    ('ci.yml', 'python-oracle-fallback'),
     ('non-dart.yml', 'pattern-boundary'),
     ('non-dart.yml', 'python-vendor-locked'),
     ('non-dart.yml', 'python-pytest'),

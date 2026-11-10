@@ -7,8 +7,7 @@ status mix without extra reporters.
 from __future__ import annotations
 
 import json
-from pathlib import Path
-from typing import Any, Mapping
+from pathlib import Path; from typing import Any, Mapping
 
 # Stable keys aligned with pytest terminalreporter.stats + Flutter JSON reporter.
 OUTCOME_KEYS = (

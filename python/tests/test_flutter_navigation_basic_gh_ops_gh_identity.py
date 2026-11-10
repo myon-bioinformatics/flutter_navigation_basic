@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import sys
-import io
-import subprocess
+import io, subprocess, sys
 from pathlib import Path
 
 import pytest

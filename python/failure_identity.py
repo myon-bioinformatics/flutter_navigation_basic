@@ -5,11 +5,8 @@ assertion text or parameter values into the compact corpus.
 """
 from __future__ import annotations
 
-import hashlib
-import json
-from pathlib import Path
-import sys
-from typing import Any
+import hashlib, json, sys
+from pathlib import Path; from typing import Any
 
 _VENDOR = Path(__file__).resolve().parent / "vendor"
 if str(_VENDOR) not in sys.path:

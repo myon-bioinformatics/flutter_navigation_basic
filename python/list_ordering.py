@@ -2,10 +2,8 @@
 """Generate deterministic ordering examples for the Flutter catalogue."""
 from __future__ import annotations
 
-import argparse
-import json
-from pathlib import Path
-from typing import Any
+import argparse, json
+from pathlib import Path; from typing import Any
 
 EXAMPLES: dict[str, list[Any]] = {
     "basic": [9, 2, 5, 1, 3],

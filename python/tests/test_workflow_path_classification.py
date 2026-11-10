@@ -17,7 +17,7 @@ def workflow(name):
     'python/vendor/markdown.py', 'python/tests/test_workflow_path_classification.py',
 ])
 def test_python_only_skips_flutter(path, classify_workflow_asset):
-    assert classify_workflow_asset(workflow('dart.yml'), path) == {
+    assert classify_workflow_asset(workflow('ci.yml'), path) == {
         'flutter': 'false', 'android': 'false',
         'python': 'true', 'patterns': 'false',
     }
@@ -39,7 +39,7 @@ def test_python_only_skips_flutter(path, classify_workflow_asset):
     'python/tests/test_pattern_smoke_generator.py',
 ])
 def test_shared_python_inputs_run_both_consumers(path, classify_workflow_asset):
-    result = classify_workflow_asset(workflow('dart.yml'), path)
+    result = classify_workflow_asset(workflow('ci.yml'), path)
     assert result['python'] == result['flutter'] == 'true'
     assert result['android'] == 'false'
     assert classify_workflow_asset(workflow('non-dart.yml'), path)['python'] == 'true'
@@ -53,7 +53,7 @@ def test_shared_python_inputs_run_both_consumers(path, classify_workflow_asset):
     ('ci/flutter_pattern_test_paths.txt', 'true'),
 ])
 def test_relocated_flutter_support_keeps_its_lane(path, patterns, classify_workflow_asset):
-    result = classify_workflow_asset(workflow('dart.yml'), path)
+    result = classify_workflow_asset(workflow('ci.yml'), path)
     assert result['flutter'] == 'true'
     assert result['python'] == 'false'
     assert result['patterns'] == patterns
@@ -65,12 +65,12 @@ def test_relocated_flutter_support_keeps_its_lane(path, patterns, classify_workf
     ['python/curl_request.py', 'lib/main.dart'],
 ])
 def test_mixed_changes_accumulate_flags(paths, classify_workflow_asset):
-    result = classify_workflow_asset(workflow('dart.yml'), paths)
+    result = classify_workflow_asset(workflow('ci.yml'), paths)
     assert result['flutter'] == result['python'] == 'true'
 
 
 def test_main_push_keeps_full_matrix(classify_workflow_asset):
-    assert set(classify_workflow_asset(workflow('dart.yml'), 'README.md', 'push').values()) == {'true'}
+    assert set(classify_workflow_asset(workflow('ci.yml'), 'README.md', 'push').values()) == {'true'}
 
 
 def test_non_dart_dispatch_keeps_full_matrix(classify_workflow_asset):
@@ -78,7 +78,7 @@ def test_non_dart_dispatch_keeps_full_matrix(classify_workflow_asset):
 
 
 def test_workflow_edits_keep_smoke_and_native_lanes(classify_workflow_asset):
-    result = classify_workflow_asset(workflow('dart.yml'), '.github/workflows/dart.yml')
+    result = classify_workflow_asset(workflow('ci.yml'), '.github/workflows/ci.yml')
     assert result['flutter'] == result['android'] == result['patterns'] == 'true'
     result = classify_workflow_asset(workflow('non-dart.yml'), '.github/workflows/non-dart.yml')
     assert set(result.values()) == {'true', 'false'}
@@ -93,6 +93,6 @@ def test_non_dart_event_filters_have_no_duplicates():
         assert len(paths) == len(set(paths))
 
 
-@pytest.mark.parametrize('name', ['dart.yml', 'non-dart.yml'])
+@pytest.mark.parametrize('name', ['ci.yml', 'non-dart.yml'])
 def test_retargeted_refactor_runs_ci_on_main(name):
     assert workflow(name)[True]['pull_request']['branches'] == ['main']

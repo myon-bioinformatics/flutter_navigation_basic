@@ -13,11 +13,8 @@ That allowance is not a Flutter screen integration. There is no wildcard CORS.
 """
 from __future__ import annotations
 
-import argparse
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-import json
-from html import escape
-from urllib.parse import urlsplit
+import argparse, json
+from html import escape; from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer; from urllib.parse import urlsplit
 from validation_patterns import run
 
 

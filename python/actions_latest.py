@@ -2,17 +2,8 @@
 
 from __future__ import annotations
 
-import json
-import os
-import shutil
-import subprocess
-import sys
-import urllib.error
-import urllib.request
-import zipfile
-from dataclasses import asdict, dataclass
-from pathlib import Path
-from typing import Any
+import json, os, shutil, subprocess, sys, urllib.error, urllib.request, zipfile
+from dataclasses import asdict, dataclass; from pathlib import Path; from typing import Any
 
 
 @dataclass

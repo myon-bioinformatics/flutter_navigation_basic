@@ -7,10 +7,8 @@ The production source is always restored, including on timeout or interruption.
 """
 from __future__ import annotations
 
-import json
+import json, subprocess, xml.etree.ElementTree as ET
 from pathlib import Path
-import subprocess
-import xml.etree.ElementTree as ET
 
 from flutter_machine_junit import convert
 

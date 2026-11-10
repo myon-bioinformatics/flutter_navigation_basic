@@ -8,7 +8,7 @@ unknown results are not converted or rewritten.
 ## Status semantics
 
 - **Offline contracts green:** pure predicates, mock-DOM collection, bounded
-  driver tests, receipt integrity and checked-in source hashes pass. It is NOT
+  driver tests, receipt integrity and historical-reference source hashes pass. It is NOT
   runtime acceptance, full 430-case coverage, or confirmation that a UI bug is fixed.
 - **Collection evidence valid:** a saved packet has the exact bounded phases,
   supported census shape, source hashes, ordered before/after snapshots and
@@ -35,7 +35,12 @@ identifiers and source order. Explicit adapters cover source-inferable native /
 interactive bodies and header/diagnostic labels. Complex whole-group, native
 child, engine and terminal outer-container bindings are not invented.
 This checked-in projection records source contracts and hashes of the actual
-repository source files; `proof_contract.py check-source` verifies those bytes.
+repository source files at the declared reference;
+`proof_contract.py check-historical-source` verifies those exact Git blobs.
+Missing reference history or a missing/tampered blob fails without fallback.
+`check-current-source` separately compares the working tree with the same recorded
+hashes and reports every drift or missing path. The legacy `check-source` command
+and receipt aggregation retain this strict current-source behavior.
 It is not an assertion that 48 runtime adapters are complete.
 
 The collector retains semantic nodes, direct native text (including mixed parent
@@ -79,7 +84,9 @@ must not be triggered by publishing unrelated product files from a scratch tree.
 ```sh
 node --test experiments/flutter-pages-audit/*.test.cjs experiments/ui-showcase-html/state.test.cjs
 for test_file in experiments/flutter-pages-audit/*.test.py; do python3 -B -S "$test_file"; done
-python3 -B -S experiments/flutter-pages-audit/proof_contract.py check-source
+python3 -B -S experiments/flutter-pages-audit/proof_contract.py check-historical-source
+# Separate compatibility result; may fail even when historical integrity passes.
+python3 -B -S experiments/flutter-pages-audit/proof_contract.py check-current-source
 ```
 
 No Playwright browser discovery, Flutter execution or screenshot measurement is
@@ -87,3 +94,41 @@ part of these commands. The full 430-case configuration is preserved separately
 as `full.playwright.config.cjs`, rather than silently running the 48-case grep in
 the full lane. HTML comparison remains separate, with unchanged source content
 and reference provenance except its explicitly repinned Flutter comparison SHA.
+
+## Historical integrity versus proposed current compatibility
+
+`current-source-projection.v1.json` is a NEW independently versioned source-only
+proposal anchored to commit `00eb2c4fc5576489e5a4034736ffcc5502b67671`. It binds the
+unchanged historical manifest by SHA256 and retains the historical reference.
+It is not a replacement runtime adapter, browser proof, or authorization record.
+
+The 32 source entries retain 30 identical files. The other two decisions are:
+- Propose adopting the comment-only workflow filename change in
+  `pattern_source_links.dart`. No executable Dart changes are admitted.
+- Reject the old workflow path for CURRENT lookup only, preserving its historical
+  record. Propose adopting `pages.yml`, workflow display name `Pages`, and both
+  gate-name references changing from `Flutter` to `CI`. Exact byte transformations
+  are checked; permissions, deployment behavior beyond those name references,
+  and all other workflow content must remain identical to the historical source.
+
+`current_source_projection.py` verifies the exact permitted transformations,
+complete source coverage, pinned commit hashes and actual working-tree bytes.
+It rejects silent reference changes, altered decisions, missing history and
+acceptance promotion. The workflow has a separately labeled proposed-current
+source compatibility job. Both jobs fetch history; triggers cover all source
+paths, including old and new workflow paths. Source drift relative to the OLD
+reference still fails `proof_contract.py check-current-source`; this command and
+receipt aggregation have not been relaxed or redirected to the proposal.
+
+Acceptance criteria for this LOCAL PROPOSAL are source-only: all 32 historical
+hashes remain valid, the two reviewed transformations are exact, all 32 new hashes
+match the pinned current commit and working tree, and negative tests reject
+unreviewed changes. Publication/adoption has not occurred. No historical JSON,
+receipt, screenshot, failed/unknown result, or live-execution setting is changed.
+`acceptancePromoted`, `liveExecutionEnabled`, and `archive_ready` remain false;
+UI acceptance is unverified. Neither live measurement nor archive retirement is
+authorized by this proposal. Historical runtime evidence is never transplanted.
+
+```sh
+python3 -B -S experiments/flutter-pages-audit/current_source_projection.py
+```
