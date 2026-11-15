@@ -174,8 +174,8 @@
     },
     {
       "repository": "myon-bioinformatics/myon-bioinformatics",
-      "ref": "45ed741f7e1f60179934cee6fa1e16a887f97cb0",
-      "commit": "45ed741f7e1f60179934cee6fa1e16a887f97cb0",
+      "ref": "6c29503cf17eda856766ddfdf4d66a5b0965a8b1",
+      "commit": "6c29503cf17eda856766ddfdf4d66a5b0965a8b1",
       "source": "fleet_check.py",
       "destination": "python/vendor/fleet_check.py",
       "blob_sha": "5b6b732ff2c4fa966a64b6ab07e4da8d563038cf",
