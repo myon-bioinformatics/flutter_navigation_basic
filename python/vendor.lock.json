@@ -171,6 +171,15 @@
       "destination": "e2e/utils/browser_execution.mjs",
       "blob_sha": "3fcccb735dddd553942d96cc67cbe23a1561fea9",
       "sha256": "3634f607a254fecf5b25a467571fe5ffce8b65e7054566242c7b6391e1602cc3"
+    },
+    {
+      "repository": "myon-bioinformatics/myon-bioinformatics",
+      "ref": "45ed741f7e1f60179934cee6fa1e16a887f97cb0",
+      "commit": "45ed741f7e1f60179934cee6fa1e16a887f97cb0",
+      "source": "fleet_check.py",
+      "destination": "python/vendor/fleet_check.py",
+      "blob_sha": "5b6b732ff2c4fa966a64b6ab07e4da8d563038cf",
+      "sha256": "ae36c7e4d0f8d19ea5a62de98860a37302a65ab48db1bee2bdb6ada4bf7be56d"
     }
   ]
 }
