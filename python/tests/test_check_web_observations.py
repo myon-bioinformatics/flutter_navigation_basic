@@ -172,7 +172,7 @@ def test_bounded_shared_browser_execution_is_immutable_and_preserves_failure_bou
     """Upstream engine tests cover live disappearing DOM; Flutter guards the locked copy."""
     root = Path(__file__).resolve().parents[2]
     lock = json.loads((root / 'python/vendor.lock.json').read_text(encoding='utf-8'))
-    assert len(lock['files']) == 19
+    assert len(lock['files']) == 20  # + python/vendor/fleet_check.py
     row = next(item for item in lock['files']
                if item['destination'] == 'e2e/utils/browser_execution.mjs')
     assert row['repository'] == 'myon-bioinformatics/BrowserTestKit'

@@ -135,6 +135,7 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
         ("myon-bioinformatics/xprobe", "LICENSE", "python/vendor/xprobe-LICENSE"),
         ("myon-bioinformatics/myon-bioinformatics", "gh_ops.py", "python/vendor/gh_ops.py"),
         ("myon-bioinformatics/myon-bioinformatics", "LICENSE", "python/vendor/myon-bioinformatics-LICENSE"),
+        ("myon-bioinformatics/myon-bioinformatics", "fleet_check.py", "python/vendor/fleet_check.py"),
         ("myon-bioinformatics/BrowserTestKit", "scripts/check_evidence.py", "python/vendor/check_evidence.py"),
         ("myon-bioinformatics/BrowserTestKit", "scripts/check_png.py", "python/vendor/check_png.py"),
         ("myon-bioinformatics/BrowserTestKit", "scripts/jsonl_digest.py", "python/vendor/jsonl_digest.py"),
@@ -148,20 +149,11 @@ def test_vendor_lock_matches_exact_bytes_and_ci_contract():
     }
     entries = lock["files"]
     assert {(entry["repository"], entry["source"], entry["destination"]) for entry in entries} == expected
-    for entry in entries:
-        assert entry["ref"] == entry["commit"]
-        assert len(entry["ref"]) == 40 and set(entry["ref"]) <= set("0123456789abcdef")
+    # Full-SHA refs and exact bytes per row: tests/test_fleet.py (fleet_check.check_lock).
     # The former Ironmate producer was replaced by gh_identity (#169) and removed.
     assert not any((vendor / name).exists() for name in (
         "repository_metadata_contract.py", "repository_metadata_generator.py", "Ironmate-LICENSE"))
     assert len({entry["destination"] for entry in entries}) == len(entries)
-    for entry in entries:
-        commit = entry["commit"]
-        assert len(commit) == 40 and set(commit) <= set("0123456789abcdef")
-        data = (ROOT / entry["destination"]).read_bytes()
-        assert hashlib.sha256(data).hexdigest() == entry["sha256"]
-        blob = f"blob {len(data)}".encode() + bytes([0]) + data
-        assert hashlib.sha1(blob).hexdigest() == entry["blob_sha"]
     assert not (vendor / "repository_metadata_provenance.json").exists()
 
     workflow = (ROOT / ".github/workflows/non-dart.yml").read_text(encoding="utf-8")
